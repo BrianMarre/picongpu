@@ -138,15 +138,14 @@ namespace picongpu
                     oldState = ion[atomicConfigNumber_].getStateIndex();
 
                     // debug only
-                    // std::cout << rand() << std::endl;
-                    // randomGenInt() << std::endl;
+                    // std::cout << randomGenInt() << std::endl;
                     // return;
 
                     // debug only
                     // std::cout << "roll new state index" << std::endl;
 
                     // get a random new state index
-                    newStatesCollectionIndex = /*randomGenInt()*/ rand() % atomicDataBox.getNumStates();
+                    newStatesCollectionIndex = randomGenInt() /*rand()*/ % atomicDataBox.getNumStates();
 
                     newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStatesCollectionIndex);
 
@@ -158,7 +157,7 @@ namespace picongpu
                     // std::cout << "get histogram index" << std::endl;
 
                     // choose random histogram collection index
-                    histogramIndex = static_cast<uint16_t>(/*randomGenInt()*/ rand()) % histogram->getNumBins();
+                    histogramIndex = static_cast<uint16_t>(randomGenInt() /*rand()*/) % histogram->getNumBins();
 
                     // debug only
                     // std::cout << "get energy electron" << std::endl;
@@ -295,7 +294,7 @@ namespace picongpu
                             // debug only
                             // std::cout << "    unphysical rate" << std::endl;
                         }
-                        else if(/*randomGenFloat()*/ rand() / float_X(RAND_MAX) <= quasiProbability)
+                        else if(randomGenFloat() /*rand()*/ / float_X(RAND_MAX) <= quasiProbability)
                         {
                             // case change only possible once
                             // => randomly change to newState in time remaining
@@ -356,9 +355,12 @@ namespace picongpu
                 auto frame = ionBox.getLastFrame(supercellIdx);
                 auto particlesInSuperCell = ionBox.getSuperCell(supercellIdx).getSizeLastFrame();
 
+                // Offset without guards for random numbers
+                auto const supercellLocalOffset = supercellIdx - mapper.getGuardingSuperCells();
                 pmacc::mappings::threads::WorkerCfg<numWorkers> workerCfg(workerIdx);
-                auto generatorInt = rngFactoryInt(acc, supercellIdx, workerCfg);
-                auto generatorFloat = rngFactoryFloat(acc, supercellIdx, workerCfg);
+
+                auto generatorInt = rngFactoryInt(acc, supercellLocalOffset, workerCfg);
+                auto generatorFloat = rngFactoryFloat(acc, supercellLocalOffset, workerCfg);
 
                 // go over frames
                 while(frame.isValid())
