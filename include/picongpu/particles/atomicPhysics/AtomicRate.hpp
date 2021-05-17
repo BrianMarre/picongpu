@@ -211,30 +211,24 @@ namespace picongpu
                     T_Acc& acc,
                     Idx const oldIdx, // unitless
                     Idx const newIdx, // unitless
-                    float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                    AtomicDataBox atomicDataBox)
+                    uint32_t const transitionIndex, // unitless
+                    float_X const energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                    AtomicDataBox const atomicDataBox)
                 {
                     // energy difference between atomic states
-                    float_X energyDifference_m = energyDifference(
+                    float_X m_energyDifference = energyDifference(
                         acc,
                         oldIdx,
                         newIdx,
                         atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
 
-                    uint32_t indexTransition; // unitless
                     float_X Ratio; // unitless
 
                     // excitation or deexcitation
-                    if(energyDifference_m < 0._X)
+                    if(m_energyDifference < 0._X)
                     {
                         // deexcitation
-                        energyDifference_m = -energyDifference_m; // unit: ATOMIC_UNIT_ENERGY
-
-                        // collisional absorption obscillator strength of transition [unitless]
-                        indexTransition = atomicDataBox.findTransition(
-                            newIdx, // lower atomic state Idx
-                            oldIdx // upper atomic state Idx
-                        );
+                        m_energyDifference = -m_energyDifference; // unit: ATOMIC_UNIT_ENERGY
 
                         // ratio due to multiplicity
                         // unitless/unitless * (AU + AU) / AU = unitless
@@ -242,7 +236,7 @@ namespace picongpu
                             * (energyElectron + energyDifference_m) / energyElectron; // unitless
 
                         // security check for NaNs in Ratio and debug outputif present
-                        if( !(Ratio >= 0) && !(Ratio < 0) ) // only true if both !(<0) and !(>=0), if nan than comparison always false
+                        if(Ratio + 1 == Ratio) ) // only true if nan or inf
                         {
                             printf(
                                 "Warning: NaN in ratio calculation, ask developer for more information\n"
@@ -268,32 +262,12 @@ namespace picongpu
                     else
                     {
                         // excitation
-                        // collisional absorption obscillator strength of transition [unitless]
-                        indexTransition = atomicDataBox.findTransition(
-                            oldIdx, // lower atomic state Idx, unitless
-                            newIdx // upper atomic state Idx, unitless
-                        );
-
                         Ratio = 1._X; // unitless
-                    }
-
-                    // BEWARE: input data may be incomplete
-                    // TODO: implement better fallback calculation
-
-                    // TODO: Implement cross section of not changing state
-
-                    // check whether transition index exists
-                    if(indexTransition == atomicDataBox.getNumTransitions())
-                    {
-                        // debug only
-                        // std::cout << " transition not found, oldIdx " << oldIdx << " newIdx" << newIdx << std::endl;
-                        // fallback
-                        return 0._X; // 0 crossection for non existing transition, unit: m^2, SI
                     }
 
                     // unitless * unitless = unitless
                     float_X const collisionalOscillatorStrength
-                        = Ratio * atomicDataBox.getCollisionalOscillatorStrength(indexTransition); // unitless
+                        = Ratio * atomicDataBox.getCollisionalOscillatorStrength(transitionIndex); // unitless
 
                     // physical constants
                     // (unitless * m)^2 / unitless = m^2
@@ -312,23 +286,13 @@ namespace picongpu
                             atomicDataBox));*/
                     // std::cout << collisionalOscillatorStrength << std::endl;
 
-                    // NaN check
-                    if((!(collisionalOscillatorStrength >= 0)) && (!(collisionalOscillatorStrength < 0)))
-                    {
-                        printf(
-                            "indexTransition %i, oscillatorStrength %f , ratio %f\n",
-                            indexTransition,
-                            atomicDataBox.getCollisionalOscillatorStrength(indexTransition),
-                            Ratio);
-                    }
-
                     // m^2 * (AUE/AUE)^2 * unitless * AUE/AUE * unitless<-[ J, J, unitless, unitless ] = m^2
                     // AUE =^= ATOMIC_UNIT_ENERGY
-                    float_X crossSection_SI = c0_SI * math::pow((1._X / 2._X) / energyDifference_m, 2.0_X)
-                        * collisionalOscillatorStrength * (energyDifference_m / energyElectron)
-                        * gauntFactor(energyDifference_m,
+                    float_X crossSection_SI = c0_SI * (1._X / 4._X) / (energyDifference_m * energyDifference_m)
+                        * collisionalOscillatorStrength * (m_energyDifference / energyElectron)
+                        * gauntFactor(m_energyDifference,
                                       energyElectron,
-                                      indexTransition,
+                                      transitionIndex,
                                       atomicDataBox); // unit: m^2, SI
 
                     // safeguard against negative cross sections due to imperfect approximations
@@ -340,80 +304,88 @@ namespace picongpu
                     // debug only
                     /*std::cout << "crossSection" << crossSection_SI << std::endl;*/
 
-                    // usual return path
                     return crossSection_SI;
                 }
 
+                // returns total cross section for a specific electron energy
                 // @param energyElectron ... kinetic energy only, unit: ATOMIC_UNIT_ENERGY
                 // return unit: m^2, SI
                 template<typename T_Acc>
                 DINLINE static float_X totalCrossSection(
                     T_Acc& acc,
-                    float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                    AtomicDataBox atomicDataBox,
-                    bool debug=false)
+                    float_X const energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                    AtomicDataBox const atomicDataBox,
+                    bool const debug = false)
                 {
                     float_X result = 0._X; // unit: m^2, SI
 
                     Idx lowerIdx;
                     Idx upperIdx;
+                    uint32_t numberTransitions;
 
                     // debug only
                     uint16_t loopCount = 0u;
 
-                    for(uint32_t i = 0u; i < atomicDataBox.getNumTransitions(); i++)
+                    // iterate over all transitions
+                    for(uint32_t i = 0u; i < atomicDataBox.getNumStates(); i++)
                     {
-                        upperIdx = atomicDataBox.getUpperIdxTransition(i);
-                        lowerIdx = atomicDataBox.getLowerIdxTransition(i);
+                        lowerIdx = atomicDataBox.getAtomicStateConfigNumberIndex();
+                        numberTransitions = atomicDataBox.getNumberTransitions(i);
+                        startIndex = atomicDataBox.getStartIndexBlock(i);
 
-                        // excitation crossection
-                        result += collisionalExcitationCrosssection(
-                            acc,
-                            lowerIdx, // unitless
-                            upperIdx, // unitless
-                            energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                            atomicDataBox); // unit: m^2, SI
-
-                        // debug only
-                        loopCount++;
-                        // NaN check
-                        if((!(result >= 0)) && (!(result < 0)))
+                        for(uint32_t j = 0u; j < numberTransitions; j++)
                         {
-                            printf(
-                                "loop %i crossSectionExcitation %f lowerIdx %u, upperIdx %u energyElectron %f \n",
-                                loopCount,
-                                collisionalExcitationCrosssection(
-                                    acc,
-                                    lowerIdx, // unitless
-                                    upperIdx, // unitless
-                                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                                    atomicDataBox),
-                                lowerIdx,
+                            upperIdx = atomicDataBox.getUpperIdxTransition(startIndex + i);
+
+                            // excitation cross section
+                            result += collisionalExcitationCrosssection(
+                                acc,
+                                lowerIdx, // unitless
+                                upperIdx, // unitless
+                                energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                atomicDataBox); // unit: m^2, SI
+
+                            // debug only
+                            loopCount++;
+                            // NaN check
+                            if((!(result >= 0)) && (!(result < 0)))
+                            {
+                                printf(
+                                    "loop %i crossSectionExcitation %f lowerIdx %u, upperIdx %u energyElectron %f \n",
+                                    loopCount,
+                                    collisionalExcitationCrosssection(
+                                        acc,
+                                        lowerIdx, // unitless
+                                        upperIdx, // unitless
+                                        energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                        atomicDataBox),
+                                    lowerIdx,
+                                    upperIdx,
+                                    energyElectron);
+                            }
+
+                            // deexcitation crosssection
+                            result += collisionalExcitationCrosssection(
+                                acc,
                                 upperIdx,
-                                energyElectron);
-                        }
+                                lowerIdx,
+                                energyElectron,
+                                atomicDataBox); // unit: m^2, SI
 
-                        // deexcitation crosssection
-                        result += collisionalExcitationCrosssection(
-                            acc,
-                            upperIdx,
-                            lowerIdx,
-                            energyElectron,
-                            atomicDataBox); // unit: m^2, SI
-
-                        // debug only
-                        // NaN check
-                        if((!(result >= 0)) && (!(result < 0)))
-                        {
-                            printf(
-                                "loop %i crossSectionDeExcitation %f \n",
-                                loopCount,
-                                collisionalExcitationCrosssection(
-                                    acc,
-                                    upperIdx, // unitless
-                                    lowerIdx, // unitless
-                                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                                    atomicDataBox));
+                            // debug only
+                            // NaN check
+                            if((!(result >= 0)) && (!(result < 0)))
+                            {
+                                printf(
+                                    "loop %i crossSectionDeExcitation %f \n",
+                                    loopCount,
+                                    collisionalExcitationCrosssection(
+                                        acc,
+                                        upperIdx, // unitless
+                                        lowerIdx, // unitless
+                                        energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                        atomicDataBox));
+                            }
                         }
                     }
 
@@ -426,7 +398,6 @@ namespace picongpu
 
                     return result; // unit: m^2, SI
                 }
-
 
                 // return unit: 1/s, SI
                 /** rate function
@@ -445,8 +416,9 @@ namespace picongpu
                 template<typename T_Acc>
                 DINLINE static float_X Rate(
                     T_Acc& acc,
-                    Idx const oldIdx, // old atomic state
-                    Idx const newIdx, // new atomic state
+                    Idx const oldState, // unit: unitless
+                    Idx const newState, // unit: unitless
+                    uint32_t const transitionIndex,
                     float_X const energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     float_X const energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
                     float_X const densityElectrons, // unit: 1/(m^3*AU)
@@ -460,10 +432,11 @@ namespace picongpu
                     // unit: J, SI
                     // unit: AU, =: ATOMIC_UNIT_ENERGY
 
-                    float_X sigma_SI = collisionalExcitationCrosssection(
+                    const float_X sigma_SI = collisionalExcitationCrosssection(
                         acc,
-                        oldIdx, // unitless
-                        newIdx, // unitless
+                        oldState, // unitless
+                        newState, // unitless
+                        transitionIndex,
                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                         atomicDataBox); // unit: (m^2), SI
 
@@ -477,11 +450,7 @@ namespace picongpu
                     // unit: 1/s; SI
                 }
 
-                /** returns \sum_{f} ( Rate_(i->f) )
-                 *
-                 * i ... initial state = oldState
-                 * f ... final state != oldState
-                 * {f} ... set of f
+                /** returns the total rate of all transitions from the given state
                  *
                  * return unit: 1/s, SI
                  */
@@ -496,22 +465,44 @@ namespace picongpu
                 {
                     float_X totalRate = 0._X; // unit: 1/s, SI
 
+                    Idx lowerState;
+                    Idx upperState;
                     Idx newState;
 
                     for(uint32_t i = 0u; i < atomicDataBox.getNumStates(); i++)
                     {
-                        newState = atomicDataBox.getAtomicStateConfigNumberIndex(i);
+                        lowerState = atomicDataBox.getAtomicStateConfigNumberIndex(i);
+                        startIndexBlock = atomicDataBox.getStartIndexBlock(i);
 
-                        if(newState != oldState)
+                        for(uint32_t j = 0u; j < atomicDataBox.getNumberTransitions(i); j++)
                         {
-                            totalRate += Rate(
-                                acc,
-                                oldState, // unitless
-                                newState, // newState, unitless
-                                energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                                energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
-                                densityElectrons,
-                                atomicDataBox); // unit: 1/s, SI
+                            indexTransition = startIndexBlock + j;
+                            upperState = atomicDataBox.getUpperIdxTransition(indexTransition);
+
+                            // newState = lowerState
+                            if(upperState == oldState)
+                                totalRate += Rate(
+                                    acc,
+                                    oldState, // unitless
+                                    lowerState, // newstate, unitless
+                                    indexTransition,
+                                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                    energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
+                                    densityElectrons,
+                                    atomicDataBox); // unit: 1/s, SI
+                            // newtState = upperState
+                            if(lowerState == oldState)
+                                totalRate += Rate(
+                                    acc,
+                                    oldState, // unitless
+                                    upperState, // newstate, unitless
+                                    indexTransition,
+                                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                    energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
+                                    densityElectrons,
+                                    atomicDataBox); // unit: 1/s, SI
+
+                            // else do nothing
                         }
                     }
 

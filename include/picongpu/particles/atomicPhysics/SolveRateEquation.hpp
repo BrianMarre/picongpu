@@ -138,20 +138,41 @@ namespace picongpu
                     oldState = ion[atomicConfigNumber_].getStateIndex();
 
                     // debug only
-                    // std::cout << randomGenInt() << std::endl;
-                    // return;
-
-                    // debug only
                     // std::cout << "roll new state index" << std::endl;
 
-                    // get a random new state index
-                    newStatesCollectionIndex = randomGenInt() /*rand()*/ % atomicDataBox.getNumStates();
+                    // get collection index of old State
+                    oldStateIndex = atomicDataBox.findState(oldState);
 
-                    newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStatesCollectionIndex);
+                    // randomly select viable Transition
+                    while(true)
+                    {
+                        // get a random new state index
+                        newStateIndex = randomGenInt() % atomicDataBox.getNumStates();
+                        newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStatesCollectionIndex);
 
-                    // newState = randomGenInt( ) % ConfigNumber::numberStates( );
-                    // unperformant since many states do not actually exist
-                    // and very large number of states possible in uint64 >> 15000
+                        if(newState == oldState)
+                            break;
+
+                        // search for transition
+                        transitionIndex = atomicDataBox.findTransitionInBlock(oldStateIndex, newState);
+
+                        // found transition?
+                        if(transitionIndex != atomicDataBox.getNumTransition())
+                        {
+                            break;
+                        }
+
+                        // search for reverse Transition
+                        transitionIndex = atomicDataBox.findTransitionInBlock(newStateIndex, oldState);
+
+                        // found transition?
+                        if(transitionIndex != atomicDataBox.getNumTransition())
+                        {
+                            break;
+                        }
+
+                        // retry if no transition between states found
+                    }
 
                     // debug only
                     // std::cout << "get histogram index" << std::endl;
@@ -222,6 +243,7 @@ namespace picongpu
                             acc,
                             oldState, // unitless
                             newState, // unitless
+                            transitionIndex, // unitless
                             energyElectron, // unit: ATOMIC_UNIT_ENERGY
                             energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
                             densityElectrons, // unit: 1/(m^3*J), SI

@@ -244,6 +244,7 @@ namespace picongpu
                      *  - filenames are hardcoded
                      *  - only a single file can be loaded for all species
                      *  - no param file yet exists
+                     *  - assumes block form for transitions
                      * @TODO get out of param files seperate for each species, Brian Marre 2020
                      */
 
