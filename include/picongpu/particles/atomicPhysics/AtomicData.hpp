@@ -295,8 +295,8 @@ namespace picongpu
                     {
                         this->m_boxStateIdx[this->m_numStates] = idx;
                         this->m_boxStateEnergy[this->m_numStates] = energy;
-                        this->m_boxNumTransitions = 0u;
-                        this->m_boxStartIndexBlockTransitions = this->m_maxNumberTransitions;
+                        this->m_boxNumTransitions[this->m_numStates] = 0u;
+                        this->m_boxStartIndexBlockTransitions[this->m_numStates] = this->m_maxNumberTransitions;
                         this->m_numStates += 1u;
                     }
                 }

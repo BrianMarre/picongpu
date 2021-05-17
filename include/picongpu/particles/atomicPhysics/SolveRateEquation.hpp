@@ -108,7 +108,9 @@ namespace picongpu
 
                 ConfigNumberDataType oldState;
                 ConfigNumberDataType newState;
-                uint32_t newStatesCollectionIndex;
+                uint32_t newStateIndex;
+                uint32_t oldStateIndex;
+                uint32_t transitionIndex;
 
                 uint16_t histogramIndex;
                 float_X energyElectron;
@@ -148,7 +150,7 @@ namespace picongpu
                     {
                         // get a random new state index
                         newStateIndex = randomGenInt() % atomicDataBox.getNumStates();
-                        newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStatesCollectionIndex);
+                        newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStateIndex);
 
                         if(newState == oldState)
                             break;
@@ -157,7 +159,7 @@ namespace picongpu
                         transitionIndex = atomicDataBox.findTransitionInBlock(oldStateIndex, newState);
 
                         // found transition?
-                        if(transitionIndex != atomicDataBox.getNumTransition())
+                        if(transitionIndex != atomicDataBox.getNumTransitions())
                         {
                             break;
                         }
@@ -166,7 +168,7 @@ namespace picongpu
                         transitionIndex = atomicDataBox.findTransitionInBlock(newStateIndex, oldState);
 
                         // found transition?
-                        if(transitionIndex != atomicDataBox.getNumTransition())
+                        if(transitionIndex != atomicDataBox.getNumTransitions())
                         {
                             break;
                         }

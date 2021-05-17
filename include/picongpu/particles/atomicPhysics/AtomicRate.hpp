@@ -212,7 +212,7 @@ namespace picongpu
                     Idx const oldIdx, // unitless
                     Idx const newIdx, // unitless
                     uint32_t const transitionIndex, // unitless
-                    float_X const energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                    float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     AtomicDataBox const atomicDataBox)
                 {
                     // energy difference between atomic states
@@ -233,10 +233,10 @@ namespace picongpu
                         // ratio due to multiplicity
                         // unitless/unitless * (AU + AU) / AU = unitless
                         Ratio = static_cast<float_X>((Multiplicity(acc, newIdx)) / (Multiplicity(acc, oldIdx)))
-                            * (energyElectron + energyDifference_m) / energyElectron; // unitless
+                            * (energyElectron + m_energyDifference) / energyElectron; // unitless
 
                         // security check for NaNs in Ratio and debug outputif present
-                        if(Ratio + 1 == Ratio) ) // only true if nan or inf
+                        if(Ratio + 1 == Ratio) // only true if nan or inf
                         {
                             printf(
                                 "Warning: NaN in ratio calculation, ask developer for more information\n"
@@ -244,7 +244,7 @@ namespace picongpu
                                 newIdx,
                                 oldIdx,
                                 energyElectron,
-                                energyDifference_m);
+                                m_energyDifference);
                         }
 
                         // debug only
@@ -257,7 +257,7 @@ namespace picongpu
                             newIdx)) / (Multiplicity(acc, oldIdx))) << std::endl;
                         }*/
 
-                        energyElectron = energyElectron + energyDifference_m; // unit; ATOMIC_UNIT_ENERGY
+                        energyElectron = energyElectron + m_energyDifference; // unit; ATOMIC_UNIT_ENERGY
                     }
                     else
                     {
@@ -288,7 +288,7 @@ namespace picongpu
 
                     // m^2 * (AUE/AUE)^2 * unitless * AUE/AUE * unitless<-[ J, J, unitless, unitless ] = m^2
                     // AUE =^= ATOMIC_UNIT_ENERGY
-                    float_X crossSection_SI = c0_SI * (1._X / 4._X) / (energyDifference_m * energyDifference_m)
+                    float_X crossSection_SI = c0_SI * (1._X / 4._X) / (m_energyDifference * m_energyDifference)
                         * collisionalOscillatorStrength * (m_energyDifference / energyElectron)
                         * gauntFactor(m_energyDifference,
                                       energyElectron,
@@ -322,6 +322,7 @@ namespace picongpu
                     Idx lowerIdx;
                     Idx upperIdx;
                     uint32_t numberTransitions;
+                    uint32_t startIndexBlock;
 
                     // debug only
                     uint16_t loopCount = 0u;
@@ -329,19 +330,20 @@ namespace picongpu
                     // iterate over all transitions
                     for(uint32_t i = 0u; i < atomicDataBox.getNumStates(); i++)
                     {
-                        lowerIdx = atomicDataBox.getAtomicStateConfigNumberIndex();
+                        lowerIdx = atomicDataBox.getAtomicStateConfigNumberIndex(i);
                         numberTransitions = atomicDataBox.getNumberTransitions(i);
-                        startIndex = atomicDataBox.getStartIndexBlock(i);
+                        startIndexBlock = atomicDataBox.getStartIndexBlock(i);
 
                         for(uint32_t j = 0u; j < numberTransitions; j++)
                         {
-                            upperIdx = atomicDataBox.getUpperIdxTransition(startIndex + i);
+                            upperIdx = atomicDataBox.getUpperIdxTransition(startIndexBlock + i);
 
                             // excitation cross section
                             result += collisionalExcitationCrosssection(
                                 acc,
                                 lowerIdx, // unitless
                                 upperIdx, // unitless
+                                startIndexBlock + i, // index transition
                                 energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                 atomicDataBox); // unit: m^2, SI
 
@@ -357,6 +359,7 @@ namespace picongpu
                                         acc,
                                         lowerIdx, // unitless
                                         upperIdx, // unitless
+                                        startIndexBlock + i, // index transition
                                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                         atomicDataBox),
                                     lowerIdx,
@@ -369,6 +372,7 @@ namespace picongpu
                                 acc,
                                 upperIdx,
                                 lowerIdx,
+                                startIndexBlock + i, // index transition
                                 energyElectron,
                                 atomicDataBox); // unit: m^2, SI
 
@@ -383,6 +387,7 @@ namespace picongpu
                                         acc,
                                         upperIdx, // unitless
                                         lowerIdx, // unitless
+                                        startIndexBlock + i, // index transition
                                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                         atomicDataBox));
                             }
@@ -468,6 +473,8 @@ namespace picongpu
                     Idx lowerState;
                     Idx upperState;
                     Idx newState;
+                    uint32_t startIndexBlock;
+                    uint32_t indexTransition;
 
                     for(uint32_t i = 0u; i < atomicDataBox.getNumStates(); i++)
                     {
