@@ -93,7 +93,7 @@ namespace picongpu
                     return;
 
                 // debug only
-                std::cout << "        process Ion" << std::endl;
+                // std::cout << "        process Ion" << std::endl;
 
                 // workaround: the types may be obtained in a better fashion
                 // TODO: relace with better version
@@ -240,11 +240,12 @@ namespace picongpu
                     // debug only
                     if(debug)
                     {
-                        /*std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI
+                        // std::cout << "ping" << std::endl;
+                        std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI
                                   << " oldState " << oldState << " newState " << newState << " energyElectron "
                                   << energyElectron << " energyElectronBinWidth " << energyElectronBinWidth
                                   << " densityElectrons " << densityElectrons << " histogramIndex " << histogramIndex
-                                  << " quasiProbability " << quasiProbability << " rateSI " << rate_SI << std::endl;*/
+                                  << " quasiProbability " << quasiProbability << " rateSI " << rate_SI << std::endl;
                     }
 
 

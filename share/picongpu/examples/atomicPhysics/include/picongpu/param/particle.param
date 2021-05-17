@@ -24,7 +24,9 @@
 #include "picongpu/particles/manipulators/manipulators.def"
 
 #include <pmacc/math/operation.hpp>
+
 #include <pmacc/math/Vector.hpp>
+
 
 // particles randomly distributed, 1 macro particle per cell
 namespace picongpu
@@ -46,6 +48,26 @@ namespace picongpu
                  */
                 static constexpr uint32_t numParticlesPerCell = 1u;
             };
+
+            // sit directly in lower corner of the cell
+            CONST_VECTOR(
+                float_X,
+                3,
+                InCellOffset,
+                // each x, y, z in-cell position component in range [0.0, 1.0)
+                0.0,
+                0.0,
+                0.0);
+            struct OnePositionParameter
+            {
+                /** Count of particles per cell at initial state
+                 *  unit: none
+                 */
+                static constexpr uint32_t numParticlesPerCell = 1u;
+
+                const InCellOffset_t inCellOffset;
+            };
+            using OnePosition = OnePositionImpl<OnePositionParameter>;
             using Random1ppc = RandomImpl<RandomParameter1ppc>;
 
         } // namespace startPosition

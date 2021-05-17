@@ -356,6 +356,9 @@ namespace picongpu
                     using Kernel = AtomicPhysicsKernel<numWorkers, maxNumBins>;
                     auto kernel = Kernel{RngFactoryInt{step}, RngFactoryFloat{step}};
 
+                    // debug only
+                    std::cout << "start atomic physics step" << std::endl;
+
                     // macro for call of kernel, once for every super cell
                     PMACC_KERNEL(kernel)
                     (mapper.getGridDim(), // how many blocks = how many supercells in local domain
@@ -365,11 +368,11 @@ namespace picongpu
                        mapper,
                        atomicData->getDeviceDataBox(this->numberStates, this->numberTransitions),
                        initialGridWidth, // unit: ATOMIC_UNIT_ENERGY
-                       relativeErrorTarget, // unit: 1/s /( 1/( m^3 * J ) ), SI
+                       relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) ), SI
                        step);
 
                     // debug only
-                    std::cout << "atomic physics step completed" << std::endl;
+                    std::cout << "end atomic physics step" << std::endl;
                 }
             };
 

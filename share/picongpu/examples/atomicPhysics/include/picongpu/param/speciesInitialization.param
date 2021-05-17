@@ -41,8 +41,9 @@ namespace picongpu
          * the functors are called in order (from first to last functor)
          */
         using InitPipeline = bmpl::vector<
-
-            CreateDensity<densityProfiles::Homogenous, startPosition::Random1ppc, CarbonIons>,
+            // CreateDensity<densityProfiles::Homogenous, startPosition::Random1ppc, CarbonIons>,
+            // debug one particle per super cell only
+            CreateDensity<densityProfiles::FreeFormula, startPosition::OnePosition, CarbonIons>,
             ManipulateDerive<manipulators::binary::DensityWeighting, CarbonIons, BulkElectrons>,
             // set ions to atomic ground state
             Manipulate<manipulators::NotIonized, CarbonIons>,

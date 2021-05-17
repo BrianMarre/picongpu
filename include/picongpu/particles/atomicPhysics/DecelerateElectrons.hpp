@@ -68,10 +68,11 @@ namespace picongpu
 
                 float_X const scalingFactor = 1._X - deltaEnergy / energy; // unitless
 
-                //electron[momentum_] *= scalingFactor;
+                electron[momentum_] *= scalingFactor;
 
-                std::cout << "scalingFactor " << scalingFactor << " electronMomentumNew " << electron[momentum_]
-                          << std::endl;
+                // debug only
+                /*std::cout << "scalingFactor " << scalingFactor << " electronMomentumNew " << electron[momentum_]
+                          << std::endl;*/
             }
 
             // Fill the histogram return via the last parameter

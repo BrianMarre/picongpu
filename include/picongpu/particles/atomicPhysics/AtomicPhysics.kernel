@@ -135,7 +135,7 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "start kernel" << std::endl;
+                        // std::cout << "start kernel" << std::endl;
                         // gpu
                         // printf("start kernel\n");
                     }
@@ -151,7 +151,7 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "    allocation histogram in SMEM" << std::endl;
+                        // std::cout << "    allocation histogram in SMEM" << std::endl;
                         // gpu
                         // printf("    allocation histogram in SMEM\n");
                     }
@@ -167,7 +167,7 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "    allocated relative error instance" << std::endl;
+                        // std::cout << "    allocated relative error instance" << std::endl;
                         // gpu
                         // printf("    allocated relative error instance\n");
                     }
@@ -187,9 +187,9 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // CPU
-                        std::cout << "    init histogram" << std::endl;
+                        // std::cout << "    init histogram" << std::endl;
                         // gpu
-                        printf("    init histogram\n");
+                        // printf("    init histogram\n");
                         // printf("        initialGridWidthSpecified: %f\n", initialGridWidth);
                     }
 
@@ -200,7 +200,7 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "    histogram filled" << std::endl;
+                        // std::cout << "    histogram filled" << std::endl;
                         // gpu
                         // printf("    histogram filled\n");
                     }
@@ -208,7 +208,7 @@ namespace picongpu
                     bool debug;
                     if(workerIdx == 0)
                     {
-                        debug = false;
+                        debug = true;
                     }
                     else
                     {
@@ -230,7 +230,7 @@ namespace picongpu
                     if( workerIdx == 0 )
                     {
                         // cpu
-                        std::cout << "    rate applied" << std::endl;
+                        // std::cout << "    rate applied" << std::endl;
                         // gpu
                         // printf("    rate applied\n");
                     }
@@ -247,7 +247,7 @@ namespace picongpu
                     if( workerIdx == 0 )
                     {
                         // cpu
-                        std::cout << "    electrons decelerated" << std::endl;
+                        // std::cout << "    electrons decelerated" << std::endl;
                         // gpu
                         // printf("    electrons decelerated\n");
                     }

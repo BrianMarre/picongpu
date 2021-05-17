@@ -176,7 +176,7 @@ namespace picongpu
      * since all "," are interpreted as seperating macro arguments
      */
     using ConfigNumber_C = particles::atomicPhysics::stateRepresentation::
-        ConfigNumber<uint64_t, numberLevels_Carbon, chargeNumber_Carbon>;
+        ConfigNumber<uint32_t, numberLevels_Carbon, chargeNumber_Carbon>;
 
     value_identifier(ConfigNumber_C, configNumber_Carbon, ConfigNumber_C(0u));
 
