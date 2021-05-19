@@ -37,26 +37,23 @@ namespace picongpu
                 {
                     constexpr auto c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
 
-                    // unit: kg, SI
-                    auto m_p_SI = attribute::getMass(1.0_X, particle) * picongpu::SI::BASE_MASS_SI;
-
+                    auto m_p_SI_rel = attribute::getMass(1.0_X, particle) * picongpu::SI::BASE_MASS_SI * c_SI
+                        * c_SI; // unit: J, SI
 
                     float3_X vectorMomentum_Scaled = particle[momentum_]; // internal units and scaled with weighting
-
                     float_X momentum = pmacc::math::abs2(vectorMomentum_Scaled) / particle[weighting_]; // internal units
 
                     // TODO: check wheter conversion is correct
-                    // unit: kg * m/s, SI
-                    float_X momentum_SI = momentum * picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME;
+                    float_X momentum_SI_rel = momentum * picongpu::UNIT_MASS * picongpu::UNIT_LENGTH
+                        / picongpu::UNIT_TIME * c_SI; // unit: J, SI
 
                     // TODO: note about math functions:
                     // in the dev branch need to add pmacc:: and acc as first parameter
 
-                    // sqrt( kg^2 * m^4/s^4  + (kg * m/s * m/s)^2 )
-                    return math::sqrt(
-                               math::pow(m_p_SI, 2.0_X) * math::pow(c_SI, 4.0_X)
-                               + math::pow(momentum_SI * c_SI, 2.0_X))
-                        - m_p_SI * math::pow(c_SI, 2.0_X); // - m*c^2, since kinetic energy is what we want
+                    // relativistic kinetic energy
+                    // E_kin = sqrt( (p*c)^2 + (m*c^2)^2 ) - m*c^2
+                    return math::sqrt(m_p_SI_rel * m_p_SI_rel + momentum_SI_rel * momentum_SI_rel) - m_p_SI_rel;
+                    // sqrt( (kg * m^2/s^2)^2  + (kg * m/s * m/s)^2 ) - kg*m^2/s^2
                     // unit: kg * m^2/s^2 = J, SI
                 }
             };

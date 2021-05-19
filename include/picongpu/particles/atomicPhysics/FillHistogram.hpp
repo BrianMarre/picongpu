@@ -32,6 +32,9 @@
 #include <cstdint>
 
 
+// debug only
+#include <iostream>
+
 namespace picongpu
 {
     namespace particles
@@ -73,8 +76,7 @@ namespace picongpu
                 auto particlesInSuperCell = electronBox.getSuperCell(supercellIdx).getSizeLastFrame();
                 //}
 
-
-                // go over frames using comon histogram
+                // go over frames using common histogram
                 while(frame.isValid())
                 {
                     // parallel loop over all particles in the frame
@@ -83,7 +85,6 @@ namespace picongpu
                         if(linearIdx < particlesInSuperCell)
                         {
                             // NOTE: all particle[ ... ] returns in PIC units, not SI
-                            // note: there is ATOMIC_UNIT_ENERGY that can be used as physical multiplicative unit
                             // note3: getEnergy should become a generic algorithm
                             auto const particle = frame[linearIdx];
 

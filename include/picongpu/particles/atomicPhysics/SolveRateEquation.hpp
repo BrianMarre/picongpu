@@ -152,11 +152,19 @@ namespace picongpu
                         newStateIndex = randomGenInt() % atomicDataBox.getNumStates();
                         newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStateIndex);
 
+                        // debug only
+                        std::cout << "    RateSolver: oldStateIndex " << oldStateIndex << " oldState " << oldState
+                                  << " newStateIndex " << newStateIndex << " newState " << newState << " numStates "
+                                  << atomicDataBox.getNumStates() << std::endl;
+
                         if(newState == oldState)
                             break;
 
                         // search for transition
                         transitionIndex = atomicDataBox.findTransitionInBlock(oldStateIndex, newState);
+
+                        std::cout << "    RateSolver-Transition: transitionIndex " << transitionIndex
+                                  << " NumberTransition " << atomicDataBox.getNumTransitions() << std::endl;
 
                         // found transition?
                         if(transitionIndex != atomicDataBox.getNumTransitions())
@@ -166,6 +174,9 @@ namespace picongpu
 
                         // search for reverse Transition
                         transitionIndex = atomicDataBox.findTransitionInBlock(newStateIndex, oldState);
+
+                        std::cout << "    RateSolver-ReverseTransition: transitionIndex " << transitionIndex
+                                  << " NumberTransition " << atomicDataBox.getNumTransitions() << std::endl;
 
                         // found transition?
                         if(transitionIndex != atomicDataBox.getNumTransitions())

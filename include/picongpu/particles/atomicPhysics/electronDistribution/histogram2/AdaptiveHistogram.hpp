@@ -100,10 +100,10 @@
 #include <utility>
 #include "picongpu/traits/attribute/GetMass.hpp"
 
+
 // debug only
 #include <iostream>
 #include <cmath>
-
 
 namespace picongpu
 {
@@ -298,7 +298,6 @@ namespace picongpu
                         {
                             return this->numBins;
                         }
-
 
                         DINLINE float_X getInitialGridWidth()
                         {

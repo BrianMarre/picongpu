@@ -323,6 +323,7 @@ namespace picongpu
                     Idx upperIdx;
                     uint32_t numberTransitions;
                     uint32_t startIndexBlock;
+                    uint32_t transitionIndex;
 
                     // debug only
                     uint16_t loopCount = 0u;
@@ -336,21 +337,22 @@ namespace picongpu
 
                         for(uint32_t j = 0u; j < numberTransitions; j++)
                         {
-                            upperIdx = atomicDataBox.getUpperIdxTransition(startIndexBlock + i);
+                            upperIdx = atomicDataBox.getUpperIdxTransition(startIndexBlock + j);
+                            transitionIndex = startIndexBlock + j;
 
                             // excitation cross section
                             result += collisionalExcitationCrosssection(
                                 acc,
                                 lowerIdx, // unitless
                                 upperIdx, // unitless
-                                startIndexBlock + i, // index transition
+                                transitionIndex, // unitless
                                 energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                 atomicDataBox); // unit: m^2, SI
 
                             // debug only
                             loopCount++;
-                            // NaN check
-                            if((!(result >= 0)) && (!(result < 0)))
+                            // NaN/inf check
+                            if(result == result + 1)
                             {
                                 printf(
                                     "loop %i crossSectionExcitation %f lowerIdx %u, upperIdx %u energyElectron %f \n",
@@ -359,7 +361,7 @@ namespace picongpu
                                         acc,
                                         lowerIdx, // unitless
                                         upperIdx, // unitless
-                                        startIndexBlock + i, // index transition
+                                        transitionIndex, // uintless
                                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                         atomicDataBox),
                                     lowerIdx,
@@ -372,13 +374,13 @@ namespace picongpu
                                 acc,
                                 upperIdx,
                                 lowerIdx,
-                                startIndexBlock + i, // index transition
+                                transitionIndex,
                                 energyElectron,
                                 atomicDataBox); // unit: m^2, SI
 
                             // debug only
-                            // NaN check
-                            if((!(result >= 0)) && (!(result < 0)))
+                            // NaN/inf check
+                            if(result == result + 1)
                             {
                                 printf(
                                     "loop %i crossSectionDeExcitation %f \n",
@@ -387,7 +389,7 @@ namespace picongpu
                                         acc,
                                         upperIdx, // unitless
                                         lowerIdx, // unitless
-                                        startIndexBlock + i, // index transition
+                                        transitionIndex, // uintless
                                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                         atomicDataBox));
                             }

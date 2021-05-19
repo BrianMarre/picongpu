@@ -33,6 +33,8 @@
 
 #pragma once
 
+// debug only
+#include <iostream>
 
 namespace picongpu
 {
@@ -194,8 +196,17 @@ namespace picongpu
                 {
                     uint32_t startIndexBlock = this->m_boxStartIndexBlockTransitions(indexLowerState);
 
-                    for(uint32_t i = 0u; i < this->m_boxNumTransitions(i); i++)
+                    // debug only
+                    /*std::cout << "        indexLowerState " << indexLowerState <<
+                        " upperState " << upperIdx << " startIndexBlock " << startIndexBlock
+                        << " numTransitions " << this->m_boxNumTransitions(indexLowerState) << std::endl;*/
+
+                    for(uint32_t i = 0u; i < this->m_boxNumTransitions(indexLowerState); i++)
                     {
+                        // debug only
+                        /*std::cout << "            transitionIndex: " << startIndexBlock + i
+                            << " upperIdxTransition " << this->m_boxUpperIdx(startIndexBlock + i) << std::endl;*/
+
                         if(this->m_boxUpperIdx(startIndexBlock + i) == upperIdx)
                             return this->m_boxStartIndexBlockTransitions(indexLowerState) + i;
                     }
