@@ -116,9 +116,14 @@ namespace picongpu
                 float_X energyElectron;
                 float_X energyElectronBinWidth;
 
+                // conversion factors
+                constexpr float_64 UNIT_VOLUME = UNIT_LENGTH * UNIT_LENGTH * UNIT_LENGTH;
+                constexpr auto numCellsPerSuperCell = pmacc::math::CT::volume<SuperCellSize>::type::value;
+
                 float_X densityElectrons;
 
                 float_X rate_SI;
+                float_X deltaEnergyTransition;
                 float_X deltaEnergy;
                 float_X quasiProbability;
 
@@ -133,15 +138,8 @@ namespace picongpu
 
                 while(timeRemaining_SI > 0.0_X)
                 {
-                    // debug only
-                    // std::cout << "loopCounter" << loopCounter << " get current state index " << std::endl;
-
                     // read out old state index
                     oldState = ion[atomicConfigNumber_].getStateIndex();
-
-                    // debug only
-                    // std::cout << "roll new state index" << std::endl;
-
                     // get collection index of old State
                     oldStateIndex = atomicDataBox.findState(oldState);
 
@@ -183,29 +181,27 @@ namespace picongpu
                         {
                             break;
                         }
-
                         // retry if no transition between states found
                     }
 
-                    // debug only
-                    // std::cout << "get histogram index" << std::endl;
+                    deltaEnergyTransition = AtomicRate::energyDifference(acc, oldIdx, newIdx, atomicDataBox);
 
                     // choose random histogram collection index
-                    histogramIndex = static_cast<uint16_t>(randomGenInt() /*rand()*/) % histogram->getNumBins();
-
-                    // debug only
-                    // std::cout << "get energy electron" << std::endl;
-
+                    histogramIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
                     // get energy of histogram bin with this collection index
                     energyElectron = histogram->getEnergyBin(
                         acc,
                         histogramIndex,
                         atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
-
-                    // debug only
-                    // std::cout << "get electron bin Width" << std::endl;
-
                     // get width of histogram bin with this collection index
+
+                    if(deltaEnergyTransition > energyElectron)
+                    {
+                        // electrons of bin lack sufficient energy for choosen transition
+                        // => need to choose new transition
+                        continue;
+                    }
+
                     energyElectronBinWidth = histogram->getBinWidth(
                         acc,
                         true, // answer to question: directionPositive?
@@ -213,17 +209,20 @@ namespace picongpu
                         histogram->getInitialGridWidth(), // unit: ATOMIC_UNIT_ENERGY
                         atomicDataBox);
 
-                    // debug only
-                    // std::cout << "calculate electron density" << std::endl;
-
-                    constexpr float_64 UNIT_VOLUME = UNIT_LENGTH * UNIT_LENGTH * UNIT_LENGTH;
-                    constexpr auto numCellsPerSuperCell = pmacc::math::CT::volume<SuperCellSize>::type::value;
                     // calculate density of electrons based on weight of electrons in this bin
-                    densityElectrons = histogram->getWeightBin(histogramIndex)
+                    densityElectrons
+                        = (histogram->getWeightBin(histogramIndex) + histogram->getDeltaWeightBin(histogramIndex))
+                        * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                         / (numCellsPerSuperCell * picongpu::CELL_VOLUME * UNIT_VOLUME * energyElectronBinWidth);
                     // (weighting * #/weighting) /
                     //      ( numCellsPerSuperCell * Volume * m^3/Volume * AU )
-                    // = # / (m^3 * AU) => unit: 1/(m^3 * AU), SI
+                    // = # / (m^3 * AU) => unit: 1/(m^3 * AU)
+
+                    // check for nan or inf
+                    if(densityElectrons + 1 == densityElectrons)
+                    {
+                        printf("ERROR: densityElectrons in rate solver is nan or inf");
+                    }
 
                     // debug only
                     // std::cout << "check if old == new" << std::endl;
@@ -263,8 +262,8 @@ namespace picongpu
                             atomicDataBox); // unit: 1/s, SI
 
                         // get the change of electron energy
-                        deltaEnergy = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox)
-                            * ion[weighting_] * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
+                        deltaEnergy = (-deltaEnergyTransition) * ion[weighting_]
+                            * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
                         // unit: ATOMIC_UNIT_ENERGY
 
                         quasiProbability = rate_SI * timeRemaining_SI;
@@ -283,7 +282,6 @@ namespace picongpu
                                   << " quasiProbability " << quasiProbability << " rateSI " << rate_SI << std::endl;*/
                     }
 
-
                     if(quasiProbability >= 1.0_X)
                     {
                         // case: more than one change per time remaining
@@ -293,26 +291,38 @@ namespace picongpu
                         // debug only
                         // std::cout << "    intermediate state" << std::endl;
 
-                        // change atomic state of ion
-                        ion[atomicConfigNumber_] = newState;
-
-                        // reduce time remaining
-                        if(rate_SI > 0)
-                        {
-                            timeRemaining_SI -= 1.0_X / rate_SI;
-                        }
-                        else
-                        {
-                            // special case: no other possibility
-                            timeRemaining_SI = 0._X;
-                        }
-
                         // record energy removed or added to electrons
-                        histogram->removeEnergyFromBin(
+                        bool sufficentElectronsInBin = histogram->tryRemoveWeightFromBin(
                             acc,
                             histogramIndex, // unitless
-                            deltaEnergy // unit: ATOMIC_UNIT_ENERGY
+                            ion[weighting_] // unit: ATOMIC_UNIT_ENERGY
                         );
+
+                        if(sufficentElectronsInBin)
+                        {
+                            // change atomic state of ion
+                            ion[atomicConfigNumber_] = newState;
+
+                            histogram->addDeltaEnergy(acc, histogramIndex, deltaEnergy);
+
+                            newElectronBin = histogram->get
+
+                            histogram->addDeltaWeight(
+                                acc,
+                                
+                                
+
+                            // reduce time remaining
+                            timeRemaining_SI -= 1.0_X / rate_SI;
+
+
+                            if(rate_SI < 0)
+                                // case timeRemaining < 0: shoule dnot happen
+                                // last resort to avoid infinte loop
+                                timeRemaining_SI = 0._X;
+                                printf("ERROR: time remaining < 0, in rate solver");
+                        }
+                    }
                     }
                     else
                     {
@@ -330,23 +340,26 @@ namespace picongpu
                             // debug only
                             // std::cout << "    unphysical rate" << std::endl;
                         }
-                        else if(randomGenFloat() /*rand()*/ / float_X(RAND_MAX) <= quasiProbability)
+                        else if(randomGenFloat() /*rand() / float_X(RAND_MAX)*/ <= quasiProbability)
                         {
                             // case change only possible once
                             // => randomly change to newState in time remaining
 
-                            // change ion state
-                            ion[atomicConfigNumber_] = newState;
-
-                            // complete timeRemaining used
-                            timeRemaining_SI = 0.0_X;
-
                             // record energy removed or added to electrons
-                            histogram->removeEnergyFromBin(
+                            bool sufficentEnergyInBin = histogram->tryAddEnergyToBin(
                                 acc,
                                 histogramIndex, // unitless
                                 deltaEnergy // unit: ATOMIC_UNIT_ENERGY
                             );
+
+                            if(sufficentEnergyInBin)
+                            {
+                                // change ion state
+                                ion[atomicConfigNumber_] = newState;
+
+                                // complete timeRemaining used
+                                timeRemaining_SI = 0.0_X;
+                            }
 
                             // debug only
                             // std::cout << "    final state" << std::endl;
@@ -407,7 +420,7 @@ namespace picongpu
                         if(linearIdx < particlesInSuperCell)
                         {
                             auto particle = frame[linearIdx];
-                            processIon<T_AtomicRate>(
+                            processIon<T_AtomicRate>( // doOneStep
                                 acc,
                                 generatorInt,
                                 generatorFloat,

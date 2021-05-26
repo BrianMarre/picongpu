@@ -127,16 +127,19 @@ namespace picongpu
                         constexpr static uint32_t maxNumBins = T_maxNumBins;
                         constexpr static uint32_t maxNumNewBins = T_maxNumNewBins;
 
-                        // content of bins
-                        // two data fields
+                        //{ content of bins, three data fields
                         // 1. weight of particles
                         float_X binWeights[maxNumBins];
-                        // 2. change in particle Energy in this bin
+                        // 2. accumulated change in particle Energy in this bin,
                         float_X binDeltaEnergy[maxNumBins];
+                        // 3. accumulated weight added to this bin due
+                        float_X binDeltaWeight[maxNumBins];
+                        //}
 
                         // location of bins
                         float_X binLeftBoundary[maxNumBins];
 
+                        //{ administration data
                         // number of bins occupied, <= T_maxNumBins
                         uint16_t numBins;
 
@@ -145,9 +148,10 @@ namespace picongpu
                         float_X newBinsWeights[maxNumNewBins];
                         // number of entries in new bins
                         uint32_t numNewBins;
+                        //}
 
                         // reference point of histogram, always boundary of a bin in the histogram
-                        // in current implementation currently not used
+                        // in current implementation not used
                         float_X lastLeftBoundary; // unit: Argument
 
                         // target value of relative Error of a histogram bin,
@@ -156,12 +160,13 @@ namespace picongpu
                         // relative error functor
                         T_RelativeError relativeError;
 
-                        // defines initial global grid
+
                     public:
+                        // defines initial global grid
                         float_X initialGridWidth; // unit: Argument
-                    private:
                         //}
 
+                    private:
                         // TODO: replace linear search, by ordering bins
                         /** Tries to find binLeftBoundary in the collection,
                          * starting at the given collection index and return the collection index.
@@ -203,7 +208,6 @@ namespace picongpu
                             else
                                 return Boundary - binWidth / 2._X;
                         }
-
 
                         /** =^= is x in Bin?
                          *  case directionPositive == true:    [boundary, boundary + binWidth)
@@ -272,6 +276,7 @@ namespace picongpu
                             {
                                 this->binWeights[i] = 0._X;
                                 this->binDeltaEnergy[i] = 0._X;
+                                this->binDeltaWeight[i] = 0._X;
                                 this->binLeftBoundary[i] = 0._X;
                             }
 
@@ -282,7 +287,6 @@ namespace picongpu
                             }
                             //} end of debug init
                         }
-
 
                         DINLINE static uint16_t getMaxNumberBins()
                         {
@@ -340,16 +344,19 @@ namespace picongpu
                             return -1._X;
                         }
 
-
                         DINLINE float_X getWeightBin(uint16_t index) const
                         {
                             return this->binWeights[index];
                         }
 
-
                         DINLINE float_X getDeltaEnergyBin(uint16_t index) const
                         {
                             return this->binDeltaEnergy[index];
+                        }
+
+                        DINLINE float_X getDeltaWeightBin(uint16_t index) const
+                        {
+                            return this->binDeltaWeight[index];
                         }
 
                         /** returns collection index of existing bin containing this energy
@@ -509,7 +516,6 @@ namespace picongpu
                             return currentBinWidth;
                         }
 
-
                         /** Returns the left boundary of the bin a given argument value x belongs into
                          *
                          * see file description for more information
@@ -540,12 +546,12 @@ namespace picongpu
                             if(workerIdx == 0)
                             {
                                 // debug code
-                                /*printf(
+                                printf(
                                     "        getBinLeftBoundary: directionPositive %s, initialBinWidth: %f, boundary: "
                                     "%f\n",
                                     directionPositive ? "true" : "false",
                                     currentBinWidth,
-                                    boundary);*/
+                                    boundary);
                             }
 
                             uint16_t loopCounter = 0u;
@@ -590,31 +596,62 @@ namespace picongpu
                                     currentBinWidth = this->initialGridWidth;
                                 }
 
-                                /*printf(
+                                printf(
                                     "        getBinLeftBoundary: inBin %s, loopCounter %i, currentBinWidth %f, "
                                     "boundary %f \n",
                                     inBin ? "true" : "false",
                                     loopCounter,
                                     currentBinWidth,
-                                    boundary);*/
+                                    boundary);
                             }
                             return boundary;
                         }
 
+                        DINLINE void addDeltaWeight(T_Acc& acc, uint16_t index, float_X deltaWeight)
+                        {
+                            cupla::atomicAdd(acc, &(this->binDeltaWeight[index]), deltaWeight);
+                        }
 
+                        DINLINE void addDeltaEnergy(T_Acc& acc, uint16_t index, float_X deltaEnergy)
+                        {
+                            cupla::atomicAdd(acc, &(this->binDeltaEnergy[index]), deltaEnergy);
+                        }
+
+                        // tries to add the specified change to the specified bin, returns true if sucessfull
+                        // or false if not enough energy in bin to add delta energy and keep bin weight >=0
+                        DINLINE bool tryRemoveWeightFromBin(T_Acc& acc, uint16_t index, float_X deltaWeight)
+                        {
+                            if(this->binWeights[index] + this->binDeltaWeight[index] - deltaWeight >= 0._X)
+                            {
+                                cupla::atomicSub(acc, &(this->binDeltaWeight[index]), deltaWeight);
+                                return true;
+                            }
+                            return false;
+                        }
+
+                        // tries to add the delta energy to the specified bin, returns true if succesfull
+                        // or false if not enough energy in bin to add delta energy and keep bin energy >=0
                         template<typename T_Acc>
-                        DINLINE void removeEnergyFromBin(
+                        DINLINE bool tryAddEnergyToBin(
                             T_Acc& acc,
                             uint16_t index,
                             float_X deltaEnergy // unit: argument
                         )
                         {
-                            cupla::atomicAdd(acc, &(this->binDeltaEnergy[index]), deltaEnergy);
+                            if((this->binWeights[index] + this->binDeltaWeight[index])
+                                       * this->getEnergyBin(acc, index, atomicDataBox)
+                                       * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+                                   + deltaEnergy
+                               >= 0.0)
+                            {
+                                cupla::atomicAdd(acc, &(this->binDeltaEnergy[index]), deltaEnergy);
+                                return true;
+                            }
+                            return false;
                             // TODO: think about moving corresponding weight of electrons to lower energy bin
                             //      might be possible if bisn are without gaps, should make histogram filling
                             //      even easier and faster
                         }
-
 
                         // add for Argument x, weight to the bin
                         template<typename T_Acc>
@@ -624,6 +661,9 @@ namespace picongpu
                             float_X const weight,
                             T_AtomicDataBox atomicDataBox)
                         {
+                            // debug only
+                            std::cout << "binCall" << std::endl;
+
                             // compute global bin index
                             float_X const binLeftBoundary = this->getBinLeftBoundary(acc, x, atomicDataBox);
 
@@ -687,7 +727,9 @@ namespace picongpu
                                         this->binLeftBoundary[this->numBins] = this->newBinsLeftBoundary[i];
                                         this->numBins++;
                                     }
-                                    // else we ran out of memory, do nothing
+                                    else
+                                        printf("ERROR: too many bins, max number bins of histogram exceeded");
+                                    // we ran out of memory, do nothing
                                 }
                             }
                             this->numNewBins = 0u;
