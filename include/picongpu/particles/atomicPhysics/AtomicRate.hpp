@@ -428,16 +428,17 @@ namespace picongpu
                     uint32_t const transitionIndex,
                     float_X const energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     float_X const energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
-                    float_X const densityElectrons, // unit: 1/(m^3*AU)
+                    float_X const densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                     AtomicDataBox const atomicDataBox)
                 {
+                    // Notation Note: AU is a shorthand for ATOMIC_UNIT_ENERGY in this context
+
                     // constants in SI
                     constexpr float_64 c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
                     constexpr float_64 m_e_SI = picongpu::SI::ELECTRON_MASS_SI; // unit: kg, SI
 
                     const float_64 E_e_SI = energyElectron * picongpu::UNITCONV_AU_to_eV * UNITCONV_eV_to_Joule;
                     // unit: J, SI
-                    // unit: AU, =: ATOMIC_UNIT_ENERGY
 
                     const float_X sigma_SI = collisionalExcitationCrosssection(
                         acc,
@@ -453,7 +454,7 @@ namespace picongpu
                     // AU * m^2 * 1/(m^3*AU) * m/s * sqrt( unitless - [ ( (kg*m^2/s^2)/J )^2 = Nm/J = J/J = unitless ]
                     // ) = AU/AU m^3/m^3 * 1/s
                     return energyElectronBinWidth * sigma_SI * densityElectrons * c_SI
-                        * math::sqrt(1 - math::pow(1._X / (1._X + E_e_SI / (m_e_SI * math::pow(c_SI, 2.0_X))), 2.0_X));
+                        * math::sqrt(1 - math::pow(1._X / (1._X + E_e_SI / (m_e_SI * c_SI * c_SI)), 2.0_X));
                     // unit: 1/s; SI
                 }
 
@@ -467,7 +468,7 @@ namespace picongpu
                     Idx oldState, // unitless
                     float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     float_X energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
-                    float_X densityElectrons, // unit: 1/(m^3*J), SI
+                    float_X densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                     AtomicDataBox atomicDataBox) // unit: 1/s, SI
                 {
                     float_X totalRate = 0._X; // unit: 1/s, SI
@@ -488,7 +489,7 @@ namespace picongpu
                             indexTransition = startIndexBlock + j;
                             upperState = atomicDataBox.getUpperIdxTransition(indexTransition);
 
-                            // newState = lowerState
+                            // transitions to oldState
                             if(upperState == oldState)
                                 totalRate += Rate(
                                     acc,
@@ -497,9 +498,9 @@ namespace picongpu
                                     indexTransition,
                                     energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                     energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
-                                    densityElectrons,
+                                    densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                                     atomicDataBox); // unit: 1/s, SI
-                            // newtState = upperState
+                            // transitions from oldState
                             if(lowerState == oldState)
                                 totalRate += Rate(
                                     acc,
@@ -508,7 +509,7 @@ namespace picongpu
                                     indexTransition,
                                     energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                     energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
-                                    densityElectrons,
+                                    densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                                     atomicDataBox); // unit: 1/s, SI
 
                             // else do nothing

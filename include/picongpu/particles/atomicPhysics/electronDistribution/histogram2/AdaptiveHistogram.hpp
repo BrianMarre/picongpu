@@ -607,11 +607,13 @@ namespace picongpu
                             return boundary;
                         }
 
+                        template<typename T_Acc>
                         DINLINE void addDeltaWeight(T_Acc& acc, uint16_t index, float_X deltaWeight)
                         {
                             cupla::atomicAdd(acc, &(this->binDeltaWeight[index]), deltaWeight);
                         }
 
+                        template<typename T_Acc>
                         DINLINE void addDeltaEnergy(T_Acc& acc, uint16_t index, float_X deltaEnergy)
                         {
                             cupla::atomicAdd(acc, &(this->binDeltaEnergy[index]), deltaEnergy);
@@ -619,6 +621,7 @@ namespace picongpu
 
                         // tries to add the specified change to the specified bin, returns true if sucessfull
                         // or false if not enough energy in bin to add delta energy and keep bin weight >=0
+                        template<typename T_Acc>
                         DINLINE bool tryRemoveWeightFromBin(T_Acc& acc, uint16_t index, float_X deltaWeight)
                         {
                             if(this->binWeights[index] + this->binDeltaWeight[index] - deltaWeight >= 0._X)
@@ -635,8 +638,8 @@ namespace picongpu
                         DINLINE bool tryAddEnergyToBin(
                             T_Acc& acc,
                             uint16_t index,
-                            float_X deltaEnergy // unit: argument
-                        )
+                            float_X deltaEnergy, // unit: argument
+                            T_AtomicDataBox atomicDataBox)
                         {
                             if((this->binWeights[index] + this->binDeltaWeight[index])
                                        * this->getEnergyBin(acc, index, atomicDataBox)
@@ -694,9 +697,96 @@ namespace picongpu
                                     /// If we are here, there were more new bins since the last update
                                     /// call than memory allocated for them
                                     /// Normally, this should not happen
+                                    printf("ERROR:Too many new bins before call to updateMethod in binObject Method");
                                 }
                             }
                         }
+
+                        // shift weight to the bin corresponding to energy x
+                        // does add the bin to array of new Bins if it does not exist yet.
+                        template<typename T_Acc>
+                        DINLINE void shiftWeight(
+                            T_Acc const& acc,
+                            float_X const energy,
+                            float_X const weight,
+                            T_AtomicDataBox atomicDataBox)
+                        {
+                            // debug only
+                            std::cout << "shiftWeightCall" << std::endl;
+
+                            // compute global bin index
+                            float_X const binLeftBoundary = this->getBinLeftBoundary(acc, energy, atomicDataBox);
+
+                            // search for bin in collection of existing bins
+                            auto const index = findBin(binLeftBoundary);
+
+                            // If the bin was already there, we need to atomically increase
+                            // the value, as another thread may contribute to the same bin
+                            if(index < maxNumBins) // bin already exists
+                            {
+                                cupla::atomicAdd(acc, &(this->binDeltaWeight[index]), weight);
+                            }
+                            else
+                            {
+                                // Otherwise we add it to a collection of new bins
+                                // get Index where to deposit it by atomic add to numNewBins
+                                // this assures that the same index is not used twice
+                                auto newBinIdx
+                                    = cupla::atomicAdd<alpaka::hierarchy::Threads>(acc, &numNewBins, uint32_t(1u));
+                                if(newBinIdx < maxNumNewBins)
+                                {
+                                    newBinsWeights[newBinIdx] = weight;
+                                    newBinsLeftBoundary[newBinIdx] = binLeftBoundary;
+                                }
+                                else
+                                {
+                                    /// If we are here, there were more new bins since the last update
+                                    /// call than memory allocated for them
+                                    /// Normally, this should not happen
+                                    printf(
+                                        "ERROR:Too many new bins before call to updateMethod in shiftWeight Method");
+                                }
+                            }
+                        }
+
+                        /** This method moves new bins created by shiftWeight to
+                         * the main collection of bins
+                         *
+                         * Should be called periodically so that we don't run out of memory for new bins
+                         * choose maxNumNewBins to fit period and number threads and particle frame size
+                         * MUST be called sequentially
+                         */
+                        DINLINE void updateWithNewShiftBins()
+                        {
+                            uint32_t const numBinsBeforeUpdate = numBins;
+                            for(uint32_t i = 0u; i < this->numNewBins; i++)
+                            {
+                                // New bins were definitely not present before
+                                // But several new bins can be the same actual bin
+                                // So we search in the newly added part only
+                                auto const index = findBin(this->newBinsLeftBoundary[i], numBinsBeforeUpdate);
+
+                                // If this bin was already added
+                                if(index < maxNumBins)
+                                    this->binDeltaWeight[index] += this->newBinsWeights[i];
+                                else
+                                {
+                                    if(this->numBins < this->maxNumBins)
+                                    {
+                                        this->binLeftBoundary[this->numBins] = this->newBinsLeftBoundary[i];
+                                        this->binWeights[this->numBins] = 0._X;
+                                        this->binDeltaEnergy[this->numBins] = 0._X;
+                                        this->binDeltaWeight[this->numBins] = this->newBinsWeights[i];
+                                        this->numBins++;
+                                    }
+                                    else
+                                        printf("ERROR: too many bins, max number bins of histogram exceeded");
+                                    // we ran out of memory, do nothing
+                                }
+                            }
+                            this->numNewBins = 0u;
+                        }
+                    };
 
 
                         /** This method moves new bins to the main collection of bins
@@ -723,8 +813,10 @@ namespace picongpu
                                 {
                                     if(this->numBins < this->maxNumBins)
                                     {
-                                        this->binWeights[this->numBins] = this->newBinsWeights[i];
                                         this->binLeftBoundary[this->numBins] = this->newBinsLeftBoundary[i];
+                                        this->binWeights[this->numBins] = this->newBinsWeights[i];
+                                        this->binDeltaEnergy[this->numBins] = 0._X;
+                                        this->binDeltaWeight[this->numBins] = 0._X;
                                         this->numBins++;
                                     }
                                     else
