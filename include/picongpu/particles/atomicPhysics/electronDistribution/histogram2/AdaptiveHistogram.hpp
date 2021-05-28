@@ -786,8 +786,6 @@ namespace picongpu
                             }
                             this->numNewBins = 0u;
                         }
-                    };
-
 
                         /** This method moves new bins to the main collection of bins
                          * Should be called periodically so that we don't run out of memory for

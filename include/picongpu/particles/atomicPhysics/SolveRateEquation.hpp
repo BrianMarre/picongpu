@@ -331,7 +331,7 @@ namespace picongpu
                         if(oldState != newState)
                         {
                             timeRemaining_SI = 0._X;
-                            print("ERROR: negative time remaining encountered in rate solver");
+                            printf("ERROR: negative time remaining encountered in rate solver");
                         }
 
                         // debug only
