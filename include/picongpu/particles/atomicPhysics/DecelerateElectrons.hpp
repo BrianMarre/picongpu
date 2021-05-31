@@ -48,31 +48,57 @@ namespace picongpu
                 T_Histogram const& histogram,
                 T_AtomicDataBox atomicDataBox)
             {
-                // TODO: compute, probably via a generic algorithm from particle
-                float_X const energy
+                // TODO: cchoose algorithm by particle? @BrianMarre, 2021
+                //
+                float_X const energyPhysicalElectron
                     = picongpu::particles::atomicPhysics::GetRealKineticEnergy::KineticEnergy(electron)
                     / picongpu::SI::ATOMIC_UNIT_ENERGY; // unit: ATOMIC_UNIT_ENERGY
-                float_X const weight = electron[weighting_]; // unitless
+                float_X const weightMacroParticle = electron[weighting_]; // unitless
 
                 // look up in the histogram, which bin is this energy
-                uint16_t binIndex = histogram.getBinIndex(acc, energy, atomicDataBox);
+                uint16_t binIndex = histogram.getBinIndex(
+                    acc,
+                    energyPhysicalElectron, // unit: ATOMIC_UNIT_ENERGY
+                    atomicDataBox);
 
-                // case electron missing from histogram due to not enough histogram bins/too few intermediate bins
+                // case: electron missing from histogram due to not enough histogram
+                // bins/too few intermediate bins
                 if(binIndex == histogram.getMaxNumberBins())
                     return;
 
                 float_X const weightBin = histogram.getWeightBin(binIndex); // unitless
-                float_X const deltaEnergyBin = histogram.getDeltaEnergyBin(binIndex); // unit: ATOMIC_UNIT_ENERGY
+                float_X const deltaEnergyBin = histogram.getDeltaEnergyBin(binIndex);
+                // unit: ATOMIC_UNIT_ENERGY
 
-                float_X const deltaEnergy = deltaEnergyBin * weight / weightBin; // unit:: ATOMIC_UNIT_ENERGY
+                constexpr auto c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
+                auto m_e_rel = attribute::getMass(1.0_X, electron) * picongpu::SI::BASE_MASS_SI * c_SI * c_SI
+                    / picongpu::SI::ATOMIC_UNIT_ENERGY; // unit: ATOMIC_UNIT_ENERGY
 
-                float_X const scalingFactor = 1._X - deltaEnergy / energy; // unitless
+                // distribute energy change as mean by weight on all electrons in bin
+                float_X newEnergyPhysicalElectron = energyPhysicalElectron
+                    + deltaEnergyBin / (weightBin * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
+                // unit:: ATOMIC_UNIT_ENERGY
 
-                electron[momentum_] *= scalingFactor;
+                // case: too much energy removed
+                if(newEnergyPhysicalElectron < 0)
+                    newEnergyPhysicalElectron = 0._X; // extract as much as possible, rest should be neglible
 
-                // debug only
-                /*std::cout << "scalingFactor " << scalingFactor << " electronMomentumNew " << electron[momentum_]
-                          << std::endl;*/
+                float_X newPhysicalElectronMomentum
+                    = math::sqrt(newEnergyPhysicalElectron * (newEnergyPhysicalElectron + 2 * m_e_rel))
+                    * picongpu::SI::ATOMIC_UNIT_ENERGY / c_SI; // unit: J/(m/s) = kg*m^2/s^2 / (m/s) = kg * m/s, SI
+
+                float_X previousMomentumVectorLength = pmacc::math::abs2(electron[momentum_]);
+
+                // case: not moving electron
+                if(previousMomentumVectorLength == 0._X)
+                    previousMomentumVectorLength = 1._X; // 0-vector has no direction
+
+                // if previous momentum == 0, discard electron
+                electron[momentum_] *= 1 / previousMomentumVectorLength // get unity vector of momentum
+                    * (newPhysicalElectronMomentum * electron[weighting_] // new momentum scaled and in internal units
+                       * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+                       / (picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME));
+                // unit: internal units
             }
 
             // Fill the histogram return via the last parameter

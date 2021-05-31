@@ -288,7 +288,7 @@ namespace picongpu
                             //} end of debug init
                         }
 
-                        DINLINE static uint16_t getMaxNumberBins()
+                        DINLINE static constexpr uint16_t getMaxNumberBins()
                         {
                             return AdaptiveHistogram::maxNumBins;
                         }
@@ -546,12 +546,12 @@ namespace picongpu
                             if(workerIdx == 0)
                             {
                                 // debug code
-                                printf(
+                                /*printf(
                                     "        getBinLeftBoundary: directionPositive %s, initialBinWidth: %f, boundary: "
                                     "%f\n",
                                     directionPositive ? "true" : "false",
                                     currentBinWidth,
-                                    boundary);
+                                    boundary);*/
                             }
 
                             uint16_t loopCounter = 0u;
@@ -596,13 +596,13 @@ namespace picongpu
                                     currentBinWidth = this->initialGridWidth;
                                 }
 
-                                printf(
+                                /*printf(
                                     "        getBinLeftBoundary: inBin %s, loopCounter %i, currentBinWidth %f, "
                                     "boundary %f \n",
                                     inBin ? "true" : "false",
                                     loopCounter,
                                     currentBinWidth,
-                                    boundary);
+                                    boundary);*/
                             }
                             return boundary;
                         }
@@ -665,7 +665,7 @@ namespace picongpu
                             T_AtomicDataBox atomicDataBox)
                         {
                             // debug only
-                            std::cout << "binCall" << std::endl;
+                            // std::cout << "                binCall" << std::endl;
 
                             // compute global bin index
                             float_X const binLeftBoundary = this->getBinLeftBoundary(acc, x, atomicDataBox);
@@ -712,7 +712,7 @@ namespace picongpu
                             T_AtomicDataBox atomicDataBox)
                         {
                             // debug only
-                            std::cout << "shiftWeightCall" << std::endl;
+                            // std::cout << "                shiftWeightCall" << std::endl;
 
                             // compute global bin index
                             float_X const binLeftBoundary = this->getBinLeftBoundary(acc, energy, atomicDataBox);

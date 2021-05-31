@@ -215,10 +215,13 @@ namespace picongpu
                 //      ( # * Volume * m^3/Volume * AU )
                 // = # / (m^3 * AU) => unit: 1/(m^3 * AU)
 
-                // check for nan or inf
-                if(densityElectrons + 1 == densityElectrons)
+                // debug only
+                // std::cout << "        densityElectrons " << densityElectrons << std::endl;
+
+                // check for nan
+                if(!(densityElectrons < 0) && !(densityElectrons >= 0))
                 {
-                    printf("ERROR: densityElectrons in rate solver is nan or inf");
+                    printf("ERROR: densityElectrons in rate solver is nan or inf\n");
                 }
 
                 // debug only
@@ -270,11 +273,11 @@ namespace picongpu
 
                 // debug only
                 // std::cout << "call to processIon" << std::endl;
-                std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI << " oldState "
+                /*std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI << " oldState "
                           << oldState << " newState " << newState << " energyElectron " << energyElectron
                           << " energyElectronBinWidth " << energyElectronBinWidth << " densityElectrons "
                           << densityElectrons << " histogramIndex " << histogramIndex << " quasiProbability "
-                          << quasiProbability << " rateSI " << rate_SI << std::endl;
+                          << quasiProbability << " rateSI " << rate_SI << std::endl;*/
 
                 if(quasiProbability >= 1.0_X)
                 {

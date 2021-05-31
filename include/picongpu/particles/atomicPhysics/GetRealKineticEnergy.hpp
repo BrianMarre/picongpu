@@ -30,10 +30,11 @@ namespace picongpu
         {
             struct GetRealKineticEnergy
             {
-                // returns the kinetic energy of a represented physical particle
+                // returns the relativistic kinetic energy of a single physical particle
+                // represented by the given macro particle
                 // return unit: J, SI
                 template<typename T_Particle>
-                HDINLINE static float_X KineticEnergy(T_Particle& particle)
+                HDINLINE static float_X KineticEnergy(T_Particle const& particle)
                 {
                     constexpr auto c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
 
@@ -41,14 +42,14 @@ namespace picongpu
                         * c_SI; // unit: J, SI
 
                     float3_X vectorMomentum_Scaled = particle[momentum_]; // internal units and scaled with weighting
-                    float_X momentum = pmacc::math::abs2(vectorMomentum_Scaled) / particle[weighting_]; // internal units
+                    float_X momentum = pmacc::math::abs2(vectorMomentum_Scaled)
+                        / particle[weighting_]; // internal units and not scaled with weighting
 
-                    // TODO: check wheter conversion is correct
                     float_X momentum_SI_rel = momentum * picongpu::UNIT_MASS * picongpu::UNIT_LENGTH
                         / picongpu::UNIT_TIME * c_SI; // unit: J, SI
 
                     // TODO: note about math functions:
-                    // in the dev branch need to add pmacc:: and acc as first parameter
+                    // in the dev branch need to add pmacc:: and acc as first parameter [?]
 
                     // relativistic kinetic energy
                     // E_kin = sqrt( (p*c)^2 + (m*c^2)^2 ) - m*c^2
