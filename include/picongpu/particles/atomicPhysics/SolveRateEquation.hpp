@@ -264,7 +264,7 @@ namespace picongpu
                     // get the change of electron energy in bin due to transition
                     deltaEnergy = (-deltaEnergyTransition) * ion[weighting_]
                         * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
-                    // unit: ATOMIC_UNIT_ENERGY
+                    // unit: ATOMIC_UNIT_ENERGY, scaled with number of ions represented
 
                     quasiProbability = rate_SI * timeRemaining_SI;
                     // debug only

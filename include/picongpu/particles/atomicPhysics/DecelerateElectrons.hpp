@@ -49,13 +49,12 @@ namespace picongpu
                 T_AtomicDataBox atomicDataBox)
             {
                 // TODO: cchoose algorithm by particle? @BrianMarre, 2021
-                //
-                float_X const energyPhysicalElectron
+                float_64 const energyPhysicalElectron
                     = picongpu::particles::atomicPhysics::GetRealKineticEnergy::KineticEnergy(electron)
                     / picongpu::SI::ATOMIC_UNIT_ENERGY; // unit: ATOMIC_UNIT_ENERGY
-                float_X const weightMacroParticle = electron[weighting_]; // unitless
+                float_X const weightMacroParticle = electron[weighting_]; // unit: internal
 
-                // look up in the histogram, which bin is this energy
+                // look up in the histogram, which bin corresponds to this energy
                 uint16_t binIndex = histogram.getBinIndex(
                     acc,
                     energyPhysicalElectron, // unit: ATOMIC_UNIT_ENERGY
@@ -70,28 +69,37 @@ namespace picongpu
                 float_X const deltaEnergyBin = histogram.getDeltaEnergyBin(binIndex);
                 // unit: ATOMIC_UNIT_ENERGY
 
+                /// @TODO: create attribute functor for pyhsical particle properties?, @BrianMarre, 2021
                 constexpr auto c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
-                auto m_e_rel = attribute::getMass(1.0_X, electron) * picongpu::SI::BASE_MASS_SI * c_SI * c_SI
+                auto m_e_rel = attribute::getMass(1.0_X, electron) * picongpu::UNIT_MASS * c_SI * c_SI
                     / picongpu::SI::ATOMIC_UNIT_ENERGY; // unit: ATOMIC_UNIT_ENERGY
 
                 // distribute energy change as mean by weight on all electrons in bin
-                float_X newEnergyPhysicalElectron = energyPhysicalElectron
-                    + deltaEnergyBin / (weightBin * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
+                float_64 newEnergyPhysicalElectron = energyPhysicalElectron
+                    + static_cast<float_64>(deltaEnergyBin / (picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE * weightBin));
                 // unit:: ATOMIC_UNIT_ENERGY
 
                 // case: too much energy removed
                 if(newEnergyPhysicalElectron < 0)
                     newEnergyPhysicalElectron = 0._X; // extract as much as possible, rest should be neglible
 
-                float_X newPhysicalElectronMomentum
+                float_64 newPhysicalElectronMomentum
                     = math::sqrt(newEnergyPhysicalElectron * (newEnergyPhysicalElectron + 2 * m_e_rel))
-                    * picongpu::SI::ATOMIC_UNIT_ENERGY / c_SI; // unit: J/(m/s) = kg*m^2/s^2 / (m/s) = kg * m/s, SI
+                    / (picongpu::SI::ATOMIC_UNIT_ENERGY * c_SI);
+                // AU = ATOMIC_UNIT_ENERGY
+                // sqrt(AU * (AU + AU)) / (AU/J) / c = sqrt(AU^2)/(AU/J) / c = J/c = kg*m^2/s^2/(m/s)
+                // unit: kg*m/s, SI
 
                 float_X previousMomentumVectorLength = pmacc::math::abs2(electron[momentum_]);
+                // unit: internal, scaled
 
                 // case: not moving electron
                 if(previousMomentumVectorLength == 0._X)
-                    previousMomentumVectorLength = 1._X; // 0-vector has no direction
+                    previousMomentumVectorLength = 1._X; // no need to resize 0-vector
+
+                // debug only
+                float_64 previousPhysicalElectronMomentumEnergy = math::sqrt(
+                    energyPhysicalElectron * (energyPhysicalElectron + 2 *m_e_rel))
 
                 // if previous momentum == 0, discard electron
                 electron[momentum_] *= 1 / previousMomentumVectorLength // get unity vector of momentum
@@ -99,6 +107,23 @@ namespace picongpu
                        * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                        / (picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME));
                 // unit: internal units
+
+                // debug only
+                std::cout << "momentumMacroParticle[internal] " << previousMomentumVectorLength
+                    << " byEnergy " << math::sqrt(energyPhysicalElectron * (energyPhysicalElectron + 2* m_e_rel)) / c_SI
+                    << std::endl;
+
+                /*std::cout << "weightParticle/Bin " << weightMacroParticle/weightBin
+                    << " energyPhysicalElectron[AU] " << energyPhysicalElectron
+                    << " deltaEnergyBinPerPhysicalParticel[AU] " << deltaEnergyBin
+                        /(weightBin * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE)
+                    << " deltaEnergyPhysicalParticle " << newEnergyPhysicalElectron - energyPhysicalElectron
+                    //<< " previousPhysicalMomentum [SI] "
+                    //<< previousMomentumVectorLength * (picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME)
+                    //    /(weightMacroParticle * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE)
+                    //<< " newPhysicalElectronMomentum [SI] " 
+                    //<< newPhysicalElectronMomentum
+                    << std::endl;*/
             }
 
             // Fill the histogram return via the last parameter
