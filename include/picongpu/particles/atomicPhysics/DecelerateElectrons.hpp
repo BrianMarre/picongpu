@@ -85,7 +85,7 @@ namespace picongpu
 
                 float_64 newPhysicalElectronMomentum
                     = math::sqrt(newEnergyPhysicalElectron * (newEnergyPhysicalElectron + 2 * m_e_rel))
-                    / (picongpu::SI::ATOMIC_UNIT_ENERGY * c_SI);
+                    * picongpu::SI::ATOMIC_UNIT_ENERGY / c_SI;
                 // AU = ATOMIC_UNIT_ENERGY
                 // sqrt(AU * (AU + AU)) / (AU/J) / c = sqrt(AU^2)/(AU/J) / c = J/c = kg*m^2/s^2/(m/s)
                 // unit: kg*m/s, SI
@@ -97,21 +97,16 @@ namespace picongpu
                 if(previousMomentumVectorLength == 0._X)
                     previousMomentumVectorLength = 1._X; // no need to resize 0-vector
 
-                // debug only
-                float_64 previousPhysicalElectronMomentumEnergy = math::sqrt(
-                    energyPhysicalElectron * (energyPhysicalElectron + 2 *m_e_rel))
-
                 // if previous momentum == 0, discard electron
                 electron[momentum_] *= 1 / previousMomentumVectorLength // get unity vector of momentum
-                    * (newPhysicalElectronMomentum * electron[weighting_] // new momentum scaled and in internal units
-                       * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-                       / (picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME));
+                    * static_cast<float_X>(newPhysicalElectronMomentum
+                                           * electron[weighting_] // new momentum scaled and in internal units
+                                           / (picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME));
                 // unit: internal units
 
                 // debug only
-                std::cout << "momentumMacroParticle[internal] " << previousMomentumVectorLength
-                    << " byEnergy " << math::sqrt(energyPhysicalElectron * (energyPhysicalElectron + 2* m_e_rel)) / c_SI
-                    << std::endl;
+                std::cout << "previousMomentumVectorLength " << previousMomentumVectorLength
+                          << " newMomentumVectorLength " << pmacc::math::abs2(electron[momentum_]) << std::endl;
 
                 /*std::cout << "weightParticle/Bin " << weightMacroParticle/weightBin
                     << " energyPhysicalElectron[AU] " << energyPhysicalElectron
@@ -121,8 +116,6 @@ namespace picongpu
                     //<< " previousPhysicalMomentum [SI] "
                     //<< previousMomentumVectorLength * (picongpu::UNIT_MASS * picongpu::UNIT_LENGTH / picongpu::UNIT_TIME)
                     //    /(weightMacroParticle * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE)
-                    //<< " newPhysicalElectronMomentum [SI] " 
-                    //<< newPhysicalElectronMomentum
                     << std::endl;*/
             }
 
