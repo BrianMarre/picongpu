@@ -114,16 +114,28 @@ namespace picongpu
                 uint32_t oldStateIndex;
                 uint32_t transitionIndex;
 
+                float_X deltaEnergyTransition;
+                uint16_t histogramIndex;
+                float_X energyElectron;
+
                 // conversion factors
                 constexpr float_64 UNIT_VOLUME = UNIT_LENGTH * UNIT_LENGTH * UNIT_LENGTH;
                 constexpr auto numCellsPerSuperCell = pmacc::math::CT::volume<SuperCellSize>::type::value;
 
-                // debug only
-                // std::cout << "            start state change loop" << std::endl;
-
                 // read out old state
                 oldState = ion[atomicConfigNumber_].getStateIndex(); // config number
                 oldStateIndex = atomicDataBox.findState(oldState); // collection index
+
+                // choose random histogram collection index
+                histogramIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
+                // get energy of histogram bin with this collection index
+                energyElectron = histogram->getEnergyBin(
+                    acc,
+                    histogramIndex,
+                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+
+                // debug only
+                // std::cout << "            start state change loop" << std::endl;
 
                 // randomly select viable Transition
                 while(true)
@@ -150,7 +162,14 @@ namespace picongpu
                     // found transition?
                     if(transitionIndex != atomicDataBox.getNumTransitions())
                     {
-                        break;
+                        // check wether transition is actually possible with choosen energy bin
+                        deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
+                        // unit: ATOMIC_UNIT_ENERGY
+
+                        if(deltaEnergyTransition <= energyElectron)
+                        {
+                            break;
+                        }
                     }
 
                     // search for Transition to oldState from newState
@@ -162,15 +181,18 @@ namespace picongpu
                     // found transition?
                     if(transitionIndex != atomicDataBox.getNumTransitions())
                     {
-                        break;
+                        // check wether transition is actually possible with choosen energy bin
+                        deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
+                        // unit: ATOMIC_UNIT_ENERGY
+
+                        if(deltaEnergyTransition <= energyElectron)
+                        {
+                            break;
+                        }
                     }
                     // retry if no transition between states found
                 }
 
-                float_X deltaEnergyTransition;
-
-                uint16_t histogramIndex;
-                float_X energyElectron;
                 float_X energyElectronBinWidth;
 
                 float_X rate_SI;
@@ -178,25 +200,6 @@ namespace picongpu
                 float_X deltaEnergy;
 
                 float_X densityElectrons;
-
-                deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
-                // unit: ATOMIC_UNIT_ENERGY
-
-                // choose random histogram collection index
-                histogramIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
-                // get energy of histogram bin with this collection index
-                energyElectron = histogram->getEnergyBin(
-                    acc,
-                    histogramIndex,
-                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
-
-                // check wether transition is actually possible
-                if(deltaEnergyTransition > energyElectron)
-                {
-                    // electrons of bin lack sufficient energy for choosen transition
-                    // => need to choose new transition
-                    return;
-                }
 
                 // get width of histogram bin with this collection index
                 energyElectronBinWidth = histogram->getBinWidth(
