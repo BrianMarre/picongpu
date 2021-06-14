@@ -135,7 +135,10 @@ namespace picongpu
                     atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
 
                 // debug only
-                // std::cout << "            start state change loop" << std::endl;
+                // std::cout << "            start transition search, loop " << loopCounter << std::endl;
+
+                uint16_t loopCounterTransitionSearch = 0u;
+                bool transitionFound = false;
 
                 // randomly select viable Transition
                 while(true)
@@ -144,11 +147,6 @@ namespace picongpu
                     newStateIndex = randomGenInt() % atomicDataBox.getNumStates();
                     newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStateIndex);
 
-                    // debug only
-                    /*std::cout << "    RateSolver: oldState " << oldState
-                              << " newState " << newState << " numTransitions "
-                              << atomicDataBox.getNumTransitions() << std::endl;*/
-
                     // no change always viable transition
                     if(newState == oldState)
                         break;
@@ -156,11 +154,29 @@ namespace picongpu
                     // search for transition from oldState to newState
                     transitionIndex = atomicDataBox.findTransitionInBlock(oldStateIndex, newState);
 
-                    // debug only
-                    // std::cout << "    RateSolver_1: transitionIndex " << transitionIndex << std::endl;
-
                     // found transition?
                     if(transitionIndex != atomicDataBox.getNumTransitions())
+                    {
+                        transitionFound = true;
+                    }
+                    else
+                    {
+                        // search for Transition to oldState from newState
+                        transitionIndex = atomicDataBox.findTransitionInBlock(newStateIndex, oldState);
+
+                        // found transition?
+                        if(transitionIndex != atomicDataBox.getNumTransitions())
+                        {
+                            transitionFound = true;
+                        }
+                    }
+
+                    // debug only
+                    /*std::cout << "    loopCount " << loopCounterTransitionSearch << " oldState " << oldState
+                        << " newState " << newState << " transitionFound? " << transitionFound
+                        << " transitionIndex " << transitionIndex<< std::endl;*/
+
+                    if(transitionFound)
                     {
                         // check wether transition is actually possible with choosen energy bin
                         deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
@@ -170,27 +186,17 @@ namespace picongpu
                         {
                             break;
                         }
-                    }
-
-                    // search for Transition to oldState from newState
-                    transitionIndex = atomicDataBox.findTransitionInBlock(newStateIndex, oldState);
-
-                    // debug only
-                    // std::cout << "    RateSolver_2: transitionIndex " << transitionIndex << std::endl;
-
-                    // found transition?
-                    if(transitionIndex != atomicDataBox.getNumTransitions())
-                    {
-                        // check wether transition is actually possible with choosen energy bin
-                        deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
-                        // unit: ATOMIC_UNIT_ENERGY
-
-                        if(deltaEnergyTransition <= energyElectron)
+                        else
                         {
-                            break;
+                            transitionFound = false;
                         }
                     }
+
+                    // debug only
+                    //std::cout << "    no valid transition" << std::endl;
+
                     // retry if no transition between states found
+                    loopCounterTransitionSearch++;
                 }
 
                 float_X energyElectronBinWidth;
@@ -427,9 +433,15 @@ namespace picongpu
 
                 ForEachIdx<IdxConfig<1, numWorkers>> onlyMaster{workerIdx};
 
+                // debug only
+                std::cout << "start rate application" << std::endl;
+
                 // go over frames
                 while(frame.isValid())
                 {
+                    // debug only
+                    std::cout << "  frame processing" << std::endl;
+
                     // all Ions of current frame processed
                     PMACC_SMEM(acc, allIonsProcessed, bool);
                     // init
@@ -445,6 +457,9 @@ namespace picongpu
                     while(!allIonsProcessed)
                     {
                         onlyMaster([&](uint32_t const, uint32_t const) { allIonsProcessed = true; });
+
+                        // debug only
+                        std::cout << "  reset finish switch:loopCounter" << loopCounter << std::endl;
 
                         ForEachIdx<ParticleDomCfg>{workerIdx}([&](uint32_t const linearIdx, uint32_t const idx) {
                             if((linearIdx < particlesInSuperCell) && (timeRemaining_SI[idx] > 0._X))
@@ -476,24 +491,6 @@ namespace picongpu
 
                         cupla::__syncthreads(acc);
                     }
-
-
-                    /*// parallel loop over all particles in the frame
-                    ForEachIdx<ParticleDomCfg>{workerIdx}([&](uint32_t const linearIdx, uint32_t const) {
-                        // todo: check whether this if is necessary
-                        if(linearIdx < particlesInSuperCell)
-                        {
-                            auto particle = frame[linearIdx];
-                            processIon<T_AtomicRate>( // doOneStep
-                                acc,
-                                generatorInt,
-                                generatorFloat,
-                                particle,
-                                atomicDataBox,
-                                histogram,
-                                debug);
-                        }
-                    });*/
 
 
                     // get the next frmae once done with the current one.
