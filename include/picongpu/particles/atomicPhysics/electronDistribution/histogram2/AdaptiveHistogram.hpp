@@ -632,6 +632,13 @@ namespace picongpu
                             return false;
                         }
 
+
+                        template<typename T_Acc>
+                        DINLINE void removeWeightFromBin(T_Acc& acc, uint16_t index, float_X deltaWeight)
+                        {
+                            cupla::atomicSub(acc, &(this->binDeltaWeight[index]), deltaWeight);
+                        }
+
                         // tries to add the delta energy to the specified bin, returns true if succesfull
                         // or false if not enough energy in bin to add delta energy and keep bin energy >=0
                         template<typename T_Acc>

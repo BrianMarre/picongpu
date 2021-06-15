@@ -73,6 +73,8 @@ namespace picongpu
              *          - decide randomly with quasiProbability if change to new state
              *          if we change state:
              *              - change ion state
+             *
+             *  TODO: Refactor this to reduce complexity
              */
             template<
                 typename T_AtomicRate,
@@ -92,7 +94,10 @@ namespace picongpu
             {
                 // case of no electrons in current super cell
                 if(histogram->getNumBins() == 0)
+                {
+                    timeRemaining_SI = 0._X;
                     return;
+                }
 
                 // debug only
                 // std::cout << "        process Ion" << std::endl;
@@ -182,7 +187,7 @@ namespace picongpu
                         deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
                         // unit: ATOMIC_UNIT_ENERGY
 
-                        if(deltaEnergyTransition <= energyElectron)
+                        if(deltaEnergyTransition <= energyElectron &&)
                         {
                             break;
                         }
@@ -280,6 +285,8 @@ namespace picongpu
                     // std::cout << "  no" << std::endl;
                 }
 
+                float_X affectedWeighting = ion[weighting_];
+
                 // debug only
                 // std::cout << "call to processIon" << std::endl;
                 /*std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI << " oldState "
@@ -299,12 +306,27 @@ namespace picongpu
 
                     // case: no transition possible, due to isolated atomic state
                     if(oldState == newState)
+                    {
+                        timeRemaining_SI = 0._X;
                         return;
+                    }
 
                     // try to remove electrons from bin, returns false if not enough
                     // electrons in bin to interact with entire macro ion
                     bool sufficentElectronsInBin
-                        = histogram->tryRemoveWeightFromBin(acc, histogramIndex, ion[weighting_]);
+                        = histogram->tryRemoveWeightFromBin(acc, histogramIndex, affectedWeighting);
+
+                    if(!sufficentElectronsInBin)
+                    {
+                        affectedWeighting
+                            = histogram->getWeightBin(histogramIndex) + histogram->getDeltaWeightBin(histogramIndex);
+                        if(randomGenFloat() <= affectedWeighting / ion[weighting_])
+                        {
+                            histogram->removeWeightFromBin(affectedWeighting);
+                            sufficentElectronsInBin = true;
+                            deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
+                        }
+                    }
 
                     if(sufficentElectronsInBin)
                     {
@@ -317,7 +339,7 @@ namespace picongpu
                         histogram->shiftWeight(
                             acc,
                             energyElectron - deltaEnergyTransition, // new electron energy, unit: ATOMIC_UNIT_ENERGY
-                            ion[weighting_],
+                            affectedWeighting,
                             atomicDataBox);
 
                         // reduce time remaining by mean time between interactions
@@ -361,7 +383,19 @@ namespace picongpu
 
                         // try to remove weight from eectron bin, to cover entire macro ion
                         bool sufficentElectronsInBin
-                            = histogram->tryRemoveWeightFromBin(acc, histogramIndex, ion[weighting_]);
+                            = histogram->tryRemoveWeightFromBin(acc, histogramIndex, affectedWeighting);
+
+                        if(!sufficentElectronsInBin)
+                        {
+                            affectedWeighting = histogram->getWeightBin(histogramIndex)
+                                + histogram->getDeltaWeightBin(histogramIndex);
+                            if(randomGenFloat() <= affectedWeighting / ion[weighting_])
+                            {
+                                histogram->removeWeightFromBin(affectedWeighting);
+                                sufficentElectronsInBin = true;
+                                deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
+                            }
+                        }
 
                         if(sufficentElectronsInBin)
                         {
@@ -376,7 +410,7 @@ namespace picongpu
                                 acc,
                                 energyElectron
                                     - deltaEnergyTransition, // new electron energy, unit: ATOMIC_UNIT_ENERGY
-                                ion[weighting_],
+                                affectedWeighting,
                                 atomicDataBox);
 
                             // complete timeRemaining is used up
@@ -458,10 +492,10 @@ namespace picongpu
                     {
                         onlyMaster([&](uint32_t const, uint32_t const) { allIonsProcessed = true; });
 
-                        // debug only
-                        std::cout << "  reset finish switch:loopCounter" << loopCounter << std::endl;
-
                         ForEachIdx<ParticleDomCfg>{workerIdx}([&](uint32_t const linearIdx, uint32_t const idx) {
+                            // debug only
+                            std::cout << "reset finish switch:loopCounter " << loopCounter << " timeRemaining "
+                                      << timeRemaining_SI[idx] << std::endl;
                             if((linearIdx < particlesInSuperCell) && (timeRemaining_SI[idx] > 0._X))
                             {
                                 auto particle = frame[linearIdx];
