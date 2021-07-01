@@ -327,7 +327,7 @@ namespace picongpu
                     // @TODO: make dependent on flag, Brian Marre, 2021
                     // number of bound electrons at initialization state of the neutral atom
                     float_X constexpr protonNumber
-                        = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
+                        = picongpu::traits::GetAtomicNumbers<T_parentIon>::type::numberOfProtons;
                     picongpu::particles::manipulators::SetIonToGroundStateOfChargeState(
                         parentIon,
                         protonNumber - parentIon[boundElectrons_]);
