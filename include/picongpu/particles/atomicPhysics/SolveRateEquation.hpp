@@ -187,7 +187,7 @@ namespace picongpu
                         deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
                         // unit: ATOMIC_UNIT_ENERGY
 
-                        if(deltaEnergyTransition <= energyElectron &&)
+                        if(deltaEnergyTransition <= energyElectron)
                         {
                             break;
                         }
@@ -322,7 +322,7 @@ namespace picongpu
                             = histogram->getWeightBin(histogramIndex) + histogram->getDeltaWeightBin(histogramIndex);
                         if(randomGenFloat() <= affectedWeighting / ion[weighting_])
                         {
-                            histogram->removeWeightFromBin(affectedWeighting);
+                            histogram->removeWeightFromBin(acc, histogramIndex, affectedWeighting);
                             sufficentElectronsInBin = true;
                             deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
                         }
@@ -391,7 +391,7 @@ namespace picongpu
                                 + histogram->getDeltaWeightBin(histogramIndex);
                             if(randomGenFloat() <= affectedWeighting / ion[weighting_])
                             {
-                                histogram->removeWeightFromBin(affectedWeighting);
+                                histogram->removeWeightFromBin(acc, histogramIndex, affectedWeighting);
                                 sufficentElectronsInBin = true;
                                 deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
                             }
