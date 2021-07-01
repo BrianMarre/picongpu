@@ -109,10 +109,8 @@ namespace picongpu
 
                 //{ atomic state
                 // data type used for configNumber
-                using T_ConfigNumberDataType = uint32_t; // must be large, since atomic input
-                                                         // data contains states with very large indices
+                using T_ConfigNumberDataType = uint32_t; // must be consitent with data type used in particle config
 
-                // number of atomic shells modelled
                 // TODO: take from sepciesDefinition.param file 
                 static constexpr uint8_t protonNumber = 6u;
                 //} atomic state
@@ -348,9 +346,9 @@ namespace picongpu
 
                     // histogram parameter, hardcoded for now
                     // TODO: make available as options from param file, Brian Marre 2020
-                    constexpr float_X initialGridWidth = 100._X; // unit: ATOMIC_UNIT_ENERGY
+                    constexpr float_X initialGridWidth = 10._X; // unit: ATOMIC_UNIT_ENERGY
                     constexpr float_X relativeErrorTarget = 20._X; // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) )
-                    constexpr uint16_t maxNumBins = 27;
+                    constexpr uint16_t maxNumBins = 160;
 
                     // renaming of Kernel, basic construct defined in
                     //   <picongpu/particles/atomicPhysics/AtomicPhysics.kernel>
@@ -358,19 +356,21 @@ namespace picongpu
                     auto kernel = Kernel{RngFactoryInt{step}, RngFactoryFloat{step}};
 
                     // debug only
-                    std::cout << "start atomic physics step" << std::endl;
+                    printf("start atomic physics step\n")
+                        // std::cout << "start atomic physics step" << std::endl; // cpu only
 
-                    // macro for call of kernel, once for every super cell
-                    PMACC_KERNEL(kernel)
-                    (mapper.getGridDim(), // how many blocks = how many supercells in local domain
-                     numWorkers // how many threads per block
-                     )(electrons.getDeviceParticlesBox(),
-                       ions.getDeviceParticlesBox(),
-                       mapper,
-                       atomicData->getDeviceDataBox(this->numberStates, this->numberTransitions),
-                       initialGridWidth, // unit: ATOMIC_UNIT_ENERGY
-                       relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) ), SI
-                       step);
+                        // macro for call of kernel, once for every super cell
+                        PMACC_KERNEL(kernel)(
+                            mapper.getGridDim(), // how many blocks = how many supercells in local domain
+                            numWorkers // how many threads per block
+                            )(
+                            electrons.getDeviceParticlesBox(),
+                            ions.getDeviceParticlesBox(),
+                            mapper,
+                            atomicData->getDeviceDataBox(this->numberStates, this->numberTransitions),
+                            initialGridWidth, // unit: ATOMIC_UNIT_ENERGY
+                            relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) ), SI
+                            step);
 
                     // debug only
                     std::cout << "end atomic physics step" << std::endl;

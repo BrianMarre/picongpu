@@ -105,6 +105,7 @@ namespace picongpu
                     // TODO: get this from ion species
                     // hard coded for now
                     using ConfigNumberDataType = uint32_t;
+                    // number of levels modelled
                     constexpr uint8_t numLevels = 10u;
 
                     // conversion to/from atomic state index
@@ -135,9 +136,9 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "start kernel" << std::endl;
+                        // std::cout << "start kernel" << std::endl;
                         // gpu
-                        // printf("start kernel\n");
+                        printf("start kernel\n");
                     }
 
                     // get new histogram
@@ -151,9 +152,9 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "    allocation histogram in SMEM" << std::endl;
+                        // std::cout << "    allocation histogram in SMEM" << std::endl;
                         // gpu
-                        // printf("    allocation histogram in SMEM\n");
+                        printf("    allocation histogram in SMEM\n");
                     }
 
                     // get new weightings
@@ -167,9 +168,9 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "    allocated relative error instance" << std::endl;
+                        // std::cout << "    allocated relative error instance" << std::endl;
                         // gpu
-                        // printf("    allocated relative error instance\n");
+                        printf("    allocated relative error instance\n");
                     }
 
                     // init histogram and relative error
@@ -187,10 +188,10 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // CPU
-                        std::cout << "    init histogram" << std::endl;
+                        // std::cout << "    init histogram" << std::endl;
                         // gpu
                         // printf("    init histogram\n");
-                        // printf("        initialGridWidthSpecified: %f\n", initialGridWidth);
+                        printf("        initialGridWidthSpecified: %f\n", initialGridWidth);
                     }
 
                     fillHistogram<T_numWorkers>(acc, electronBox, mapper, &histogram, atomicDataBox);
@@ -200,9 +201,9 @@ namespace picongpu
                     if(workerIdx == 0)
                     {
                         // cpu
-                        std::cout << "    histogram filled" << std::endl;
+                        // std::cout << "    histogram filled" << std::endl;
                         // gpu
-                        // printf("    histogram filled\n");
+                        printf("    histogram filled\n");
                     }
 
                     bool debug;
@@ -230,9 +231,9 @@ namespace picongpu
                     if( workerIdx == 0 )
                     {
                         // cpu
-                        std::cout << "    rate applied" << std::endl;
+                        // std::cout << "    rate applied" << std::endl;
                         // gpu
-                        // printf("    rate applied\n");
+                        printf("    rate applied\n");
                     }
 
                     decelerateElectrons< T_numWorkers >(
@@ -247,9 +248,9 @@ namespace picongpu
                     if( workerIdx == 0 )
                     {
                         // cpu
-                        std::cout << "    electrons decelerated" << std::endl;
+                        // std::cout << "    electrons decelerated" << std::endl;
                         // gpu
-                        // printf("    electrons decelerated\n");
+                        printf("    electrons decelerated\n");
                     }
                 }
             };

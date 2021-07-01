@@ -88,7 +88,7 @@ namespace picongpu
     /* ratio relative to BASE_DENSITY */
     value_identifier(float_X, DensityRatioCarbon, 1.0);
 
-    using ParticleFlagsIons = MakeSeq_t<
+    using ParticleFlagsCarbon = MakeSeq_t<
         particlePusher<UsedParticlePusher>,
         shape<UsedParticleShape>,
         interpolation<UsedField2Particle>,
@@ -97,14 +97,20 @@ namespace picongpu
         chargeRatio<ChargeRatioCarbon>,
         densityRatio<DensityRatioCarbon>,
         _atomicPhysics<BulkElectrons>,
+        atomicNumbers<ionization::atomicNumbers::Carbon_t>,
+        ionizationEnergies<ionization::energies::AU::Carbon_t>,
         effectiveNuclearCharge<ionization::effectiveNuclearCharge::Carbon_t>,
-        atomicNumbers<ionization::atomicNumbers::Carbon_t>>;
+        ionizers<MakeSeq_t<
+            particles::ionization::
+                BSIEffectiveZ<BulkElectrons, particles::ionization::current::PARAM_IONIZATIONCURRENT>,
+            particles::ionization::ADKLinPol<BulkElectrons, particles::ionization::current::PARAM_IONIZATIONCURRENT>,
+            particles::ionization::ThomasFermi<BulkElectrons>>>>;
 
     using CarbonAttributes
         = MakeSeq_t<DefaultParticleAttributes, atomicConfigNumber<configNumber_Carbon>, boundElectrons>;
 
     /* define species ions */
-    using CarbonIons = Particles<PMACC_CSTRING("C"), ParticleFlagsIons, CarbonAttributes>;
+    using CarbonIons = Particles<PMACC_CSTRING("C"), ParticleFlagsCarbon, CarbonAttributes>;
 
     /*########################### end species ####################################*/
 

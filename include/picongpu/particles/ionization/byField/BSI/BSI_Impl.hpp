@@ -255,6 +255,15 @@ namespace picongpu
                      *          see #1850 for details
                      */
                     parentIon[boundElectrons_] -= float_X(1.);
+
+                    // set atomic state to new ground state
+                    // @TODO: make dependent on flag, Brian Marre, 2021
+                    // number of bound electrons at initialization state of the neutral atom
+                    float_X constexpr protonNumber
+                        = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
+                    picongpu::particles::manipulators::SetIonToGroundStateOfChargeState(
+                        parentIon,
+                        protonNumber - parentIon[boundElectrons_]);
                 }
             };
 

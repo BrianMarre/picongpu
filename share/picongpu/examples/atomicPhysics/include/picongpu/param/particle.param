@@ -28,7 +28,7 @@
 #include <pmacc/math/Vector.hpp>
 
 
-// particles randomly distributed, 1 macro particle per cell
+// particles randomly distributed, 10 macro particle per cell, 200keV initial drift
 namespace picongpu
 {
     namespace particles
@@ -41,12 +41,12 @@ namespace picongpu
 
         namespace startPosition
         {
-            struct RandomParameter1ppc
+            struct RandomParameter10ppc
             {
                 /** Count of particles per cell at initial state
                  *  unit: none
                  */
-                static constexpr uint32_t numParticlesPerCell = 1u;
+                static constexpr uint32_t numParticlesPerCell = 10u;
             };
 
             // sit directly in lower corner of the cell
@@ -80,11 +80,11 @@ namespace picongpu
 
         namespace manipulators
         {
-            struct SetIonToNotIonized
+            struct SetIonToGroundStateOfChargeState
             {
                 // set ions to not ionized ground state
                 template<typename T_Particle>
-                DINLINE void operator()(T_Particle& particle)
+                DINLINE void operator()(T_Particle& particle, uint16_t chargeState = 0u)
                 {
                     using Particle = T_Particle;
 
@@ -92,7 +92,7 @@ namespace picongpu
                     float_X const protonNumber = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
 
                     // init normal ionization
-                    particle[boundElectrons_] = protonNumber;
+                    particle[boundElectrons_] = protonNumber - chargeState;
 
                     // get current Configuration number object
                     auto configNumber = particle[atomicConfigNumber_];
@@ -100,8 +100,7 @@ namespace picongpu
                     // create occupation number vector
                     auto occupationNumberVector = pmacc::math::Vector<uint8_t, configNumber.numberLevels>::create(0u);
 
-
-                    uint8_t numberElectronsRemaining = protonNumber;
+                    uint8_t numberElectronsRemaining = protonNumber - chargeState;
                     // fill from bottom up until no electrons remaining -> ground state init
                     for(uint8_t level = 1u; level <= configNumber.numberLevels; level++)
                     {
@@ -143,7 +142,7 @@ namespace picongpu
 
 
             // definition of SetDrift start
-            using NotIonized = generic::Free<SetIonToNotIonized>;
+            using NotIonized = generic::Free<SetIonToGroundStateOfChargeState>;
 
         } // namespace manipulators
     } // namespace particles
