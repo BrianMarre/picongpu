@@ -626,7 +626,7 @@ namespace picongpu
                         {
                             if(this->binWeights[index] + this->binDeltaWeight[index] - deltaWeight >= 0._X)
                             {
-                                cupla::atomicSub(acc, &(this->binDeltaWeight[index]), deltaWeight);
+                                cupla::atomicAdd(acc, &(this->binDeltaWeight[index]), -deltaWeight);
                                 return true;
                             }
                             return false;
@@ -636,7 +636,7 @@ namespace picongpu
                         template<typename T_Acc>
                         DINLINE void removeWeightFromBin(T_Acc& acc, uint16_t index, float_X deltaWeight)
                         {
-                            cupla::atomicSub(acc, &(this->binDeltaWeight[index]), deltaWeight);
+                            cupla::atomicAdd(acc, &(this->binDeltaWeight[index]), -deltaWeight);
                         }
 
                         // tries to add the delta energy to the specified bin, returns true if succesfull
@@ -704,7 +704,8 @@ namespace picongpu
                                     /// If we are here, there were more new bins since the last update
                                     /// call than memory allocated for them
                                     /// Normally, this should not happen
-                                    printf("ERROR:Too many new bins before call to updateMethod in binObject Method");
+                                    printf(
+                                        "ERROR:Too many new bins before call to updateMethod in binObject Method\n");
                                 }
                             }
                         }
@@ -751,7 +752,7 @@ namespace picongpu
                                     /// call than memory allocated for them
                                     /// Normally, this should not happen
                                     printf(
-                                        "ERROR:Too many new bins before call to updateMethod in shiftWeight Method");
+                                        "ERROR:Too many new bins before call to updateMethod in shiftWeight Method\n");
                                 }
                             }
                         }
@@ -787,7 +788,7 @@ namespace picongpu
                                         this->numBins++;
                                     }
                                     else
-                                        printf("ERROR: too many bins, max number bins of histogram exceeded");
+                                        printf("ERROR: too many bins, max number bins of histogram exceeded\n");
                                     // we ran out of memory, do nothing
                                 }
                             }
@@ -825,7 +826,7 @@ namespace picongpu
                                         this->numBins++;
                                     }
                                     else
-                                        printf("ERROR: too many bins, max number bins of histogram exceeded");
+                                        printf("ERROR: too many bins, max number bins of histogram exceeded\n");
                                     // we ran out of memory, do nothing
                                 }
                             }

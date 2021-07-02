@@ -249,21 +249,16 @@ namespace picongpu
                     parentIon[momentum_] -= electronMomentum;
 
                     /** ionization of the ion by reducing the number of bound electrons
+                     *  and reset of atoic state to ground state of new charge state
                      *
                      * @warning substracting a float from a float can potentially
                      *          create a negative boundElectrons number for the ion,
                      *          see #1850 for details
+                     * @todo: make dependent on flag, Brian Marre, 2021
                      */
-                    parentIon[boundElectrons_] -= float_X(1.);
-
-                    // set atomic state to new ground state
-                    // @TODO: make dependent on flag, Brian Marre, 2021
-                    // number of bound electrons at initialization state of the neutral atom
-                    float_X constexpr protonNumber
-                        = picongpu::traits::GetAtomicNumbers<T_parentIon>::type::numberOfProtons;
-                    picongpu::particles::manipulators::SetIonToGroundStateOfChargeState(
+                    picongpu::particles::atomicPhysics::SetToAtomicGroundStateForChargeState(
                         parentIon,
-                        protonNumber - parentIon[boundElectrons_]);
+                        static_cast<uint8_t>(parentIon[boundElectrons_] - 1u));
                 }
             };
 
