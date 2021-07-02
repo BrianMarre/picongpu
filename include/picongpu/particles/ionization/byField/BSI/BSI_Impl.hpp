@@ -254,9 +254,9 @@ namespace picongpu
                      * @warning substracting a float from a float can potentially
                      *          create a negative boundElectrons number for the ion,
                      *          see #1850 for details
-                     * @todo: make dependent on flag, Brian Marre, 2021
+                     * @TODO: make dependent on flag, Brian Marre, 2021
                      */
-                    picongpu::particles::atomicPhysics::SetToAtomicGroundStateForChargeState(
+                    picongpu::particles::atomicPhysics::SetToAtomicGroundStateForChargeState{}(
                         parentIon,
                         static_cast<uint8_t>(parentIon[boundElectrons_] - 1u));
                 }

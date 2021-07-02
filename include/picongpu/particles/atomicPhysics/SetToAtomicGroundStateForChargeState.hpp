@@ -29,7 +29,7 @@ namespace picongpu
             {
                 // set a given ion to its ground state for a given number of electrons
                 template<typename T_Particle>
-                DINLINE void operator()(T_Particle& particle, uint8_t const numberBoundElectrons)
+                DINLINE void operator()(T_Particle& particle, uint8_t numberBoundElectrons)
                 {
                     using Particle = T_Particle;
 

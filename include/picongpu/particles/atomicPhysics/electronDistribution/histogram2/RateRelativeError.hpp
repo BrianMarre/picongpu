@@ -305,7 +305,7 @@ namespace picongpu
                                 weight = this->weights[o * numSamplePoints + j]; // unit: unitless
 
                                 // get crossection of the energy bin
-                                float_X sigmaValue = AtomicRate::totalCrossSection(
+                                sigmaValue = AtomicRate::totalCrossSection(
                                     acc,
                                     samplePoint, // unit: ATOMIC_UNIT_ENERGY
                                     atomicDataBox); // unit: m^2, SI
