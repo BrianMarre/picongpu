@@ -240,7 +240,7 @@ namespace picongpu
                         {
                             printf(
                                 "Warning: NaN in ratio calculation, ask developer for more information\n"
-                                "   newIdx %zu ,oldIdx %zu ,energyElectron_SI %f ,energyDifference_m %f",
+                                "   newIdx %u ,oldIdx %u ,energyElectron_SI %f ,energyDifference_m %f",
                                 newIdx,
                                 oldIdx,
                                 energyElectron,
@@ -475,7 +475,6 @@ namespace picongpu
 
                     Idx lowerState;
                     Idx upperState;
-                    Idx newState;
                     uint32_t startIndexBlock;
                     uint32_t indexTransition;
 
