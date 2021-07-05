@@ -494,7 +494,7 @@ namespace picongpu
                                 // no need to reset to value before
                                 // since this was first value that was below target
                             }
-                            if(currentBinWidth <= 10._X)
+                            if(currentBinWidth <= 1._X)
                             {
                                 printf(
                                     "Warning in [atomicPhysics]: to low relative error target, used value %f\n",

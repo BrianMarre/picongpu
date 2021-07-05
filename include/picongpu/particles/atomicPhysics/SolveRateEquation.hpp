@@ -494,8 +494,8 @@ namespace picongpu
 
                         ForEachIdx<ParticleDomCfg>{workerIdx}([&](uint32_t const linearIdx, uint32_t const idx) {
                             // debug only
-                            // std::cout << "reset finish switch:loopCounter " << loopCounter << " timeRemaining "
-                            //          << timeRemaining_SI[idx] << std::endl;
+                            std::cout << "reset finish switch:loopCounter " << loopCounter << " timeRemaining "
+                                     << timeRemaining_SI[idx] << std::endl;
                             if((linearIdx < particlesInSuperCell) && (timeRemaining_SI[idx] > 0._X))
                             {
                                 auto particle = frame[linearIdx];
