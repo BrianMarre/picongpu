@@ -38,9 +38,11 @@ namespace picongpu
                 {
                     constexpr auto c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
 
-                    // mass of physical particle
+                    // mass of physical particle, WARNING getMass assumes weighting in multiples of TYPICALNUMPARTICLES
                     auto m_p_SI_rel = attribute::getMass(1.0_X, particle) * picongpu::UNIT_MASS * c_SI * c_SI;
                     // unit: J, SI
+                    // debug only
+                    // std::cout << m_p_SI_rel * UNITCONV_Joule_to_keV << std::endl;, tested result ~511 keV check!
 
                     float3_X vectorMomentum_Scaled = particle[momentum_]; // unit: internal, scaled
                     float_X momentum = pmacc::math::abs2(vectorMomentum_Scaled)

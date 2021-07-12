@@ -20,6 +20,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+//@TODO: change normalisation, such that [simga] = UNIT_LENGTH^2 and [densities] = UNIT_LENGTH^3, Brian Marre 2021
+//@TODO: change normailzation time remaining to UNIT_TIME, Brian Marre 2021
+
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
@@ -95,12 +98,12 @@ namespace picongpu
                 // case of no electrons in current super cell
                 if(histogram->getNumBins() == 0)
                 {
+                    // debug only
+                    std::cout << "          no electrons present" << std::endl;
+
                     timeRemaining_SI = 0._X;
                     return;
                 }
-
-                // debug only
-                // std::cout << "        process Ion" << std::endl;
 
                 // workaround: the types may be obtained in a better fashion
                 // TODO: relace with better version
@@ -109,7 +112,7 @@ namespace picongpu
                 using ConfigNumberDataType = decltype(ion[atomicConfigNumber_].getStateIndex()); // ? shorten
 
                 // debug only
-                // std::cout << "        got ion configNumber object" << std::endl;
+                std::cout << "        got ion configNumber object" << std::endl;
 
                 using AtomicRate = T_AtomicRate;
 
@@ -140,7 +143,7 @@ namespace picongpu
                     atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
 
                 // debug only
-                // std::cout << "            start transition search, loop " << loopCounter << std::endl;
+                std::cout << "            start transition search, loop " << loopCounter << std::endl;
 
                 uint16_t loopCounterTransitionSearch = 0u;
                 bool transitionFound = false;
@@ -198,7 +201,7 @@ namespace picongpu
                     }
 
                     // debug only
-                    //std::cout << "    no valid transition" << std::endl;
+                    /*std::cout << "    no valid transition" << std::endl;*/
 
                     // retry if no transition between states found
                     loopCounterTransitionSearch++;
@@ -221,21 +224,29 @@ namespace picongpu
                     atomicDataBox);
 
                 // calculate density of electrons based on weight of electrons in this bin
+                // REMEMBER: histogram is filled by direct add of particle[weighting_]
+                // and weighting_ is "number of real particles"
                 densityElectrons
                     = (histogram->getWeightBin(histogramIndex) + histogram->getDeltaWeightBin(histogramIndex))
-                    * picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                     / (numCellsPerSuperCell * picongpu::CELL_VOLUME * UNIT_VOLUME * energyElectronBinWidth);
-                // (weighting * #/weighting) /
-                //      ( # * Volume * m^3/Volume * AU )
+                // # / ( # * Volume * m^3/Volume * AU )
                 // = # / (m^3 * AU) => unit: 1/(m^3 * AU)
 
                 // debug only
-                // std::cout << "        densityElectrons " << densityElectrons << std::endl;
+                std::cout << "        densityElectrons " << densityElectrons << std::endl;
 
                 // check for nan
                 if(!(densityElectrons < 0) && !(densityElectrons >= 0))
                 {
-                    printf("ERROR: densityElectrons in rate solver is nan or inf\n");
+                    printf("ERROR: densityElectrons in rate solver is nan\n");
+                }
+                // debug only
+                if(std::isinf(densityElectrons))
+                {
+                    std::cout << "histogramIndex " << histogramIndex << " WeightBin "
+                              << histogram->getWeightBin(histogramIndex) << " DeltaWeight "
+                              << histogram->getDeltaWeightBin(histogramIndex) << " binWidth " << energyElectronBinWidth
+                              << std::endl;
                 }
 
                 // debug only
@@ -289,11 +300,11 @@ namespace picongpu
 
                 // debug only
                 // std::cout << "call to processIon" << std::endl;
-                /*std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI << " oldState "
+                std::cout << "loopCounter " << loopCounter << " timeRemaining " << timeRemaining_SI << " oldState "
                           << oldState << " newState " << newState << " energyElectron " << energyElectron
                           << " energyElectronBinWidth " << energyElectronBinWidth << " densityElectrons "
                           << densityElectrons << " histogramIndex " << histogramIndex << " quasiProbability "
-                          << quasiProbability << " rateSI " << rate_SI << std::endl;*/
+                          << quasiProbability << " rateSI " << rate_SI << std::endl;
 
                 if(quasiProbability >= 1.0_X)
                 {
@@ -307,6 +318,8 @@ namespace picongpu
                     // case: no transition possible, due to isolated atomic state
                     if(oldState == newState)
                     {
+                        // debug only
+                        std::cout << "      no transition possible " << std::endl;
                         timeRemaining_SI = 0._X;
                         return;
                     }

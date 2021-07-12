@@ -225,7 +225,7 @@ namespace picongpu
                     {
                         /** constructor using a given occupation number vector to initialise.
                          */
-                        this->configNumber += getAtomicStateIndex(levelVector);
+                        this->configNumber = getAtomicStateIndex(levelVector);
                     }
 
 

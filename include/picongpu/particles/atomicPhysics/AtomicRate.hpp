@@ -170,8 +170,8 @@ namespace picongpu
                  * return unit: unitless
                  */
                 DINLINE static float_X gauntFactor(
-                    float_X energyDifference, // unit: E
-                    float_X energyElectron, // unit: E
+                    float_X energyDifference, // unit: ATOMIC_UNIT_ENERGY
+                    float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     uint32_t indexTransition, // unitless
                     AtomicDataBox atomicDataBox)
                 {
@@ -236,7 +236,7 @@ namespace picongpu
                             * (energyElectron + m_energyDifference) / energyElectron; // unitless
 
                         // security check for NaNs in Ratio and debug outputif present
-                        if(Ratio + 1 == Ratio) // only true if nan or inf
+                        if(!(Ratio >= 0) && !(Ratio < 0)) // only true if nan
                         {
                             printf(
                                 "Warning: NaN in ratio calculation, ask developer for more information\n"
