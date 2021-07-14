@@ -74,7 +74,8 @@ namespace picongpu
                 using LevelVector = pmacc::math::Vector<uint8_t,
                                                         T_numLevels>; // unitless
 
-            private:
+                // debug only
+            public:
                 /** binomial coefficient calculated using partial pascal triangle
                  *
         t         *      should be no problem in flychk data since largest value ~10^10
@@ -184,8 +185,7 @@ namespace picongpu
 
                     // calculate gaunt Factor
                     float_X const U = energyElectron / energyDifference; // unit: unitless
-                    float_X const g
-                        = A * math::log(U) + B + C / (U + a) + D / math::pow(U + a, 2.0_X); // unitless
+                    float_X const g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
 
                     return g * (U > 1.0); // unitless
                 }
@@ -199,7 +199,7 @@ namespace picongpu
                     Idx const newIdx, // unitless
                     AtomicDataBox atomicDataBox)
                 {
-                    return (atomicDataBox(newIdx) - atomicDataBox(oldIdx)) * picongpu::UNITCONV_eV_to_AU;
+                    return (atomicDataBox(newIdx) - atomicDataBox(oldIdx));
                     // unit: ATOMIC_UNIT_ENERGY
                 }
 
@@ -236,7 +236,7 @@ namespace picongpu
                             * (energyElectron + m_energyDifference) / energyElectron; // unitless
 
                         // security check for NaNs in Ratio and debug outputif present
-                        if(!(Ratio >= 0) && !(Ratio < 0)) // only true if nan
+                        if(!(Ratio == Ratio)) // only true if nan
                         {
                             printf(
                                 "Warning: NaN in ratio calculation, ask developer for more information\n"
@@ -286,6 +286,7 @@ namespace picongpu
                             atomicDataBox));*/
                     // std::cout << collisionalOscillatorStrength << std::endl;
 
+                    // scaling constants * E_Ry^2/deltaE_Trans^2 * f * deltaE_Trans/E_kin
                     // m^2 * (AUE/AUE)^2 * unitless * AUE/AUE * unitless<-[ J, J, unitless, unitless ] = m^2
                     // AUE =^= ATOMIC_UNIT_ENERGY
                     float_X crossSection_SI = c0_SI * (1._X / 4._X) / (m_energyDifference * m_energyDifference)
@@ -454,7 +455,11 @@ namespace picongpu
                     // AU * m^2 * 1/(m^3*AU) * m/s * sqrt( unitless - [ ( (kg*m^2/s^2)/J )^2 = Nm/J = J/J = unitless ]
                     // ) = AU/AU m^3/m^3 * 1/s
                     return energyElectronBinWidth * sigma_SI * densityElectrons * c_SI
-                        * math::sqrt(1 - math::pow(1._X / (1._X + E_e_SI / (m_e_SI * c_SI * c_SI)), 2.0_X));
+                        * math::sqrt(
+                               1.0
+                               - 1.0
+                                   / ((1._X + E_e_SI / (m_e_SI * c_SI * c_SI))
+                                      * (1._X + E_e_SI / (m_e_SI * c_SI * c_SI))));
                     // unit: 1/s; SI
                 }
 

@@ -88,6 +88,10 @@ namespace picongpu
     /* ratio relative to BASE_DENSITY */
     value_identifier(float_X, DensityRatioCarbon, 1.0);
 
+#ifndef PARAM_IONIZATIONCURRENT
+#    define PARAM_IONIZATIONCURRENT None
+#endif
+
     using ParticleFlagsCarbon = MakeSeq_t<
         particlePusher<UsedParticlePusher>,
         shape<UsedParticleShape>,

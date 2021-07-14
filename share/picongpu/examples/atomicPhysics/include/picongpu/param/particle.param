@@ -22,6 +22,7 @@
 
 #include "picongpu/particles/startPosition/functors.def"
 #include "picongpu/particles/manipulators/manipulators.def"
+#include "picongpu/particles/atomicPhysics/SetToAtomicGroundStateForChargeState.hpp"
 
 #include <pmacc/math/operation.hpp>
 
@@ -68,7 +69,7 @@ namespace picongpu
                 const InCellOffset_t inCellOffset;
             };
             using OnePosition = OnePositionImpl<OnePositionParameter>;
-            using Random1ppc = RandomImpl<RandomParameter1ppc>;
+            using Random10ppc = RandomImpl<RandomParameter10ppc>;
 
         } // namespace startPosition
 
@@ -76,49 +77,23 @@ namespace picongpu
          *  number of particles per cell for normalization of weighted
          *  particle attributes.
          */
-        constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter1ppc::numParticlesPerCell;
+        constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter10ppc::numParticlesPerCell;
 
         namespace manipulators
         {
-            struct SetIonToGroundStateOfChargeState
+            struct SetIonToOnceIonized
             {
-                // set ions to not ionized ground state
+                // set ions to not ionized and atomic ground state
                 template<typename T_Particle>
-                DINLINE void operator()(T_Particle& particle, uint16_t chargeState = 0u)
+                DINLINE void operator()(T_Particle& particle)
                 {
-                    using Particle = T_Particle;
+                    // number of Electrons for neutral atom
+                    float_X constexpr numberBoundElectrons
+                        = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
 
-                    // number of bound electrons at initialization state of the neutral atom
-                    float_X const protonNumber = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
-
-                    // init normal ionization
-                    particle[boundElectrons_] = protonNumber - chargeState;
-
-                    // get current Configuration number object
-                    auto configNumber = particle[atomicConfigNumber_];
-
-                    // create occupation number vector
-                    auto occupationNumberVector = pmacc::math::Vector<uint8_t, configNumber.numberLevels>::create(0u);
-
-                    uint8_t numberElectronsRemaining = protonNumber - chargeState;
-                    // fill from bottom up until no electrons remaining -> ground state init
-                    for(uint8_t level = 1u; level <= configNumber.numberLevels; level++)
-                    {
-                        if(numberElectronsRemaining >= 2u * level * level)
-                        {
-                            (occupationNumberVector)[level - 1u] = 2u * level * level;
-                            numberElectronsRemaining -= 2u * level * level;
-                        }
-                        else
-                        {
-                            (occupationNumberVector)[level - 1u] = numberElectronsRemaining;
-                            numberElectronsRemaining = 0;
-                            break;
-                        }
-                    }
-
-                    // change atomic state index
-                    particle[atomicConfigNumber_] = configNumber.getAtomicStateIndex(occupationNumberVector);
+                    picongpu::particles::atomicPhysics::SetToAtomicGroundStateForChargeState{}(
+                        particle,
+                        static_cast<uint8_t>(numberBoundElectrons - 1u));
                 }
             };
 
@@ -136,13 +111,13 @@ namespace picongpu
                 /** Initial temperature
                  *  unit: keV
                  */
-                static constexpr float_64 temperature = 10.;
+                static constexpr float_64 temperature = 1.;
             };
             using AddTemperature = unary::Temperature<TemperatureParam>;
 
 
-            // definition of SetDrift start
-            using NotIonized = generic::Free<SetIonToGroundStateOfChargeState>;
+            // definition of set initial ionization
+            using OnceIonized = generic::Free<SetIonToOnceIonized>;
 
         } // namespace manipulators
     } // namespace particles

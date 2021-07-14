@@ -132,6 +132,74 @@ namespace picongpu
                     using Histogram = electronDistribution::histogram2::
                         AdaptiveHistogram<T_maxNumBins, frameSize, RelativeError, T_AtomicDataBox>;
 
+
+                    // debug only, compare to hand calculated rate
+                    /*
+                    ConfigNumberDataType oldState = 1055u;
+                    auto levelVector = ConfigNumber::getLevelVector(oldState);
+                    std::cout << "oldState: { " << uint16_t(levelVector[0]) << ", "
+                        << uint16_t(levelVector[1]) << ", "
+                        << uint16_t(levelVector[2]) << ", "
+                        << uint16_t(levelVector[3]) << ", "
+                        << uint16_t(levelVector[4]) << ", "
+                        << uint16_t(levelVector[5]) << ", "
+                        << uint16_t(levelVector[6]) << ", "
+                        << uint16_t(levelVector[7]) << ", "
+                        << uint16_t(levelVector[8]) << ", "
+                        << uint16_t(levelVector[9]) << ", "
+                        << std::endl;
+
+                    ConfigNumberDataType newState = 352973;
+                    auto levelVector2 = ConfigNumber::getLevelVector(newState);
+                    std::cout << "newState: { " << uint16_t(levelVector2[0]) << ", "
+                        << uint16_t(levelVector2[1]) << ", "
+                        << uint16_t(levelVector2[2]) << ", "
+                        << uint16_t(levelVector2[3]) << ", "
+                        << uint16_t(levelVector2[4]) << ", "
+                        << uint16_t(levelVector2[5]) << ", "
+                        << uint16_t(levelVector2[6]) << ", "
+                        << uint16_t(levelVector2[7]) << ", "
+                        << uint16_t(levelVector2[8]) << ", "
+                        << uint16_t(levelVector2[9]) << ", "
+                        << std::endl;
+
+                    std::cout << "oldStateenergy " << float_64(atomicDataBox(oldState)) * UNITCONV_AU_to_eV <<
+                    std::endl; std::cout << "newStateenergy " << float_64(atomicDataBox(newState)) * UNITCONV_AU_to_eV
+                    << std::endl;
+
+                    std::cout << "energyDifference "
+                        << float_64(AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox)) *
+                    UNITCONV_AU_to_eV << std::endl;
+
+                    auto transitionIndex = atomicDataBox.findTransitionInBlock(atomicDataBox.findState(oldState),
+                    newState); std::cout << "transitionIndex "
+                        << transitionIndex << std::endl;
+
+                    std::cout << "gauntFactor " << AtomicRate::gauntFactor(
+                        AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox),
+                        5._X,
+                        transitionIndex,
+                        atomicDataBox) << std::endl;
+
+                    std::cout << "cross section " << AtomicRate::collisionalExcitationCrosssection(
+                        acc,
+                        oldState,
+                        newState,
+                        transitionIndex,
+                        5._X,
+                        atomicDataBox) << std::endl;
+
+                    std::cout << "Rate " << AtomicRate::Rate(
+                        acc,
+                        oldState,
+                        newState,
+                        transitionIndex,
+                        5._X,
+                        10._X,
+                        float_X(9.99999e24),
+                        atomicDataBox) << std::endl;
+                    */
+
                     // debug only
                     if(workerIdx == 0)
                     {

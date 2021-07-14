@@ -142,7 +142,8 @@ namespace picongpu
                     {
                         if(m_boxStateIdx(i) == idx)
                         {
-                            return m_boxStateEnergy(i) * UNITCONV_eV_to_AU;
+                            // NOTE: unit conversion should be done in 64 bit
+                            return float_X(float_64(m_boxStateEnergy(i)) * UNITCONV_eV_to_AU);
                         }
                     }
                     // atomic state not found return zero
