@@ -51,11 +51,11 @@ namespace picongpu
     {
         namespace atomicPhysics
         {
-            /** functor class containing calculation formulas of rates and crossections
+            /** functor class containing calculation formulas of rates and cross sections
              *
              * @tparam T_AtomicDataBox ... type of atomic data box used, stores actual basic
              *      atomic input data
-             * TODO: T_TypeIndex accessible from T_ConfigNumber remove direct mention
+             * TODO: T_TypeIndex is accessible from T_ConfigNumber remove direct mention
              * @tparam T_TypeIndex ... data type of atomic state index used in configNumber, unitless
              * @tparam T_ConfigNumber ... type of storage object of atomic state
              * @tparam T_numLevels ... number of atomic levels modelled in configNumber, unitless
@@ -203,7 +203,12 @@ namespace picongpu
                     // unit: ATOMIC_UNIT_ENERGY
                 }
 
-                /** @param energyElectron ... kinetic energy only, unit: ATOMIC_UNIT_ENERGY
+                /** returns the cross section for collisional exitation and deexcitation
+                 *
+                 * NOTE: does not check whether electron has enough energy, this is
+                 * expected to be done by caller
+                 *
+                 * @param energyElectron ... kinetic energy only, unit: ATOMIC_UNIT_ENERGY
                  * return unit: m^2
                  */
                 template<typename T_Acc>
@@ -221,6 +226,10 @@ namespace picongpu
                         oldIdx,
                         newIdx,
                         atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+
+                    // case no physical transition possible, since insufficient electron energy
+                    if(m_energyDifference > energyElectron)
+                        return 0._X;
 
                     float_X Ratio; // unitless
 
@@ -341,14 +350,21 @@ namespace picongpu
                             upperIdx = atomicDataBox.getUpperIdxTransition(startIndexBlock + j);
                             transitionIndex = startIndexBlock + j;
 
-                            // excitation cross section
-                            result += collisionalExcitationCrosssection(
-                                acc,
-                                lowerIdx, // unitless
-                                upperIdx, // unitless
-                                transitionIndex, // unitless
-                                energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                                atomicDataBox); // unit: m^2, SI
+                            // check excitation possible with electron energy
+                            if(
+                                AtomicRate::energyDifference(acc, lowerIdx, upperIdx, atomicDataBox)
+                                <= energyElectron)
+                            {
+                                // excitation cross section
+                                result += collisionalExcitationCrosssection(
+                                    acc,
+                                    lowerIdx, // unitless
+                                    upperIdx, // unitless
+                                    transitionIndex, // unitless
+                                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                    atomicDataBox); // unit: m^2, SI
+                            }
+
 
                             // debug only
                             loopCount++;
@@ -370,7 +386,7 @@ namespace picongpu
                                     energyElectron);
                             }
 
-                            // deexcitation crosssection
+                            // deexcitation crosssection, always possible
                             result += collisionalExcitationCrosssection(
                                 acc,
                                 upperIdx,
@@ -505,7 +521,7 @@ namespace picongpu
                                     densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                                     atomicDataBox); // unit: 1/s, SI
                             // transitions from oldState
-                            if(lowerState == oldState)
+                            if( (lowerState == oldState) && (AtomicRate::energyDifference(acc, lowerState, upperState, atomicDataBox) <= energyElectron))
                                 totalRate += Rate(
                                     acc,
                                     oldState, // unitless

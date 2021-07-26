@@ -72,7 +72,7 @@ namespace picongpu
                 DataBoxNumber m_boxStartIndexBlockTransitions;
                 DataBoxStateIdx m_boxStateIdx;
 
-                // debug only
+                // debug only, should be private later
             public:
                 DataBoxValue m_boxCollisionalOscillatorStrength;
 

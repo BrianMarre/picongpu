@@ -346,8 +346,8 @@ namespace picongpu
 
                     // histogram parameter, hardcoded for now
                     // TODO: make available as options from param file, Brian Marre 2020
-                    constexpr float_X initialGridWidth = 10._X; // unit: ATOMIC_UNIT_ENERGY
-                    constexpr float_X relativeErrorTarget = 2.1_X; // unit: 1/s /(1/( m^3 * ATOMIC_UNIT_ENERGY ))
+                    constexpr float_X initialGridWidth = 1._X; // unit: ATOMIC_UNIT_ENERGY
+                    constexpr float_X relativeErrorTarget = 10._X; // unit: 1/s /(1/( m^3 * ATOMIC_UNIT_ENERGY ))
                     constexpr uint16_t maxNumBins = 80;
 
                     // renaming of Kernel, basic construct defined in

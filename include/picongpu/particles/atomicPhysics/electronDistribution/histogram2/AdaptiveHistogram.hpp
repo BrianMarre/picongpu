@@ -308,6 +308,11 @@ namespace picongpu
                             return this->initialGridWidth;
                         }
 
+                        DINLINE float_X getLastBinLeftBoundary()
+                        {
+                            return this->lastBinLeftBoundary;
+                        }
+
                         // return unit: value
                         /** if bin with given index exists, returns it's central energy, otherwise returns 0
                          *
@@ -335,6 +340,7 @@ namespace picongpu
                             return 0._X;
                         }
 
+                        // returns the left Boundary of the by collection index specified occupied bin
                         DINLINE float_X getLeftBoundaryBin(uint16_t index) const
                         {
                             // no need to check for < 0, since uint
@@ -423,7 +429,7 @@ namespace picongpu
                                        atomicDataBox));
 
                             // debug only
-                            /*std::cout
+                            std::cout
                                 << "getBinWidth: isBelowTarget " << (isBelowTarget ? "true" : "false")
                                 << " directionPositive " << directionPositive << " initBinWidth " << currentBinWidth
                                 << " boundary " << boundary << " relativeError "
@@ -432,7 +438,7 @@ namespace picongpu
                                        currentBinWidth,
                                        AdaptiveHistogram::centerBin(directionPositive, boundary, currentBinWidth),
                                        atomicDataBox)
-                                << std::endl;*/
+                                << std::endl;
 
                             // debug only
                             uint16_t loopCounter = 0u;
@@ -459,16 +465,16 @@ namespace picongpu
 
                                     // debug only
                                     loopCounter++;
-                                    /*std::cout << "loop_1, loopcounter " << loopCounter <<
+                                    std::cout << "loop_1, loopcounter " << loopCounter <<
                                         " currentBinWidth " << currentBinWidth <<
                                         " boundary " << boundary <<
-                                        " relativeError " << m_relativeError << std::endl;*/
+                                        " relativeError " << m_relativeError << std::endl;
                                 }
 
                                 // last i-th try was not below target,
                                 // but (i-1)-th was still below
                                 // -> reset to value i-1
-                                currentBinWidth /= 2._X;
+                                currentBinWidth -= this->initialGridWidth;
                             }
                             else
                             {
@@ -488,33 +494,30 @@ namespace picongpu
                                     isBelowTarget = (this->relativeErrorTarget >= m_relativeError);
 
                                     loopCounter++;
-                                    /*std::cout << "loop_2, loopcounter " << loopCounter <<
+                                    std::cout << "loop_2, loopcounter " << loopCounter <<
                                         " currentBinWidth " << currentBinWidth <<
                                         " boundary " << boundary <<
-                                        " relativeError " << m_relativeError << std::endl;*/
+                                        " relativeError " << m_relativeError << std::endl;
                                 }
                                 // no need to reset to value before
                                 // since this was first value that was below target
                             }
-                            if(currentBinWidth <= 1._X)
+                            if(currentBinWidth <= 0.5_X)
                             {
                                 printf(
-                                    "Warning in [atomicPhysics]: too low relative error target, minimum binWidth "
-                                    "reached, use last value %f instead\n",
-                                    this->relativeErrorTarget);
+                                    "Warning in [atomicPhysics]: too low minimum binWidth, => relative error target too low\n");
                             }
                             // debug acess
-                            if((workerIdx == 0) )
+                            /*if((workerIdx == 0) )
                             {
                                 // debug code
-                                /*printf(
+                                printf(
                                     "    Final: +/-?: %s, initialBinWidth: %f, boundary: %f, loopN: %i\n",
                                     directionPositive ? "t" : "f",
                                     currentBinWidth,
                                     boundary,
                                     loopCounter);
-                                */
-                            }
+                            }*/
 
                             return currentBinWidth;
                         }
@@ -543,7 +546,7 @@ namespace picongpu
                             //  instance
                             float_X boundary = this->lastLeftBoundary; // unit: argument
 
-                            // preparation for debug access to run time acess
+                            // preparation for debug access to run time access
                             uint32_t const workerIdx = cupla::threadIdx(acc).x;
                             // debug acess
                             if(workerIdx == 0)
@@ -635,7 +638,6 @@ namespace picongpu
                             }
                             return false;
                         }
-
 
                         template<typename T_Acc>
                         DINLINE void removeWeightFromBin(T_Acc& acc, uint16_t index, float_X deltaWeight)
