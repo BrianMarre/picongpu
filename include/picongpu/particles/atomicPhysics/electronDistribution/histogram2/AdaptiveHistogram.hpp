@@ -309,9 +309,11 @@ namespace picongpu
                         }
 
                         // return unit: value
-                        /** if bin with given index exists returns it's central energy, otherwise returns 0
+                        /** if bin with given index exists, returns it's central energy, otherwise returns 0
                          *
                          * 0 is never a valid central energy since 0 is always a left boundary of a bin
+                         *
+                         * @param index ... collection index of bin
                          */
                         template<typename T_Acc>
                         DINLINE float_X getEnergyBin(T_Acc& acc, uint16_t index, T_AtomicDataBox atomicDataBox) const
@@ -390,7 +392,7 @@ namespace picongpu
 
                         /** find z, /in Z, iteratively, such that currentBinWidth * 2^z
                          * gives a lower relativeError than the relativeErrorTarget and maximises the
-                         * binWidth.
+                         * binWidth and return currentBinWidth * 2^z.
                          *
                          * @param directionPositive .. whether the bin faces in positive argument
                          *      direction from the given boundary
@@ -401,9 +403,9 @@ namespace picongpu
                         template<typename T_Acc>
                         DINLINE float_X getBinWidth(
                             T_Acc& acc,
-                            const bool directionPositive,
+                            const bool directionPositive, // unitless
                             const float_X boundary, // unit: value
-                            float_X currentBinWidth,
+                            float_X currentBinWidth, // unit: argument
                             T_AtomicDataBox atomicDataBox) const
                         {
                             // first check
@@ -497,7 +499,8 @@ namespace picongpu
                             if(currentBinWidth <= 1._X)
                             {
                                 printf(
-                                    "Warning in [atomicPhysics]: to low relative error target, used value %f\n",
+                                    "Warning in [atomicPhysics]: too low relative error target, minimum binWidth "
+                                    "reached, use last value %f instead\n",
                                     this->relativeErrorTarget);
                             }
                             // debug acess
@@ -607,6 +610,7 @@ namespace picongpu
                             return boundary;
                         }
 
+                        /// maybe rename to addDelta_Weight and addDelta_Energy to avoid confusion?
                         template<typename T_Acc>
                         DINLINE void addDeltaWeight(T_Acc& acc, uint16_t index, float_X deltaWeight)
                         {

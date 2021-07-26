@@ -149,7 +149,7 @@ namespace picongpu
                         << uint16_t(levelVector[9]) << ", "
                         << std::endl;
 
-                    ConfigNumberDataType newState = 352973;
+                    ConfigNumberDataType newState = 352973u;
                     auto levelVector2 = ConfigNumber::getLevelVector(newState);
                     std::cout << "newState: { " << uint16_t(levelVector2[0]) << ", "
                         << uint16_t(levelVector2[1]) << ", "
@@ -265,6 +265,26 @@ namespace picongpu
                     fillHistogram<T_numWorkers>(acc, electronBox, mapper, &histogram, atomicDataBox);
                     cupla::__syncthreads(acc);
 
+                    // debug only, histogram output
+                    uint16_t numBins = histogram.getNumBins();
+                    float_X binLeftBoundary;
+                    float_X binCentralEnergy;
+
+                    std::cout << numBins << std::endl;
+
+                    std::cout << "{ " << std::endl;
+                    for(uint16_t i = 0u; i < numBins; i++)
+                    {
+                        std::cout << i << " : ";
+
+                        binLeftBoundary = histogram.getLeftBoundaryBin(i);
+                        binCentralEnergy = histogram.getEnergyBin(acc, i, atomicDataBox);
+
+                        std::cout << "[" << binLeftBoundary << ", " << (2 * binCentralEnergy - binLeftBoundary) << "]";
+                        std::cout << ": " << histogram.getWeightBin(i) << std::endl;
+                    }
+                    std::cout << " }" << std::endl;
+
                     // debug only
                     if(workerIdx == 0)
                     {
@@ -284,6 +304,7 @@ namespace picongpu
                         debug = false;
                     }
 
+                    /*
                     solveRateEquation<T_numWorkers, AtomicRate>(
                         acc,
                         mapper,
@@ -294,6 +315,7 @@ namespace picongpu
                         &histogram,
                         debug);
                     cupla::__syncthreads( acc );
+                    */
 
                     // debug only
                     if( workerIdx == 0 )
