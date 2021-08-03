@@ -86,8 +86,7 @@
  *  float_X getDeltaEnergyBin(uint index) ... same as above for delta energy bin, beware also applies
  *  uint getBinIndex(T_Acc& acc, float_X energy, T_AtomicDataBox atomicDataBox) ...
  *      returns collection index of existing bin containing this energy, or maxNumBins otherwise
- *  float_X getBinWidth(T_Acc& acc, bool directionPositive, float_X boundary, float_X currentBinWidth,
- *      T_AtomicDataBox atomicDataBox) ...
+ *  float_X getBinWidth(T_Acc& acc, bool directionPositive, float_X boundary, T_AtomicDataBox atomicDataBox)
  *      return binWidth of the specifed bin, for more see in code function documentation
  */
 
@@ -331,7 +330,6 @@ namespace picongpu
                                     acc,
                                     true,
                                     leftBoundary,
-                                    this->initialGridWidth,
                                     atomicDataBox);
 
                                 return leftBoundary + binWidth / 2._X;
@@ -386,7 +384,6 @@ namespace picongpu
                                     acc,
                                     true,
                                     leftBoundary,
-                                    this->initialGridWidth,
                                     atomicDataBox);
                                 if(this->inBin(true, leftBoundary, binWidth, energy))
                                 {
@@ -411,115 +408,151 @@ namespace picongpu
                             T_Acc& acc,
                             const bool directionPositive, // unitless
                             const float_X boundary, // unit: value
-                            float_X currentBinWidth, // unit: argument
                             T_AtomicDataBox atomicDataBox) const
                         {
-                            // first check
-                            // return 0.1_X;
-
                             // preparation for debug access to run time acess
                             uint32_t const workerIdx = cupla::threadIdx(acc).x;
+
+                            // @TODO: move to .param file, BrianMarre, 2021
+                            float_X minBinWidth = 0.05_X; // unit: ATOMIC_UNIT_ENERGY, ~2eV
+                            float_X stepWidthUp = 0.5_X; // unit: ATOMIC_UNIT_ENERGY
+                            float_X stepWidthDown = 0.1_X; // unit: ATOMIC_UNIT_ENERGY
+
+                            uint16_t loopCounter = 0u;
+                            float_X binWidth;
+
+                            // special case: relative error grows with reduced binWidth
+                            if(this->relativeErrorTarget < this->relativeError(
+                                   acc,
+                                   minBinWidth,
+                                   AdaptiveHistogram::centerBin(directionPositive, boundary, minBinWidth),
+                                   atomicDataBox))
+                            {
+                                std::cout
+                                    << "special case: relativeErrorTarget " << this->relativeErrorTarget
+                                    << " boundary " << boundary << " direction positive "
+                                    << ((directionPositive) ? "True" : "False") << " minBinWidth " << minBinWidth
+                                    << " relativeError "
+                                    << this->relativeError(
+                                           acc,
+                                           minBinWidth,
+                                           AdaptiveHistogram::centerBin(directionPositive, boundary, minBinWidth),
+                                           atomicDataBox)
+                                    << std::endl;
+                                while(true)
+                                {
+                                    loopCounter++;
+
+                                    // quadratic stepping through linear grid
+                                    binWidth = minBinWidth + stepWidthUp * loopCounter * loopCounter;
+
+                                    std::cout
+                                        << "loopCounter " << loopCounter << " binWidth " << binWidth
+                                        << " relativeError "
+                                        << this->relativeError(
+                                               acc,
+                                               binWidth,
+                                               AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
+                                               atomicDataBox)
+                                        << std::endl;
+
+                                    if(this->relativeErrorTarget >= this->relativeError(
+                                           acc,
+                                           binWidth,
+                                           AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
+                                           atomicDataBox))
+                                    {
+                                        return binWidth;
+                                    }
+                                }
+                            }
 
                             // is initial binWidth realtiveError below the Target?
                             bool isBelowTarget
                                 = (this->relativeErrorTarget >= this->relativeError(
                                        acc,
-                                       currentBinWidth,
-                                       AdaptiveHistogram::centerBin(directionPositive, boundary, currentBinWidth),
+                                       this->initialGridWidth,
+                                       AdaptiveHistogram::centerBin(
+                                           directionPositive,
+                                           boundary,
+                                           this->initialGridWidth),
                                        atomicDataBox));
 
                             // debug only
-                            std::cout
-                                << "getBinWidth: isBelowTarget " << (isBelowTarget ? "true" : "false")
-                                << " directionPositive " << directionPositive << " initBinWidth " << currentBinWidth
-                                << " boundary " << boundary << " relativeError "
-                                << this->relativeError(
-                                       acc,
-                                       currentBinWidth,
-                                       AdaptiveHistogram::centerBin(directionPositive, boundary, currentBinWidth),
-                                       atomicDataBox)
-                                << std::endl;
-
-                            // debug only
-                            uint16_t loopCounter = 0u;
-                            uint16_t maxLoopCount = 100u;
-
-                            float_X m_relativeError;
+                            std::cout << "getBinWidth: isBelowTarget " << (isBelowTarget ? "true" : "false")
+                                      << " directionPositive " << directionPositive << " initBinWidth "
+                                      << this->initialGridWidth << " boundary " << boundary << " relativeError "
+                                      << this->relativeError(
+                                             acc,
+                                             this->initialGridWidth,
+                                             AdaptiveHistogram::centerBin(
+                                                 directionPositive,
+                                                 boundary,
+                                                 this->initialGridWidth),
+                                             atomicDataBox)
+                                      << std::endl;
 
                             if(isBelowTarget)
                             {
                                 // increase until no longer below
-                                while(isBelowTarget) //&& (loopCounter <= maxLoopCount))
+                                while(true)
                                 {
+                                    loopCounter++;
                                     // try higher binWidth
-                                    currentBinWidth *= 2._X;
+                                    binWidth = this->initialGridWidth + stepWidthUp * loopCounter * loopCounter;
+
+                                    std::cout
+                                        << "loop_1, loopcounter " << loopCounter << " binWidth " << binWidth
+                                        << " relativeError "
+                                        << this->relativeError(
+                                               acc,
+                                               binWidth,
+                                               AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
+                                               atomicDataBox)
+                                        << std::endl;
 
                                     // until first time below Target
-                                    m_relativeError = this->relativeError(
-                                        acc,
-                                        currentBinWidth,
-                                        AdaptiveHistogram::centerBin(directionPositive, boundary, currentBinWidth),
-                                        atomicDataBox);
-
-                                    isBelowTarget = (this->relativeErrorTarget >= m_relativeError);
-
-                                    // debug only
-                                    loopCounter++;
-                                    std::cout << "loop_1, loopcounter " << loopCounter <<
-                                        " currentBinWidth " << currentBinWidth <<
-                                        " boundary " << boundary <<
-                                        " relativeError " << m_relativeError << std::endl;
+                                    if(this->relativeErrorTarget <= this->relativeError(
+                                           acc,
+                                           binWidth,
+                                           AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
+                                           atomicDataBox))
+                                    {
+                                        return this->initialGridWidth
+                                            + stepWidthUp * (loopCounter - 1u) * (loopCounter - 1u);
+                                    }
                                 }
-
-                                // last i-th try was not below target,
-                                // but (i-1)-th was still below
-                                // -> reset to value i-1
-                                currentBinWidth -= this->initialGridWidth;
                             }
                             else
                             {
-                                // decrease until below target for the first time
-                                while((!isBelowTarget) && (loopCounter <= maxLoopCount))
+                                // decrease until below target for the first time,
+                                // or reached minBinWidth
+                                while(binWidth >= minBinWidth)
                                 {
-                                    // lower binWidth
-                                    currentBinWidth /= 2._X;
+                                    loopCounter++;
+                                    binWidth = this->initialGridWidth - stepWidthDown * loopCounter * loopCounter;
+
+                                    std::cout
+                                        << "loop_2, loopcounter " << loopCounter << " binWidth " << binWidth
+                                        << " relativeError "
+                                        << this->relativeError(
+                                               acc,
+                                               binWidth,
+                                               AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
+                                               atomicDataBox)
+                                        << std::endl;
 
                                     // until first time below Target
-                                    m_relativeError = this->relativeError(
-                                        acc,
-                                        currentBinWidth,
-                                        AdaptiveHistogram::centerBin(directionPositive, boundary, currentBinWidth),
-                                        atomicDataBox);
-
-                                    isBelowTarget = (this->relativeErrorTarget >= m_relativeError);
-
-                                    loopCounter++;
-                                    std::cout << "loop_2, loopcounter " << loopCounter <<
-                                        " currentBinWidth " << currentBinWidth <<
-                                        " boundary " << boundary <<
-                                        " relativeError " << m_relativeError << std::endl;
+                                    if(this->relativeErrorTarget >= this->relativeError(
+                                           acc,
+                                           binWidth,
+                                           AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
+                                           atomicDataBox))
+                                    {
+                                        return binWidth;
+                                    }
                                 }
-                                // no need to reset to value before
-                                // since this was first value that was below target
                             }
-                            if(currentBinWidth <= 0.5_X)
-                            {
-                                printf(
-                                    "Warning in [atomicPhysics]: too low minimum binWidth, => relative error target too low\n");
-                            }
-                            // debug acess
-                            /*if((workerIdx == 0) )
-                            {
-                                // debug code
-                                printf(
-                                    "    Final: +/-?: %s, initialBinWidth: %f, boundary: %f, loopN: %i\n",
-                                    directionPositive ? "t" : "f",
-                                    currentBinWidth,
-                                    boundary,
-                                    loopCounter);
-                            }*/
-
-                            return currentBinWidth;
                         }
 
                         /** Returns the left boundary of the bin a given argument value x belongs into
@@ -569,8 +602,7 @@ namespace picongpu
                                 // get currentBinWidth
                                 // currentBinWidth = 0.1_X;
                                 // debug since this call seems to cause infinite loop
-                                currentBinWidth
-                                    = getBinWidth(acc, directionPositive, boundary, currentBinWidth, atomicDataBox);
+                                currentBinWidth = getBinWidth(acc, directionPositive, boundary, atomicDataBox);
 
                                 inBin = AdaptiveHistogram::inBin(directionPositive, boundary, currentBinWidth, x);
 

@@ -300,7 +300,6 @@ namespace picongpu
                             acc,
                             true,
                             leftBinBoundary,
-                            histogram.getInitialGridWidth(),
                             atomicDataBox);
 
                         std::cout << ", " << leftBinBoundary;

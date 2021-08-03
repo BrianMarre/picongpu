@@ -46,7 +46,7 @@ namespace picongpu
             CreateDensity<densityProfiles::FreeFormula, startPosition::OnePosition, CarbonIons>,
             ManipulateDerive<manipulators::binary::DensityWeighting, CarbonIons, BulkElectrons>,
             // set ions to atomic ground state
-            Manipulate<manipulators::NotIonized, CarbonIons>,
+            Manipulate<manipulators::OnceIonized, CarbonIons>,
             // Set initial temperature of bulk electrons
             Manipulate<manipulators::AddTemperature, BulkElectrons>>;
 
