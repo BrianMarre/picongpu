@@ -262,7 +262,6 @@ namespace picongpu
                         printf("        initialGridWidthSpecified: %f\n", initialGridWidth);
                     }
 
-                    /*
                     fillHistogram<T_numWorkers>(acc, electronBox, mapper, &histogram, atomicDataBox);
                     cupla::__syncthreads(acc);
 
@@ -286,10 +285,10 @@ namespace picongpu
                         std::cout << "|: " << histogram.getWeightBin(i) << std::endl;
                     }
                     std::cout << " }" << std::endl;
-                    //}*/
+                    //}
 
                     // debug only, histogram bins write out, serial build only
-                    uint16_t numBinsToWriteOut = 10;
+                    /*uint16_t numBinsToWriteOut = 10;
 
                     // init with defined 0-th bin Boundary
                     float_X leftBinBoundary = 0._X;
@@ -304,7 +303,7 @@ namespace picongpu
 
                         std::cout << ", " << leftBinBoundary;
                     }
-                    std::cout << " }" << std::endl;
+                    std::cout << " }" << std::endl;*/
 
                     // debug only
                     if(workerIdx == 0)

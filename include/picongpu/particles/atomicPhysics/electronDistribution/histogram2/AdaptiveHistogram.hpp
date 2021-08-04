@@ -428,7 +428,8 @@ namespace picongpu
                                    AdaptiveHistogram::centerBin(directionPositive, boundary, minBinWidth),
                                    atomicDataBox))
                             {
-                                std::cout
+                                // debug only
+                                /*std::cout
                                     << "special case: relativeErrorTarget " << this->relativeErrorTarget
                                     << " boundary " << boundary << " direction positive "
                                     << ((directionPositive) ? "True" : "False") << " minBinWidth " << minBinWidth
@@ -438,7 +439,7 @@ namespace picongpu
                                            minBinWidth,
                                            AdaptiveHistogram::centerBin(directionPositive, boundary, minBinWidth),
                                            atomicDataBox)
-                                    << std::endl;
+                                    << std::endl;*/
                                 while(true)
                                 {
                                     loopCounter++;
@@ -446,7 +447,8 @@ namespace picongpu
                                     // quadratic stepping through linear grid
                                     binWidth = minBinWidth + stepWidthUp * loopCounter * loopCounter;
 
-                                    std::cout
+                                    // debug only
+                                    /*std::cout
                                         << "loopCounter " << loopCounter << " binWidth " << binWidth
                                         << " relativeError "
                                         << this->relativeError(
@@ -454,7 +456,7 @@ namespace picongpu
                                                binWidth,
                                                AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
                                                atomicDataBox)
-                                        << std::endl;
+                                        << std::endl;*/
 
                                     if(this->relativeErrorTarget >= this->relativeError(
                                            acc,
@@ -479,7 +481,7 @@ namespace picongpu
                                        atomicDataBox));
 
                             // debug only
-                            std::cout << "getBinWidth: isBelowTarget " << (isBelowTarget ? "true" : "false")
+                            /*std::cout << "getBinWidth: isBelowTarget " << (isBelowTarget ? "true" : "false")
                                       << " directionPositive " << directionPositive << " initBinWidth "
                                       << this->initialGridWidth << " boundary " << boundary << " relativeError "
                                       << this->relativeError(
@@ -490,7 +492,7 @@ namespace picongpu
                                                  boundary,
                                                  this->initialGridWidth),
                                              atomicDataBox)
-                                      << std::endl;
+                                      << std::endl;*/
 
                             if(isBelowTarget)
                             {
@@ -501,7 +503,8 @@ namespace picongpu
                                     // try higher binWidth
                                     binWidth = this->initialGridWidth + stepWidthUp * loopCounter * loopCounter;
 
-                                    std::cout
+                                    // debug only
+                                    /*std::cout
                                         << "loop_1, loopcounter " << loopCounter << " binWidth " << binWidth
                                         << " relativeError "
                                         << this->relativeError(
@@ -509,7 +512,7 @@ namespace picongpu
                                                binWidth,
                                                AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
                                                atomicDataBox)
-                                        << std::endl;
+                                        << std::endl;*/
 
                                     // until first time below Target
                                     if(this->relativeErrorTarget <= this->relativeError(
@@ -532,7 +535,8 @@ namespace picongpu
                                     loopCounter++;
                                     binWidth = this->initialGridWidth - stepWidthDown * loopCounter * loopCounter;
 
-                                    std::cout
+                                    // debug only
+                                    /*std::cout
                                         << "loop_2, loopcounter " << loopCounter << " binWidth " << binWidth
                                         << " relativeError "
                                         << this->relativeError(
@@ -540,7 +544,7 @@ namespace picongpu
                                                binWidth,
                                                AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
                                                atomicDataBox)
-                                        << std::endl;
+                                        << std::endl;*/
 
                                     // until first time below Target
                                     if(this->relativeErrorTarget >= this->relativeError(
