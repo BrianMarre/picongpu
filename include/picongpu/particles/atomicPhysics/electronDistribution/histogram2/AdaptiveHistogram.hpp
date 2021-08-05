@@ -30,7 +30,7 @@
  *  @tparam T_RelativeError ... functor with operator() which returns relative error
  *  @tparam T_AtomicDataBox ... type of data container for atomic input data
  *  @tparam T_maxNumberBins ... maximum number of bins of the histogram
- *  @tparam T_mayNumNewBins ... maximum number of new bins before updateWithNewBins
+ *  @tparam T_maxNumNewBins ... maximum number of new bins before updateWithNewBins
  *                                must be called by one thread
  *                                BEWARE: causes invalid memory access if set incorrectly
  *
@@ -410,6 +410,16 @@ namespace picongpu
                             const float_X boundary, // unit: value
                             T_AtomicDataBox atomicDataBox) const
                         {
+                            // debug only, hardcoded binWidths for now, until I have time to rework the error
+                            // estimator, Brian Marre, 2021
+                            if(boundary < 1)
+                                return 0.25_X;
+                            else if(boundary < 10)
+                                return 1._X;
+                            else if(boundary < 50)
+                                return 10._X;
+                            return boundary / 2;
+
                             // preparation for debug access to run time acess
                             uint32_t const workerIdx = cupla::threadIdx(acc).x;
 
@@ -714,10 +724,13 @@ namespace picongpu
                             T_AtomicDataBox atomicDataBox)
                         {
                             // debug only
-                            // std::cout << "                binCall" << std::endl;
+                            // std::cout << "energy" << x << std::endl;
 
                             // compute global bin index
                             float_X const binLeftBoundary = this->getBinLeftBoundary(acc, x, atomicDataBox);
+
+                            // debug only
+                            // std::cout << "foundLBoundary";
 
                             // search for bin in collection of existing bins
                             auto const index = findBin(binLeftBoundary);

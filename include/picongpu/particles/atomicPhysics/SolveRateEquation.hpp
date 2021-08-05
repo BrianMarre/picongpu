@@ -220,7 +220,6 @@ namespace picongpu
                     acc,
                     true, // answer to question: directionPositive?
                     histogram->getLeftBoundaryBin(histogramIndex), // unit: ATOMIC_UNIT_ENERGY
-                    histogram->getInitialGridWidth(), // unit: ATOMIC_UNIT_ENERGY
                     atomicDataBox);
 
                 // calculate density of electrons based on weight of electrons in this bin

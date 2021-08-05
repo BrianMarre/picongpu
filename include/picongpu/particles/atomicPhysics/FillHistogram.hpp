@@ -92,11 +92,14 @@ namespace picongpu
                                 = picongpu::particles::atomicPhysics::GetRealKineticEnergy::KineticEnergy(particle);
                             // unit: J, SI
 
+                            // std::cout << "bincall" << std::endl;
+
                             histogram->binObject(
                                 acc,
                                 energy_SI / picongpu::SI::ATOMIC_UNIT_ENERGY, // unit: ATOMIC_UNIT_ENERGY
                                 particle[weighting_],
                                 atomicDataBox);
+                            // std::cout << "binned electron" << std::endl;
                         }
                     });
 
