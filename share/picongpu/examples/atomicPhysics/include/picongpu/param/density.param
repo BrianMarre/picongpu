@@ -25,7 +25,7 @@
 #include <pmacc/preprocessor/struct.hpp>
 
 
-// base density 1e25, 1 macro particle per cell, unifrom distribution
+// base density 1e25, 1 macro particle per cell, uniform distribution
 namespace picongpu
 {
     namespace SI
