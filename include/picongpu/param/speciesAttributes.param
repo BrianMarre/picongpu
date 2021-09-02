@@ -34,6 +34,8 @@
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
+#include "picongpu/particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp"
+#include "picongpu/param/atomicPhysics.param"
 
 // pmacc
 #include <pmacc/particles/Identifier.hpp>
@@ -112,9 +114,6 @@ namespace picongpu
      * the following definitions, until <end atomicPhysics> are different
      * Representations of the internal state of ions in plasmas.
      */
-    // Example of number of modelled shells/levels
-    constexpr uint8_t numberLevels_Hydrogen = 10u; // model 4 shells/levels
-    constexpr uint8_t chargeNumber_Hydrogen = 1u; // hydrogen charge number=1
 
     /** [depreceated]flylite atomic superconfiguration from
      *
@@ -141,9 +140,9 @@ namespace picongpu
      */
 
     value_identifier(
-        atomicPhysics::LevelVector<numberLevels_Hydrogen>,
+        atomicPhysics::LevelVector<picongpu::atomicPhysics::numLevels>,
         levelVector_Hydrogen, // name used in species Definition
-        atomicPhysics::LevelVector<numberLevels_Hydrogen>::create(0.)
+        atomicPhysics::LevelVector<picongpu::atomicPhysics::numLevels>::create(0.)
         // initialization with zero
     );
 
@@ -172,7 +171,10 @@ namespace picongpu
      * since all "," are interpreted as seperating macro arguments
      */
     using ConfigNumber_H = particles::atomicPhysics::stateRepresentation::
-        ConfigNumber<uint64_t, numberLevels_Hydrogen, chargeNumber_Hydrogen>;
+        ConfigNumber<
+            picongpu::atomicPhysics::configNumberDataType,
+            picongpu::atomicPhysics::numLevels,
+            picongpu::atomicPhysics::protonNumber>;
 
     value_identifier(ConfigNumber_H, configNumber_Hydrogen, ConfigNumber_H(1u));
 

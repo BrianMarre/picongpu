@@ -104,9 +104,9 @@ namespace picongpu
 
                     // TODO: get this from ion species
                     // hard coded for now
-                    using ConfigNumberDataType = uint32_t;
+                    using ConfigNumberDataType = picongpu::atomicPhysics::configNumberDataType;
                     // number of levels modelled
-                    constexpr uint8_t numLevels = 10u;
+                    constexpr uint8_t numLevels = picongpu::atomicPhysics::numLevels;
 
                     // conversion to/from atomic state index
                     using ConfigNumber = picongpu::particles::atomicPhysics::stateRepresentation::

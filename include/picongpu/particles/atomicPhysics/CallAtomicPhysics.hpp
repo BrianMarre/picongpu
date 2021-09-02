@@ -25,6 +25,7 @@
 #include "picongpu/simulation_defines.hpp"
 #include "picongpu/particles/atomicPhysics/AtomicPhysics.kernel"
 #include "picongpu/particles/atomicPhysics/AtomicData.hpp"
+#include "picongpu/param/atomicPhysics.param"
 
 #include <pmacc/mappings/kernel/AreaMapping.hpp>
 #include <pmacc/traits/GetNumWorkers.hpp>
@@ -109,10 +110,10 @@ namespace picongpu
 
                 //{ atomic state
                 // data type used for configNumber
-                using T_ConfigNumberDataType = uint32_t; // must be consitent with data type used in particle config
+                // TODO: read from type of ion
+                using T_ConfigNumberDataType = picongpu::atomicPhysics::configNumberDataType;
 
-                // TODO: take from sepciesDefinition.param file 
-                static constexpr uint8_t protonNumber = 6u;
+                static constexpr uint8_t protonNumber = picongpu::atomicPhysics::protonNumber;
                 //} atomic state
 
                 //{ electrons
@@ -246,19 +247,14 @@ namespace picongpu
                      * @TODO get out of param files seperate for each species, Brian Marre 2020
                      */
 
-                    // names of file containing atomic data.
-                    // names are hard-coded for now and must be specifed as global path
-                    std::string stateDataFileName = "/home/marre55/CarbonLevels.txt";
-                    std::string transitionDataFileName = "/home/marre55/CarbonTransitions.txt";
-
                     // debug only
                     std::cout << "read atomic input data" << std::endl;
 
                     // read in atomic data:
                     // levels
-                    auto levelDataItems = readStateData(stateDataFileName);
+                    auto levelDataItems = readStateData(picongpu::atomicPhysics::stateDataFileName);
                     // transitions
-                    auto transitionDataItems = readTransitionData(transitionDataFileName);
+                    auto transitionDataItems = readTransitionData(picongpu::atomicPhysics::transitionDataFileName);
 
                     // check whether read was sucessfull
                     if(levelDataItems.empty())
@@ -344,15 +340,9 @@ namespace picongpu
                     constexpr uint32_t numWorkers = pmacc::traits::GetNumWorkers<
                         pmacc::math::CT::volume<MappingDesc::SuperCellSize>::type::value>::value;
 
-                    // histogram parameter, hardcoded for now
-                    // TODO: make available as options from param file, Brian Marre 2020
-                    constexpr float_X initialGridWidth = 1._X; // unit: ATOMIC_UNIT_ENERGY
-                    constexpr float_X relativeErrorTarget = 0.5_X; // unit: 1/s /(1/( m^3 * ATOMIC_UNIT_ENERGY ))
-                    constexpr uint16_t maxNumBins = 80;
-
                     // renaming of Kernel, basic construct defined in
                     //   <picongpu/particles/atomicPhysics/AtomicPhysics.kernel>
-                    using Kernel = AtomicPhysicsKernel<numWorkers, maxNumBins>;
+                    using Kernel = AtomicPhysicsKernel<numWorkers, picongpu::atomicPhysics::maxNumBins>;
                     auto kernel = Kernel{RngFactoryInt{step}, RngFactoryFloat{step}};
 
                     // debug only
@@ -367,8 +357,9 @@ namespace picongpu
                        ions.getDeviceParticlesBox(),
                        mapper,
                        atomicData->getDeviceDataBox(this->numberStates, this->numberTransitions),
-                       initialGridWidth, // unit: ATOMIC_UNIT_ENERGY
-                       relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) ), SI
+                       picongpu::atomicPhysics::initialGridWidth, // unit: ATOMIC_UNIT_ENERGY
+                       picongpu::atomicPhysics::relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) ),
+                                                                     // SI
                        step);
 
                     // debug only
