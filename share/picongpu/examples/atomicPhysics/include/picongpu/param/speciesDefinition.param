@@ -83,7 +83,7 @@ namespace picongpu
 
     /* ratio relative to BASE_CHARGE and BASE_MASS */
     value_identifier(float_X, MassRatioCarbon, 12 * 1836.152672);
-    value_identifier(float_X, ChargeRatioCarbon, -12.0);
+    value_identifier(float_X, ChargeRatioCarbon, -6.0);
 
     /* ratio relative to BASE_DENSITY */
     value_identifier(float_X, DensityRatioCarbon, 1.0);

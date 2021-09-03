@@ -123,25 +123,25 @@ namespace picongpu
                 // @param idx ... index of atomic state, unitless
                 // return unit: unitless
                 template<typename T_Acc>
-                DINLINE static float_64 Multiplicity(T_Acc& acc, Idx idx)
+                DINLINE static float_64 Multiplicity(T_Acc& acc, Idx configNumber)
                 {
-                    LevelVector const levelVector = ConfigNumber::getLevelVector(idx); // unitless
+                    LevelVector const levelVector = ConfigNumber::getLevelVector(configNumber); // unitless
 
                     float_64 result = 1u;
 
                     // debug only
-                    // Conversion idx to levelVector
+                    // Conversion configNumber to levelVector
                     /*int Z = int(ConfigNumber::Z);
-                    std::cout << "Idx " << idx << " ,Z " << Z << std::endl;
+                    std::cout << "Idx " << configNumber << " ,Z " << Z << std::endl;
                     std::cout << "{";
                     for (uint8_t i = 0u; i < T_numLevels; i++ )
                     {
                         std::cout << int(levelVector[i]) << ",";
-                        //printf("idx %hhi \n", idx);
+                        //printf("idx %hhi \n", configNumber);
                     }
                     std::cout << "}" << std::endl;*/
 
-                    // TODO: chnage power function call to explicit multipication
+                    // @TODO: chnage power function call to explicit multipication, BrianMarre 2020
                     for(uint8_t i = 0u; i < T_numLevels; i++)
                     {
                         result *= binomialCoefficients(
@@ -195,11 +195,11 @@ namespace picongpu
                 template<typename T_Acc>
                 DINLINE static float_X energyDifference(
                     T_Acc& acc,
-                    Idx const oldIdx, // unitless
-                    Idx const newIdx, // unitless
+                    Idx const oldConfigNumber, // unitless
+                    Idx const newConfigNumber, // unitless
                     AtomicDataBox atomicDataBox)
                 {
-                    return (atomicDataBox(newIdx) - atomicDataBox(oldIdx));
+                    return (atomicDataBox(newConfigNumber) - atomicDataBox(oldConfigNumber));
                     // unit: ATOMIC_UNIT_ENERGY
                 }
 
@@ -214,8 +214,8 @@ namespace picongpu
                 template<typename T_Acc>
                 DINLINE static float_X collisionalExcitationCrosssection(
                     T_Acc& acc,
-                    Idx const oldIdx, // unitless
-                    Idx const newIdx, // unitless
+                    Idx const oldConfigNumber, // unitless
+                    Idx const newConfigNumber, // unitless
                     uint32_t const transitionIndex, // unitless
                     float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     AtomicDataBox const atomicDataBox)
@@ -223,8 +223,8 @@ namespace picongpu
                     // energy difference between atomic states
                     float_X m_energyDifference = energyDifference(
                         acc,
-                        oldIdx,
-                        newIdx,
+                        oldConfigNumber,
+                        newConfigNumber,
                         atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
 
                     // case no physical transition possible, since insufficient electron energy
@@ -241,7 +241,8 @@ namespace picongpu
 
                         // ratio due to multiplicity
                         // unitless/unitless * (AU + AU) / AU = unitless
-                        Ratio = static_cast<float_X>((Multiplicity(acc, newIdx)) / (Multiplicity(acc, oldIdx)))
+                        Ratio = static_cast<float_X>(
+                                    (Multiplicity(acc, newConfigNumber)) / (Multiplicity(acc, oldConfigNumber)))
                             * (energyElectron + m_energyDifference) / energyElectron; // unitless
 
                         // security check for NaNs in Ratio and debug outputif present
@@ -250,8 +251,8 @@ namespace picongpu
                             printf(
                                 "Warning: NaN in ratio calculation, ask developer for more information\n"
                                 "   newIdx %u ,oldIdx %u ,energyElectron_SI %f ,energyDifference_m %f",
-                                newIdx,
-                                oldIdx,
+                                newConfigNumber,
+                                oldConfigNumber,
                                 energyElectron,
                                 m_energyDifference);
                         }
@@ -259,11 +260,12 @@ namespace picongpu
                         // debug only
                         /*if(std::isnan(Ratio))
                         {
-                            std::cout << "Ratio: " << Ratio << "MultiplicityN: " << (Multiplicity(acc, newIdx)) <<
-                                 "MultiplicityO: " << (Multiplicity(acc, oldIdx)) << "term" << (energyElectron +
-                            energyDifference_m) / energyElectron << "R-Multi." << (Multiplicity(acc, newIdx)) /
-                            (Multiplicity(acc, oldIdx)) << "cast R-Multi." << static_cast<float_X>( (Multiplicity(acc,
-                            newIdx)) / (Multiplicity(acc, oldIdx))) << std::endl;
+                            std::cout << "Ratio: " << Ratio << "MultiplicityN: " << (Multiplicity(acc,
+                        newConfigNumber)) << "MultiplicityO: " << (Multiplicity(acc, oldConfigNumber)) << "term" <<
+                        (energyElectron + energyDifference_m) / energyElectron << "R-Multi." << (Multiplicity(acc,
+                        newConfigNumber)) / (Multiplicity(acc, oldConfigNumber)) << "cast R-Multi." <<
+                        static_cast<float_X>( (Multiplicity(acc, newConfigNumber)) / (Multiplicity(acc,
+                        oldConfigNumber))) << std::endl;
                         }*/
 
                         energyElectron = energyElectron + m_energyDifference; // unit; ATOMIC_UNIT_ENERGY
@@ -317,9 +319,12 @@ namespace picongpu
                     return crossSection_SI;
                 }
 
-                // returns total cross section for a specific electron energy
-                // @param energyElectron ... kinetic energy only, unit: ATOMIC_UNIT_ENERGY
-                // return unit: m^2, SI
+
+                /** returns total cross section for a specific electron energy
+                 *
+                 * @param energyElectron ... kinetic energy only, unit: ATOMIC_UNIT_ENERGY
+                 * return unit: m^2, SI
+                 */
                 template<typename T_Acc>
                 DINLINE static float_X totalCrossSection(
                     T_Acc& acc,
@@ -329,8 +334,8 @@ namespace picongpu
                 {
                     float_X result = 0._X; // unit: m^2, SI
 
-                    Idx lowerIdx;
-                    Idx upperIdx;
+                    Idx lowerStateConfigNumber;
+                    Idx upperStateConfigNumber;
                     uint32_t numberTransitions;
                     uint32_t startIndexBlock;
                     uint32_t transitionIndex;
@@ -341,25 +346,28 @@ namespace picongpu
                     // iterate over all transitions
                     for(uint32_t i = 0u; i < atomicDataBox.getNumStates(); i++)
                     {
-                        lowerIdx = atomicDataBox.getAtomicStateConfigNumberIndex(i);
+                        lowerStateConfigNumber = atomicDataBox.getAtomicStateConfigNumberIndex(i);
                         numberTransitions = atomicDataBox.getNumberTransitions(i);
                         startIndexBlock = atomicDataBox.getStartIndexBlock(i);
 
                         for(uint32_t j = 0u; j < numberTransitions; j++)
                         {
-                            upperIdx = atomicDataBox.getUpperIdxTransition(startIndexBlock + j);
+                            upperStateConfigNumber = atomicDataBox.getUpperConfigNumberTransition(startIndexBlock + j);
                             transitionIndex = startIndexBlock + j;
 
                             // check excitation possible with electron energy
-                            if(
-                                AtomicRate::energyDifference(acc, lowerIdx, upperIdx, atomicDataBox)
-                                <= energyElectron)
+                            if(AtomicRate::energyDifference(
+                                   acc,
+                                   lowerStateConfigNumber,
+                                   upperStateConfigNumber,
+                                   atomicDataBox)
+                               <= energyElectron)
                             {
                                 // excitation cross section
                                 result += collisionalExcitationCrosssection(
                                     acc,
-                                    lowerIdx, // unitless
-                                    upperIdx, // unitless
+                                    lowerStateConfigNumber, // unitless
+                                    upperStateConfigNumber, // unitless
                                     transitionIndex, // unitless
                                     energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                     atomicDataBox); // unit: m^2, SI
@@ -372,25 +380,26 @@ namespace picongpu
                             if(result == result + 1)
                             {
                                 printf(
-                                    "loop %i crossSectionExcitation %f lowerIdx %u, upperIdx %u energyElectron %f \n",
+                                    "loop %i crossSectionExcitation %f lowerStateConfigNumber %u, "
+                                    "upperStateConfigNumber %u energyElectron %f \n",
                                     loopCount,
                                     collisionalExcitationCrosssection(
                                         acc,
-                                        lowerIdx, // unitless
-                                        upperIdx, // unitless
+                                        lowerStateConfigNumber, // unitless
+                                        upperStateConfigNumber, // unitless
                                         transitionIndex, // uintless
                                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                         atomicDataBox),
-                                    lowerIdx,
-                                    upperIdx,
+                                    lowerStateConfigNumber,
+                                    upperStateConfigNumber,
                                     energyElectron);
                             }
 
                             // deexcitation crosssection, always possible
                             result += collisionalExcitationCrosssection(
                                 acc,
-                                upperIdx,
-                                lowerIdx,
+                                upperStateConfigNumber,
+                                lowerStateConfigNumber,
                                 transitionIndex,
                                 energyElectron,
                                 atomicDataBox); // unit: m^2, SI
@@ -404,8 +413,8 @@ namespace picongpu
                                     loopCount,
                                     collisionalExcitationCrosssection(
                                         acc,
-                                        upperIdx, // unitless
-                                        lowerIdx, // unitless
+                                        upperStateConfigNumber, // unitless
+                                        lowerStateConfigNumber, // unitless
                                         transitionIndex, // uintless
                                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                                         atomicDataBox));
@@ -507,7 +516,7 @@ namespace picongpu
                         for(uint32_t j = 0u; j < atomicDataBox.getNumberTransitions(i); j++)
                         {
                             indexTransition = startIndexBlock + j;
-                            upperState = atomicDataBox.getUpperIdxTransition(indexTransition);
+                            upperState = atomicDataBox.getUpperConfigNumberTransition(indexTransition);
 
                             // transitions to oldState
                             if(upperState == oldState)

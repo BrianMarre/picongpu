@@ -138,14 +138,15 @@ namespace picongpu
                     >>;
                 // same as States but for Transitions
                 using Transitions = typename std::vector<std::tuple<
-                    T_ConfigNumberDataType, // lower state index
-                    T_ConfigNumberDataType, // higher state index
+                    T_ConfigNumberDataType, // lower state config number
+                    T_ConfigNumberDataType, // higher state config number
                     float_X, // collisional oscillator strength
                     float_X, // cinx1, gaunt coefficent used by formula
                     float_X, // cinx2, gaunt coefficent used by formula
                     float_X, // cinx3, gaunt coefficent used by formula
                     float_X, // cinx4, gaunt coefficent used by formula
-                    float_X // cinx5, gaunt coefficent used by formula
+                    float_X, // cinx5, gaunt coefficent used by formula
+                    float_X // absorption oscillator strength
                     >>;
                 //} input data
                 //} Datatypes for later access
@@ -175,12 +176,12 @@ namespace picongpu
                     }
 
                     States result;
-                    double stateIndex; // @TODO: catch overflow if full uint64 is used
+                    double stateConfigNumber; // @TODO: catch overflow if full uint64 is used
                     float_X energyOverGroundState;
 
-                    while(file >> stateIndex >> energyOverGroundState)
+                    while(file >> stateConfigNumber >> energyOverGroundState)
                     {
-                        T_ConfigNumberDataType idx = static_cast<T_ConfigNumberDataType>(stateIndex);
+                        T_ConfigNumberDataType idx = static_cast<T_ConfigNumberDataType>(stateConfigNumber);
                         auto item = std::make_pair(idx, energyOverGroundState);
                         result.push_back(item);
                     }
@@ -212,10 +213,12 @@ namespace picongpu
                     float_X cinx4;
                     float_X cinx5;
 
+                    float_X absorptionOscillatorStrength;
+
                     Transitions result;
 
                     while(file >> idxLower >> idxUpper >> collisionalOscillatorStrength >> cinx1 >> cinx2 >> cinx3
-                          >> cinx4 >> cinx5)
+                          >> cinx4 >> cinx5 >> absorptionOscillatorStrength)
                     {
                         uint64_t stateIndexLower = static_cast<uint64_t>(idxLower);
                         uint64_t stateIndexUpper = static_cast<uint64_t>(idxUpper);
@@ -228,7 +231,8 @@ namespace picongpu
                             cinx2,
                             cinx3,
                             cinx4,
-                            cinx5);
+                            cinx5,
+                            absorptionOscillatorStrength);
                         // append to vector result
                         result.push_back(item);
                     }
@@ -242,7 +246,6 @@ namespace picongpu
                      * BEWARE: prototype implementation ONLY,
                      *  - filenames are hardcoded
                      *  - only a single file can be loaded for all species
-                     *  - no param file yet exists
                      *  - assumes block form for transitions
                      * @TODO get out of param files seperate for each species, Brian Marre 2020
                      */
@@ -303,7 +306,8 @@ namespace picongpu
                             std::get<4>(transitionDataItems[i]),
                             std::get<5>(transitionDataItems[i]),
                             std::get<6>(transitionDataItems[i]),
-                            std::get<7>(transitionDataItems[i]));
+                            std::get<7>(transitionDataItems[i]),
+                            std::get<8>(transitionDataItems[i]));
                     }
 
                     // copy data to device buffer
@@ -358,8 +362,7 @@ namespace picongpu
                        mapper,
                        atomicData->getDeviceDataBox(this->numberStates, this->numberTransitions),
                        picongpu::atomicPhysics::initialGridWidth, // unit: ATOMIC_UNIT_ENERGY
-                       picongpu::atomicPhysics::relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) ),
-                                                                     // SI
+                       picongpu::atomicPhysics::relativeErrorTarget, // unit: 1/s /( 1/( m^3 * ATOMIC_UNIT_ENERGY ) )
                        step);
 
                     // debug only
