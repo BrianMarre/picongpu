@@ -33,6 +33,7 @@
 
 
 #include "picongpu/particles/particleToGrid/derivedAttributes/Density.hpp"
+#inlcude "picongpu/param/atomicPhysics.param"
 
 #include <cstdint>
 
@@ -58,7 +59,8 @@ namespace picongpu
              * \return updates value of timeRemaining_SI
              *
              * this method does one step of the rate solving algorithm, it is called
-             * by atomicPhysics.kernel until time remaining becomes zero
+             * by atomicPhysics.kernel until time remaining of the current particle
+             * becomes zero
              *
              * basic:
              *  1.) randomly choose viable transition
@@ -108,7 +110,7 @@ namespace picongpu
                 }
 
                 // workaround: the types may be obtained in a better fashion
-                // TODO: relace with better version
+                // TODO: replace with better version
                 auto configNumber = ion[atomicConfigNumber_];
                 using ConfigNumber = decltype(configNumber);
                 using ConfigNumberDataType = decltype(ion[atomicConfigNumber_].getStateIndex()); // @TODO: ? shorten
@@ -121,6 +123,8 @@ namespace picongpu
                 uint32_t oldStateIndex;
                 uint32_t transitionIndex;
 
+                uint8_t processIndex;
+
                 float_X deltaEnergyTransition;
                 uint16_t histogramIndex;
                 float_X energyElectron;
@@ -131,15 +135,7 @@ namespace picongpu
 
                 // read out old state
                 oldState = ion[atomicConfigNumber_].getStateIndex(); // config number
-                oldStateIndex = atomicDataBox.findState(oldState); // collection index
-
-                // choose random histogram collection index
-                histogramIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
-                // get energy of histogram bin with this collection index
-                energyElectron = histogram->getEnergyBin(
-                    acc,
-                    histogramIndex,
-                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+                oldStateIndex = atomicDataBox.findState(oldState); // collection index of atomic state
 
                 // debug only
                 // std::cout << "            start transition search, local loop " << localLoopCounter << std::endl;
@@ -154,7 +150,20 @@ namespace picongpu
                     newStateIndex = randomGenInt() % atomicDataBox.getNumStates();
                     newState = atomicDataBox.getAtomicStateConfigNumberIndex(newStateIndex);
 
-                    // no change always viable transition
+                    // get random process,
+                    // @TODO get available processes from species on compile time
+                    // 1: free electron interaction, 2: +photonic spontanous deexcitation
+                    process = randomGentInt() % picongpu::atomicPhysics::numProcesses;
+
+                    // choose random histogram collection index
+                    histogramIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
+                    // get energy of histogram bin with this collection index
+                    energyElectron = histogram->getEnergyBin(
+                        acc,
+                        histogramIndex,
+                        atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+
+                    // no change always viable transition, @TODO: circle transitions?, BrianMarre, 2021
                     if(newState == oldState)
                         break;
 
@@ -190,13 +199,46 @@ namespace picongpu
                         deltaEnergyTransition = AtomicRate::energyDifference(acc, oldState, newState, atomicDataBox);
                         // unit: ATOMIC_UNIT_ENERGY
 
-                        if(deltaEnergyTransition <= energyElectron)
+                        // free electron interaction
+                        if(process == 0u)
                         {
-                            break;
+                            if(deltaEnergyTransition <= energyElectron)
+                            {
+                                freeElectronInteraction<T_AtomicRate>(
+                                    acc,
+                                    randomGenFloat,
+                                    ion,
+                                    timeRemaining_SI,
+                                    atomicDataBox,
+                                    histogram,
+                                    oldStateIndex,
+                                    oldState,
+                                    newStateIndex,
+                                    newState,
+                                    transitionIndex,
+                                    histogramIndex,
+                                    energyElectron,
+                                    deltaEnergyTransition,
+                                    globalLoopCounter,
+                                    localLoopCounter) break;
+                            }
+                            else
+                            {
+                                transitionFound = false;
+                            }
                         }
-                        else
+                        // spontaneous photon emission
+                        else if(process == 1u)
                         {
-                            transitionFound = false;
+                            if(deltaEnergyTransition <= 0)
+                            {
+                                // call spontaneous emission function
+                                break;
+                            }
+                            else
+                            {
+                                transitionFound = false;
+                            }
                         }
                     }
 
@@ -206,7 +248,34 @@ namespace picongpu
                     // retry if no transition between states found
                     loopCounterTransitionSearch++;
                 }
+            }
 
+            template<
+                typename T_AtomicRate,
+                typename T_Acc,
+                typename T_Ion,
+                typename T_ConfigNumberDataType,
+                typename T_AtomicDataBox,
+                typename T_Histogram>
+            DINLINE void freeElectronInteraction(
+                T_Acc const& acc,
+                RandomGenFloat& randomGenFloat,
+                T_Ion ion,
+                float_X& timeRemaining_SI,
+                T_AtomicDataBox const atomicDataBox,
+                T_Histogram* histogram,
+                uint32_t oldStateIndex,
+                T_ConfigNumberDataType oldState,
+                uint32_t newStateIndex,
+                T_ConfigNumberDataType newState,
+                uint32_t transitionIndex,
+                uint16_t histogramIndex,
+                float_X energyElectron,
+                float_X deltaEnergyTransition,
+                uint16_t globalLoopCounter,
+                uint16_t localLoopCounter)
+            {
+                //{ preparation
                 float_X energyElectronBinWidth;
 
                 float_X rate_SI;
@@ -234,7 +303,7 @@ namespace picongpu
                 // debug only
                 // std::cout << "        densityElectrons " << densityElectrons << std::endl;
 
-                //{ ceck for numerical problems ins desnity Electrons
+                //{ check for numerical problems in density Electrons
                 // check for nan
                 if(!(densityElectrons == densityElectrons))
                 {
@@ -248,7 +317,6 @@ namespace picongpu
                 // check for inf
                 if(densityElectrons == 1.0 / 0.0)
                 {
-                    //}
 
                     printf("ERROR: densityElectrons in rate solver is +-inf\n");
                     // debug only output
@@ -257,6 +325,7 @@ namespace picongpu
                               << histogram->getDeltaWeightBin(histogramIndex) << " binWidth " << energyElectronBinWidth
                               << std::endl;*/
                 }
+                //}
 
                 if(oldState == newState)
                 {
@@ -270,7 +339,7 @@ namespace picongpu
                         energyElectron, // unit: ATOMIC_UNIT_ENERGY
                         energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
                         densityElectrons, // unit: 1/(m^3*AU), SI
-                        atomicDataBox); // unit: 1/s, SI
+                        atomicDataBox); // unit: 1/s, SI @TODO: update total rate calculation
 
                     quasiProbability = 1._X - rate_SI * timeRemaining_SI;
                     deltaEnergy = 0._X;
@@ -307,12 +376,15 @@ namespace picongpu
                     << " energyElectronBinWidth " << energyElectronBinWidth << " densityElectrons "
                     << densityElectrons << " histogramIndex " << histogramIndex << " quasiProbability "
                     << quasiProbability << " rateSI " << rate_SI << std::endl;*/
+                //} end preparation
 
+                //{ rate equation solver
                 if(quasiProbability >= 1.0_X)
                 {
                     // case: more than one change per time remaining
                     // -> change once and reduce time remaining by mean time between such transitions
-                    //  can only happen in the case of newState != olstate, since otherwise 1 - ( >0 ) < 1
+                    //  can only happen in the case of newState != oldstate, since otherwise 1 - ( >0 ) < 1
+                    //  unless current state is isolated state
 
                     // debug only
                     // std::cout << "    intermediate state" << std::endl;
@@ -444,6 +516,33 @@ namespace picongpu
                         // std::cout << "    final state" << std::endl;
                     }
                 }
+                //}
+            }
+
+            template<
+                typename T_AtomicRate,
+                typename T_Acc,
+                typename T_Ion,
+                typename T_ConfigNumberDataType,
+                typename T_AtomicDataBox,
+                typename T_Histogram>
+            DINLINE void spontaneousEmission(
+                T_Acc const& acc,
+                RandomGenFloat& randomGenFloat,
+                T_Ion ion,
+                float_X& timeRemaining_SI,
+                T_AtomicDataBox const atomicDataBox,
+                T_Histogram* histogram,
+                uint32_t oldStateIndex,
+                T_ConfigNumberDataType oldState,
+                uint32_t newStateIndex,
+                T_ConfigNumberDataType newState,
+                uint32_t transitionIndex,
+                float_X deltaEnergyTransition,
+                uint16_t globalLoopCounter,
+                uint16_t localLoopCounter)
+            {
+                float_X rate_SI //= as function in atomic rate (2 * pi * e^2)/(eps_0 * m_e * c^3) * g_new/g_old * faax
             }
 
             // Fill the histogram return via the last parameter
