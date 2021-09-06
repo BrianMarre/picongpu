@@ -208,19 +208,20 @@ namespace picongpu
                                     acc,
                                     randomGenFloat,
                                     ion,
-                                    timeRemaining_SI,
+                                    timeRemaining_SI, // unit: s, SI
                                     atomicDataBox,
                                     histogram,
                                     oldStateIndex,
-                                    oldState,
+                                    oldState, // unit: untiless
                                     newStateIndex,
-                                    newState,
+                                    newState, // unit: unitless
                                     transitionIndex,
                                     histogramIndex,
-                                    energyElectron,
-                                    deltaEnergyTransition,
+                                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                                    deltaEnergyTransition, // unit: ATOMIC_UNIT_ENERGY
                                     globalLoopCounter,
-                                    localLoopCounter) break;
+                                    localLoopCounter);
+                                break;
                             }
                             else
                             {
@@ -232,7 +233,7 @@ namespace picongpu
                         {
                             if(deltaEnergyTransition <= 0)
                             {
-                                // call spontaneous emission function
+                                // call spontaneous photon emission function
                                 break;
                             }
                             else
@@ -261,17 +262,17 @@ namespace picongpu
                 T_Acc const& acc,
                 RandomGenFloat& randomGenFloat,
                 T_Ion ion,
-                float_X& timeRemaining_SI,
+                float_X& timeRemaining_SI, // unit: s, SI
                 T_AtomicDataBox const atomicDataBox,
                 T_Histogram* histogram,
                 uint32_t oldStateIndex,
-                T_ConfigNumberDataType oldState,
+                T_ConfigNumberDataType oldState, // unit: unitless
                 uint32_t newStateIndex,
-                T_ConfigNumberDataType newState,
+                T_ConfigNumberDataType newState, // unit: unitless
                 uint32_t transitionIndex,
                 uint16_t histogramIndex,
-                float_X energyElectron,
-                float_X deltaEnergyTransition,
+                float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                float_X deltaEnergyTransition, // unit: ATOMIC_UNIT_ENERGY
                 uint16_t globalLoopCounter,
                 uint16_t localLoopCounter)
             {
@@ -289,7 +290,7 @@ namespace picongpu
                     acc,
                     true, // answer to question: directionPositive?
                     histogram->getLeftBoundaryBin(histogramIndex), // unit: ATOMIC_UNIT_ENERGY
-                    atomicDataBox);
+                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
 
                 // calculate density of electrons based on weight of electrons in this bin
                 // REMEMBER: histogram is filled by direct add of particle[weighting_]
@@ -327,10 +328,9 @@ namespace picongpu
                 }
                 //}
 
+                // calculating quasiProbability for special case of keeping in current state
                 if(oldState == newState)
                 {
-                    // calculating quasiProbability for special case of keeping in current state
-
                     // R_(i->i) = - sum_f( R_(i->f), rate_SI = - R_(i->i),
                     // R ... rate, i ... initial state, f ... final state
                     rate_SI = AtomicRate::totalRate(
@@ -349,7 +349,7 @@ namespace picongpu
                 {
                     // calculating quasiProbability for standard case of different newState
 
-                    rate_SI = AtomicRate::Rate(
+                    rate_SI = AtomicRate::RateFreeElectronInteraction(
                         acc,
                         oldState, // unitless
                         newState, // unitless
@@ -378,7 +378,41 @@ namespace picongpu
                     << quasiProbability << " rateSI " << rate_SI << std::endl;*/
                 //} end preparation
 
-                //{ rate equation solver
+                rateEquationSolverForExternalSpectrum(
+                    acc,
+                    ion,
+                    timeRemaining_SI,
+                    histogram,
+                    histogramIndex,
+                    atomicDataBox,
+                    energyElectron,
+                    quasiProbability,
+                    rate_SI,
+                    deltaEnergyTransition,
+                    deltaEnergy,
+                    affectedWeighting,
+                    oldState,
+                    newState)
+            }
+
+            template<typename T_Acc, typename T_Ion, typename T_ConfigNumberDataType, typename T_AtomicDataBox>
+            DINLINE void rateEquationSolverForExternalSpectrum(
+                T_Acc const& acc,
+                RandomGenFloat& randomGenFloat,
+                T_Ion ion,
+                float_X& timeRemaining_SI,
+                T_Histogram* histogram,
+                uint16_t histogramIndex,
+                T_AtomicDataBox const atomicDataBox,
+                float_X energyElectron,
+                float_X quasiProbability,
+                float_X rate_SI,
+                float_X deltaEnergyTransition,
+                float_X deltaEnergy,
+                float_X affectedWeighting,
+                T_ConfigNumberDataType oldState,
+                T_ConfigNumberDataType newState)
+            {
                 if(quasiProbability >= 1.0_X)
                 {
                     // case: more than one change per time remaining
@@ -400,24 +434,24 @@ namespace picongpu
 
                     // try to remove electrons from bin, returns false if not enough
                     // electrons in bin to interact with entire macro ion
-                    bool sufficentElectronsInBin
+                    bool sufficentWeightInBin
                         = histogram->tryRemoveWeightFromBin(acc, histogramIndex, affectedWeighting);
 
                     // do state change randomly even if not enough weight, Note: might be problematic for very large
                     // number of workers?
-                    if(!sufficentElectronsInBin)
+                    if(!sufficentWeightInBin)
                     {
                         affectedWeighting
                             = histogram->getWeightBin(histogramIndex) + histogram->getDeltaWeightBin(histogramIndex);
                         if(randomGenFloat() <= affectedWeighting / ion[weighting_])
                         {
                             histogram->removeWeightFromBin(acc, histogramIndex, affectedWeighting);
-                            sufficentElectronsInBin = true;
+                            sufficentWeightInBin = true;
                             deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
                         }
                     }
 
-                    if(sufficentElectronsInBin)
+                    if(sufficentWeightInBin)
                     {
                         // debug only
                         // std::cout << "  change accepted" << std::endl;
@@ -474,22 +508,22 @@ namespace picongpu
                         // => randomly change to newState in time remaining
 
                         // try to remove weight from eectron bin, to cover entire macro ion
-                        bool sufficentElectronsInBin
+                        bool sufficentWeightInBin
                             = histogram->tryRemoveWeightFromBin(acc, histogramIndex, affectedWeighting);
 
-                        if(!sufficentElectronsInBin)
+                        if(!sufficentWeightInBin)
                         {
                             affectedWeighting = histogram->getWeightBin(histogramIndex)
                                 + histogram->getDeltaWeightBin(histogramIndex);
                             if(randomGenFloat() <= affectedWeighting / ion[weighting_])
                             {
                                 histogram->removeWeightFromBin(acc, histogramIndex, affectedWeighting);
-                                sufficentElectronsInBin = true;
+                                sufficentWeightInBin = true;
                                 deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
                             }
                         }
 
-                        if(sufficentElectronsInBin)
+                        if(sufficentWeightInBin)
                         {
                             // debug only
                             // std::cout << "  change accepted" << std::endl;
@@ -516,7 +550,100 @@ namespace picongpu
                         // std::cout << "    final state" << std::endl;
                     }
                 }
-                //}
+            }
+
+            template<typename T_Acc, typename T_Ion, typename T_ConfigNumberDataType>
+            DINLINE void rateEquationSolverSpontaneousTransition(
+                T_Acc const& acc,
+                RandomGenFloat& randomGenFloat,
+                T_Ion ion,
+                float_X& timeRemaining_SI,
+                float_X quasiProbability,
+                float_X rate_SI,
+                float_X deltaEnergyTransition,
+                float_X affectedWeighting,
+                T_ConfigNumberDataType oldState,
+                T_ConfigNumberDataType newState)
+            {
+                if(quasiProbability >= 1.0_X)
+                {
+                    // case: more than one change per time remaining
+                    // -> change once and reduce time remaining by mean time between such transitions
+                    //  can only happen in the case of newState != oldstate, since otherwise 1 - ( >0 ) < 1
+                    //  unless current state is isolated state
+
+                    // debug only
+                    // std::cout << "    intermediate state" << std::endl;
+
+                    // case: no transition possible, due to isolated atomic state
+                    if(oldState == newState)
+                    {
+                        // debug only
+                        /*std::cout << "      no transition possible " << std::endl;*/
+                        timeRemaining_SI = 0._X;
+                        return;
+                    }
+
+                    // debug only
+                    // std::cout << "  change accepted" << std::endl;
+
+                    ion[atomicConfigNumber_] = newState;
+
+                    // @TODO: spawn photon with frequency deltaEnergyTransition and affectedWeight
+
+                    // reduce time remaining by mean time between interactions
+                    timeRemaining_SI -= 1.0_X / rate_SI;
+
+                    // safeguard against numerical error
+                    if(rate_SI < 0)
+                    {
+                        // case: timeRemaining < 0: should not happen
+                        // last resort to avoid infinte loop
+                        timeRemaining_SI = 0._X;
+                        printf("ERROR: time remaining < 0, in rate solver");
+                    }
+                }
+                else
+                {
+                    if(quasiProbability < 0._X)
+                    {
+                        // case: newState != oldState
+                        // quasiProbability can only be > 0, since AtomicRate::Rate( )>=0
+                        // and timeRemaining >= 0
+                        if(oldState != newState)
+                        {
+                            timeRemaining_SI = 0._X;
+                            printf("ERROR: negative time remaining encountered in rate solver");
+                        }
+
+                        // debug only
+                        // std::cout << "    unphysical rate" << std::endl;
+
+                        // case: newState == oldState
+                        // on average change from original state into new more than once
+                        // in timeRemaining
+                        // => can not remain in current state -> must choose new state
+                    }
+                    else if(randomGenFloat() <= quasiProbability)
+                    {
+                        // case change only possible once
+                        // => randomly change to newState in time remaining
+
+                        // debug only
+                        // std::cout << "  change accepted" << std::endl;
+
+                        // change ion state
+                        ion[atomicConfigNumber_] = newState;
+
+                        // @TODO: spawn photon with frequency deltaEnergyTransition and affectedWeight
+
+                        // complete timeRemaining is used up
+                        timeRemaining_SI = 0.0_X;
+
+                        // debug only
+                        // std::cout << "    final state" << std::endl;
+                    }
+                }
             }
 
             template<
@@ -526,7 +653,7 @@ namespace picongpu
                 typename T_ConfigNumberDataType,
                 typename T_AtomicDataBox,
                 typename T_Histogram>
-            DINLINE void spontaneousEmission(
+            DINLINE void spontaneousPhotonEmission(
                 T_Acc const& acc,
                 RandomGenFloat& randomGenFloat,
                 T_Ion ion,
@@ -542,7 +669,67 @@ namespace picongpu
                 uint16_t globalLoopCounter,
                 uint16_t localLoopCounter)
             {
-                float_X rate_SI //= as function in atomic rate (2 * pi * e^2)/(eps_0 * m_e * c^3) * g_new/g_old * faax
+                float_X rate_SI;
+                float_X quasiProbability;
+                float_X deltaEnergy;
+
+                // calculating quasiProbability for special case of keeping in current state, @TODO: think about that
+                // more
+                if(oldState == newState)
+                {
+                    // R_(i->i) = - sum_f( R_(i->f), rate_SI = - R_(i->i),
+                    // R ... rate, i ... initial state, f ... final state
+                    /*rate_SI = AtomicRate::totalRateSpontaneousPhotonEmission(
+                        acc,
+                        oldState, // unitless
+                        atomicDataBox); // unit: 1/s, SI @TODO: update total rate calculation
+
+                    quasiProbability = 1._X - rate_SI * timeRemaining_SI;
+                    deltaEnergy = 0._X;*/
+                    // std::cout << "old state == new state " << (oldState==newState) << std::endl;
+                }
+                else
+                {
+                    // calculating quasiProbability for standard case of different newState
+
+                    rate_SI = AtomicRate::RateSpontaneousPhotonEmission(
+                        acc,
+                        oldState, // unitless
+                        newState, // unitless
+                        transitionIndex, // unitless
+                        atomicDataBox); // unit: 1/s, SI
+
+                    // get the change of electron energy in bin due to transition
+                    deltaEnergy = (-deltaEnergyTransition) * ion[weighting_];
+                    // unit: ATOMIC_UNIT_ENERGY, scaled with number of ions represented
+
+                    quasiProbability = rate_SI * timeRemaining_SI;
+                }
+
+                float_X affectedWeighting = ion[weighting_];
+
+                // debug only
+                /*std::cout << "particleID " << ion[particleId_] << " globalLoopCounter " << globalLoopCounter
+                    << " localLoopCounter " << localLoopCounter
+                    << " timeRemaining " << timeRemaining_SI << " oldState "
+                    << oldState << " newState " << newState << " energyElectron " << energyElectron
+                    << " energyElectronBinWidth " << energyElectronBinWidth << " densityElectrons "
+                    << densityElectrons << " histogramIndex " << histogramIndex << " quasiProbability "
+                    << quasiProbability << " rateSI " << rate_SI << std::endl;*/
+                //} end preparation
+
+                //= as function in atomic rate (2 * pi * e^2)/(eps_0 * m_e * c^3) * g_new/g_old * faax
+
+                rateEquationSolverSpontaneousTransition(
+                    acc,
+                    randomGenFloat,
+                    ion,
+                    quasiProbability,
+                    rate_SI,
+                    deltaEnergyTransition,
+                    affectedWeighting,
+                    oldState,
+                    newState)
             }
 
             // Fill the histogram return via the last parameter

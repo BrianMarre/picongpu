@@ -1,4 +1,4 @@
-/* Copyright 2017-2021 Axel Huebl, Brian Marre, Sudhir Sharma
+/* Copyright 2017-2021 Axel Huebl, Sudhir Sharma, Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -433,7 +433,7 @@ namespace picongpu
                 }
 
                 // return unit: 1/s, SI
-                /** rate function
+                /** rate function for interaction of ion with free electron
                  * uses 1th order integration <-> a = 0, => T_minOrderApprox = 1
                  * TODO: implement higher order integration
                  * TODO: change density to internal units
@@ -447,7 +447,7 @@ namespace picongpu
                  * return unit: 1/s ... SI
                  */
                 template<typename T_Acc>
-                DINLINE static float_X Rate(
+                DINLINE static float_X RateFreeElectronInteraction(
                     T_Acc& acc,
                     Idx const oldState, // unit: unitless
                     Idx const newState, // unit: unitless
@@ -485,6 +485,57 @@ namespace picongpu
                                - 1.0
                                    / ((1._X + E_e_SI / (m_e_SI * c_SI * c_SI))
                                       * (1._X + E_e_SI / (m_e_SI * c_SI * c_SI))));
+                    // unit: 1/s; SI
+                }
+
+                // return unit: 1/s, SI
+                /** rate function for spontaneous photon emission
+                 * TODO: change return unit to internal units
+                 *
+                 * @param atomicDataBox ... acess to input atomic data
+                 *
+                 * return unit: 1/s ... SI
+                 */
+                template<typename T_Acc>
+                DINLINE static float_X RateSpontaneousPhotonEmission(
+                    T_Acc& acc,
+                    Idx const oldState, // unit: unitless
+                    Idx const newState, // unit: unitless
+                    uint32_t const transitionIndex,
+                    float_X deltaEnergyTransition, // unit: ATOMIC_UNIT_ENERGY
+                    AtomicDataBox const atomicDataBox)
+                {
+                    // Notation Note: AU is a shorthand for ATOMIC_UNIT_ENERGY in this context
+
+                    // constants in SI
+                    constexpr float_64 c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
+                    constexpr float_64 m_e_SI = picongpu::SI::ELECTRON_MASS_SI; // unit: kg, SI
+                    constexpr float_64 e_SI = picongpu::SI::ELECTRON_CHARGE_SI; // unit: C, SI
+
+                    constexpr float_64 mu0_SI = picongpu::SI::MUE0_SI; // unit: C/(Vm), SI
+                    constexpr float_64 pi = picongpu::PI; // unit: unitless
+                    constexpr float_64 hbar_SI = picongpu::SI::HBAR_SI; // unit: Js, SI
+
+                    constexpr float_64 au_SI = picongpu::SI::ATOMIC_UNIT_ENERGY; // unit: J, SI
+
+                    // (2 * pi * e^2)/(eps_0 * m_e * c^3) = (2 * pi * e^2 * mue_0) / (m_e * c)
+                    constexpr float_X constFactor
+                        = static_cast<float_X>((2 * pi * e_SI * e_SI * mu_0_SI) / (m_e_SI * c_SI));
+                    // unit: ((As)^2 * N/A^2) /(kg * m/s) = A^2/A^2 *s^2 * N / ( kg * m/s )
+                    // = s^2 * kg*m/s^2 / ( kg * m/s ) = 1/(1/s) = s, SI
+
+                    float_X frequencyPhoton = static_cast<float_X>(
+                        (static_cast<float_64>(deltaEnergyTransition) * au_SI) / hbar_SI); // unit: 1/s
+                    // NOTE: this is an actual frequency not an angular frequency
+
+                    Ratio = static_cast<float_X>(
+                        Multiplicity(acc, newConfigNumber) / Multiplicity(acc, oldConfigNumber));
+                    // unit: unitless
+
+                    // (2 * pi * e^2)/(eps_0 * m_e * c^3) * nu^2 * g_new/g_old * faax
+                    // s * (1/s)^2 = 1/s
+                    return constFactor * frequencyPhoton * frequencyPhoton * Ratio
+                        * atomicDataBox.getAbsorptionOscillatorStrength(indexTransition);
                     // unit: 1/s; SI
                 }
 
