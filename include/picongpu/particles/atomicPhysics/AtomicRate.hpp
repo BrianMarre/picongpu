@@ -319,20 +319,19 @@ namespace picongpu
                     return crossSection_SI;
                 }
 
-
                 /** returns total cross section for a specific electron energy
                  *
                  * @param energyElectron ... kinetic energy only, unit: ATOMIC_UNIT_ENERGY
                  * return unit: m^2, SI
                  */
                 template<typename T_Acc>
-                DINLINE static float_X totalCrossSection(
+                DINLINE static float_X totalElectronInteractionCrossSection(
                     T_Acc& acc,
                     float_X const energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     AtomicDataBox const atomicDataBox,
                     bool const debug = false)
                 {
-                    float_X result = 0._X; // unit: m^2, SI
+                    float_X crossSection = 0._X; // unit: m^2, SI
 
                     Idx lowerStateConfigNumber;
                     Idx upperStateConfigNumber;
@@ -364,7 +363,7 @@ namespace picongpu
                                <= energyElectron)
                             {
                                 // excitation cross section
-                                result += collisionalExcitationCrosssection(
+                                crossSection += collisionalExcitationCrosssection(
                                     acc,
                                     lowerStateConfigNumber, // unitless
                                     upperStateConfigNumber, // unitless
@@ -377,7 +376,7 @@ namespace picongpu
                             // debug only
                             loopCount++;
                             // NaN/inf check
-                            if(result == result + 1)
+                            if(crossSection == crossSection + 1)
                             {
                                 printf(
                                     "loop %i crossSectionExcitation %f lowerStateConfigNumber %u, "
@@ -396,7 +395,7 @@ namespace picongpu
                             }
 
                             // deexcitation crosssection, always possible
-                            result += collisionalExcitationCrosssection(
+                            crossSection += collisionalExcitationCrosssection(
                                 acc,
                                 upperStateConfigNumber,
                                 lowerStateConfigNumber,
@@ -406,7 +405,7 @@ namespace picongpu
 
                             // debug only
                             // NaN/inf check
-                            if(result == result + 1)
+                            if(crossSection == crossSection + 1)
                             {
                                 printf(
                                     "loop %i crossSectionDeExcitation %f \n",
@@ -425,11 +424,11 @@ namespace picongpu
                     // debug only
                     if ( debug )
                     {
-                        /*std::cout << "totalCrossSection " << result << " energyElectron " << 
+                        /*std::cout << "totalElectronInteractionCrossSection " << crossSection << " energyElectron " <<
                             energyElectron << std::endl;*/
                     }
 
-                    return result; // unit: m^2, SI
+                    return crossSection; // unit: m^2, SI
                 }
 
                 // return unit: 1/s, SI
@@ -512,7 +511,7 @@ namespace picongpu
                     constexpr float_64 m_e_SI = picongpu::SI::ELECTRON_MASS_SI; // unit: kg, SI
                     constexpr float_64 e_SI = picongpu::SI::ELECTRON_CHARGE_SI; // unit: C, SI
 
-                    constexpr float_64 mu0_SI = picongpu::SI::MUE0_SI; // unit: C/(Vm), SI
+                    constexpr float_64 mue0_SI = picongpu::SI::MUE0_SI; // unit: C/(Vm), SI
                     constexpr float_64 pi = picongpu::PI; // unit: unitless
                     constexpr float_64 hbar_SI = picongpu::SI::HBAR_SI; // unit: Js, SI
 
@@ -520,7 +519,7 @@ namespace picongpu
 
                     // (2 * pi * e^2)/(eps_0 * m_e * c^3) = (2 * pi * e^2 * mue_0) / (m_e * c)
                     constexpr float_X constFactor
-                        = static_cast<float_X>((2 * pi * e_SI * e_SI * mu_0_SI) / (m_e_SI * c_SI));
+                        = static_cast<float_X>((2 * pi * e_SI * e_SI * mue0_SI) / (m_e_SI * c_SI));
                     // unit: ((As)^2 * N/A^2) /(kg * m/s) = A^2/A^2 *s^2 * N / ( kg * m/s )
                     // = s^2 * kg*m/s^2 / ( kg * m/s ) = 1/(1/s) = s, SI
 
@@ -528,30 +527,33 @@ namespace picongpu
                         (static_cast<float_64>(deltaEnergyTransition) * au_SI) / hbar_SI); // unit: 1/s
                     // NOTE: this is an actual frequency not an angular frequency
 
-                    Ratio = static_cast<float_X>(
-                        Multiplicity(acc, newConfigNumber) / Multiplicity(acc, oldConfigNumber));
+                    float_X Ratio = static_cast<float_X>(Multiplicity(acc, newState) / Multiplicity(acc, oldState));
                     // unit: unitless
 
                     // (2 * pi * e^2)/(eps_0 * m_e * c^3) * nu^2 * g_new/g_old * faax
+                    // taken from https://en.wikipedia.org/wiki/Einstein_coefficients
                     // s * (1/s)^2 = 1/s
                     return constFactor * frequencyPhoton * frequencyPhoton * Ratio
-                        * atomicDataBox.getAbsorptionOscillatorStrength(indexTransition);
+                        * atomicDataBox.getAbsorptionOscillatorStrength(transitionIndex);
                     // unit: 1/s; SI
                 }
 
                 /** returns the total rate of all transitions from the given state
+                 * to any other state, using any process
                  *
                  * return unit: 1/s, SI
                  */
                 template<typename T_Acc>
                 DINLINE static float_X totalRate(
-                    T_Acc& acc,
+                    T_Acc const& acc,
                     Idx oldState, // unitless
                     float_X energyElectron, // unit: ATOMIC_UNIT_ENERGY
                     float_X energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
                     float_X densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                     AtomicDataBox atomicDataBox) // unit: 1/s, SI
                 {
+                    // NOTE on Notation: the term upper-/lowerState refers
+                    //  to the energy of the state
                     float_X totalRate = 0._X; // unit: 1/s, SI
 
                     Idx lowerState;
@@ -569,9 +571,10 @@ namespace picongpu
                             indexTransition = startIndexBlock + j;
                             upperState = atomicDataBox.getUpperConfigNumberTransition(indexTransition);
 
-                            // transitions to oldState
+                            // transitions with oldState as upper state
                             if(upperState == oldState)
-                                totalRate += Rate(
+                            {
+                                totalRate += RateFreeElectronInteraction(
                                     acc,
                                     oldState, // unitless
                                     lowerState, // newstate, unitless
@@ -580,9 +583,25 @@ namespace picongpu
                                     energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
                                     densityElectrons, // unit: 1/(m^3*ATOMIC_UNIT_ENERGY)
                                     atomicDataBox); // unit: 1/s, SI
-                            // transitions from oldState
+
+                                float_X deltaEnergyTransition = energyDifference(
+                                    acc,
+                                    oldState,
+                                    lowerState,
+                                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+
+                                totalRate += RateSpontaneousPhotonEmission(
+                                    acc,
+                                    oldState,
+                                    lowerState,
+                                    indexTransition,
+                                    deltaEnergyTransition, // unit: ATOMIC_UNIT_ENERGY
+                                    atomicDataBox); // unit: 1/s, SI
+                            }
+
+                            // transitions with oldState as lower State
                             if( (lowerState == oldState) && (AtomicRate::energyDifference(acc, lowerState, upperState, atomicDataBox) <= energyElectron))
-                                totalRate += Rate(
+                                totalRate += RateFreeElectronInteraction(
                                     acc,
                                     oldState, // unitless
                                     upperState, // newstate, unitless

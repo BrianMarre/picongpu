@@ -62,7 +62,7 @@ namespace picongpu
                     // std::cout << occupationNumberVector << std::endl;
 
                     // set atomic state index
-                    particle[atomicConfigNumber_] = configNumber.getAtomicStateIndex(occupationNumberVector);
+                    particle[atomicConfigNumber_] = configNumber.getAtomicConfigNumber(occupationNumberVector);
                 }
             };
 

@@ -223,6 +223,13 @@ namespace picongpu
                         uint64_t stateIndexLower = static_cast<uint64_t>(idxLower);
                         uint64_t stateIndexUpper = static_cast<uint64_t>(idxUpper);
 
+                        // protection against circle transitions
+                        if(stateIndexLower == stateIndexUpper)
+                        {
+                            printf("ERROR: circular transitions are not supported, treat steps seperately");
+                            continue;
+                        }
+
                         auto item = std::make_tuple(
                             stateIndexLower,
                             stateIndexUpper,

@@ -118,7 +118,7 @@ namespace picongpu
                  *           what you are doing
                  *   ConfigNumber( pmacc::math::Vector<uint_8, T_numberLevels > N )
                  *       constructor using occupation number vector N = ( N_1, N_2, ..., N_(n_max) )
-                 *   T_DataType getAtomicStateIndex( pmacc::math::Vector<uint8_t, T_numberLevels> N )
+                 *   T_DataType getAtomicStateConfigNumber( pmacc::math::Vector<uint8_t, T_numberLevels> N )
                  *       converts occupation number vector N to configNumber index
                  *   pmacc::math::Vector<uint8_t, T_numberLevels> getLevelVector( T_DataType x )
                  *       converts configNumber ID x to occupation number vector
@@ -208,7 +208,7 @@ namespace picongpu
                         return static_cast<T_DataType>(stepLength(numberLevels + 1));
                     }
 
-                    // constructor using scalar config Number
+                    // constructor using scalar configNumber
                     HDINLINE ConfigNumber(T_DataType N = static_cast<T_DataType>(0u))
                     {
                         PMACC_ASSERT_MSG(N >= 0, "negative configurationNumbers are not defined");
@@ -220,16 +220,16 @@ namespace picongpu
                         this->configNumber = N;
                     }
 
-                    // constructor using occupation numbers
+                    // constructor using occupation number vector
                     HDINLINE ConfigNumber(pmacc::math::Vector<uint8_t, numberLevels> levelVector)
                     {
                         /** constructor using a given occupation number vector to initialise.
                          */
-                        this->configNumber = getAtomicStateIndex(levelVector);
+                        this->configNumber = getAtomicStateConfigNumber(levelVector);
                     }
 
 
-                    HDINLINE static T_DataType getAtomicStateIndex(
+                    HDINLINE static T_DataType getAtomicConfigNumber(
                         pmacc::math::Vector<uint8_t, numberLevels> levelVector)
                     {
                         /**
@@ -242,7 +242,7 @@ namespace picongpu
                          */
                         T_DataType stepLength = 1;
 
-                        T_DataType atomicStateIndex = 0;
+                        T_DataType configNumber = 0;
 
                         for(uint8_t n = 0u; n < numberLevels; n++)
                         {
@@ -257,10 +257,10 @@ namespace picongpu
                                 "occuation numbers too large, must be <=2*n^2");
 
                             nextStepLength(&stepLength, n);
-                            atomicStateIndex += levelVector[n] * stepLength;
+                            configNumber += levelVector[n] * stepLength;
                         }
 
-                        return atomicStateIndex;
+                        return configNumber;
                     }
 
 
@@ -306,8 +306,7 @@ namespace picongpu
                         this->configNumber = newConfigNumber;
                     }
 
-
-                    HDINLINE T_DataType getStateIndex()
+                    HDINLINE T_DataType getConfigNumber()
                     {
                         return this->configNumber;
                     }

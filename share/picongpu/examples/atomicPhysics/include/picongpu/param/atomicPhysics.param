@@ -48,6 +48,10 @@ namespace picongpu
         constexpr uint8_t protonNumber = 18u;
         constexpr uint8_t numLevels = 10u;
 
+        // dirty hack, should be specifiable per species independently
+        // for now 1: free electron interaction, 2: +photonic spontanous deexcitation
+        constexpr uint8_t numProcesses = 2u;
+
         // histogram parameter
         constexpr float_X initialGridWidth = 1._X; // unit: ATOMIC_UNIT_ENERGY
         constexpr float_X relativeErrorTarget = 0.5_X; // unit: 1/s /(1/( m^3 * ATOMIC_UNIT_ENERGY ))
