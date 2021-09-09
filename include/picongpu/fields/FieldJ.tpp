@@ -252,13 +252,7 @@ namespace picongpu
 
         auto const deposit = currentSolver::Deposit<Strategy>{};
 
-        // debug only
-        std::cout << "start deposition kernel" << std::endl;
-
         deposit.template execute<T_area, numWorkers>(cellDescription, depositionKernel, solver, jBox, pBox);
-
-        // debug only
-        std::cout << "end deposition kernel" << std::endl;
     }
 
     template<uint32_t T_area, class T_CurrentInterpolationFunctor>

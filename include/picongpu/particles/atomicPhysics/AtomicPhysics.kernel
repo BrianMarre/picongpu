@@ -259,7 +259,7 @@ namespace picongpu
                         // std::cout << "    init histogram" << std::endl;
                         // gpu
                         // printf("    init histogram\n");
-                        printf("        initialGridWidthSpecified: %f\n", initialGridWidth);
+                        //printf("        initialGridWidthSpecified: %f\n", initialGridWidth);
                     }
 
                     fillHistogram<T_numWorkers>(acc, electronBox, mapper, &histogram, atomicDataBox);
@@ -324,7 +324,6 @@ namespace picongpu
                         debug = false;
                     }
 
-                    
                     solveRateEquation<T_numWorkers, AtomicRate>(
                         acc,
                         mapper,
@@ -335,7 +334,7 @@ namespace picongpu
                         &histogram,
                         debug);
                     cupla::__syncthreads( acc );
-                    
+                    return;
 
                     // debug only
                     if( workerIdx == 0 )

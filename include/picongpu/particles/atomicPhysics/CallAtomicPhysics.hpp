@@ -226,7 +226,7 @@ namespace picongpu
                         // protection against circle transitions
                         if(stateIndexLower == stateIndexUpper)
                         {
-                            printf("ERROR: circular transitions are not supported, treat steps seperately");
+                            printf("ERROR: circular transitions are not supported, treat steps seperately\n");
                             continue;
                         }
 
@@ -357,8 +357,8 @@ namespace picongpu
                     auto kernel = Kernel{RngFactoryInt{step}, RngFactoryFloat{step}};
 
                     // debug only
-                    printf("start atomic physics step\n");
-                    // std::cout << "start atomic physics step" << std::endl; // cpu only
+                    // printf("start atomic physics step\n");
+                    std::cout << "start atomic physics step" << std::endl; // cpu only
 
                     // macro for call of kernel, once for every super cell
                     PMACC_KERNEL(kernel)
