@@ -230,9 +230,7 @@ namespace picongpu
                          *      starting binwidth of algorithm
                          * @param relativeError ... relative should be monoton rising with rising binWidth
                          */
-                        DINLINE void init(
-                            float_X relativeErrorTarget,
-                            float_X initialGridWidth)
+                        DINLINE void init(float_X relativeErrorTarget, float_X initialGridWidth)
                         {
                             // debug only
                             /*printf(
