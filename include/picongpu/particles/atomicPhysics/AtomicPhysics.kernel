@@ -34,10 +34,6 @@
 #include "picongpu/particles/atomicPhysics/FillHistogram.hpp"
 #include "picongpu/particles/atomicPhysics/SolveRateEquation.hpp"
 
-// relativeError calculation
-#include "picongpu/particles/atomicPhysics/electronDistribution/histogram2/RateRelativeError.hpp"
-// numerical differentiation
-#include "picongpu/particles/atomicPhysics/electronDistribution/histogram2/FornbergNumericalDifferentiation.hpp"
 // atomic rate calculation functor
 #include "picongpu/particles/atomicPhysics/AtomicRate.hpp"
 // conversion to/from atomic state index
@@ -116,21 +112,8 @@ namespace picongpu
                     using AtomicRate = picongpu::particles::atomicPhysics::
                         AtomicRate<T_AtomicDataBox, ConfigNumberDataType, ConfigNumber, numLevels>;
 
-                    // numerical derivative werightings
-                    using WeightingGen = electronDistribution::histogram2::FornbergNumericalDifferentiation<
-                        float_X, // T_Value
-                        float_X // T_Argument
-                        >;
-
-                    // hard coded for now
-                    // TODO: move to param file, BrianMarre, 2021
-                    using RelativeError = electronDistribution::histogram2::RateRelativeError<
-                        AtomicRate,
-                        T_AtomicDataBox,
-                        ConfigNumberDataType>;
-
                     using Histogram = electronDistribution::histogram2::
-                        AdaptiveHistogram<T_maxNumBins, frameSize, RelativeError, T_AtomicDataBox>;
+                        AdaptiveHistogram<T_maxNumBins, frameSize, T_AtomicDataBox>;
 
 
                     // debug only, compare to hand calculated rate
@@ -225,14 +208,6 @@ namespace picongpu
                         printf("    allocation histogram in SMEM\n");
                     }
 
-                    // get new weightings
-                    //RelativeError relativeError;
-                    PMACC_SMEM(
-                        acc, // mandatory first parameter
-                        relativeError, // variable name
-                        RelativeError // variable type
-                    );
-
                     if(workerIdx == 0)
                     {
                         // cpu
@@ -244,10 +219,8 @@ namespace picongpu
                     // init histogram and relative error
                     if(workerIdx == 0)
                     {
-                        // calculate weightings once
-                        relativeError.init();
                         // pass through parameters of histogram
-                        histogram.init(relativeErrorTarget, initialGridWidth, relativeError);
+                        histogram.init(relativeErrorTarget, initialGridWidth);
                     }
                     cupla::__syncthreads(acc);
                     // necessary since all access relativeError and histogram, but both are only valid after init

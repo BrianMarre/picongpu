@@ -27,7 +27,6 @@
  *
  * TemplateParameters:
  * -------------------
- *  @tparam T_RelativeError ... functor with operator() which returns relative error
  *  @tparam T_AtomicDataBox ... type of data container for atomic input data
  *  @tparam T_maxNumberBins ... maximum number of bins of the histogram
  *  @tparam T_maxNumNewBins ... maximum number of new bins before updateWithNewBins
@@ -117,7 +116,6 @@ namespace picongpu
                     template<
                         uint32_t T_maxNumBins,
                         uint32_t T_maxNumNewBins,
-                        typename T_RelativeError,
                         typename T_AtomicDataBox>
                     struct AdaptiveHistogram
                     {
@@ -156,8 +154,6 @@ namespace picongpu
                         // target value of relative Error of a histogram bin,
                         // bin width choosen such that relativeError is close to target
                         float_X relativeErrorTarget; // unit: varies
-                        // relative error functor
-                        T_RelativeError relativeError;
 
 
                     public:
@@ -236,8 +232,7 @@ namespace picongpu
                          */
                         DINLINE void init(
                             float_X relativeErrorTarget,
-                            float_X initialGridWidth,
-                            T_RelativeError& relativeError)
+                            float_X initialGridWidth)
                         {
                             // debug only
                             /*printf(
@@ -256,16 +251,6 @@ namespace picongpu
                             // init adaptive bin width algorithm parameters
                             this->relativeErrorTarget = relativeErrorTarget;
                             this->initialGridWidth = initialGridWidth;
-
-                            // debug only
-                            /*printf(
-                                "        initialGridWidth_INIT_SET %f, relativeErrorTarget_INIT_SET %f\n",
-                                this->initialGridWidth,
-                                this->relativeErrorTarget);
-                            */
-
-                            // functor of relative error
-                            this->relativeError = relativeError;
 
                             // TODO: make this debug mode only
                             // since we are filling memory we are never touching (if everything works)
@@ -419,96 +404,6 @@ namespace picongpu
                             else if(boundary < 50)
                                 return 10._X;
                             return boundary / 2;
-                            }
-
-                            // is initial binWidth realtiveError below the Target?
-                            bool isBelowTarget
-                                = (this->relativeErrorTarget >= this->relativeError(
-                                       acc,
-                                       this->initialGridWidth,
-                                       AdaptiveHistogram::centerBin(
-                                           directionPositive,
-                                           boundary,
-                                           this->initialGridWidth),
-                                       atomicDataBox));
-
-                            // debug only
-                            /*std::cout << "getBinWidth: isBelowTarget " << (isBelowTarget ? "true" : "false")
-                                      << " directionPositive " << directionPositive << " initBinWidth "
-                                      << this->initialGridWidth << " boundary " << boundary << " relativeError "
-                                      << this->relativeError(
-                                             acc,
-                                             this->initialGridWidth,
-                                             AdaptiveHistogram::centerBin(
-                                                 directionPositive,
-                                                 boundary,
-                                                 this->initialGridWidth),
-                                             atomicDataBox)
-                                      << std::endl;*/
-
-                            if(isBelowTarget)
-                            {
-                                // increase until no longer below
-                                while(true)
-                                {
-                                    loopCounter++;
-                                    // try higher binWidth
-                                    binWidth = this->initialGridWidth + stepWidthUp * loopCounter * loopCounter;
-
-                                    // debug only
-                                    /*std::cout
-                                        << "loop_1, loopcounter " << loopCounter << " binWidth " << binWidth
-                                        << " relativeError "
-                                        << this->relativeError(
-                                               acc,
-                                               binWidth,
-                                               AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
-                                               atomicDataBox)
-                                        << std::endl;*/
-
-                                    // until first time below Target
-                                    if(this->relativeErrorTarget <= this->relativeError(
-                                           acc,
-                                           binWidth,
-                                           AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
-                                           atomicDataBox))
-                                    {
-                                        return this->initialGridWidth
-                                            + stepWidthUp * (loopCounter - 1u) * (loopCounter - 1u);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                // decrease until below target for the first time,
-                                // or reached minBinWidth
-                                while(binWidth >= minBinWidth)
-                                {
-                                    loopCounter++;
-                                    binWidth = this->initialGridWidth - stepWidthDown * loopCounter * loopCounter;
-
-                                    // debug only
-                                    /*std::cout
-                                        << "loop_2, loopcounter " << loopCounter << " binWidth " << binWidth
-                                        << " relativeError "
-                                        << this->relativeError(
-                                               acc,
-                                               binWidth,
-                                               AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
-                                               atomicDataBox)
-                                        << std::endl;*/
-
-                                    // until first time below Target
-                                    if(this->relativeErrorTarget >= this->relativeError(
-                                           acc,
-                                           binWidth,
-                                           AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
-                                           atomicDataBox))
-                                    {
-                                        return binWidth;
-                                    }
-                                }
-                            }
                         }
 
                         /** Returns the left boundary of the bin a given argument value x belongs into
