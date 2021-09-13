@@ -419,64 +419,6 @@ namespace picongpu
                             else if(boundary < 50)
                                 return 10._X;
                             return boundary / 2;
-
-                            // preparation for debug access to run time acess
-                            uint32_t const workerIdx = cupla::threadIdx(acc).x;
-
-                            // @TODO: move to .param file, BrianMarre, 2021
-                            float_X minBinWidth = 0.05_X; // unit: ATOMIC_UNIT_ENERGY, ~2eV
-                            float_X stepWidthUp = 0.5_X; // unit: ATOMIC_UNIT_ENERGY
-                            float_X stepWidthDown = 0.1_X; // unit: ATOMIC_UNIT_ENERGY
-
-                            uint16_t loopCounter = 0u;
-                            float_X binWidth;
-
-                            // special case: relative error grows with reduced binWidth
-                            if(this->relativeErrorTarget < this->relativeError(
-                                   acc,
-                                   minBinWidth,
-                                   AdaptiveHistogram::centerBin(directionPositive, boundary, minBinWidth),
-                                   atomicDataBox))
-                            {
-                                // debug only
-                                /*std::cout
-                                    << "special case: relativeErrorTarget " << this->relativeErrorTarget
-                                    << " boundary " << boundary << " direction positive "
-                                    << ((directionPositive) ? "True" : "False") << " minBinWidth " << minBinWidth
-                                    << " relativeError "
-                                    << this->relativeError(
-                                           acc,
-                                           minBinWidth,
-                                           AdaptiveHistogram::centerBin(directionPositive, boundary, minBinWidth),
-                                           atomicDataBox)
-                                    << std::endl;*/
-                                while(true)
-                                {
-                                    loopCounter++;
-
-                                    // quadratic stepping through linear grid
-                                    binWidth = minBinWidth + stepWidthUp * loopCounter * loopCounter;
-
-                                    // debug only
-                                    /*std::cout
-                                        << "loopCounter " << loopCounter << " binWidth " << binWidth
-                                        << " relativeError "
-                                        << this->relativeError(
-                                               acc,
-                                               binWidth,
-                                               AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
-                                               atomicDataBox)
-                                        << std::endl;*/
-
-                                    if(this->relativeErrorTarget >= this->relativeError(
-                                           acc,
-                                           binWidth,
-                                           AdaptiveHistogram::centerBin(directionPositive, boundary, binWidth),
-                                           atomicDataBox))
-                                    {
-                                        return binWidth;
-                                    }
-                                }
                             }
 
                             // is initial binWidth realtiveError below the Target?
