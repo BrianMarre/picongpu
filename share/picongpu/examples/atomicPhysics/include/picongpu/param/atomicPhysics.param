@@ -39,9 +39,11 @@ namespace picongpu
 
         // pathes of file containing atomic input data, see documentation for creation, only one different ion possible for now
         // state data
-        const std::string stateDataFileName = "/home/marre55/CarbonLevels.txt";
+        // ArgonLevels.txt
+        const std::string stateDataFileName = "/home/<username>/CarbonLevels.txt";
         // transition data
-        const std::string transitionDataFileName = "/home/marre55/CarbonTransitions.txt";
+        // ArgonTransitions.txt
+        const std::string transitionDataFileName = "/home/<username>/CarbonTransitions.txt";
 
         // datatype to be used for configNUmber storage
         using configNumberDataType = uint64_t;
