@@ -311,9 +311,6 @@ namespace picongpu
                     // debug only
                     if( workerIdx == 0 )
                     {
-                        // cpu
-                        // std::cout << "    rate applied" << std::endl;
-                        // gpu
                         printf("    rate applied\n");
 
                         // debug only, content of histogram, serial build only
