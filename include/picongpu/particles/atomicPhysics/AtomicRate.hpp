@@ -617,6 +617,64 @@ namespace picongpu
 
                     return totalRate; // unit: 1/s, SI
                 }
+
+                /** returns the total rate of all spontaneous transitions
+                 * from the given state to any other state
+                 *
+                 * return unit: 1/s, SI
+                 */
+                template<typename T_Acc>
+                DINLINE static float_X totalSpontaneousRate(
+                    T_Acc const& acc,
+                    Idx oldState, // unitless
+                    AtomicDataBox atomicDataBox) // unit: 1/s, SI
+                {
+                    // NOTE on Notation: the term upper-/lowerState refers
+                    //  to the energy of the state
+                    float_X totalRate = 0._X; // unit: 1/s, SI
+
+                    Idx lowerState;
+                    Idx upperState;
+                    uint32_t startIndexBlock;
+                    uint32_t indexTransition;
+
+                    for(uint32_t i = 0u; i < atomicDataBox.getNumStates(); i++)
+                    {
+                        lowerState = atomicDataBox.getAtomicStateConfigNumberIndex(i);
+                        startIndexBlock = atomicDataBox.getStartIndexBlock(i);
+
+                        for(uint32_t j = 0u; j < atomicDataBox.getNumberTransitions(i); j++)
+                        {
+                            indexTransition = startIndexBlock + j;
+                            upperState = atomicDataBox.getUpperConfigNumberTransition(indexTransition);
+
+                            // transitions with oldState as upper state
+                            if(upperState == oldState)
+                            {
+                                float_X deltaEnergyTransition = energyDifference(
+                                    acc,
+                                    oldState,
+                                    lowerState,
+                                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+
+                                totalRate += RateSpontaneousPhotonEmission(
+                                    acc,
+                                    oldState,
+                                    lowerState,
+                                    indexTransition,
+                                    deltaEnergyTransition, // unit: ATOMIC_UNIT_ENERGY
+                                    atomicDataBox); // unit: 1/s, SI
+                            }
+
+                            // transitions with oldState as lower State
+                            // no contribution
+
+                            // else do nothing
+                        }
+                    }
+
+                    return totalRate; // unit: 1/s, SI
+                }
             };
 
         } // namespace atomicPhysics

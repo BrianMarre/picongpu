@@ -307,7 +307,6 @@ namespace picongpu
                         &histogram,
                         debug);
                     cupla::__syncthreads( acc );
-                    return;
 
                     // debug only
                     if( workerIdx == 0 )
@@ -316,7 +315,34 @@ namespace picongpu
                         // std::cout << "    rate applied" << std::endl;
                         // gpu
                         printf("    rate applied\n");
+
+                        // debug only, content of histogram, serial build only
+                        /*//{
+                        uint16_t numBins = histogram.getNumBins();
+                        float_X binLeftBoundary;
+                        float_X binCentralEnergy;
+                        float_X binresultEnergy;
+
+                        std::cout << numBins << std::endl;
+
+                        std::cout << "{ " << std::endl;
+                        for(uint16_t i = 0u; i < numBins; i++)
+                        {
+                            std::cout << i << " : ";
+
+                            binLeftBoundary = histogram.getLeftBoundaryBin(i);
+                            binCentralEnergy = histogram.getEnergyBin(acc, i, atomicDataBox);
+
+                            std::cout << "L: " << binLeftBoundary << ", C: " << binCentralEnergy;
+                            std::cout << " | resulting weight: "
+                                << histogram.getDeltaWeightBin(i) + histogram.getWeightBin(i)
+                                << std::endl;
+                        }
+                        std::cout << " }" << std::endl;
+                        //}*/
                     }
+                    // debug only
+                    //cupla::__syncthreads( acc );
 
                     decelerateElectrons< T_numWorkers >(
                         acc,

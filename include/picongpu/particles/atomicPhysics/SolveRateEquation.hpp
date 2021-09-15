@@ -125,6 +125,8 @@ namespace picongpu
 
                             deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
                         }
+                        else
+                            timeRemaining_SI -= 1._X / rate_SI;
                     }
 
                     if(sufficentWeightInBin)
@@ -168,6 +170,9 @@ namespace picongpu
                         // case change only possible once
                         // => randomly change to newState in time remaining
 
+                        // case for oldState == newState
+                        //       timeRemaining_SI = 0;
+
                         // try to remove weight from eectron bin, to cover entire macro ion
                         bool sufficentWeightInBin
                             = histogram->tryRemoveWeightFromBin(acc, histogramBinIndex, affectedWeighting);
@@ -182,6 +187,8 @@ namespace picongpu
                                 sufficentWeightInBin = true;
                                 deltaEnergy = deltaEnergy * affectedWeighting / ion[weighting_];
                             }
+                            else
+                                timeRemaining_SI = 0._X;
                         }
 
                         if(sufficentWeightInBin)
@@ -209,7 +216,7 @@ namespace picongpu
 
                         // debug only
                         // std::cout << "    final state" << std::endl;
-                    }
+                    } // higher order error since may retry same transiton several times
                 }
             }
 
@@ -515,13 +522,12 @@ namespace picongpu
                 typename T_Histogram>
             DINLINE void noStateChange(
                 T_Acc const& acc,
+                RandomGenInt& randomGenInt,
                 RandomGenFloat& randomGenFloat,
                 float_X& timeRemaining_SI,
                 T_AtomicDataBox const atomicDataBox,
                 T_ConfigNumberDataType oldState,
-                T_Histogram* histogram,
-                uint16_t histogramBinIndex,
-                float_X energyElectron)
+                T_Histogram* histogram)
             {
                 using AtomicRate = T_AtomicRate;
 
@@ -529,31 +535,50 @@ namespace picongpu
                 constexpr float_64 UNIT_VOLUME = UNIT_LENGTH * UNIT_LENGTH * UNIT_LENGTH;
                 constexpr auto numCellsPerSuperCell = pmacc::math::CT::volume<SuperCellSize>::type::value;
 
-                // get width of histogram bin with this collection index
-                float_X energyElectronBinWidth = histogram->getBinWidth(
-                    acc,
-                    true, // answer to question: directionPositive?
-                    histogram->getLeftBoundaryBin(histogramBinIndex), // unit: ATOMIC_UNIT_ENERGY
-                    atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+                float_X rate_SI;
 
-                // see freeElectronInteraction() for more info
-                float_X densityElectrons
-                    = (histogram->getWeightBin(histogramBinIndex) + histogram->getDeltaWeightBin(histogramBinIndex))
-                    / (numCellsPerSuperCell * picongpu::CELL_VOLUME * UNIT_VOLUME * energyElectronBinWidth);
-                // # / ( # * Volume * m^3/Volume * AU )
-                // = # / (m^3 * AU) => unit: 1/(m^3 * AU)
+                if(histogram->getNumBins() == 0)
+                {
+                    // debug only
+                    // std::cout << "          no electrons present" << std::endl;
+                    printf("         no electrons present in one super cell\n");
 
-                checkDensityForNaNandInf(densityElectrons);
+                    rate_SI = AtomicRate::totalSpontaneousRate(acc, oldState, atomicDataBox);
+                }
+                else
+                {
+                    uint16_t histogramBinIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
+                    float_X energyElectron = histogram->getEnergyBin(
+                        acc,
+                        histogramBinIndex,
+                        atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
 
-                // R_(i->i) = - sum_f( R_(i->f), rate_SI = - R_(i->i),
-                // R ... rate, i ... initial state, f ... final state
-                float_X rate_SI = AtomicRate::totalRate(
-                    acc,
-                    oldState, // unitless
-                    energyElectron, // unit: ATOMIC_UNIT_ENERGY
-                    energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
-                    densityElectrons, // unit: 1/(m^3*AU), SI
-                    atomicDataBox); // unit: 1/s, SI @TODO: update total rate calculation
+                    // get width of histogram bin width for this collection index
+                    float_X energyElectronBinWidth = histogram->getBinWidth(
+                        acc,
+                        true, // answer to question: directionPositive?
+                        histogram->getLeftBoundaryBin(histogramBinIndex), // unit: ATOMIC_UNIT_ENERGY
+                        atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
+
+                    // see freeElectronInteraction() for more info
+                    float_X densityElectrons = (histogram->getWeightBin(histogramBinIndex)
+                                                + histogram->getDeltaWeightBin(histogramBinIndex))
+                        / (numCellsPerSuperCell * picongpu::CELL_VOLUME * UNIT_VOLUME * energyElectronBinWidth);
+                    // # / ( # * Volume * m^3/Volume * AU )
+                    // = # / (m^3 * AU) => unit: 1/(m^3 * AU)
+
+                    checkDensityForNaNandInf(densityElectrons);
+
+                    // R_(i->i) = - sum_f( R_(i->f), rate_SI = - R_(i->i),
+                    // R ... rate, i ... initial state, f ... final state
+                    rate_SI = AtomicRate::totalRate(
+                        acc,
+                        oldState, // unitless
+                        energyElectron, // unit: ATOMIC_UNIT_ENERGY
+                        energyElectronBinWidth, // unit: ATOMIC_UNIT_ENERGY
+                        densityElectrons, // unit: 1/(m^3*AU), SI
+                        atomicDataBox); // unit: 1/s, SI @TODO: update total rate calculation
+                }
 
                 float_X quasiProbability = 1._X - rate_SI * timeRemaining_SI;
 
@@ -641,22 +666,14 @@ namespace picongpu
                             << " timeRemaining " << timeRemaining_SI << " oldState "
                             << oldState << " newState " << newState;*/
 
-                        uint16_t histogramBinIndex = static_cast<uint16_t>(randomGenInt()) % histogram->getNumBins();
-
-                        float_X energyElectron = histogram->getEnergyBin(
-                            acc,
-                            histogramBinIndex,
-                            atomicDataBox); // unit: ATOMIC_UNIT_ENERGY
-
                         noStateChange<AtomicRate>(
                             acc,
+                            randomGenInt,
                             randomGenFloat,
                             timeRemaining_SI,
                             atomicDataBox,
                             oldState,
-                            histogram,
-                            histogramBinIndex,
-                            energyElectron);
+                            histogram);
                         break;
                     }
 
