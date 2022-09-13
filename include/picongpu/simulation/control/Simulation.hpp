@@ -58,6 +58,8 @@
 #include "picongpu/simulation/stage/SynchrotronRadiation.hpp"
 #include "picongpu/versionFormat.hpp"
 
+#include "picongpu/param/atomicPhysics2.param"
+
 #include <pmacc/assert.hpp>
 #include <pmacc/dimensions/GridLayout.hpp>
 #include <pmacc/eventSystem/EventSystem.hpp>
@@ -328,7 +330,13 @@ namespace picongpu
             // initialize particle boundaries
             particleBoundaries.init();
 
-            // create atomic physics instance, stored as protected member
+            // atomicPhysics
+            /// @todo load atomic input data, Brian Marre, 2022
+
+            initAtomicPhyiscsLocalHistograms(dc);
+
+            // make histogram
+            // old
             this->atomicPhysics = std::make_unique<simulation::stage::AtomicPhysics>(*cellDescription);
 
             // initialize runtime density file paths
@@ -636,6 +644,7 @@ namespace picongpu
         // Because of it, has a special init() method that has to be called during initialization of the simulation
         simulation::stage::FieldBackground fieldBackground;
 
+        /// @todo remove
         std::unique_ptr<simulation::stage::AtomicPhysics> atomicPhysics;
 
         // Particle boundaries stage, has to live always as it is used for registering options like a plugin.
@@ -775,6 +784,22 @@ namespace picongpu
                 auto fieldTmp = std::make_unique<FieldTmp>(*cellDescription, slot);
                 dataConnector.consume(std::move(fieldTmp));
             }
+        }
+
+        /** create local histogram field and store in dataConnector
+         *
+         * used for atomicPhysics step
+         */
+        void initAtomicPhyiscsLocalHistograms(DataConnector& dataConnector)
+        {
+            auto localSuperCellElectronHistogram = std::make_unique<
+                particles::atomicPhysics2::electronDistribution::LocalHistogramField<
+                    atomicPhysics2::ElectronHistogram, // set in atomicPhysics2.param
+                    picongpu::MappingDesc> // defined in memory.param
+                >(*cellDescription, "Electron");
+            dataConnector.consume(std::move(localSuperCellElectronHistogram))
+
+            ///@todo same for "Photons" once implemented, Brian Marre, 2022
         }
 
         /** Reset all fields

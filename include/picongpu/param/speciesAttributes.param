@@ -110,24 +110,74 @@ namespace picongpu
      */
     value_identifier(bool, transitionRadiationMask, false);
 
+    /** atomic superconfiguration
+     *
+     * atomic configuration of an ion for collisional-radiative modeling,
+     * see also flylite.param
+     *
+     * @todo remove
+     */
+    value_identifier(flylite::Superconfig, superconfig, flylite::Superconfig::create(0.));
+
     /** number of electrons bound to the atom / ion
      *
      * value type is float_X to avoid casts during the runtime
      * - float_X instead of integer types are reasonable because effective charge
-     *   numbers are possible
+     *   numbers are possible, NOTE: but not useful, Brian, 2022
      * - required for ion species if ionization is enabled
      * - setting it requires atomicNumbers to also be set
+     * - BEWARE: must always match atomicConfigNumber charge state!
      *
      * @todo connect default to proton number
+     * @todo change to uint8_t or uint32_t
      */
     value_identifier(float_X, boundElectrons, 0._X);
 
-    //! alias for one of two representations of the atomic state, see also atomicPhysics.param
-    alias(atomicLevels);
+    //! alias for particle ionizers, see also ionizer.param
+    alias(ionizers);
 
-    //! alias for atomic state of ion, see also atomicPhysics.param
+    /** alias for ionization energy container, see also ionizationEnergies.param
+     *  - only reasonable for atoms / ions / nuclei
+     */
+    alias(ionizationEnergies);
+
+    /** alias for particle flag: atomic numbers, see also ionizer.param
+     * - only reasonable for atoms / ions / nuclei
+     * - is required when boundElectrons is set
+     */
+    alias(atomicNumbers);
+
+    /** alias for particle flag: effective nuclear charge,
+     *
+     * - see also ionizer.param
+     * - only reasonable for atoms / ions / nuclei
+     */
+    alias(effectiveNuclearCharge);
+
+    //! atomic state storage of ions, see also atomicPhysics.param
     alias(atomicConfigNumber);
 
+    /** path to file containing atomic physics state input data,
+     *
+     * file gives parameter of atomic physics states for ion species
+     * - must follow PIConGPU specific formatting
+     * - files are not shipped with PIConGPU, see documentation for creation and sources
+     *      @todo create documentation, Brian Marre, 2022
+     * - all paths are either relative to the simOutput folder, or absolute
+     */
+    alias(atomicPhysicsStatesFileName);
+
+    /** path to file containing atomic physics transition input data,
+     *
+     * file gives parameter of modelled atomic physics transition for ion species
+     * - must follow PIConGPU specific formatting
+     * - files are not shipped with PIConGPU, see documentation for creation and sources
+     *      @todo create documentation, Brian Marre, 2022
+     * - all paths are either relative to the simOutput folder, or absolute
+     */
+    alias(atomicPhysicsTransitionsFileName)
+
+    //! alias for particle flag describing atomicPhysics solver
     alias(atomicPhysicsSolver);
 
     /** Total cell index of a particle.
@@ -145,12 +195,6 @@ namespace picongpu
     //! alias for particle pusher, see alsospecies.param
     alias(particlePusher);
 
-    //! alias for particle ionizers, see also ionizer.param
-    alias(ionizers);
-
-    //! alias for ionization energy container, see also ionizationEnergies.param
-    alias(ionizationEnergies);
-
     //! alias for synchrotronPhotons, see also speciesDefinition.param
     alias(synchrotronPhotons);
 
@@ -165,19 +209,6 @@ namespace picongpu
 
     //! alias for particle current solver, see also species.param
     alias(current);
-
-    /** alias for particle flag: atomic numbers, see also ionizer.param
-     * - only reasonable for atoms / ions / nuclei
-     * - is required when boundElectrons is set
-     */
-    alias(atomicNumbers);
-
-    /** alias for particle flag: effective nuclear charge,
-     *
-     * - see also ionizer.param
-     * - only reasonable for atoms / ions / nuclei
-     */
-    alias(effectiveNuclearCharge);
 
     /** alias for particle mass ratio
      *

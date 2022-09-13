@@ -17,9 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file Implements an evenly distributed log-space Histogram, starting from argument 0
+/** @file implements as an object an evenly distributed log-space Histogram, starting from argument 0
  */
-
 
 #pragma once
 
@@ -71,7 +70,7 @@ namespace picongpu
 
                     static const float_X base = math::pow(T_maxEnergy, 1._X / (T_numberBins - 1));
 
-                    //! debug only bin Index range checks
+                    // debug only, bin Index range checks
                     static DINLINE bool debugCheckBinIndexInRange(uint32_t const binIndex) const
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
