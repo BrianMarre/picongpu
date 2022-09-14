@@ -80,7 +80,7 @@ namespace picongpu
 
                     // required by ISimulationData
                     //! == deviceToHost
-                    void synchronize()
+                    void synchronize() override
                     {
                         (this->localHistogramField)->deviceToHost();
                     }

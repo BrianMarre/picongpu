@@ -40,7 +40,8 @@
 #include "picongpu/random/seed/ISeed.hpp"
 #include "picongpu/simulation/control/DomainAdjuster.hpp"
 #include "picongpu/simulation/control/MovingWindow.hpp"
-#include "picongpu/simulation/stage/AtomicPhysics.hpp"
+#include "picongpu/simulation/stage/AtomicPhysics.hpp" ///@todo remove
+#include "picongpu/simulation/stage/AtomicPhysics2.hpp"
 #include "picongpu/simulation/stage/Bremsstrahlung.hpp"
 #include "picongpu/simulation/stage/Collision.hpp"
 #include "picongpu/simulation/stage/CurrentBackground.hpp"
@@ -330,7 +331,7 @@ namespace picongpu
             // initialize particle boundaries
             particleBoundaries.init();
 
-            // atomicPhysics
+            // inits for atomicPhysics
             /// @todo load atomic input data, Brian Marre, 2022
 
             initAtomicPhyiscsLocalHistograms(dc);
@@ -562,7 +563,9 @@ namespace picongpu
             fieldBackground.subtract(currentStep);
             myFieldSolver->update_beforeCurrent(currentStep);
             __setTransactionEvent(commEvent);
+            /// @todo remove
             atomicPhysics->runSolver(currentStep);
+            atomicPhysics2{}(*cellDescription);
             CurrentBackground{*cellDescription}(currentStep);
             CurrentDeposition{}(currentStep);
             currentInterpolationAndAdditionToEMF(currentStep, *myFieldSolver);
@@ -644,8 +647,7 @@ namespace picongpu
         // Because of it, has a special init() method that has to be called during initialization of the simulation
         simulation::stage::FieldBackground fieldBackground;
 
-        /// @todo remove
-        std::unique_ptr<simulation::stage::AtomicPhysics> atomicPhysics;
+        std::unique_ptr<simulation::stage::AtomicPhysics> atomicPhysics; /// @todo remove
 
         // Particle boundaries stage, has to live always as it is used for registering options like a plugin.
         // Because of it, has a special init() method that has to be called during initialization of the simulation

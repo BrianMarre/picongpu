@@ -72,7 +72,8 @@ namespace picongpu
         interpolation<UsedField2Particle>,
         current<UsedParticleCurrentSolver>,
         massRatio<MassRatioElectrons>,
-        chargeRatio<ChargeRatioElectrons>>;
+        chargeRatio<ChargeRatioElectrons>,
+        isElectron<>>;
 
     /* thermal bulk electrons */
     using BulkElectrons = Particles<

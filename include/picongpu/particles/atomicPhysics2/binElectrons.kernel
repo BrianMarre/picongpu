@@ -1,0 +1,101 @@
+/* Copyright 2022 Brian Marre
+ *
+ * This file is part of PMacc.
+ *
+ * PMacc is free software: you can redistribute it and/or modify
+ * it under the terms of either the GNU General Public License or
+ * the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * PMacc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License and the GNU Lesser General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * and the GNU Lesser General Public License along with PMacc.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragme once
+
+#include <cstdint>
+
+namespace picongpu
+{
+    namespace particles
+    {
+        namespace atomicPhyiscs2
+        {
+            template<typename T_ElectronSpecies, typename T_Histogram, uint32_t T_numWorkers>
+            struct BinElectronsKernel
+            {
+                template<
+                    typename T_Acc,
+                    typename T_AreaMapping,
+                    typename T_ElectronBox,
+                    typename T_DeviceBuffer>
+                static DINLINE void operator() (
+                    T_Acc const& acc,
+                    T_AreaMapping areaMapper,
+                    T_ElectronBox const electronBox,
+                    T_DeviceBuffer localElectronHistogramField
+                    ) const
+                {
+                    // by definition our frameSize is always equal to the superCellSize
+                    constexpr uint32_t frameSize = pmacc::math::CT::volume<SuperCellSize>::type::value;
+
+                    // get index vector of superCell, kernel was called on
+                    pmacc::DataSpace<simDim> const superCellIdx(
+                        mapper.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(acc))));
+
+                    auto frame = electronBox.getLastFrame(superCellIdx);
+                    auto particlesInSuperCell = electronBox.getSuperCell(superCellIdx).getSizeLastFrame();
+
+                    uint32_t const workerIdx = cupla::threadIdx(acc).x;
+
+                    auto forEachParticleSlotInFrame = lockstep::makeForEach<
+                        frameSize,
+                        T_numWorkers
+                        >(workerIdx);
+
+                    // serial in particlesFrames, parallel in particle slots of a frame
+                    while(frame.isValid())
+                    {
+                        forEachParticleSlotInFrame(
+                            [&](lockstep::Idx const linearIdx)
+                            {
+                                // executed kernel
+                                if(linearIdx < particlesInSuperCell)
+                                {
+                                    auto particle = frame[linearIdx];
+
+                                    float_X const energy = GetRealKineticEnergy::KineticEnergy(particle);
+                                    // unit: eV
+
+                                    // get correct histogram?, reset before use?
+
+                                    histogram->binObject(
+                                        acc,
+                                        static_cast<float_X>(
+                                            energy_SI / (2._X * picongpu::SI::ATOMIC_UNIT_ENERGY), // unit: ATOMIC_UNIT_ENERGY
+                                        particle[weighting_],
+                                        atomicDataBox);
+                                }
+                            });
+
+                        // A single thread does bookkeeping
+                        cupla::__syncthreads(acc);
+                        onlyMaster([&]() { histogram->updateWithNewBins(); });
+                        cupla::__syncthreads(acc);
+
+                        frame = electronBox.getPreviousFrame(frame);
+                        particlesInSuperCell = frameSize;
+                }
+                }
+            }
+        } // namespace atomicPhysics2
+    } // namespace particles
+} // namespace picongpu
