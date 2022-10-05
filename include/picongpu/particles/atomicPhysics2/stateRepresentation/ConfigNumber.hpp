@@ -79,7 +79,7 @@ namespace picongpu
 {
     namespace particles
     {
-        namespace atomicPhysics
+        namespace atomicPhysics2
         {
             namespace stateRepresentation
             {
@@ -297,7 +297,7 @@ namespace picongpu
                 };
 
             } // namespace stateRepresentation
-        } // namespace atomicPhysics
+        } // namespace atomicPhysics2
     } // namespace particles
 } // namespace picongpu
 
@@ -312,7 +312,7 @@ namespace pmacc
         // defines what datatype is to be used to save the data in this object
         template<typename T_DataType, uint8_t T_numberLevels, uint8_t T_atomicNumber>
         struct GetComponentsType<
-            picongpu::particles::atomicPhysics::stateRepresentation::
+            picongpu::particles::atomicPhysics2::stateRepresentation::
                 ConfigNumber<T_DataType, T_numberLevels, T_atomicNumber>,
             false>
         {
@@ -322,7 +322,7 @@ namespace pmacc
         // defines how many independent components are saved in the object
         template<typename T_DataType, uint8_t T_numberLevels, uint8_t T_atomicNumber>
         struct GetNComponents<
-            picongpu::particles::atomicPhysics::stateRepresentation::
+            picongpu::particles::atomicPhysics2::stateRepresentation::
                 ConfigNumber<T_DataType, T_numberLevels, T_atomicNumber>,
             false>
         {

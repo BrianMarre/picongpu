@@ -565,7 +565,7 @@ namespace picongpu
             __setTransactionEvent(commEvent);
             /// @todo remove
             atomicPhysics->runSolver(currentStep);
-            atomicPhysics2{}(*cellDescription);
+            AtomicPhysics2{}(*cellDescription);
             CurrentBackground{*cellDescription}(currentStep);
             CurrentDeposition{}(currentStep);
             currentInterpolationAndAdditionToEMF(currentStep, *myFieldSolver);
@@ -799,7 +799,7 @@ namespace picongpu
                     atomicPhysics2::ElectronHistogram, // set in atomicPhysics2.param
                     picongpu::MappingDesc> // defined in memory.param
                 >(*cellDescription, "Electron");
-            dataConnector.consume(std::move(localSuperCellElectronHistogram))
+            dataConnector.consume(std::move(localSuperCellElectronHistogram));
 
             ///@todo same for "Photons" once implemented, Brian Marre, 2022
         }

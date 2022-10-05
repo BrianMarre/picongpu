@@ -1,6 +1,4 @@
-/* Copyright 2013-2022 Axel Huebl, Felix Schmitt, Heiko Burau, Rene Widera,
- *                     Richard Pausch, Alexander Debus, Marco Garten,
- *                     Benjamin Worpitz, Alexander Grund, Sergei Bastrakov,
+/* Copyright 2022 Rene Widera, Sergei Bastrakov,
  *                     Brian Marre
  *
  * This file is part of PIConGPU.
@@ -22,7 +20,7 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/binElectrons.hpp"
+#include "picongpu/particles/atomicPhysics2/BinElectrons.hpp"
 
 #include <pmacc/meta/ForEach.hpp>
 
@@ -58,15 +56,15 @@ namespace picongpu
                     typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isElectron<>>::type;
 
                 //! kernel to be called for each species
-                pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::binElectrons<bmpl::_1>>
-                    binElectrons;
+                pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::BinElectrons<bmpl::_1>>
+                    BinElectrons;
 
             public:
                 AtomicPhysics2() = default;
 
                 void operator()(MappingDesc const mappingDesc)
                 {
-                    binElectrons(mappingDesc);
+                    BinElectrons(mappingDesc);
                 }
 
             };

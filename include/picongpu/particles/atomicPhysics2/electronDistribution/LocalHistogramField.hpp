@@ -24,13 +24,13 @@
 #pragma once
 
 #include <pmacc/dataManagement/ISimulationData.hpp>
-#include <pmacc/fields/SimulationHelperField.hpp>
-#include <pmacc/memory/buffers/GridBuffer.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
+#include <pmacc/fields/SimulationFieldHelper.hpp>
+#include <pmacc/memory/boxes/PitchedBox.hpp>
+#include <pmacc/memory/buffers/GridBuffer.hpp>
 
-
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace picongpu
 {
@@ -45,10 +45,12 @@ namespace picongpu
                  */
                 template<typename T_Histogram, typename T_MappingDescription>
                 struct LocalHistogramField
-                    : public pmacc::ISimulationData,
-                      public pmacc::SimulationHelperField<T_MappingDescription>
+                    : public pmacc::ISimulationData
+                    , public pmacc::SimulationFieldHelper<T_MappingDescription>
                 {
-                    /// @todo should these be private?
+                    //! Type of data box for field values on host and device
+                    using DataBoxType = pmacc::DataBox<pmacc::PitchedBox<T_Histogram, simDim>>;
+
                     /* from SimulationFieldHelper<T_MappingDescription>:
                      * protected:
                      *      T_MappingDescription cellDescription;
@@ -60,16 +62,19 @@ namespace picongpu
                      *      T_MappingDescription getCellDescription() const
                      */
 
+                    /// @todo should be private?
                     //! pointer to gridBuffer of histograms:T_histograms created upon creation
                     std::unique_ptr<pmacc::GridBuffer<T_Histogram, simDim>> localHistogramField;
+                    /// @todo should these be private?
                     //! type of physical particle represented in histogram, usually "Electron" or "Photon"
                     std::string histogramType;
 
                     LocalHistogramField(T_MappingDescription const& mappingDesc, std::string const histogramType)
-                        : SimulationHelperField<T_MappingDescription>(mappingDesc),
-                          histogramType(histogramType)
+                        : SimulationFieldHelper<T_MappingDescription>(mappingDesc)
+                        , histogramType(histogramType)
                     {
-                        this->localHistogramField = std::make_unique<GridBuffer<T_Histogram, simDim>>( mappingDesc.getGridSuperCells()::toRT() );
+                        this->localHistogramField
+                            = std::make_unique<GridBuffer<T_Histogram, simDim>>(mappingDesc.getGridSuperCells());
                     }
 
                     // required by ISimulationData
@@ -82,24 +87,30 @@ namespace picongpu
                     //! == deviceToHost
                     void synchronize() override
                     {
-                        (this->localHistogramField)->deviceToHost();
+                        localHistogramField->deviceToHost();
                     }
 
-                    // required by SimulationHelperField
-                    void reset() override
+                    // required by SimulationFieldHelper
+                    void reset(uint32_t currentStep) override
                     {
                          /// @todo figure out why exactly this way
-                        (this->localHistogramField)->getHostBuffer.reset(true);
-                        (this->localHistogramField)->getDeviceBuffer.reset(false);
+                         localHistogramField->getHostBuffer().reset(true);
+                         localHistogramField->getDeviceBuffer().reset(false);
                     };
 
                     // required by SimulationHelperField
+                    //! ==hostToDevice
                     void syncToDevice() override
                     {
-                        (this->localHistogramField)->hostToDevice()
+                        localHistogramField->hostToDevice();
                     }
 
-                }
+                    //! get dataBox on device for use in device kernels
+                    DataBoxType getDeviceDataBox()
+                    {
+                        return this->localHistogramField->getDeviceBuffer().getDataBox();
+                    }
+                };
             } // namespace electronHistogram
         } // namespace atomicPhysics2
     } // namespace particles

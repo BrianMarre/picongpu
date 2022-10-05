@@ -19,29 +19,51 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragme once
+#pragma once
 
 #include <cstdint>
+
+#include "picongpu/particles/atomicPhysics2/GetPhysicalEnergy.hpp"
 
 namespace picongpu
 {
     namespace particles
     {
-        namespace atomicPhyiscs2
+        namespace atomicPhysics2
         {
+            /** binning kernel
+             *
+             * called by binElectrons sub-stage, resets the to the superCell corresponding
+             * histogram and then bins all macro particles of the species T_ElectronSpecies
+             * in the given superCell
+             *
+             * @tparam T_ElectronSpecies species of electron, must be actual type, not alias
+             * @tparam T_Histogram type of histogram used per superCell
+             * @tparam T_numWorkers number of workers per Block/superCell
+             */
             template<typename T_ElectronSpecies, typename T_Histogram, uint32_t T_numWorkers>
             struct BinElectronsKernel
             {
+                /** call operator
+                 *
+                 * @param acc accelerator object containing the device and block
+                 *  information, passed by PMACC_KERNEL call
+                 * @param areaMapper mapping of blockIndex to block superCell index
+                 * @param electronBox deviceDataBox containing the particle frames of the
+                 *  superCell
+                 * @param localElectronHistogramDataBox deviceDataBox containing the
+                 *  electron histograms of the local superCell
+                 */
                 template<
                     typename T_Acc,
                     typename T_AreaMapping,
                     typename T_ElectronBox,
-                    typename T_DeviceBuffer>
-                static DINLINE void operator() (
+                    typename T_localElectronHistogramDataBox>
+                HDINLINE void operator() (
                     T_Acc const& acc,
-                    T_AreaMapping areaMapper,
+                    T_AreaMapping areaMapping,
                     T_ElectronBox const electronBox,
-                    T_DeviceBuffer localElectronHistogramField
+                    T_localElectronHistogramDataBox localElectronHistogramDataBox
                     ) const
                 {
                     // by definition our frameSize is always equal to the superCellSize
@@ -49,13 +71,32 @@ namespace picongpu
 
                     // get index vector of superCell, kernel was called on
                     pmacc::DataSpace<simDim> const superCellIdx(
-                        mapper.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(acc))));
+                        areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(acc))));
 
+                    // get first T_ElectronSpecies particle frame
                     auto frame = electronBox.getLastFrame(superCellIdx);
                     auto particlesInSuperCell = electronBox.getSuperCell(superCellIdx).getSizeLastFrame();
 
+                    // get histogram for current superCell
+                    T_Histogram& histogram = localElectronHistogramDataBox(superCellIdx);
+
                     uint32_t const workerIdx = cupla::threadIdx(acc).x;
 
+                    //reset histogram
+                    auto forEachHistogramBin = lockstep::makeForEach<
+                        histogram.getNumberResetOps(),
+                        T_numWorkers
+                        >( workerIdx );
+
+                    forEachHistogramBin(
+                        [&](lockstep::Idx const linearIdx)
+                        {
+                            histogram.reset(linearIdx);
+                        });
+
+                    cupla::__syncthreads(acc);
+
+                    // bin electrons
                     auto forEachParticleSlotInFrame = lockstep::makeForEach<
                         frameSize,
                         T_numWorkers
@@ -72,30 +113,23 @@ namespace picongpu
                                 {
                                     auto particle = frame[linearIdx];
 
-                                    float_X const energy = GetRealKineticEnergy::KineticEnergy(particle);
+                                    float_X const energy = GetPhysicalEnergy::KineticEnergy(particle);
                                     // unit: eV
 
-                                    // get correct histogram?, reset before use?
-
-                                    histogram->binObject(
+                                    histogram.binParticle(
                                         acc,
-                                        static_cast<float_X>(
-                                            energy_SI / (2._X * picongpu::SI::ATOMIC_UNIT_ENERGY), // unit: ATOMIC_UNIT_ENERGY
-                                        particle[weighting_],
-                                        atomicDataBox);
+                                        energy, // unit: eV
+                                        particle[weighting_]); // unitless
                                 }
                             });
-
-                        // A single thread does bookkeeping
-                        cupla::__syncthreads(acc);
-                        onlyMaster([&]() { histogram->updateWithNewBins(); });
                         cupla::__syncthreads(acc);
 
                         frame = electronBox.getPreviousFrame(frame);
                         particlesInSuperCell = frameSize;
+                    }
+
                 }
-                }
-            }
+            };
         } // namespace atomicPhysics2
     } // namespace particles
 } // namespace picongpu

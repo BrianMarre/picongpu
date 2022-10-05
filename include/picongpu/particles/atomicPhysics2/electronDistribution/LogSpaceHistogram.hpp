@@ -51,33 +51,35 @@ namespace picongpu
                  * For the overflow bin only the total weight outside the range is stored,
                  *  since not atomic transitions may use this bin due to it's unknown energy.
                  *
-                 * @tparam T_maxEnergy ... maximum energy of the range covered, > 0, [eV]
+                 * @tparam T_maxEnergy ... maximum energy of the range covered, > 0, [eV], stored as uint
                  * @tparam T_numberBins ... number of bins, does not include the overflow bin, unitless
                  */
-                template<uint32_t T_numberBins, float_X T_maxEnergy>
+                template<typename T_Storage, uint32_t T_numberBins, T_Storage T_maxEnergy>
                 class LogSpaceHistogram
                 {
                 public:
-                    static constexpr float_X maxEnergy = T_maxEnergy;
-                    static constexpr float_X numberBins = T_numberBins
+                    static constexpr float_X maxEnergy = static_cast<float_X>(T_maxEnergy);
+                    static constexpr float_X numberBins = T_numberBins;
 
-                        private : float_X binWeights0[T_numberBins];
+                private:
+                    // could in theory be computed on compile time but math::pow is not constexpr
+                    float_X base = math::pow(maxEnergy, 1._X / (T_numberBins - 1u));
+
+                    float_X binWeights0[T_numberBins];
                     float_X binDeltaWeights[T_numberBins];
                     float_X binDeltaEnergy[T_numberBins];
                     bool binOverSubscribed[T_numberBins];
 
-                    float_X overFlowBin_Weight = 0._X;
+                    float_X overFlowBinWeight = 0._X;
 
-                    static const float_X base = math::pow(T_maxEnergy, 1._X / (T_numberBins - 1));
-
-                    // debug only, bin Index range checks
-                    static DINLINE bool debugCheckBinIndexInRange(uint32_t const binIndex) const
+                    //! debug only bin Index range checks
+                    static DINLINE bool debugCheckBinIndexInRange(uint32_t const binIndex)
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
                         if(binIndex < 0)
                         {
                             std::cout << "Error: binIndex < 0" << std::endl;
-                            return false
+                            return false;
                         }
                         if(binIndex >= T_numberBins)
                         {
@@ -89,16 +91,16 @@ namespace picongpu
 
                     /** get binIndex for a given energy
                      *
-                     * BEWARE: for energy > T_maxEnergy, returns binIndex >= T_numberBins,
-                     *  unless using debug compile mode, check for energy > T_maxEnergy externally
+                     * BEWARE: for energy > maxEnergy, returns binIndex >= T_numberBins,
+                     *  unless using debug compile mode, check for energy > maxEnergy externally
                      *
-                     * @param energy energy, >= 0, < T_maxEnergy, [eV]
+                     * @param energy energy, >= 0, < maxEnergy, [eV]
                      * @return corresponding binIndex, unitless
                      */
-                    static DINLINE uint32_t getBinIndex(float_X const energy) const
+                    DINLINE uint32_t getBinIndex(float_X const energy) const
                     {
                         // negative energies are always wrong
-                        PMACC_ASSERT_MSG(energy >= 0, "energies must be >= 0")
+                        PMACC_ASSERT_MSG(energy >= 0, "energies must be >= 0");
 
                         // debug only
                         /// @todo find correct debug compile guard, Brian Marre, 2022
@@ -107,9 +109,9 @@ namespace picongpu
                             std::cout << "Error: energy < 0" << std::endl;
                             return 0u;
                         }
-                        if(energy > T_maxEnergy)
+                        if(energy > maxEnergy)
                         {
-                            std::cout << "Error: energy > T_maxEnergy" << std::endl;
+                            std::cout << "Error: energy > maxEnergy" << std::endl;
                             return 0u;
                         }
 
@@ -124,10 +126,10 @@ namespace picongpu
                     }
 
                 public:
-                    /** check whether the physical energy is <= T_maxEnergy */
-                    static DINLINE bool inRange(float_X const energy) const
+                    /** check whether the physical energy is <= maxEnergy */
+                    static DINLINE bool inRange(float_X const energy)
                     {
-                        if(energy > T_maxEnergy)
+                        if(energy > maxEnergy)
                         {
                             return false;
                         }
@@ -143,7 +145,7 @@ namespace picongpu
                      * @param binIndex ... bin index , unitless
                      * @return middle energy of bin[argument(usually eV)]
                      */
-                    static DINLINE float_X getBinEnergy(uint32_t const binIndex) const
+                    DINLINE float_X getBinEnergy(uint32_t const binIndex) const
                     {
                         // check binIndex Boundaries
                         PMACC_DEVICE_ASSERT_MSG(
@@ -168,7 +170,7 @@ namespace picongpu
                      *
                      * @return binWidth, [eV]
                      */
-                    static DINLINE float_X getBinWidth(uint32_t const binIndex) const
+                    DINLINE float_X getBinWidth(uint32_t const binIndex) const
                     {
                         if(binIndex == 0u)
                             return 1._X; //[eV]
@@ -220,21 +222,21 @@ namespace picongpu
                      *
                      * BEWARE: does no range checks, outside a debug compile
                      */
-                    DINLINE float_X isBinOverSubscribed(uint32_t const binIndex) const
+                    DINLINE bool isBinOverSubscribed(uint32_t const binIndex) const
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
                         if(not debugCheckBinIndexInRange(binIndex))
-                            return 0._X;
+                            return false;
 
-                        return this - < binOverSubscribed[binIndex];
+                        return this->binOverSubscribed[binIndex];
                     }
 
                     /** get accumulated weight of all previously binned particles with an
-                     *  energy >= T_maxEnergy
+                     *  energy >= maxEnergy
                      */
                     DINLINE float_X getOverflowWeight() const
                     {
-                        return this->overFlowBin_Weight;
+                        return this->overFlowBinWeight;
                     }
 
                     // change state-methods
@@ -262,7 +264,7 @@ namespace picongpu
                         // overflow bin
                         if(not inRange(energy))
                         {
-                            cupla::atomicAdd(acc, &(this->overFlowBin_Weight), weight);
+                            cupla::atomicAdd(acc, &(this->overFlowBinWeight), weight);
                             return;
                         }
 
@@ -287,12 +289,8 @@ namespace picongpu
                     DINLINE void addDeltaWeight(T_Acc const& acc, uint32_t const binIndex, float_X const weight)
                     {
                         // debug only
-                        ///@todo find correct debug compile guard, Brian MArre, 2022
-                        if((binIndex < 0) or (binIndex >= T_numberBins))
-                        {
-                            std::cout << "binIndex out of range" << std::endl;
+                        if(not debugCheckBinIndexInRange(binIndex))
                             return;
-                        }
 
                         cupla::atomicAdd(acc, &(this->binDeltaWeights[binIndex]), weight);
                         return;
@@ -312,12 +310,8 @@ namespace picongpu
                     DINLINE void addDeltaEnergy(T_Acc const& acc, uint32_t const binIndex, float_X const deltaEnergy)
                     {
                         // debug only
-                        ///@todo find correct debug compile guard, Brian MArre, 2022
-                        if((binIndex < 0) or (binIndex >= T_numberBins))
-                        {
-                            std::cout << "binIndex out of range" << std::endl;
+                        if(not debugCheckBinIndexInRange(binIndex))
                             return;
-                        }
 
                         cupla::atomicAdd(acc, &(this->binDeltaEnergy[binIndex]), deltaEnergy);
                         return;
@@ -327,16 +321,37 @@ namespace picongpu
                     DINLINE void setOversubscribed(uint32_t const binIndex)
                     {
                         // debug only
-                        ///@todo find correct debug compile guard, Brian Marre, 2022
-                        if(energy < 0)
-                        {
-                            std::cout << "Error: energy < 0" << std::endl;
+                        if(not debugCheckBinIndexInRange(binIndex))
                             return;
-                        }
 
                         this->binOverSubscribed[binIndex] = true;
                     }
-                }
+
+                    /** resets the given bin to an empty initial state
+                     *
+                     * sets all w0, Dw, DE and the overflowBinWeight to zero
+                     * BEWARE: does no range check outside debug mode
+                     */
+                    DINLINE void reset(uint32_t const binIndex)
+                    {
+                        // debug only
+                        if(not debugCheckBinIndexInRange(binIndex))
+                            return;
+
+                        binWeights0[binIndex] = 0._X;
+                        binDeltaWeights[binIndex] = 0._X;
+                        binDeltaEnergy[binIndex] = 0._X;
+                        overFlowBinWeight = 0._X;
+                    }
+
+                    /** returns number of calls we need to make to reset the histogram
+                     *
+                     */
+                    DINLINE static constexpr uint32_t getNumberResetOps()
+                    {
+                        return numberBins;
+                    }
+                };
 
             } // namespace electronDistribution
         } // namespace atomicPhysics2
