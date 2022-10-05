@@ -28,8 +28,8 @@
 
 #include <string>
 
-#include <picongpu/particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp>
-#include <picongpu/particles/atomicPhysics/electronDistribution/LogSpaceHistogram.hpp>
+#include <picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp>
+#include <picongpu/particles/atomicPhysics2/electronDistribution/LogSpaceHistogram.hpp>
 
 namespace picongpu
 {
@@ -77,10 +77,10 @@ namespace picongpu
      * actual datatype must be defined seperately from value_identifier,
      * since all "," are interpreted as seperating macro arguments
      */
-    using ConfigNumber_Ar = particles::atomicPhysics::stateRepresentation::ConfigNumber<
-        picongpu::atomicPhysics::configNumberDataType,
-        picongpu::atomicPhysics::numLevels,
-        picongpu::atomicPhysics::protonNumber>;
+    using ConfigNumber_Ar = particles::atomicPhysics2::stateRepresentation::ConfigNumber<
+        picongpu::atomicPhysics2::configNumberDataType,
+        picongpu::atomicPhysics2::numLevels,
+        picongpu::atomicPhysics2::protonNumber>;
     value_identifier(ConfigNumber_Ar, configNumber_Argon, ConfigNumber_Ar(1u));
 
 } // namespace picongpu

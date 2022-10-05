@@ -1,4 +1,4 @@
-/* Copyright 2013-2020 Rene Widera, Benjamin Worpitz, Heiko Burau, Brian Marre
+/* Copyright 2013-2022 Rene Widera, Benjamin Worpitz, Heiko Burau, Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -103,8 +103,8 @@ namespace picongpu
         chargeRatio<ChargeRatioArgon>,
         densityRatio<DensityRatioArgon>,
 
-        atomicPhysicsStatesFileName<"../ArgonLevels.txt">,
-        atomicPhysicsTransitionsFileName<"../ArgonTransitions.txt">,
+        atomicPhysicsStatesFileName<PMACC_CSTRING("../ArgonLevels.txt")>,
+        atomicPhysicsTransitionsFileName<PMACC_CSTRING("../ArgonTransitions.txt")>,
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
         ionizationEnergies<ionization::energies::AU::Argon_t>,
         effectiveNuclearCharge<ionization::effectiveNuclearCharge::Argon_t>,

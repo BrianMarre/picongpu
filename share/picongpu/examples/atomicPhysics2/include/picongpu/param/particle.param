@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics/SetToAtomicGroundStateForChargeState.hpp"
+#include "picongpu/particles/atomicPhysics2/SetToAtomicGroundStateForChargeState.hpp"
 #include "picongpu/particles/manipulators/manipulators.def"
 #include "picongpu/particles/startPosition/functors.def"
 
@@ -98,7 +98,7 @@ namespace picongpu
                         numberBoundElectrons >= targetChargeState,
                         "too few protons for target charge state");
 
-                    picongpu::particles::atomicPhysics::SetToAtomicGroundStateForChargeState{}(
+                    picongpu::particles::atomicPhysics2::SetToAtomicGroundStateForChargeState{}(
                         particle,
                         numberBoundElectrons - targetChargeState);
                 }
