@@ -175,7 +175,7 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsTransitionsFileName)
+    alias(atomicPhysicsTransitionsFileName);
 
     //! alias for particle flag describing atomicPhysics solver
     alias(atomicPhysicsSolver);
