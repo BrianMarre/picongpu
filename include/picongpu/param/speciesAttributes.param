@@ -180,6 +180,9 @@ namespace picongpu
     //! alias for particle flag describing atomicPhysics solver
     alias(atomicPhysicsSolver);
 
+    //! alias for particle flag describing atomicPhysics solver
+    alias(atomicPhysicsSolver2);
+
     //! alias for particle flag, noting a species as representing an Electron
     alias(isElectron);
 

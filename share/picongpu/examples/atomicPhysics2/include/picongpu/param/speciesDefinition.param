@@ -108,7 +108,7 @@ namespace picongpu
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
         ionizationEnergies<ionization::energies::AU::Argon_t>,
         effectiveNuclearCharge<ionization::effectiveNuclearCharge::Argon_t>,
-        atomicPhysicsSolver<BulkElectrons>>;
+        atomicPhysicsSolver2<BulkElectrons>>;
 
     using ArgonAttributes
         = MakeSeq_t<DefaultParticleAttributes, atomicConfigNumber<configNumber_Argon>, boundElectrons>;
