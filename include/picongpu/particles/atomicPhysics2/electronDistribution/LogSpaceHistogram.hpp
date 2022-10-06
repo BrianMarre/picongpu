@@ -62,9 +62,6 @@ namespace picongpu
                     static constexpr uint32_t numberBins = T_numberBins;
 
                 private:
-                    // could in theory be computed on compile time but math::pow is not constexpr
-                    float_X base = math::pow(maxEnergy, 1._X / static_cast<float_X>(T_numberBins - 1u));
-
                     float_X binWeights0[T_numberBins];
                     float_X binDeltaWeights[T_numberBins];
                     float_X binDeltaEnergy[T_numberBins];
@@ -89,6 +86,11 @@ namespace picongpu
                         return true;
                     }
 
+                    static DINLINE float_X computeBase()
+                    {
+                        return math::pow(maxEnergy, 1._X / static_cast<float_X>(T_numberBins - 1u));
+                    }
+
                     /** get binIndex for a given energy
                      *
                      * BEWARE: for energy > maxEnergy, returns binIndex >= T_numberBins,
@@ -97,7 +99,7 @@ namespace picongpu
                      * @param energy energy, >= 0, < maxEnergy, [eV]
                      * @return corresponding binIndex, unitless
                      */
-                    DINLINE uint32_t getBinIndex(float_X const energy) const
+                    static DINLINE uint32_t getBinIndex(float_X const energy)
                     {
                         // negative energies are always wrong
                         PMACC_ASSERT_MSG(energy >= 0, "energies must be >= 0");
@@ -109,17 +111,17 @@ namespace picongpu
                             std::cout << "Error: energy < 0" << std::endl;
                             return 0u;
                         }
-                        if(energy > maxEnergy)
+                        if(energy >= maxEnergy)
                         {
                             std::cout << "Error: energy > maxEnergy" << std::endl;
                             return 0u;
                         }
 
 
-                        if(energy > 1._X)
+                        if(energy >= 1._X)
                         {
                             // standard bin
-                            return static_cast<uint32_t>(math::log(energy) / math::log(base));
+                            return static_cast<uint32_t>(math::log(energy) / math::log( computeBase() )) + 1u;
                         }
                         else
                             return 0u; // first bin
@@ -129,7 +131,7 @@ namespace picongpu
                     /** check whether the physical energy is <= maxEnergy */
                     static DINLINE bool inRange(float_X const energy)
                     {
-                        if(energy > maxEnergy)
+                        if(energy >= maxEnergy)
                         {
                             return false;
                         }
@@ -159,8 +161,8 @@ namespace picongpu
                         if(binIndex == 0u)
                             return 1._X / 2._X; //[eV]
 
-                        return (math::pow(base, static_cast<float_X>(binIndex - 1u))
-                                + math::pow(base, static_cast<float_X>(binIndex)))
+                        return (math::pow(computeBase(), static_cast<float_X>(binIndex - 1u))
+                                + math::pow(computeBase(), static_cast<float_X>(binIndex)))
                             / 2._X; // [eV]
                     }
 
@@ -175,8 +177,8 @@ namespace picongpu
                         if(binIndex == 0u)
                             return 1._X; //[eV]
                         return (
-                            math::pow(base, static_cast<float_X>(binIndex))
-                            - math::pow(base, static_cast<float_X>(binIndex - 1u))); // [eV]
+                            math::pow(computeBase(), static_cast<float_X>(binIndex))
+                            - math::pow(computeBase(), static_cast<float_X>(binIndex - 1u))); // [eV]
                     }
 
                     /** get w0 entry for given binIndex
@@ -254,7 +256,7 @@ namespace picongpu
                     DINLINE void binParticle(T_Acc const& acc, float_X const energy, float_X const weight)
                     {
                         // debug only
-                        ///@todo find correct debug compile guard, Brian MArre, 2022
+                        ///@todo find correct debug compile guard, Brian Marre, 2022
                         if(energy < 0)
                         {
                             std::cout << "Error: energy < 0" << std::endl;
@@ -350,6 +352,11 @@ namespace picongpu
                     DINLINE static constexpr uint32_t getNumberResetOps()
                     {
                         return numberBins;
+                    }
+
+                    float_X getBase() const
+                    {
+                        return computeBase();
                     }
                 };
 

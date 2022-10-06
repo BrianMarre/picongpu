@@ -37,24 +37,34 @@ namespace picongpu
                 {
                     constexpr uint32_t numBins = T_Histogram::numberBins;
 
-                    std::cout << "histogram: " << std::endl;
+                    std::cout << "histogram: base=" << histogram.getBase();
+                    std::cout << " numBins=" << T_Histogram::numberBins;
+                    std::cout << " maxE=" << T_Histogram::maxEnergy << std::endl;
+
+                    float_X centralEnergy;
+                    float_X binWidth;
 
                     for(uint32_t i = 0u; i < numBins; i++)
                     {
                         // binIndex
-                        std::cout << i << ": (E, DE) ";
+                        std::cout << "\t "<< i;
 
                         // central bin energy [eV] and binWidth [eV]
-                        std::cout << "\t (" << histogram.getBinEnergy(i) << ", " << histogram.getBinWidth(i) << ") ";
+                        centralEnergy = histogram.getBinEnergy(i);
+                        binWidth = histogram.getBinWidth(i);
+
+                        std::cout << "(" << centralEnergy - binWidth/2._X << ", "<<  centralEnergy + binWidth/2._X << "] :";
 
                         // bin data, [w0, DeltaW, DeltaEnergy, binOverSubscribed]
-                        std::cout << ", [w0, Dw, DE, o?] [";
+                        std::cout << " [w0, Dw, DE, o?]: [";
                         std::cout << histogram.getBinWeight0(i) << ", ";
                         std::cout << histogram.getBinDeltaWeight(i) << ", ";
                         std::cout << histogram.getBinDeltaEnergy(i) << ", ";
                         std::cout << histogram.isBinOverSubscribed(i) << "]";
                         std::cout << std::endl;
                     }
+                    std::cout << "\t overFlow: w0=" << histogram.getOverflowWeight() << std::endl;
+                    std::cout << math::pow(float_X(1e7), 1._X / static_cast<float_X>(100u - 1u)) << std::endl;
                 }
             } // namespace debug
         } // namespace atomicPhysics2
