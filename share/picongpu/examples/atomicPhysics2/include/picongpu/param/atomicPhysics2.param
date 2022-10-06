@@ -36,7 +36,7 @@ namespace picongpu
     namespace atomicPhysics2
     {
 
-        using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<100u, float_X(1e7)>;
+        using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<uint32_t, 100u, static_cast<uint32_t>(float_X(1e7))>;
 
         /// @todo remove
         // state data

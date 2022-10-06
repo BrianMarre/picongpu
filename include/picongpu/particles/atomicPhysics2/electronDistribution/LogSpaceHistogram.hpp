@@ -59,11 +59,11 @@ namespace picongpu
                 {
                 public:
                     static constexpr float_X maxEnergy = static_cast<float_X>(T_maxEnergy);
-                    static constexpr float_X numberBins = T_numberBins;
+                    static constexpr uint32_t numberBins = T_numberBins;
 
                 private:
                     // could in theory be computed on compile time but math::pow is not constexpr
-                    float_X base = math::pow(maxEnergy, 1._X / (T_numberBins - 1u));
+                    float_X base = math::pow(maxEnergy, 1._X / static_cast<float_X>(T_numberBins - 1u));
 
                     float_X binWeights0[T_numberBins];
                     float_X binDeltaWeights[T_numberBins];
@@ -138,14 +138,14 @@ namespace picongpu
                     }
 
                     // query state-methods
-                    /** get binEnergy for a given binIndex
+                    /** get the central Energy for a given binIndex
                      *
                      * BEWARE: does no range check outside a debug compile, check range externally!
                      *
                      * @param binIndex ... bin index , unitless
-                     * @return middle energy of bin[argument(usually eV)]
+                     * @return central energy of bin[eV]
                      */
-                    DINLINE float_X getBinEnergy(uint32_t const binIndex) const
+                    HDINLINE float_X getBinEnergy(uint32_t const binIndex) const
                     {
                         // check binIndex Boundaries
                         PMACC_DEVICE_ASSERT_MSG(
@@ -181,7 +181,7 @@ namespace picongpu
 
                     /** get w0 entry for given binIndex
                      *
-                     * BEWARE: does no range checks, outside a debug compile
+                     * BEWARE: does no range checks outside a debug compile
                      */
                     DINLINE float_X getBinWeight0(uint32_t const binIndex) const
                     {
@@ -194,7 +194,7 @@ namespace picongpu
 
                     /** get DeltaW entry for given binIndex
                      *
-                     * BEWARE: does no range checks, outside a debug compile
+                     * BEWARE: does no range checks outside a debug compile
                      */
                     DINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const
                     {
@@ -207,7 +207,7 @@ namespace picongpu
 
                     /** get DeltaE entry for given binIndex
                      *
-                     * BEWARE: does no range checks, outside a debug compile
+                     * BEWARE: does no range checks outside a debug compile
                      */
                     DINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const
                     {
@@ -220,7 +220,7 @@ namespace picongpu
 
                     /** is the bin marked as oversubscribed ?
                      *
-                     * BEWARE: does no range checks, outside a debug compile
+                     * BEWARE: does no range checks outside a debug compile
                      */
                     DINLINE bool isBinOverSubscribed(uint32_t const binIndex) const
                     {

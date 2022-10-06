@@ -32,8 +32,10 @@
 #include <cstdint>
 #include <cstring>
 
-/** @file implements kernel call
+/** @file binElectrons sub-stage of atomicPhysics
  *
+ * implements the binning of all electron species into a super cell field shared histogram for use with the
+ * atomicPhysics rate calculation.
  */
 
 namespace picongpu

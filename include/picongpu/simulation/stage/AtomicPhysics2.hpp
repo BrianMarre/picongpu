@@ -39,9 +39,7 @@ namespace picongpu
     {
         namespace stage
         {
-            /** functor for actual atomic physics stage call
-             *
-             * defined in file <include/picongpu/particles/atomicPhysics/CallAtomicPhysics.hpp>
+            /** atomic physics stage
              *
              * one instance of this class is initialized and it's operator() called for every time step
              */
@@ -62,6 +60,7 @@ namespace picongpu
             public:
                 AtomicPhysics2() = default;
 
+                //! calls the substages
                 void operator()(MappingDesc const mappingDesc)
                 {
                     BinElectrons(mappingDesc);

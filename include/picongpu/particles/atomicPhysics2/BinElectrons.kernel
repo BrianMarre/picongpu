@@ -25,6 +25,9 @@
 
 #include "picongpu/particles/atomicPhysics2/GetPhysicalEnergy.hpp"
 
+// debug only
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+
 namespace picongpu
 {
     namespace particles
@@ -35,7 +38,7 @@ namespace picongpu
              *
              * called by binElectrons sub-stage, resets the to the superCell corresponding
              * histogram and then bins all macro particles of the species T_ElectronSpecies
-             * in the given superCell
+             * in the given superCell into the given histogram
              *
              * @tparam T_ElectronSpecies species of electron, must be actual type, not alias
              * @tparam T_Histogram type of histogram used per superCell
@@ -127,6 +130,9 @@ namespace picongpu
                         frame = electronBox.getPreviousFrame(frame);
                         particlesInSuperCell = frameSize;
                     }
+
+                    // debug only
+                    debug::printHistogramToConsole(histogram);
 
                 }
             };
