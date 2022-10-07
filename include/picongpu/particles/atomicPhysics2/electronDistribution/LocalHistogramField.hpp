@@ -48,8 +48,10 @@ namespace picongpu
                     : public pmacc::ISimulationData
                     , public pmacc::SimulationFieldHelper<T_MappingDescription>
                 {
-                    //! Type of data box for field values on host and device
+                    //! type of data box for field values on host and device
                     using DataBoxType = pmacc::DataBox<pmacc::PitchedBox<T_Histogram, simDim>>;
+                    //! type of device buffer
+                    using DeviceBufferType = pmacc::DeviceBuffer<T_Histogram, simDim>;
 
                     /* from SimulationFieldHelper<T_MappingDescription>:
                      * protected:
@@ -105,10 +107,18 @@ namespace picongpu
                         localHistogramField->hostToDevice();
                     }
 
-                    //! get dataBox on device for use in device kernels
+                    /** get dataBox on device for use in device kernels
+                     *
+                     * Note: dataBoxes are just "pointers"
+                     */
                     DataBoxType getDeviceDataBox()
                     {
                         return this->localHistogramField->getDeviceBuffer().getDataBox();
+                    }
+
+                    DeviceBufferType& getDeviceBuffer()
+                    {
+                        return this->localHistogramField->getDeviceBuffer();
                     }
                 };
             } // namespace electronHistogram

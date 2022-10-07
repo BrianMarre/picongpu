@@ -64,7 +64,6 @@ namespace picongpu
                         std::cout << std::endl;
                     }
                     std::cout << "\t overFlow: w0=" << histogram.getOverflowWeight() << std::endl;
-                    std::cout << math::pow(float_X(1e7), 1._X / static_cast<float_X>(100u - 1u)) << std::endl;
                 }
             } // namespace debug
         } // namespace atomicPhysics2

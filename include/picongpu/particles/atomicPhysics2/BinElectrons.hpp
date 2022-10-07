@@ -38,6 +38,18 @@
  * atomicPhysics rate calculation.
  */
 
+/* @todo Tests: test need to check correct binning in following cases
+ * 1. no temperature and no drift, single species, bin to bin-0
+ *      else: incorrect binning
+ * 2. 200keV drift, single species, bin to 200keV bin
+ *      else: incorrect binning
+ * ( temperature, single species, correct distribution )
+ * 3. 2 step simulation, single species, periodic boundaries, no "doubling" of histogram bin values
+ *      else: missing reset between steps
+ * 4. no temperature and no drift, multiple species, all species weights are actually accounted
+ *      else: spurious reset in between different species calls
+ */
+
 namespace picongpu
 {
     namespace particles

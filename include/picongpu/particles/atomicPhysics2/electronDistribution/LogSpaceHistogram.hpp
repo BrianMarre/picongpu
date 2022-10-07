@@ -62,9 +62,9 @@ namespace picongpu
                     static constexpr uint32_t numberBins = T_numberBins;
 
                 private:
-                    float_X binWeights0[T_numberBins];
-                    float_X binDeltaWeights[T_numberBins];
-                    float_X binDeltaEnergy[T_numberBins];
+                    float_X binWeights0[T_numberBins] = {0};
+                    float_X binDeltaWeights[T_numberBins] = {0};
+                    float_X binDeltaEnergy[T_numberBins] = {0};
                     bool binOverSubscribed[T_numberBins];
 
                     float_X overFlowBinWeight = 0._X;

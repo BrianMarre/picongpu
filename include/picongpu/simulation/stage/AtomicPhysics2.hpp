@@ -55,7 +55,21 @@ namespace picongpu
 
                 //! kernel to be called for each species
                 pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::BinElectrons<bmpl::_1>>
-                    BinElectrons;
+                    ForEachElectronSpeciesBinElectrons;
+
+                //! reset the histogram on device side
+                void resetHistograms(MappingDesc const mappingDesc)
+                {
+                    pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+
+                    auto& localElectronHistogramField
+                        = *dc.get<particles::atomicPhysics2::electronDistribution::LocalHistogramField<
+                            picongpu::atomicPhysics2::ElectronHistogram,
+                            picongpu::MappingDesc>>("Electron_localHistogramField", true);
+
+                    localElectronHistogramField.getDeviceBuffer().setValue(
+                        picongpu::atomicPhysics2::ElectronHistogram());
+                }
 
             public:
                 AtomicPhysics2() = default;
@@ -63,7 +77,11 @@ namespace picongpu
                 //! calls the substages
                 void operator()(MappingDesc const mappingDesc)
                 {
-                    BinElectrons(mappingDesc);
+                    // reset Histogram
+                    resetHistograms(mappingDesc);
+
+                    // bin all electron species
+                    ForEachElectronSpeciesBinElectrons(mappingDesc);
                 }
 
             };
