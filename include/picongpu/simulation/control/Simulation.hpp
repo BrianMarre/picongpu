@@ -33,7 +33,10 @@
 #include "picongpu/fields/background/cellwiseOperation.hpp"
 #include "picongpu/initialization/IInitPlugin.hpp"
 #include "picongpu/initialization/ParserGridDistribution.hpp"
+#include "picongpu/param/atomicPhysics2.param"
 #include "picongpu/particles/Manipulate.hpp"
+#include "picongpu/particles/atomicPhysics2/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
 #include "picongpu/particles/manipulators/manipulators.hpp"
@@ -58,8 +61,6 @@
 #include "picongpu/simulation/stage/RuntimeDensityFile.hpp"
 #include "picongpu/simulation/stage/SynchrotronRadiation.hpp"
 #include "picongpu/versionFormat.hpp"
-
-#include "picongpu/param/atomicPhysics2.param"
 
 #include <pmacc/assert.hpp>
 #include <pmacc/dimensions/GridLayout.hpp>
@@ -334,7 +335,9 @@ namespace picongpu
             // inits for atomicPhysics
             /// @todo load atomic input data, Brian Marre, 2022
 
+            // initialize atomicPhyiscs superCell local fields
             initAtomicPhyiscsLocalHistograms(dc);
+            initTimeRemainingField(dc);
 
             // make histogram
             // old
@@ -802,6 +805,14 @@ namespace picongpu
             dataConnector.consume(std::move(localSuperCellElectronHistogram));
 
             ///@todo same for "Photons" once implemented, Brian Marre, 2022
+        }
+
+        void initTimeRemainingField(DataConnector& dataConnector)
+        {
+            auto localSuperCellTimeRemaining = std::make_unique<
+                particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc> // defined in memory.param
+                >(*cellDescription);
+            dataConnector.consume(std::move(localSuperCellTimeRemaining));
         }
 
         /** Reset all fields

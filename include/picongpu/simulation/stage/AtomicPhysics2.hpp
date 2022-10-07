@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include "picongpu/simulation_defines.hpp"
+
 #include "picongpu/particles/atomicPhysics2/BinElectrons.hpp"
 
 #include <pmacc/meta/ForEach.hpp>
@@ -58,7 +60,7 @@ namespace picongpu
                     ForEachElectronSpeciesBinElectrons;
 
                 //! reset the histogram on device side
-                void resetHistograms(MappingDesc const mappingDesc)
+                static void resetHistograms(MappingDesc const mappingDesc)
                 {
                     pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
@@ -71,17 +73,36 @@ namespace picongpu
                         picongpu::atomicPhysics2::ElectronHistogram());
                 }
 
+                //! set local timeRemaining to PIC-time step
+                static void setTimeRemaining(MappingDesc const mappingDesc)
+                {
+                    pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+
+                    auto& localTimeRemainingField
+                        = *dc.get<particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc>>(
+                            "LocalTimeRemainingField",
+                            true);
+
+                    localTimeRemainingField.getDeviceBuffer().setValue(picongpu::SI::DELTA_T_SI);
+                }
+
             public:
                 AtomicPhysics2() = default;
 
                 //! calls the substages
                 void operator()(MappingDesc const mappingDesc)
                 {
+                    // set timeRemaining
+                    setTimeRemaining(mappingDesc);
+
+                    // bin Electrons
                     // reset Histogram
                     resetHistograms(mappingDesc);
 
-                    // bin all electron species
+                    // actual binning
                     ForEachElectronSpeciesBinElectrons(mappingDesc);
+
+                    //
                 }
 
             };
