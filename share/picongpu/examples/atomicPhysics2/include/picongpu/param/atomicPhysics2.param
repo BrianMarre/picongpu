@@ -51,7 +51,6 @@ namespace picongpu
         constexpr uint8_t numLevels = 10u;
 
 
-
     } // namespace atomicPhysics2
 
     /** atomicConfigNumber
@@ -74,8 +73,8 @@ namespace picongpu
     /* definition of a configNumber type as an example,
      * other ion speceis can be added similarly as a new value identifier
      *
-     * actual datatype must be defined seperately from value_identifier,
-     * since all "," are interpreted as seperating macro arguments
+     * actual datatype must be defined separately from value_identifier,
+     * since all "," are interpreted as separating macro arguments
      */
     using ConfigNumber_Ar = particles::atomicPhysics2::stateRepresentation::ConfigNumber<
         picongpu::atomicPhysics2::configNumberDataType,
