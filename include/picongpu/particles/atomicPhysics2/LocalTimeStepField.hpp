@@ -17,9 +17,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements the local timeRemainingField for each superCell
+/** @file implements the local timeStepField for each superCell
  *
- * timeRemaining for the current atomicPhysics step in each superCell
+ * timeStep length for the current atomicPhysics iteration in each superCell
  */
 
 #pragma once
@@ -35,22 +35,23 @@ namespace picongpu
     {
         namespace atomicPhysics2
         {
-            /**@class holds a gridBuffer of the per-superCell timeRemaining:float_X for atomicPhysics
+            /**@class superCell field of the current timeStep:float_X for one atomicPhysics iteration
              *
              */
             template<typename T_MappingDescription>
-            struct LocalTimeRemainingField
+            struct LocalTimeStepField
                 : public SuperCellField<float_X, T_MappingDescription>
             {
 
-                LocalTimeRemainingField(T_MappingDescription const& mappingDesc)
+                LocalTimeStepField(T_MappingDescription const& mappingDesc)
                     : SuperCellField<float_X, T_MappingDescription>(mappingDesc) {}
 
                 // required by ISimulationData
                 std::string getUniqueId() override
                 {
-                    return "LocalTimeRemainingField";
+                    return "LocalTimeStepField";
                 }
+
             };
         } // namespace atomicPhysics2
     } // namespace particles

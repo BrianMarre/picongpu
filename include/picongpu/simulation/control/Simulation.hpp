@@ -36,6 +36,7 @@
 #include "picongpu/param/atomicPhysics2.param"
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/atomicPhysics2/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics2/LocalTimeStepField.hpp"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
@@ -336,8 +337,7 @@ namespace picongpu
             /// @todo load atomic input data, Brian Marre, 2022
 
             // initialize atomicPhyiscs superCell local fields
-            initAtomicPhyiscsLocalHistograms(dc);
-            initTimeRemainingField(dc);
+            initAtomicPhyiscsSuperCellFields(dc);
 
             // make histogram
             // old
@@ -791,12 +791,13 @@ namespace picongpu
             }
         }
 
-        /** create local histogram field and store in dataConnector
+        /** create the superCell fields and store them in the dataConnector
          *
          * used for atomicPhysics step
          */
-        void initAtomicPhyiscsLocalHistograms(DataConnector& dataConnector)
+        void initAtomicPhyiscsSuperCellFields(DataConnector& dataConnector)
         {
+            // local interaction histograms
             auto localSuperCellElectronHistogram = std::make_unique<
                 particles::atomicPhysics2::electronDistribution::LocalHistogramField<
                     atomicPhysics2::ElectronHistogram, // set in atomicPhysics2.param
@@ -805,14 +806,18 @@ namespace picongpu
             dataConnector.consume(std::move(localSuperCellElectronHistogram));
 
             ///@todo same for "Photons" once implemented, Brian Marre, 2022
-        }
 
-        void initTimeRemainingField(DataConnector& dataConnector)
-        {
+            // local time Remaining
             auto localSuperCellTimeRemaining = std::make_unique<
-                particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc> // defined in memory.param
+                particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc>
                 >(*cellDescription);
             dataConnector.consume(std::move(localSuperCellTimeRemaining));
+
+            // local time Remaining
+            auto localSuperCellTimeStep = std::make_unique<
+                particles::atomicPhysics2::LocalTimeStepField<picongpu::MappingDesc>
+                >(*cellDescription);
+            dataConnector.consume(std::move(localSuperCellTimeStep));
         }
 
         /** Reset all fields
