@@ -22,9 +22,11 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "picongpu/simulation_defines.hpp"
+
+#include "picongpu/particles/atomicPhysics2/electronDistribution/HistogramInterface.hpp"
+
+#include <cstdint>
 
 // debug only
 #include <iostream>
@@ -40,7 +42,7 @@ namespace picongpu
                 /** @class histogram of logarithmically evenly distributed bins
                  *
                  * The histogram uses (T_numberBins)-bins, logarithmically evenly distributed,
-                 *  to cover the range [0,maxEnergy] and one additional special high energy
+                 *  to cover the range [0,maxEnergy) and one additional special high energy
                  *  overflow bin.
                  *
                  * For every regular bins, the original binned accumulated weight w0,
@@ -51,11 +53,12 @@ namespace picongpu
                  * For the overflow bin only the total weight outside the range is stored,
                  *  since not atomic transitions may use this bin due to it's unknown energy.
                  *
-                 * @tparam T_maxEnergy ... maximum energy of the range covered, > 0, [eV], stored as uint
-                 * @tparam T_numberBins ... number of bins, does not include the overflow bin, unitless
+                 * @tparam T_maxEnergy maximum energy of the range covered, > 0, [eV]:float_X but stored as T_Storage
+                 * @tparam T_numberBins number of bins, does not include the overflow bin, unitless
+                 * @tparam T_Storage storage type of T_maxEnergy
                  */
                 template<typename T_Storage, uint32_t T_numberBins, T_Storage T_maxEnergy>
-                class LogSpaceHistogram
+                class LogSpaceHistogram : HistogramInterface
                 {
                 public:
                     static constexpr float_X maxEnergy = static_cast<float_X>(T_maxEnergy);
@@ -147,7 +150,7 @@ namespace picongpu
                      * @param binIndex ... bin index , unitless
                      * @return central energy of bin[eV]
                      */
-                    HDINLINE float_X getBinEnergy(uint32_t const binIndex) const
+                    HDINLINE float_X getBinEnergy(uint32_t const binIndex) const final
                     {
                         // check binIndex Boundaries
                         PMACC_DEVICE_ASSERT_MSG(
@@ -172,7 +175,7 @@ namespace picongpu
                      *
                      * @return binWidth, [eV]
                      */
-                    DINLINE float_X getBinWidth(uint32_t const binIndex) const
+                    DINLINE float_X getBinWidth(uint32_t const binIndex) const final
                     {
                         if(binIndex == 0u)
                             return 1._X; //[eV]
@@ -185,7 +188,7 @@ namespace picongpu
                      *
                      * BEWARE: does no range checks outside a debug compile
                      */
-                    DINLINE float_X getBinWeight0(uint32_t const binIndex) const
+                    DINLINE float_X getBinWeight0(uint32_t const binIndex) const final
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
                         if(not debugCheckBinIndexInRange(binIndex))
@@ -198,7 +201,7 @@ namespace picongpu
                      *
                      * BEWARE: does no range checks outside a debug compile
                      */
-                    DINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const
+                    DINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const final
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
                         if(not debugCheckBinIndexInRange(binIndex))
@@ -211,7 +214,7 @@ namespace picongpu
                      *
                      * BEWARE: does no range checks outside a debug compile
                      */
-                    DINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const
+                    DINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const final
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
                         if(not debugCheckBinIndexInRange(binIndex))
@@ -224,7 +227,7 @@ namespace picongpu
                      *
                      * BEWARE: does no range checks outside a debug compile
                      */
-                    DINLINE bool isBinOverSubscribed(uint32_t const binIndex) const
+                    DINLINE bool isBinOverSubscribed(uint32_t const binIndex) const final
                     {
                         /// @todo find correct debug compile guard, Brian Marre, 2022
                         if(not debugCheckBinIndexInRange(binIndex))
@@ -320,7 +323,7 @@ namespace picongpu
                     }
 
                     //! BEWARE: does not check binIndex range outside a debug compile
-                    DINLINE void setOversubscribed(uint32_t const binIndex)
+                    DINLINE void setOversubscribed(uint32_t const binIndex) final
                     {
                         // debug only
                         if(not debugCheckBinIndexInRange(binIndex))
@@ -329,26 +332,7 @@ namespace picongpu
                         this->binOverSubscribed[binIndex] = true;
                     }
 
-                    /** resets the given bin to an empty initial state
-                     *
-                     * sets all w0, Dw, DE and the overflowBinWeight to zero
-                     * BEWARE: does no range check outside debug mode
-                     */
-                    DINLINE void reset(uint32_t const binIndex)
-                    {
-                        // debug only
-                        if(not debugCheckBinIndexInRange(binIndex))
-                            return;
-
-                        binWeights0[binIndex] = 0._X;
-                        binDeltaWeights[binIndex] = 0._X;
-                        binDeltaEnergy[binIndex] = 0._X;
-                        overFlowBinWeight = 0._X;
-                    }
-
-                    /** returns number of calls we need to make to reset the histogram
-                     *
-                     */
+                    //! returns number of calls we need to make to reset the histogram
                     DINLINE static constexpr uint32_t getNumberResetOps()
                     {
                         return numberBins;
