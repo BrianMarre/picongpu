@@ -32,152 +32,283 @@
 #include <utility>
 
 
+/** @file implements the storage of atomic state and transition data
+ *
+ * The atomicPhysics step relies on a model of atomic states and transitions for each atomic-
+ * Physics ion species. The model's parameters are provided by the user as .txt file of
+ * specified format at runtime, external to PIConGPU itself due to license requirements.
+ *
+ * This file is read at the start of the simulation and stored in an instance of the
+ * atomicData Database implemented in this file.
+ *
+ * too different classes give access to atomic data:
+ * - AtomicDataDB ... implements
+ *                         * reading of the atomicData input file
+ *                         * export to the DataBox for device side use
+ *                         * host side storage of atomicData
+ * - AtomicDataBox ... deviceSide storage and access to atomicData
+ *
+ * The atomic data actually consists of 7 different data sets:
+ *
+ * - list of ionization states (sorted in ascending order of ionization):
+ *      [ (ionization energy, [eV]
+ *         number of atomicStates,
+ *         startIndex of block of atomicStates in atomicState list) ]
+ *
+ * - list of levels (sorted blockwise by ionization state list)
+ *    [(configNumber, [see electronDistribution]
+ *      screenedCharge, [eV]
+ *      energy respective to ground state of ionization state, [eV]
+ *
+ *      number of transitions          up b,
+ *      startIndex of transition block up b,
+ *      number of transitions          down b,
+ *      startIndex of transition block down b,
+ *
+ *      number of transitions          up f,
+ *      startIndex of transition block up f,
+ *      number of transitions          down f,
+ *      startIndex of transition block down f,
+ *
+ *      number of transitions          up a,
+ *      startIndex of transition block up a,
+ *      number of transitions          down a,
+ *      startIndex of transition block down a)]
+ *
+ * - bound-bound(b) transitions, list (sorted blockwise by lower State according to state list)
+ *    [(collisionalOscillatorStrength,
+ *      absorptionOscillatorStrength,
+ *      gaunt coefficent 1,
+ *      gaunt coefficent 2,
+ *      gaunt coefficent 3,
+ *      gaunt coefficent 4,
+ *      gaunt coefficent 5,
+ *      upper state configNumber)]
+ *
+ * - b reverse loockup list: sorted blockwise by upper State
+ *    [ index Transition,
+ *      lower state configNumber]
+ *
+ * - bound-free(f) transitions, list (sorted blockwise by lower State according to state list)
+ *    [(phicx coefficent 1,
+ *      phicx coefficent 2,
+ *      phicx coefficent 3,
+ *      phicx coefficent 4,
+ *      phicx coefficent 5,
+ *      phicx coefficent 6,
+ *      phicx coefficent 7,
+ *      phicx coefficent 8,
+ *      upper state configNumber)]
+ *
+ * - f reverse loockup list: sorted blockwise by upper State
+ *    [ index Transition,
+ *      lower state configNumber]
+ *
+ * - autonomous transitions(a), list (sorted blockwise by lower atomic, according to state list)
+ *    [(rate, [1/s]
+ *      upper state configNumber)]
+ *
+ * - f reverse loockup list: sorted blockwise by upper State
+ *    [ index Transition,
+ *      lower state configNumber]
+ *
+ * NOTE: - configNumber specifies the number of a state as defined by the configNumber class
+ *       - index always refers to a collection index
+ *      the configNumber of a given state is always the same, its collection index depends on
+ *      input file, => should only be used internally
+ */
+
+
 namespace picongpu
 {
     namespace particles
     {
         namespace atomicPhysics2
         {
-            /** too different classes giving acess to atomic data:
-             * - base class ... implements actual functionality
-             * - dataBox class ... provides acess implementation for actual storage in box
-             *      encapsulates index shift currently
-             *
-             * the atomic data box contains actually two data sets:
-             *  - list of levels [(configNumber,
-             *                    energy respective to ground state of ionzation state,
-             *                    number of transitions,
-             *                    startindex of block in transition list)]
-             *  - list of transitions [(collisionalOscillatorStrength,
-             *                          absorptionOscillatorStrength,
-             *                          gaunt coefficent 1,
-             *                          gaunt coefficent 2,
-             *                          gaunt coefficent 3,
-             *                          gaunt coefficent 4,
-             *                          gaunt coefficent 5,
-             *                          upper state configNumber)]
-             *      transitions are grouped by lower state, the start of each block is
-             *          specified in the state list
-             *
-             * NOTE: - configNumber specifies the number of a state as defined by the configNumber class
-             *       - index always refers to a collection index
-             *      the configNumber of a given state is always the same, its collection index depends on
-             *      input file, => should only be used internally
-             */
-
             template<
-                uint8_t T_atomicNumber,
                 // Data box types for atomic data on host and device
-                typename T_DataBoxValue,
-                typename T_DataBoxNumber,
-                typename T_DataBoxStateConfigNumber,
-                typename T_ConfigNumberDataType>
+                typename T_DataBoxType,
+                typename T_Number, // uint32_t
+                typename T_Value, // float_X
+                typename T_ConfigNumberDataType, // uint64_t
+                typename T_TransitionIndexDataType, // uint32_t
+
+                uint32_t T_atomicNumber, // number ionization states-1
+                uint32_t T_numberAtomicStates,
+                uint32_t T_numberAtomicTransitions>
             class AtomicDataBox
             {
             public:
-                using DataBoxValue = T_DataBoxValue;
-                using DataBoxNumber = T_DataBoxNumber;
-                using DataBoxStateConfigNumber = T_DataBoxStateConfigNumber;
                 using Idx = T_ConfigNumberDataType;
-                using ValueType = typename DataBoxValue::ValueType;
+                using BoxNumber = T_DataBoxType<T_Number>;
+                using BoxValue = T_DataBoxType<T_Value>;
+                using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
+                using BoxTransitionIdx = T_DataBoxType<T_TransitionIndexDataType>;
 
             private:
-                DataBoxValue m_boxStateEnergy;
-                DataBoxNumber m_boxNumTransitions;
-                DataBoxNumber m_boxStartIndexBlockTransitions;
-                DataBoxStateConfigNumber m_boxStateConfigNumber;
-                uint32_t m_numStates;
-                uint32_t m_maxNumberStates; // max number of States that can be stored
+                // ionization state storage
+                BoxValue m_boxIonization_ionizationEnergy; // unit: eV
+                BoxValue m_boxIonization_screenedCharge; // unit: e
+                BoxNumber m_boxIonization_numberAtomicStates;
+                BoxNumber m_boxIonization_startIndexBlockAtomicStates;
 
-                DataBoxStateConfigNumber m_boxUpperConfigNumber; // lower config numebr is available via index
-                DataBoxValue m_boxCollisionalOscillatorStrength;
-                DataBoxValue m_boxCinx1;
-                DataBoxValue m_boxCinx2;
-                DataBoxValue m_boxCinx3;
-                DataBoxValue m_boxCinx4;
-                DataBoxValue m_boxCinx5;
-                DataBoxValue m_boxAbsorptionOscillatorStrength;
+                // atomic state storage
+                BoxStateConfigNumber m_boxState_configNumber;
+                BoxValue m_boxState_energy; // unit: eV
 
-                uint32_t m_numberTransitions;
-                uint32_t m_maxNumberTransitions; // max number of Transitions that can be stored
+                BoxNumber m_boxState_numberTransitions_up_b;
+                BoxNumber m_boxState_startIndexBlockTransitions_up_b;
+                BoxNumber m_boxState_numberTransitions_down_b;
+                BoxNumber m_boxState_startIndexBlockTransitions_down_b;
+
+                BoxNumber m_boxState_numberTransitions_up_f;
+                BoxNumber m_boxState_startIndexBlockTransitions_up_f;
+                BoxNumber m_boxState_numberTransitions_down_f;
+                BoxNumber m_boxState_startIndexBlockTransitions_down_f;
+
+                BoxNumber m_boxState_numberTransitions_up_a;
+                BoxNumber m_boxState_startIndexBlockTransitions_up_a;
+                BoxNumber m_boxState_numberTransitions_down_a;
+                BoxNumber m_boxState_startIndexBlockTransitions_down_a;
+
+                // transitionStorage bound-bound
+                BoxValue m_boxTransitionB_collisionalOscillatorStrength; // unitless
+                BoxValue m_boxTransitionB_absorptionOscillatorStrength; // unitless
+                BoxValue m_boxTransitionB_cinx1; // unitless
+                BoxValue m_boxTransitionB_cinx2; // unitless
+                BoxValue m_boxTransitionB_cinx3; // unitless
+                BoxValue m_boxTransitionB_cinx4; // unitless
+                BoxValue m_boxTransitionB_cinx5; // unitless
+                BoxStateConfigNumber m_boxTransitionB_UpperConfigNumber; // lower config number is available via index
+
+                // reverse lockupTable bound-bound
+                BoxTransitionIdx m_boxTransitionReverseB_transitionIndex;
+                BoxConfigNumber m_boxTransitionReverseB_lowerConfigNumber;
+
+                // transitionStorage bound-free
+                BoxValue m_boxTransitionF_cinx1; // unitless
+                BoxValue m_boxTransitionF_cinx2; // unitless
+                BoxValue m_boxTransitionF_cinx3; // unitless
+                BoxValue m_boxTransitionF_cinx4; // unitless
+                BoxValue m_boxTransitionF_cinx5; // unitless
+                BoxValue m_boxTransitionF_cinx6; // unitless
+                BoxValue m_boxTransitionF_cinx7; // unitless
+                BoxValue m_boxTransitionF_cinx8; // unitless
+                BoxStateConfigNumber m_boxTransitionF_upperConfigNumber; // lower config number is available via index
+
+                // reverse lockupTable bound-free
+                BoxTransitionIdx m_boxTransitionReverseF_transitionIndex;
+                BoxConfigNumber m_boxTransitionReverseF_lowerConfigNumber;
+
+                // transitionStorage autonomous
+                ///@todo better unit?
+                BoxValue m_boxTransitionA_Rate; // unit: 1/s
+                BoxConfigNumber m_boxTransitionA_upperStateConfigNumber;
+
+                // reverse lockup-autonomous
+                BoxTransitionIdx m_boxTransitionReverseA_transitionIndex;
+                BoxConfigNumber m_boxTransitionReverseA_lowerConfigNumber;
 
             public:
-                // Constructor
                 AtomicDataBox(
-                    DataBoxValue boxStateEnergy,
-                    DataBoxNumber boxNumTransitions,
-                    DataBoxNumber boxStartIndexBlockTransitions,
-                    DataBoxStateConfigNumber boxStateConfigNumber,
-                    uint32_t numStates,
-                    uint32_t maxNumberStates,
-
-                    DataBoxStateConfigNumber boxUpperConfigNumber,
-                    DataBoxValue boxCollisionalOscillatorStrength,
-                    DataBoxValue boxCinx1,
-                    DataBoxValue boxCinx2,
-                    DataBoxValue boxCinx3,
-                    DataBoxValue boxCinx4,
-                    DataBoxValue boxCinx5,
-                    DataBoxValue boxAbsorptionOscillatorStrength,
-                    uint32_t numberTransitions,
-                    uint32_t maxNumberTransitions)
-                    : m_boxStateEnergy(boxStateEnergy)
-                    , m_boxNumTransitions(boxNumTransitions)
-                    , m_boxStartIndexBlockTransitions(boxStartIndexBlockTransitions)
-                    , m_boxStateConfigNumber(boxStateConfigNumber)
-                    , m_numStates(numStates)
-                    , m_maxNumberStates(maxNumberStates)
-
-                    , m_boxUpperConfigNumber(boxUpperConfigNumber)
-                    , m_boxCollisionalOscillatorStrength(boxCollisionalOscillatorStrength)
-                    , m_boxCinx1(boxCinx1)
-                    , m_boxCinx2(boxCinx2)
-                    , m_boxCinx3(boxCinx3)
-                    , m_boxCinx4(boxCinx4)
-                    , m_boxCinx5(boxCinx5)
-                    , m_boxAbsorptionOscillatorStrength(boxAbsorptionOscillatorStrength)
-                    , m_numberTransitions(numberTransitions)
-                    , m_maxNumberTransitions(maxNumberTransitions)
+                    BoxValue boxIonization_ionizationEnergy, // unit: eV
+                    BoxValue boxIonization_screenedCharge, // unit: e
+                    BoxNumber boxIonization_numberAtomicStates, // unitless
+                    BoxNumber boxIonization_startIndexBlockAtomicStates, // unitless
+                    BoxStateConfigNumber boxState_configNumber,
+                    BoxValue boxState_energy, // unit: eV
+                    BoxNumber boxState_numberTransitions_up_b,
+                    BoxNumber boxState_startIndexBlockTransitions_up_b,
+                    BoxNumber boxState_numberTransitions_down_b,
+                    BoxNumber boxState_startIndexBlockTransitions_down_b,
+                    BoxNumber boxState_numberTransitions_up_f,
+                    BoxNumber boxState_startIndexBlockTransitions_up_f,
+                    BoxNumber boxState_numberTransitions_down_f,
+                    BoxNumber boxState_startIndexBlockTransitions_down_f,
+                    BoxNumber boxState_numberTransitions_up_a,
+                    BoxNumber boxState_startIndexBlockTransitions_up_a,
+                    BoxNumber boxState_numberTransitions_down_a,
+                    BoxNumber boxState_startIndexBlockTransitions_down_a,
+                    BoxValue boxTransitionB_collisionalOscillatorStrength, // unitless
+                    BoxValue boxTransitionB_absorptionOscillatorStrength, // unitless
+                    BoxValue boxTransitionB_cinx1, // unitless
+                    BoxValue boxTransitionB_cinx2, // unitless
+                    BoxValue boxTransitionB_cinx3, // unitless
+                    BoxValue boxTransitionB_cinx4, // unitless
+                    BoxValue boxTransitionB_cinx5, // unitless
+                    BoxStateConfigNumber boxTransitionB_UpperConfigNumber,
+                    BoxTransitionIdx boxTransitionReverseB_transitionIndex,
+                    BoxConfigNumber boxTransitionReverseB_lowerConfigNumber,
+                    BoxValue boxTransitionF_cinx1, // unitless
+                    BoxValue boxTransitionF_cinx2, // unitless
+                    BoxValue boxTransitionF_cinx3, // unitless
+                    BoxValue boxTransitionF_cinx4, // unitless
+                    BoxValue boxTransitionF_cinx5, // unitless
+                    BoxValue boxTransitionF_cinx6, // unitless
+                    BoxValue boxTransitionF_cinx7, // unitless
+                    BoxValue boxTransitionF_cinx8, // unitless
+                    BoxStateConfigNumber boxTransitionF_upperConfigNumber,
+                    BoxTransitionIdx boxTransitionReverseF_transitionIndex,
+                    BoxConfigNumber boxTransitionReverseF_lowerConfigNumber,
+                    BoxValue boxTransitionA_Rate, // unit: 1/s
+                    BoxConfigNumber boxTransitionA_upperStateConfigNumber,
+                    BoxTransitionIdx boxTransitionReverseA_transitionIndex,
+                    BoxConfigNumber boxTransitionReverseA_lowerConfigNumber)
+                    : m_boxIonization_ionizationEnergy(boxIonization_ionizationEnergy)
+                    , m_boxIonization_screenedCharge(boxIonization_screenedCharge)
+                    , m_boxIonization_numberAtomicStates(boxIonization_numberAtomicStates)
+                    , m_boxIonization_startIndexBlockAtomicStates(boxIonization_startIndexBlockAtomicStates)
+                    , m_boxState_configNumber(boxState_configNumber)
+                    , m_boxState_energy(boxState_energy)
+                    , m_boxState_numberTransitions_up_b(boxState_numberTransitions_up_b)
+                    , m_boxState_startIndexBlockTransitions_up_b(boxState_startIndexBlockTransitions_up_b)
+                    , m_boxState_numberTransitions_down_b(boxState_numberTransitions_down_b)
+                    , m_boxState_startIndexBlockTransitions_down_b(boxState_startIndexBlockTransitions_down_b)
+                    , m_boxState_numberTransitions_up_f(boxState_numberTransitions_up_f)
+                    , m_boxState_startIndexBlockTransitions_up_f(boxState_startIndexBlockTransitions_up_f)
+                    , m_boxState_numberTransitions_down_f(boxState_numberTransitions_down_f)
+                    , m_boxState_startIndexBlockTransitions_down_f(boxState_startIndexBlockTransitions_down_f)
+                    , m_boxState_numberTransitions_up_a(boxState_numberTransitions_up_a)
+                    , m_boxState_startIndexBlockTransitions_up_a(boxState_startIndexBlockTransitions_up_a)
+                    , m_boxState_numberTransitions_down_a(boxState_numberTransitions_down_a)
+                    , m_boxState_startIndexBlockTransitions_down_a(boxState_startIndexBlockTransitions_down_a)
+                    , m_boxTransitionB_collisionalOscillatorStrength(boxTransitionB_collisionalOscillatorStrength)
+                    , m_boxTransitionB_absorptionOscillatorStrength(boxTransitionB_absorptionOscillatorStrength)
+                    , m_boxTransitionB_cinx1(boxTransitionB_cinx1)
+                    , m_boxTransitionB_cinx2(boxTransitionB_cinx2)
+                    , m_boxTransitionB_cinx3(boxTransitionB_cinx3)
+                    , m_boxTransitionB_cinx4(boxTransitionB_cinx4)
+                    , m_boxTransitionB_cinx5(boxTransitionB_cinx5)
+                    , m_boxTransitionB_UpperConfigNumber(boxTransitionB_UpperConfigNumber)
+                    , m_boxTransitionReverseB_transitionIndex(boxTransitionReverseB_transitionIndex)
+                    , m_boxTransitionReverseB_lowerCondfigNumber(boxTransitionReverseB_lowerCondfigNumber)
+                    , m_boxTransitionF_cinx1(boxTransitionF_cinx1)
+                    , m_boxTransitionF_cinx2(boxTransitionF_cinx2)
+                    , m_boxTransitionF_cinx3(boxTransitionF_cinx3)
+                    , m_boxTransitionF_cinx4(boxTransitionF_cinx4)
+                    , m_boxTransitionF_cinx5(boxTransitionF_cinx5)
+                    , m_boxTransitionF_cinx6(boxTransitionF_cinx6)
+                    , m_boxTransitionF_cinx7(boxTransitionF_cinx7)
+                    , m_boxTransitionF_cinx8(boxTransitionF_cinx8)
+                    , m_boxTransitionF_upperConfigNumber(boxTransitionF_upperConfigNumber)
+                    , m_boxTransitionReverseF_transitionIndex(boxTransitionReverseF_transitionIndex)
+                    , m_boxTransitionReverseF_lowerCondfigNumber(boxTransitionReverseF_lowerCondfigNumber)
+                    , m_boxTransitionA_Rate(boxTransitionA_Rate)
+                    , m_boxTransitionA_upperStateConfigNumber(boxTransitionA_upperStateConfigNumber)
+                    , m_boxTransitionReverseA_transitionIndex(boxTransitionReverseA_transitionIndex)
+                    , m_boxTransitionReverseA_lowerCondfigNumber(boxTransitionReverseA_lowerCondfigNumber)
                 {
-                }
-
-                /** write atomic data to console
-                 *
-                 * should be called serially
-                 */
-                HINLINE void writeToConsoleAtomicData() const
-                {
-                    std::cout << "(" << m_numStates << ", " << m_numberTransitions << ")" << std::endl;
-
-                    for(uint32_t i = 0u; i < this->m_numStates; i++)
-                    {
-                        std::cout << i << " : "
-                                  << "[" << m_boxStateConfigNumber(i) << "]" << m_boxStateEnergy(i) << " ("
-                                  << m_boxNumTransitions(i) << "): " << m_boxStartIndexBlockTransitions(i)
-                                  << std::endl;
-
-                        for(uint32_t j = 0; j < m_boxNumTransitions(i); j++)
-                        {
-                            uint32_t indexTransition = m_boxStartIndexBlockTransitions(i) + j;
-
-                            std::cout << "\t" << indexTransition << " : " << m_boxStateConfigNumber(i) << " -> "
-                                      << m_boxUpperConfigNumber(indexTransition)
-                                      << "; C: " << m_boxCollisionalOscillatorStrength(indexTransition)
-                                      << ", A: " << m_boxAbsorptionOscillatorStrength(indexTransition) << ", Gaunt: ( "
-                                      << m_boxCinx1(indexTransition) << ", " << m_boxCinx2(indexTransition) << ", "
-                                      << m_boxCinx3(indexTransition) << ", " << m_boxCinx4(indexTransition) << ", "
-                                      << m_boxCinx5(indexTransition) << ")" << std::endl;
-                        }
-                    }
                 }
 
                 /**returns the energy of the given state respective to the ground state of its ionization
                  *
                  * @param ConfigNumber ... configNumber of atomic state
                  * return unit: ATOMIC_UNIT_ENERGY
+                 *
+                 * @todo move to atomic rate calc
                  */
                 // @TODO: replace dumb linear search @BrianMarre 2021
-                HDINLINE ValueType operator()(Idx const ConfigNumber) const
+                HDINLINE T_ValueType operator()(Idx const ConfigNumber) const
                 {
                     // one is a special case
                     if(ConfigNumber == 0)
@@ -193,7 +324,7 @@ namespace picongpu
                         }
                     }
                     // atomic state not found return zero
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
                 /** returns state corresponding to given index */
@@ -296,53 +427,53 @@ namespace picongpu
                     return this->m_numStates;
                 }
 
-                HDINLINE ValueType getCollisionalOscillatorStrength(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getCollisionalOscillatorStrength(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxCollisionalOscillatorStrength(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
-                HDINLINE ValueType getCinx1(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getCinx1(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxCinx1(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
-                HDINLINE ValueType getCinx2(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getCinx2(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxCinx2(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
-                HDINLINE ValueType getCinx3(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getCinx3(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxCinx3(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
-                HDINLINE ValueType getCinx4(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getCinx4(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxCinx4(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
-                HDINLINE ValueType getCinx5(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getCinx5(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxCinx5(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
-                HDINLINE ValueType getAbsorptionOscillatorStrength(uint32_t const indexTransition) const
+                HDINLINE T_ValueType getAbsorptionOscillatorStrength(uint32_t const indexTransition) const
                 {
                     if(indexTransition < this->m_numberTransitions)
                         return this->m_boxAbsorptionOscillatorStrength(indexTransition);
-                    return static_cast<ValueType>(0);
+                    return static_cast<T_ValueType>(0);
                 }
 
                 HDINLINE constexpr static uint8_t getAtomicNumber()
@@ -353,7 +484,7 @@ namespace picongpu
 
                 HDINLINE void addLevel(
                     Idx const ConfigNumber, // must be index as defined in ConfigNumber
-                    ValueType const energy // unit: eV
+                    T_ValueType const energy // unit: eV
                 )
                 {
                     /** add a level to databox
@@ -381,13 +512,13 @@ namespace picongpu
                 HDINLINE void addTransition(
                     Idx const lowerConfigNumber, // must be index as defined in ConfigNumber
                     Idx const upperConfigNumber, // must be index as defined in ConfigNumber
-                    ValueType const collisionalOscillatorStrength, // unit: unitless
-                    ValueType const gauntCoefficent1, // unit: unitless
-                    ValueType const gauntCoefficent2, // unit: unitless
-                    ValueType const gauntCoefficent3, // unit: unitless
-                    ValueType const gauntCoefficent4, // unit: unitless
-                    ValueType const gauntCoefficent5, // unit: unitless
-                    ValueType const absorptionOscillatorStrength) // unitless
+                    T_ValueType const collisionalOscillatorStrength, // unit: unitless
+                    T_ValueType const gauntCoefficent1, // unit: unitless
+                    T_ValueType const gauntCoefficent2, // unit: unitless
+                    T_ValueType const gauntCoefficent3, // unit: unitless
+                    T_ValueType const gauntCoefficent4, // unit: unitless
+                    T_ValueType const gauntCoefficent5, // unit: unitless
+                    T_ValueType const absorptionOscillatorStrength) // unitless
                 {
                     // get dataBox index of lowerConfigNumber
                     uint32_t collectionIndex = this->findState(lowerConfigNumber);

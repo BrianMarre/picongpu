@@ -30,8 +30,7 @@ namespace picongpu
         {
             namespace debug
             {
-                /** debug only, print content and bins of histogram to console, serial and cpu build only
-                 */
+                //! debug only, print content and bins of histogram to console, serial and cpu build only
                 template<typename T_Histogram>
                 void printHistogramToConsole(T_Histogram& histogram)
                 {
@@ -65,6 +64,36 @@ namespace picongpu
                     }
                     std::cout << "\t overFlow: w0=" << histogram.getOverflowWeight() << std::endl;
                 }
+
+                //! debug only, write atomic data to console, must be called serially and cpu build only
+                template<typename T_AtomicData>
+                void writeToConsoleAtomicData(T_AtomicData atomicData) const
+                {
+                    ///@todo convert to new move out form atomicDataBox
+                    std::cout << "(" << m_numStates << ", " << m_numberTransitions << ")" << std::endl;
+
+                    for(uint32_t i = 0u; i < this->m_numStates; i++)
+                    {
+                        std::cout << i << " : "
+                                  << "[" << m_boxStateConfigNumber(i) << "]" << m_boxStateEnergy(i) << " ("
+                                  << m_boxNumTransitions(i) << "): " << m_boxStartIndexBlockTransitions(i)
+                                  << std::endl;
+
+                        for(uint32_t j = 0; j < m_boxNumTransitions(i); j++)
+                        {
+                            uint32_t indexTransition = m_boxStartIndexBlockTransitions(i) + j;
+
+                            std::cout << "\t" << indexTransition << " : " << m_boxStateConfigNumber(i) << " -> "
+                                      << m_boxUpperConfigNumber(indexTransition)
+                                      << "; C: " << m_boxCollisionalOscillatorStrength(indexTransition)
+                                      << ", A: " << m_boxAbsorptionOscillatorStrength(indexTransition) << ", Gaunt: ( "
+                                      << m_boxCinx1(indexTransition) << ", " << m_boxCinx2(indexTransition) << ", "
+                                      << m_boxCinx3(indexTransition) << ", " << m_boxCinx4(indexTransition) << ", "
+                                      << m_boxCinx5(indexTransition) << ")" << std::endl;
+                        }
+                    }
+                }
+
             } // namespace debug
         } // namespace atomicPhysics2
     } // namespace particles
