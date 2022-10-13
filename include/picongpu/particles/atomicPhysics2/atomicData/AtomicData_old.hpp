@@ -300,39 +300,6 @@ namespace picongpu
                 {
                 }
 
-                /**returns the energy of the given state respective to the ground state of its ionization
-                 *
-                 * @param ConfigNumber ... configNumber of atomic state
-                 * return unit: ATOMIC_UNIT_ENERGY
-                 *
-                 * @todo move to atomic rate calc
-                 */
-                // @TODO: replace dumb linear search @BrianMarre 2021
-                HDINLINE T_ValueType operator()(Idx const ConfigNumber) const
-                {
-                    // one is a special case
-                    if(ConfigNumber == 0)
-                        return 0.0_X;
-
-                    // search for state in list
-                    for(uint32_t i = 0u; i < this->m_numStates; i++)
-                    {
-                        if(m_boxStateConfigNumber(i) == ConfigNumber)
-                        {
-                            // NOTE: unit conversion should be done in 64 bit
-                            return float_X(float_64(m_boxStateEnergy(i)) * UNITCONV_eV_to_AU);
-                        }
-                    }
-                    // atomic state not found return zero
-                    return static_cast<T_ValueType>(0);
-                }
-
-                /** returns state corresponding to given index */
-                HDINLINE Idx getAtomicStateConfigNumberIndex(uint32_t const indexState) const
-                {
-                    return this->m_boxStateConfigNumber(indexState);
-                }
-
                 /** returns index of atomic state in databox, if returns numStates state not found
                  *
                  * @TODO: replace linear search @BrianMarre, 2021
@@ -475,12 +442,6 @@ namespace picongpu
                         return this->m_boxAbsorptionOscillatorStrength(indexTransition);
                     return static_cast<T_ValueType>(0);
                 }
-
-                HDINLINE constexpr static uint8_t getAtomicNumber()
-                {
-                    return T_atomicNumber;
-                }
-
 
                 HDINLINE void addLevel(
                     Idx const ConfigNumber, // must be index as defined in ConfigNumber

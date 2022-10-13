@@ -316,13 +316,12 @@ namespace picongpu
                      *
                      * @return charge of ion
                      */
-                    HDINLINE static uint8_t getIonizatioState(T_DataType configNumber)
+                    HDINLINE static uint8_t getIonizationState(T_DataType configNumber)
                     {
                         uint8_t numberElectrons = 0u;
                         uint8_t shellNumberElectrons;
 
                         T_DataType stepLength = ConfigNumber::stepLength(T_numberLevels);
-                        ;
 
                         // BEWARE: for-loop counts down, starting with n_max
                         for(uint8_t n = T_numberLevels; n >= 1; n--)
