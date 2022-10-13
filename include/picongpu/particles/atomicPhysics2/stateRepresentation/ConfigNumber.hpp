@@ -17,18 +17,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file
+/** @file implements the actual storage of atomic FlyCHK super configurations in a single
+ *   unsigned integer.
  *
- * This file implements the actual storage of atomic configurations.
- *
- * This implementation uses config numbers for this. A configNumber is an index number
- * of an hydrogen like atomic state, with several conversion methods and static methods.
+ * A configNumber is an index number of an hydrogen like atomic state, with several
+ * static conversion methods included.
  * Instances of this class represent an atomic state of an ion by numbering
  * Hydrogen-like super configurations.
  *
- * The Hydrogen-like super configuration is specified by the occupation
- * vector N-vector, a listing of every level n's occupation number N_n, with n:
- * 1 < n < n_max.
+ * The Hydrogen-like super configuration is specified by the occupation vector N-vector,
+ * a listing of every level n's occupation number N_n, with n: 1 < n < n_max, same as FlyCHK.
  *
  * These different super configurations are organized in a combinatorial table
  * and numbered starting with the completely ionized state.
@@ -46,7 +44,7 @@
  * 9 |0    |3    |0
  * ...
  *
- * analytical formula:
+ * analytical conversion formula:
  * # ... configNumber assigned
  * # = N_1 *(g(0) + 1)+ N_2 * (g(1)+1) + N_3 * (g(2)+1) * (g(1) + 1)) + ...
  * # = Sum_{n=1}^{n_max}[ N_n * Product_{i=1}^{n} (g(i-1) + 1) ]
@@ -85,24 +83,10 @@ namespace picongpu
             {
                 /** Implements the actual storage of the super configurations by index
                  *
-                 * @tparam T_DataType unsigned integer data type to represent the config number
-                 * @tparam T_numberLevels max principle quantum number, n_max, represented in
+                 * @tparam T_DataType ... unsigned integer data type to represent the config number
+                 * @tparam T_numberLevels ... max principle quantum number, n_max, represented in
                  *                              this configNumber
                  * @tparam T_atomicNumber ... atomic number of the ion, in units of elementary charge
-                 *
-                 * public methods:
-                 *   - T_DataType numberStates()
-                 *       return number of states representable in this configNumber Object
-                 *   - ConfigNumber( uint x )
-                 *       constructor directly setting private member configNumber,
-                 *       BEWARE: no conversions and no runtime range checks, only use if you know
-                 *           what you are doing
-                 *   - ConfigNumber( pmacc::math::Vector<uint_8, T_numberLevels > N )
-                 *       constructor using occupation number vector N = ( N_1, N_2, ..., N_(n_max) )
-                 *   - T_DataType getAtomicStateConfigNumber( pmacc::math::Vector<uint8_t, T_numberLevels> N )
-                 *       converts occupation number vector N to configNumber index
-                 *   - pmacc::math::Vector<uint8_t, T_numberLevels> getLevelVector( T_DataType x )
-                 *       converts configNumber ID x to occupation number vector
                  */
                 template<typename T_DataType, uint8_t T_numberLevels, uint8_t T_atomicNumber>
                 class ConfigNumber
@@ -128,7 +112,7 @@ namespace picongpu
 
                     /** number of different occupation number values possible for the n-th shell
                      *
-                     * BEWARE: n larger than 254 cause an overflow.
+                     * @attention n larger than 254 cause an overflow.
                      *
                      * @param n principal quantum number
                      */
@@ -143,6 +127,8 @@ namespace picongpu
                      * ie. number of table entries per occupation number VALUE of the
                      * current principal quantum number n.
                      *
+                     * @attention n larger than 254 cause an overflow.
+                     *
                      *@param n principal quantum number
                      */
                     HDINLINE static T_DataType stepLength(uint8_t n)
@@ -156,19 +142,40 @@ namespace picongpu
                         return result;
                     }
 
-                    /** returns the next step length of the next shell, given the
-                     * current step length and current_n
+                    /** returns stepLength(current_n+1) based on stepLength(current_n) and current_n
                      *
-                     * ie.  number of table entries per occupation number VALUE of the
-                     * principal quantum number (n+1).
+                     * equivalent to numberOfOccupationNumberValuesInShell(current_n+1), but faster
                      *
-                     * @param n principal quantum number of current shell
+                     * @attention n larger than 254 cause an overflow.
+                     *
+                     * @param current_n principal quantum number of current shell
                      * @param currentStepLength current step length
+                     *
+                     * @return changes stepLength to stepLength(n+1)
                      */
                     HDINLINE static void nextStepLength(T_DataType* currentStepLength, uint8_t current_n)
                     {
                         *currentStepLength = *currentStepLength
                             * static_cast<T_DataType>(ConfigNumber::numberOfOccupationNumberValuesInShell(current_n));
+                    }
+
+                    /** returns stepLength(current_n-1) based on stepLength(current_n) and current_n
+                     *
+                     * equivalent to numberOfOccupationNumberValuesInShell(current_n-1), but faster
+                     *
+                     * @attention n larger than 254 cause an overflow
+                     * @attention does not check for ranges
+                     *
+                     * @param current_n principal quantum number of current shell
+                     * @param currentStepLength current step length
+                     *
+                     * @return changes stepLength to stepLength(n-1)
+                     */
+                    HDINLINE static void previousStepLength(T_DataType* currentStepLength, uint8_t current_n)
+                    {
+                        *currentStepLength = *currentStepLength
+                            / static_cast<T_DataType>(
+                                ConfigNumber::numberOfOccupationNumberValuesInShell(current_n - 1u));
                     }
 
                 public:
@@ -184,16 +191,31 @@ namespace picongpu
                     static constexpr uint8_t numberLevels = T_numberLevels;
                     //}
 
-                    /** returns number of different states(Configs) that are represented
-                     *
-                     * for use in Markov chain solver as range of integer random number
-                     */
-                    HDINLINE static constexpr T_DataType numberStates()
+                    //! returns number of different states(Configs) that are representable
+                    HDINLINE static T_DataType numberStates()
                     {
                         return static_cast<T_DataType>(stepLength(numberLevels + 1));
                     }
 
-                    //! constructor using scalar configNumber, simple assign constructor with range checks
+                    //! direct assignment
+                    HDINLINE void operator=(T_DataType newConfigNumber)
+                    {
+                        this->configNumber = newConfigNumber;
+                    }
+
+                    //! get stored value
+                    HDINLINE T_DataType getConfigNumber()
+                    {
+                        return this->configNumber;
+                    }
+
+                    // Constructors
+                    /** constructor using scalar configNumber, simple assign constructor
+                     *
+                     * @attention no conversions and no runtime range checks, only use if you know
+                     *    what you are doing
+                     * @param N configNumber, uint like
+                     */
                     HDINLINE ConfigNumber(T_DataType N = static_cast<T_DataType>(0u))
                     {
                         PMACC_ASSERT_MSG(N >= 0, "negative configurationNumbers are not defined");
@@ -205,23 +227,25 @@ namespace picongpu
                         this->configNumber = N;
                     }
 
-                    //! constructor using occupation number vector
-                    HDINLINE ConfigNumber(pmacc::math::Vector<uint8_t, numberLevels> levelVector)
+                    /** constructor using occupation number vector
+                     *
+                     * @param levelVector occupation number vector (N_1, N_2, N_3, ... , N_(n_max)
+                     */
+                    HDINLINE ConfigNumber(pmacc::math::Vector<uint8_t, T_numberLevels> levelVector)
                     {
                         this->configNumber = getAtomicStateConfigNumber(levelVector);
                     }
 
-
-                    /** convert occupation number vector to configNumber
+                    // conversion methods
+                    /** convert an occupation number vector to a configNumber
                      *
                      * Uses the formula in file description.
-                     * Assumes index of vector is principal quantum number shifted by -1.
+                     * @param levelVector occupation number vector (N_1, N_2, N_3, ... , N_(n_max)
                      *
-                     * @return Returns number, not object, use constructor for getting an
-                     * instance of the class.
+                     * @return returns only number, not instance
                      */
                     HDINLINE static T_DataType getAtomicConfigNumber(
-                        pmacc::math::Vector<uint8_t, numberLevels> levelVector)
+                        pmacc::math::Vector<uint8_t, T_numberLevels> levelVector)
                     {
                         /* stepLength ... number of table entries per occupation number VALUE of
                          * the current principal quantum number n.
@@ -230,7 +254,7 @@ namespace picongpu
 
                         T_DataType configNumber = 0;
 
-                        for(uint8_t n = 0u; n < numberLevels; n++)
+                        for(uint8_t n = 0u; n < T_numberLevels; n++)
                         {
                             /* BEWARE: n here equals n-1 in formula in file documentation,
                              *
@@ -249,7 +273,7 @@ namespace picongpu
                         return configNumber;
                     }
 
-                    /** converts configNumber N into an occupation number vector
+                    /** converts configNumber into an occupation number vector
                      *
                      * Index of result vector corresponds to principal quantum number n -1.
                      *
@@ -261,38 +285,59 @@ namespace picongpu
                      * further information: see master thesis of Brian Marre
                      *
                      * @param N configNumber, uint like
+                     * @return (N_1, N_2, N_3, ..., N_(n_max))
                      */
-                    HDINLINE static pmacc::math::Vector<uint8_t, numberLevels> getLevelVector(T_DataType N)
+                    HDINLINE static pmacc::math::Vector<uint8_t, T_numberLevels> getLevelVector(T_DataType N)
                     {
                         pmacc::math::Vector<uint8_t, numberLevels> result
                             = pmacc::math::Vector<uint8_t, numberLevels>::create(0);
 
-                        T_DataType stepLength;
+                        T_DataType stepLength = ConfigNumber::stepLength(T_numberLevels);
 
-                        // BEWARE: for loop counts down, starting with n_max
-                        for(uint8_t n = numberLevels; n >= 1; n--)
+                        // BEWARE: for-loop counts down, starting with n_max
+                        for(uint8_t n = T_numberLevels; n >= 1; n--)
                         {
-                            // calculate current stepLength
-                            stepLength = ConfigNumber::stepLength(n);
 
                             // get occupation number N_n by getting largest whole number factor
                             result[n - 1] = static_cast<uint8_t>(N / stepLength);
 
                             // remove contribution of current N_n
                             N -= stepLength * (result[n - 1]);
+
+                            ConfigNumber::previousStepLength(*stepLength, n);
                         }
 
                         return result;
                     }
 
-                    HDINLINE void operator=(T_DataType newConfigNumber)
+                    /** get charge state from configNumber
+                     *
+                     * @param configNumber configNumber, uint like, not an object
+                     *
+                     * @return charge of ion
+                     */
+                    HDINLINE static uint8_t getIonizatioState(T_DataType configNumber)
                     {
-                        this->configNumber = newConfigNumber;
-                    }
+                        uint8_t numberElectrons = 0u;
+                        uint8_t shellNumberElectrons;
 
-                    HDINLINE T_DataType getConfigNumber()
-                    {
-                        return this->configNumber;
+                        T_DataType stepLength = ConfigNumber::stepLength(T_numberLevels);
+                        ;
+
+                        // BEWARE: for-loop counts down, starting with n_max
+                        for(uint8_t n = T_numberLevels; n >= 1; n--)
+                        {
+                            // get occupation number N_n by getting largest whole number factor
+                            shellNumberElectrons = static_cast<uint8_t>(N / stepLength);
+
+                            // remove contribution of current N_n
+                            N -= stepLength * (shellNumberElectrons);
+
+                            ConfigNumber::previousStepLength(*stepLength, n);
+
+                            numberElectrons += shellNumberElectrons;
+                        }
+                        return T_atomicNumber - shellNumberElectrons;
                     }
                 };
 
@@ -301,15 +346,15 @@ namespace picongpu
     } // namespace particles
 } // namespace picongpu
 
-/** this specifies how an object of the ConfigNumber class can be written to an
- * external file for storage.
- */
 
 namespace pmacc
 {
     namespace traits
     {
-        // defines what datatype is to be used to save the data in this object
+        /** implementation of how a ConfigNumber instance can be written to openPMD output
+         *
+         * Datatype is to be used to save the data in this object
+         */
         template<typename T_DataType, uint8_t T_numberLevels, uint8_t T_atomicNumber>
         struct GetComponentsType<
             picongpu::particles::atomicPhysics2::stateRepresentation::
@@ -319,7 +364,10 @@ namespace pmacc
             using type = T_DataType;
         };
 
-        // defines how many independent components are saved in the object
+        /** implementation of how a ConfigNumber instance can be written to openPMD output
+         *
+         * how many independent components are saved in the object
+         */
         template<typename T_DataType, uint8_t T_numberLevels, uint8_t T_atomicNumber>
         struct GetNComponents<
             picongpu::particles::atomicPhysics2::stateRepresentation::
