@@ -71,6 +71,7 @@
 #include <pmacc/assert.hpp>
 #include <pmacc/math/Vector.hpp>
 
+// debug only
 #include <cstdint>
 
 namespace picongpu
@@ -287,7 +288,7 @@ namespace picongpu
                      * @param N configNumber, uint like
                      * @return (N_1, N_2, N_3, ..., N_(n_max))
                      */
-                    HDINLINE static pmacc::math::Vector<uint8_t, T_numberLevels> getLevelVector(T_DataType N)
+                    HDINLINE static pmacc::math::Vector<uint8_t, T_numberLevels> getLevelVector(T_DataType configNumber)
                     {
                         pmacc::math::Vector<uint8_t, numberLevels> result
                             = pmacc::math::Vector<uint8_t, numberLevels>::create(0);
@@ -297,14 +298,13 @@ namespace picongpu
                         // BEWARE: for-loop counts down, starting with n_max
                         for(uint8_t n = T_numberLevels; n >= 1; n--)
                         {
-
                             // get occupation number N_n by getting largest whole number factor
-                            result[n - 1] = static_cast<uint8_t>(N / stepLength);
+                            result[n - 1] = static_cast<uint8_t>(configNumber / stepLength);
 
                             // remove contribution of current N_n
-                            N -= stepLength * (result[n - 1]);
+                            configNumber -= stepLength * (result[n - 1]);
 
-                            ConfigNumber::previousStepLength(*stepLength, n);
+                            ConfigNumber::previousStepLength(&stepLength, n);
                         }
 
                         return result;
@@ -319,7 +319,6 @@ namespace picongpu
                     HDINLINE static uint8_t getIonizationState(T_DataType configNumber)
                     {
                         uint8_t numberElectrons = 0u;
-                        uint8_t shellNumberElectrons;
 
                         T_DataType stepLength = ConfigNumber::stepLength(T_numberLevels);
 
@@ -327,16 +326,17 @@ namespace picongpu
                         for(uint8_t n = T_numberLevels; n >= 1; n--)
                         {
                             // get occupation number N_n by getting largest whole number factor
-                            shellNumberElectrons = static_cast<uint8_t>(N / stepLength);
+                            uint8_t shellNumberElectrons = static_cast<uint8_t>(configNumber / stepLength);
 
                             // remove contribution of current N_n
-                            N -= stepLength * (shellNumberElectrons);
+                            configNumber -= stepLength * shellNumberElectrons;
 
-                            ConfigNumber::previousStepLength(*stepLength, n);
+                            ConfigNumber::previousStepLength(&stepLength, n);
 
                             numberElectrons += shellNumberElectrons;
                         }
-                        return T_atomicNumber - shellNumberElectrons;
+
+                        return T_atomicNumber - numberElectrons;
                     }
                 };
 
