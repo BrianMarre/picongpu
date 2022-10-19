@@ -19,10 +19,42 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateOrgaData.hpp"
+
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateOrgaData_BoundBound.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateOrgaData_BoundFree.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateOrgaData_Autonomous.hpp"
+
 #include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionData.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/StateData.hpp"
+
+
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionData.hpp"
 
-/** @file gathering of all files implementing storage of atomic Data */
+/** @file gathering of all files implementing storage classes of atomic Data
+ *
+ * The atomicPhysics step relies on a model of atomic states and transitions for each
+ * atomicPhysics ion species.
+ * These model's parameters are provided by the user as a .txt file of specified format
+ * at runtime, due to license requirements.
+ *
+ *  PIConGPU itself only includes charge state data, for ADK-, Thomas-Fermi- and BSI-ionization.
+ *  All other atomic state data is kept separate from PIConGPU itself.
+ *
+ * This file is read at the start of the simulation and stored in several objects for
+ *  later use.
+ *
+ * Always two different classes handle each sub set of atomicPhysics data:
+ * - a data class ... implements
+ *                      * reading of the atomicData input file
+ *                      * export to the DataBox for device side(GPU) use
+ *                      * host side storage of atomicData
+ * - a DataBox class ... device side(GPU) storage and access to atomicData
+ *
+ * For some data sets also an separate orga-data set exists. This describes the Structure
+ *  of the pure value data for faster lookups.
+ */

@@ -57,7 +57,6 @@
  *
  * - list of levels (sorted blockwise by ionization state list)
  *    [(configNumber, [see electronDistribution]
- *      screenedCharge, [eV]
  *      energy respective to ground state of ionization state, [eV]
  *
  *      number of transitions          up b,
