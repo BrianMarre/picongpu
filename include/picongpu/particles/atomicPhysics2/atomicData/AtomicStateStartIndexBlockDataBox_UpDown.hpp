@@ -1,4 +1,4 @@
-/* Copyright 2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Brian Marre, Sergei Bastrakov
  *
  * This file is part of PIConGPU.
  *
@@ -23,15 +23,9 @@
 
 #include <cstdint>
 
-/** @file implements the storage of atomic state orga data for the bound-bound transitions
+/** @file implements base class of atomic state start index block data with up- and downward transitions
  *
- * The atomic state data consists of the following data sets:
- *
- * - collection of atomic states orga data for bound-bound transitions (sorted blockwise by ionization state ascending)
- *    [ (number of transitions          up,
- *       startIndex of transition block up,
- *       number of transitions          down,
- *       startIndex of transition block down)]
+ * e.g. for bound-bound and bound-free transitions
  */
 
 namespace picongpu
@@ -42,7 +36,8 @@ namespace picongpu
         {
             namespace atomicData
             {
-                /** data box storing atomic state orga data for bound-bound transitions
+
+                /** data box storing atomic state startIndexBlock for up- and downward-transitions
                  *
                  * for use on device.
                  *
@@ -56,19 +51,12 @@ namespace picongpu
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class AtomicStateOrgaDataBox_BoundBound : Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class AtomicStateStartIndexDataBox_UpDown : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
-                    //! number of bound-bound transitions from the atomic state upward
-                    BoxNumber m_boxNumberTransitionsUp;
-                    /** start collection index of the block of upward bound-bound transitions
-                     * from the atomic state in the collection of upward bound-bound transitions
-                     */
+                    //! start collection index of the block of upward transitions from the atomic state in the corresponding upward collection
                     BoxNumber m_boxStartIndexBlockTransitionsUp;
-                    //! number of bound-bound transitions from the atomic state downward
-                    BoxNumber m_boxNumberTransitionsDown;
-                    /** start collection index of the block of downward bound-bound transitions
-                     * from the atomic state in the collection of downward bound-bound transitions
-                     */
+
+                    //! start collection index of the block of downward transitions from the atomic state in the corresponding upward collection                    BoxNumber m_boxStartIndexBlockTransitionsDown;
                     BoxNumber m_boxStartIndexBlockTransitionsDown;
 
                 public:
@@ -78,46 +66,22 @@ namespace picongpu
                      *  and secondary ascending by configNumber.
                      * @attention the completely ionized state must be left out.
                      *
-                     * @param boxNumberTransitionsUp number of upward bound-bound transitions from the atomic state
                      * @param startIndexBlockAtomicStatesUp start collection index of the block of
                      *  bound-bound transitions in the upward bound-bound transition collection
-                     * @param boxNumberTransitionsDown number of downward bound-bound transitions from the atomic state
                      * @param startIndexBlockAtomicStatesDown start collection index of the block of
                      *  bound-bound transitions in the downward bound-bound transition collection
                      */
-                    AtomicStateOrgaDataBox_BoundBound(
-                        BoxNumber boxNumberTransitionsUp,
+                    AtomicStateStartIndexDataBox_UpDown(
                         BoxNumber boxStartIndexBlockTransitionsUp,
-                        BoxNumber boxNumberTransitionsDown,
                         BoxNumber boxStartIndexBlockTransitionsDown)
-                        : m_boxNumberTransitionsUp(boxNumberTransitionsUp)
-                        , m_boxStartIndexBlockTransitionsUp(boxStartIndexBlockTransitionsUp)
-                        , m_boxNumberTransitionsDown(boxNumberTransitionsDown)
+                        : m_boxStartIndexBlockTransitionsUp(boxStartIndexBlockTransitionsUp)
                         , m_boxStartIndexBlockTransitionsDown(boxStartIndexBlockTransitionsDown)
                     {
                     }
 
-                    /** get number of upward bound-bound transitions from an atomic state
+                    /** get start index of block of transitions upward from atomic state
                      *
-                     * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-                     * @attention no range check
-                     */
-                    TypeNumber numberTransitionsUp(uint32_t const collectionIndex) const
-                    {
-                        return m_boxNumberTransitionsUp(collectionIndex);
-                    }
-
-                    /** get number of downward bound-bound transitions from an atomic state
-                     *
-                     * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-                     * @attention no range check
-                     */
-                    TypeNumber numberTransitionsDown(uint32_t const collectionIndex) const
-                    {
-                        return m_boxNumberTransitionsDown(collectionIndex);
-                    }
-
-                    /** get start index of block of autonomous transitions from atomic state
+                     * @param collectionIndex atomic state collection index
                      *
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
@@ -127,7 +91,9 @@ namespace picongpu
                         return m_boxStartIndexBlockTransitionsUp(collectionIndex);
                     }
 
-                    /** get start index of block of autonomous transitions from atomic state
+                    /** get start index of block of transitions downward from atomic state
+                     *
+                     * @param collectionIndex atomic state collection index
                      *
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check

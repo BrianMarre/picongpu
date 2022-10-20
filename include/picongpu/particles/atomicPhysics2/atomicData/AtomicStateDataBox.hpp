@@ -25,13 +25,6 @@
 
 /** @file implements the storage of atomic state property data
  *
- * The atomic state data consists of the following data sets:
- *
- * - collection of atomic states property data (sorted blockwise by ionization state ascending)
- *    [(configNumber, [see electronDistribution]
- *      energy respective to ground state of ionization state [eV]
- *     )]
- *
  * @attention ConfigNumber specifies the number of a state as defined by the configNumber
  *      class, while index always refers to a collection index.
  *      The configNumber of a given state is always the same, its collection index depends
@@ -57,6 +50,11 @@ namespace picongpu
                  *      typically uint64_t
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  * @tparam T_numberAtomicStates number of atomic states to be stored
+                 *
+                 * @attention ConfigNumber specifies the number of a state as defined by the configNumber
+                 *      class, while index always refers to a collection index.
+                 *      The configNumber of a given state is always the same, its collection index depends
+                 *      on input file,it should therefore only be used internally!
                  */
                 template<
                     typename T_DataBoxType,
@@ -65,7 +63,7 @@ namespace picongpu
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber,
                     uint32_t T_numberAtomicStates>
-                class AtomicStateDataBox : Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class AtomicStateDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
@@ -121,11 +119,11 @@ namespace picongpu
 
                         /// @todo replace linear search, BrianMarre, 2022
                         // search for state in dataBox
-                        for(uint32_t i = startIndexBlock; i < numberAtomicStatesForChargeState; i++)
+                        for(uint32_t i = 0; i < numberAtomicStatesForChargeState; i++)
                         {
-                            if(m_boxConfigNumber(i) == configNumber)
+                            if(m_boxConfigNumber(i + startIndexBlock) == configNumber)
                             {
-                                return i;
+                                return i + startIndexBlock;
                             }
                         }
 
@@ -175,13 +173,6 @@ namespace picongpu
                         return this->m_boxStateEnergy(collectionIndex);
                     }
                 };
-
-                /// @todo
-                //template<uint8_t T_atomicNumber, typename T_ConfigNumberDataType = uint64_t>
-                //class AtomicData
-                //{
-                //public:
-                //}
 
             } // namespace atomicData
         } // namespace atomicPhysics2

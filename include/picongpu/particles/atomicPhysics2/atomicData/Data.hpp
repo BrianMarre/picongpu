@@ -45,6 +45,7 @@ namespace picongpu
                     >
                 class DataBox
                 {
+                public:
                     using BoxNumber = T_DataBoxType<T_Number>;
                     using BoxValue = T_DataBoxType<T_Value>;
 

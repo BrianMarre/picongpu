@@ -375,12 +375,6 @@ namespace picongpu
                     return 0u;
                 }
 
-                // returns start index of the block of transitions with state as lower state
-                HDINLINE uint32_t getStartIndexBlock(uint32_t const indexState) const
-                {
-                    return this->m_boxStartIndexBlockTransitions(indexState);
-                }
-
                 // number of Transitions stored in this box
                 HDINLINE uint32_t getNumTransitions() const
                 {

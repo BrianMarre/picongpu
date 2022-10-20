@@ -1,4 +1,4 @@
-/* Copyright 2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Brian Marre, Sergei Bastrakov
  *
  * This file is part of PIConGPU.
  *
@@ -22,16 +22,10 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
 
 #include <cstdint>
-//#include <memory>
-//#include <utility>
 
-/** @file implements the storage of charge state property data
+/** @file implements storage of numberInBlock data for each atomic state with downward transitions
  *
- * The charge state data consists of the following data sets:
- *
- * - list of ionization states (sorted in ascending order of ionization):
- *      [ (ionization energy, [eV]
- *         screenedCharge, [eV] )]
+ * e.g. for autonomous transitions
  */
 
 namespace picongpu
@@ -42,8 +36,7 @@ namespace picongpu
         {
             namespace atomicData
             {
-
-                /** data box storing charge state property data
+                /** data box storing atomic state numberInBlock for downward-only transitions
                  *
                  * for use on device.
                  *
@@ -56,45 +49,44 @@ namespace picongpu
                     typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
-                    uint8_t T_atomicNumber // element
-                    >
-                class ChargeStateDataBox : Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                    uint8_t T_atomicNumber>
+                class AtomicStateNumberOfTransitionsDataBox_Down : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
-                    //! unit: eV
-                    BoxValue m_boxIonizationEnergy;
-                    //! unit: elementary charge
-                    BoxValue m_boxScreenedCharge;
+                    /** start collection index of the block of autonomous transitions
+                     * from the atomic state in the collection of autonomous transitions
+                     */
+                    BoxNumber m_boxNumberOfTransitions;
+
+                    /// @todo transitions from configNumber 0u?
 
                 public:
                     /** constructor
                      *
-                     * @attention charge state data must be sorted by ascending charge and
+                     * @attention atomic state data must be sorted block-wise by charge state
+                     *  and secondary ascending by configNumber.
                      * @attention the completely ionized state must be left out.
                      *
-                     * @param ionizationEnergy ionization energy[eV] of charge states
-                     * @param screenedCharge screenedCharge[e] of charge states
+                     * @param boxNumberTransitions number of transitions from the atomic state
                      */
-                    ChargeStateDataBox(
-                        BoxValue ionizationEnergy,
-                        BoxValue screenedCharge)
-                        : m_boxIonizationEnergy(ionizationEnergy)
-                        , m_boxScreenedCharge(screenedCharge)
+                    AtomicStateNumberOfTransitionsDataBox_Down(
+                        BoxNumber boxNumberOfTransitions)
+                        : m_boxNumberOfTransitions(boxNumberOfTransitions)
                     {
                     }
 
-                    //!@attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Value ionizationEnergy(uint8_t chargeState)
+                    /** get start index of block of autonomous transitions from atomic state
+                     *
+                     * @param collectionIndex atomic state collection index
+                     *
+                     * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
+                     * @attention no range check
+                     */
+                    TypeNumber numberOfTransitions(uint32_t const collectionIndex) const
                     {
-                        return m_boxIonizationEnergy[chargeState];
+                        return m_boxNumberOfTransitions(collectionIndex);
                     }
 
-                    //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Value screenedCharge(uint8_t chargeState)
-                    {
-                        return m_boxScreenedCharge[chargeState]
-                    }
                 };
-
             } // namespace atomicData
         } // namespace atomicPhysics2
     } // namespace particles

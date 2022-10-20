@@ -1,4 +1,4 @@
-/* Copyright 2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Brian Marre, Sergei Bastrakov
  *
  * This file is part of PIConGPU.
  *
@@ -23,13 +23,9 @@
 
 #include <cstdint>
 
-/** @file implements the storage of atomic state orga data for the autonomous transitions
+/** @file implements base class of atomic state start index block data with up- and downward transitions
  *
- * The atomic state data consists of the following data sets:
- *
- * - collection of atomic states orga data for autonomous transitions (sorted blockwise by ionization state ascending)
- *    [ (number of transitions,
- *       startIndex of transition block)]
+ * e.g. for autonomous transitions
  */
 
 namespace picongpu
@@ -40,7 +36,7 @@ namespace picongpu
         {
             namespace atomicData
             {
-                /** data box storing atomic state orga data for autonomous transitions
+                /** data box storing for each atomic state the startIndexBlock for downward-only transitions
                  *
                  * for use on device.
                  *
@@ -54,10 +50,8 @@ namespace picongpu
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class AtomicStateOrgaDataBox_Autonomous : Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class AtomicStateStartIndexBlockDataBox_Down : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
-                    //! number of autonomous transitions from the atomic state
-                    BoxNumber m_boxNumberTransitions;
                     /** start collection index of the block of autonomous transitions
                      * from the atomic state in the collection of autonomous transitions
                      */
@@ -76,25 +70,15 @@ namespace picongpu
                      * @param startIndexBlockAtomicStates start collection index of block of
                      *  autonomous transitions in autonomous transition collection
                      */
-                    AtomicStateOrgaDataBox_Autonomous(
-                        BoxNumber boxNumberTransitions,
+                    AtomicStateStartIndexBlockDataBox_Down(
                         BoxNumber boxStartIndexBlockTransitions)
-                        : m_boxNumberTransitions(boxNumberTransitions)
-                        , m_boxStartIndexBlockTransitions(boxStartIndexBlockTransitions)
+                        : m_boxStartIndexBlockTransitions(boxStartIndexBlockTransitions)
                     {
-                    }
-
-                    /** get number of autonomous transitions from an atomic state
-                     *
-                     * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-                     * @attention no range check
-                     */
-                    TypeNumber numberTransitions(uint32_t const collectionIndex) const
-                    {
-                        return m_boxNumberTransitions(collectionIndex);
                     }
 
                     /** get start index of block of autonomous transitions from atomic state
+                     *
+                     * @param collectionIndex atomic state collection index
                      *
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
@@ -105,8 +89,6 @@ namespace picongpu
                     }
 
                 };
-
-
             } // namespace atomicData
         } // namespace atomicPhysics2
     } // namespace particles

@@ -22,16 +22,17 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
 
 #include <cstdint>
+//#include <memory>
+//#include <utility>
 
-/** @file implements the storage of charge state orga data
+/** @file implements the storage of charge state property data
  *
  * The charge state data consists of the following data sets:
  *
  * - list of ionization states (sorted in ascending order of ionization):
- *      [ (number of atomicStates of this charge state,
- *         startIndex of block of atomicStates in atomicState collection) ]
+ *      [ (ionization energy, [eV]
+ *         screenedCharge, [eV] )]
  */
-
 
 namespace picongpu
 {
@@ -41,7 +42,8 @@ namespace picongpu
         {
             namespace atomicData
             {
-                /** data box storing charge state orga data
+
+                /** data box storing charge state property data
                  *
                  * for use on device.
                  *
@@ -56,42 +58,41 @@ namespace picongpu
                     typename T_Value,
                     uint8_t T_atomicNumber // element
                     >
-                class ChargeStateOrgaDataBox : Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class ChargeStateDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
-                    //! number of atomic states associated with the charge state
-                    BoxNumber m_boxNumberAtomicStates;
-                    //! start collection index of block of atomic states for charge state in collection of AtomicStates
-                    BoxNumber m_boxStartIndexBlockAtomicStates;
+                    //! unit: eV
+                    BoxValue m_boxIonizationEnergy;
+                    //! unit: elementary charge
+                    BoxValue m_boxScreenedCharge;
 
                 public:
                     /** constructor
                      *
                      * @attention charge state data must be sorted by ascending charge and
-                     *  the completely ionized state is left out.
+                     * @attention the completely ionized state must be left out.
                      *
-                     * @param numberAtomicStates number of atomicStates for the charge state
-                     * @param startIndexBlockAtomicStates start collection index of block of atomicStates in atomicState
+                     * @param ionizationEnergy ionization energy[eV] of charge states
+                     * @param screenedCharge screenedCharge[e] of charge states
                      */
-                    ChargeStateOrgaDataBox(
-                        BoxNumber numberAtomicStates,
-                        BoxNumber startIndexBlockAtomicStates)
-                        : m_boxNumberAtomicStates(numberAtomicStates)
-                        , m_boxStartIndexBlockAtomicStates(startIndexBlockAtomicStates)
+                    ChargeStateDataBox(
+                        BoxValue ionizationEnergy,
+                        BoxValue screenedCharge)
+                        : m_boxIonizationEnergy(ionizationEnergy)
+                        , m_boxScreenedCharge(screenedCharge)
                     {
+                    }
+
+                    //!@attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
+                    T_Value ionizationEnergy(uint8_t chargeState)
+                    {
+                        return m_boxIonizationEnergy[chargeState];
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Number numberAtomicStates(uint8_t chargeState)
+                    T_Value screenedCharge(uint8_t chargeState)
                     {
-                        return m_boxNumberAtomicStates[chargeState];
+                        return m_boxScreenedCharge[chargeState]
                     }
-
-                    //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Number startIndexBlockAtomicStates(uint8_t chargeState)
-                    {
-                        return m_boxStartIndexBlockAtomicStates[chargeState];
-                    }
-
                 };
 
             } // namespace atomicData
