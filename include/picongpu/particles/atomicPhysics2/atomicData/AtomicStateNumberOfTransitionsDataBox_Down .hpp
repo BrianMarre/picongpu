@@ -44,6 +44,7 @@ namespace picongpu
                  * @tparam T_Number dataType used for number storage, typically uint32_t
                  * @tparam T_Value dataType used for value storage, typically float_X
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 * @param boxOffset offset of transition type in chooseTransition selection
                  */
                 template<
                     typename T_DataBoxType,
@@ -56,6 +57,8 @@ namespace picongpu
                      * from the atomic state in the collection of autonomous transitions
                      */
                     BoxNumber m_boxNumberOfTransitions;
+                    //! offset of transition type in chooseTransition selection
+                    BoxNumber m_boxOffset;
 
                     /// @todo transitions from configNumber 0u?
 
@@ -69,12 +72,14 @@ namespace picongpu
                      * @param boxNumberTransitions number of transitions from the atomic state
                      */
                     AtomicStateNumberOfTransitionsDataBox_Down(
-                        BoxNumber boxNumberOfTransitions)
+                        BoxNumber boxNumberOfTransitions,
+                        BoxNumber boxOffset)
                         : m_boxNumberOfTransitions(boxNumberOfTransitions)
+                        , m_boxOffset(boxOffset)
                     {
                     }
 
-                    /** get start index of block of autonomous transitions from atomic state
+                    /** get number of transitions from atomic state
                      *
                      * @param collectionIndex atomic state collection index
                      *
@@ -84,6 +89,18 @@ namespace picongpu
                     TypeNumber numberOfTransitions(uint32_t const collectionIndex) const
                     {
                         return m_boxNumberOfTransitions(collectionIndex);
+                    }
+
+                    /** get offset of transition type for the atomic state
+                     *
+                     * @param collectionIndex atomic state collection index
+                     *
+                     * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
+                     * @attention no range check
+                     */
+                    TypeNumber getOffset(uint32_t const collectionOffset)
+                    {
+                        return m_boxOffset(collectionIndex);
                     }
 
                 };

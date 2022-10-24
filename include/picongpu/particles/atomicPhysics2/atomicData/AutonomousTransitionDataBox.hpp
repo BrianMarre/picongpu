@@ -1,4 +1,4 @@
-/* Copyright 2020-2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Sergei Bastrakov, Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -51,7 +51,6 @@ namespace picongpu
                  * @tparam T_TransitionIndexDataType dataType used for transition index,
                  *      typically uint32_t
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
-                 * @tparam T_numberTransitions number of atomic autonomous transitions stored
                  *
                  * @attention ConfigNumber specifies the number of a state as defined by the configNumber
                  *      class, while index always refers to a collection index.
@@ -63,8 +62,7 @@ namespace picongpu
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber,
-                    uint32_t T_numberTransitions>
+                    uint8_t T_atomicNumber>
                 class AutonomousTransitionDataBox :
                     public TransitionDataBox<
                         T_DataBoxType,
@@ -76,12 +74,25 @@ namespace picongpu
                     /// @todo better unit?, Brian Marre, 2022
                     BoxValue m_boxTransitionRate; // unit: 1/s
 
+                    /** constructor
+                     *
+                     * @attention transition data must be sorted block-wise by atomic state
+                     *  and secondary ascending by upper configNumber.
+                     *
+                     * @param boxTransitionRate rate over deexcitation [1/s]
+                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the transition
+                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
+                     * @param numberTransitions number of atomic bound-bound transitions stored
+                     * @param numberTransitions number of atomic autonomous transitions stored
+                     */
+
                     AutonomousTransitionDataBox(
                         BoxValue boxTransitionRate,
                         BoxConfigNumber boxLowerConfigNumber,
-                        BoxConfigNumber boxUpperConfigNumber)
+                        BoxConfigNumber boxUpperConfigNumber,
+                        uint32_t numberTransitions)
                         : m_boxTransitionRate(boxTransitionRate)
-                        , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber)
+                        , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                     {
                     }
 

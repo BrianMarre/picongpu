@@ -1,4 +1,4 @@
-/* Copyright 2020-2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Sergei Bastrakov, Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -51,7 +51,6 @@ namespace picongpu
                  * @tparam T_TransitionIndexDataType dataType used for transition index,
                  *      typically uint32_t
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
-                 * @tparam T_numberTransitions number of atomic bound-free transitions stored
                  *
                  * @attention ConfigNumber specifies the number of a state as defined by the configNumber
                  *      class, while index always refers to a collection index.
@@ -63,8 +62,7 @@ namespace picongpu
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber,
-                    uint32_t T_numberTransitions>
+                    uint8_t T_atomicNumber>
                 class BoundBoundTransitionDataBox :
                     public TransitionDataBox<
                         T_DataBoxType,
@@ -105,6 +103,7 @@ namespace picongpu
                      * @param boxCinx5 cross section fit parameter 8
                      * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the transition
                      * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
+                     * @param T_numberTransitions number of atomic bound-free transitions stored
                      */
                     BoundBoundTransitionDataBox(
                         BoxValue boxCinx1,
@@ -116,7 +115,8 @@ namespace picongpu
                         BoxValue boxCinx7,
                         BoxValue boxCinx8,
                         BoxConfigNumber boxLowerConfigNumber,
-                        BoxConfigNumber boxUpperConfigNumber)
+                        BoxConfigNumber boxUpperConfigNumber,
+                        uint32_t numberTransitions)
                         : m_boxCinx1(boxCinx1)
                         , m_boxCinx2(boxCinx2)
                         , m_boxCinx3(boxCinx3)
@@ -125,7 +125,7 @@ namespace picongpu
                         , m_boxCinx6(boxCinx6)
                         , m_boxCinx7(boxCinx7)
                         , m_boxCinx8(boxCinx8)
-                        , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber)
+                        , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                         {
                         }
 
@@ -141,7 +141,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx1(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -156,7 +156,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx2(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -171,7 +171,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx3(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -186,7 +186,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx4(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -201,7 +201,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx5(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -216,7 +216,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx6(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -231,7 +231,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx7(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }
@@ -246,7 +246,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxCinx8(indexTransition);
                         return static_cast<ValueType>(0._X);
                     }

@@ -58,6 +58,8 @@ namespace picongpu
 
                     //! start collection index of the block of downward transitions from the atomic state in the corresponding upward collection
                     BoxNumber m_boxNumberOfTransitionsDown;
+                    //! offset of transition type in chooseTransition selection
+                    BoxNumber m_boxOffset;
 
                 public:
                     /** constructor
@@ -70,12 +72,15 @@ namespace picongpu
                      *  transitions in the corresponding upward transition collection
                      * @param numberInBlockAtomicStatesDown start collection index of the block of
                      *  transitions in the corresponding downward transition collection
+                     * @param boxOffset offset of transition type in chooseTransition selection
                      */
                     AtomicStateNumberOfTransitionsDataBox_UpDown(
                         BoxNumber boxNumberOfTransitionsUp,
-                        BoxNumber boxNumberOfTransitionsDown)
+                        BoxNumber boxNumberOfTransitionsDown,
+                        BoxNumber boxOffset)
                         : m_boxNumberOfTransitionsUp(boxNumberOfBlockTransitionsUp)
                         , m_boxNumberOfTransitionsDown(boxNumberOfBlockTransitionsDown)
+                        , m_boxOffset(boxOffset)
                     {
                     }
 
@@ -103,6 +108,18 @@ namespace picongpu
                     TypeNumber numberOfTransitionsDown(uint32_t const collectionIndex) const
                     {
                         return m_boxNumberOfTransitionsDown(collectionIndex);
+                    }
+
+                    /** get offset of transition type for the atomic state
+                     *
+                     * @param collectionIndex atomic state collection index
+                     *
+                     * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
+                     * @attention no range check
+                     */
+                    TypeNumber getOffset(uint32_t const collectionOffset)
+                    {
+                        return m_boxOffset(collectionIndex);
                     }
 
                 };

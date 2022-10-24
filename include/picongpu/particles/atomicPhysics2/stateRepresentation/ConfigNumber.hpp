@@ -314,7 +314,7 @@ namespace picongpu
                      *
                      * @param configNumber configNumber, uint like, not an object
                      *
-                     * @return charge of ion
+                     * @returns charge of ion
                      */
                     HDINLINE static uint8_t getIonizationState(T_DataType configNumber)
                     {

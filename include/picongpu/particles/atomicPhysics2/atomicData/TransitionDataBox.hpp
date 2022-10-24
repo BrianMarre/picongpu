@@ -44,20 +44,20 @@ namespace picongpu
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber,
-                    uint32_t T_numberTransitions>
+                    uint8_t T_atomicNumber>
                 class TransitionDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
                     using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
-                    constexpr uint32_t numberTransitions = T_numberTransitions;
 
                 protected:
                     //! configNumber of the lower(lower excitation energy) state of the transition
                     BoxConfigNumber m_boxLowerConfigNumber;
                     //! configNumber of the upper(higher excitation energy) state of the transition
                     BoxConfigNumber m_boxUpperConfigNumber;
+
+                    uint32_t numberTransitions;
 
                 public:
                     /** constructor
@@ -69,9 +69,11 @@ namespace picongpu
                      */
                     TransitionDataBox(
                         BoxConfigNumber boxLowerConfigNumber,
-                        BoxConfigNumber boxUpperConfigNumber)
+                        BoxConfigNumber boxUpperConfigNumber,
+                        uint32_t numberTransitions)
                         : m_boxLowerConfigNumber(boxLowerConfigNumber)
                         , m_boxUpperConfigNumber(boxUpperConfigNumber)
+                        , m_numberTransitions(numberTransitions)
                     {
                     }
 
@@ -91,8 +93,8 @@ namespace picongpu
                     HDINLINE uint32_t findTransitionCollectionIndex(
                         Idx const lowerConfigNumber,
                         Idx const upperConfigNumber,
-                        uint32_t const startIndexBlock=0u,
-                        uint32_t const numberOfTransitionsInBlock=T_numberTransitions) const
+                        uint32_t const numberOfTransitionsInBlock,
+                        uint32_t const startIndexBlock=0u) const
                     {
                         // search in corresponding block in transitions box
                         for(uint32_t i = 0u; i < numberOfTransitionsInBlock; i++)
@@ -102,7 +104,7 @@ namespace picongpu
                                 return i + startIndexBlock;
                         }
 
-                        return T_numberTransitions;
+                        return numberTransitions;
                     }
 
                    /** returns upper states configNumber of the transition
@@ -115,7 +117,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxUpperConfigNumber(collectionIndex);
                         return 0u;
                     }
@@ -130,10 +132,16 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
+                        if(collectionIndex < numberTransitions)
                             return m_boxLowerConfigNumber(collectionIndex);
                         return 0u;
                     }
+
+                    HDINLINE uint32_t getNumberOfTransitionsTotal()
+                    {
+                        return numberTransitions;
+                    }
+
                 };
             } // namespace atomicData
         } // namespace atomicPhysics2

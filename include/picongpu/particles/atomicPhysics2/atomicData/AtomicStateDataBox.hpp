@@ -49,7 +49,6 @@ namespace picongpu
                  * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
                  *      typically uint64_t
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
-                 * @tparam T_numberAtomicStates number of atomic states to be stored
                  *
                  * @attention ConfigNumber specifies the number of a state as defined by the configNumber
                  *      class, while index always refers to a collection index.
@@ -61,37 +60,38 @@ namespace picongpu
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber,
-                    uint32_t T_numberAtomicStates>
+                    uint8_t T_atomicNumber>
                 class AtomicStateDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
                     using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
 
-                    constexpr static uint32_t numberAtomicStates = T_numberAtomicStates;
-
                 private:
                     //! configNumber of atomic state, sorted block wise by ionization state
                     BoxStateConfigNumber m_boxConfigNumber;
                     //! energy respective to ground state of ionization state[eV], sorted block wise by ionizatioState
                     BoxValue m_boxStateEnergy; // unit: eV
+                    uint32_t m_numberAtomicStates;
 
                 public:
                     /** constructor
                      *
-                     * @attention atomic state data must be sorted block-wise by charge state
-                     *  and secondary ascending by configNumber.
+                     * @attention atomic state data must be sorted block-wise ascending by
+                     *  charge state and secondary ascending by configNumber.
                      * @attention the completely ionized state must be left out.
                      *
                      * @param boxConfigNumber dataBox of atomic state configNumber(fancy index)
                      * @param boxStateEnergy dataBox of energy respective to ground state of ionization state [eV]
+                     * @param numberAtomicStates number of atomic states
                      */
                     AtomicStateDataBox(
                         BoxStateConfigNumber boxConfigNumber,
-                        BoxValue boxStateEnergy)
+                        BoxValue boxStateEnergy,
+                        uint32_t numberAtomicStates)
                         : m_boxConfigNumber(boxConfigNumber)
                         , m_boxStateEnergy(boxStateEnergy)
+                        , m_numberAtomicStates(numberAtomicStates)
                     {
                     }
 
@@ -171,6 +171,11 @@ namespace picongpu
                     HDINLINE TypeValue stateEnergy(uint32_t const collectionIndex) const
                     {
                         return this->m_boxStateEnergy(collectionIndex);
+                    }
+
+                    HDINLINE uint32_t getNumberAtomicStatesTotal()
+                    {
+                        return numberAtomicStates;
                     }
                 };
 

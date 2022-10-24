@@ -84,6 +84,8 @@ namespace picongpu
                         return m_boxNumberPhysicalTransitionsTotal
                     }
 
+                    get
+
                 };
             } // namespace atomicData
         } // namespace atomicPhysics2
