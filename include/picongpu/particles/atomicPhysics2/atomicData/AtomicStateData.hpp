@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
+#include <memory>
 
 /** @file implements the storage of atomic state property data
  *
@@ -177,6 +179,60 @@ namespace picongpu
                     {
                         return numberAtomicStates;
                     }
+                };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_DataBoxType dataBox type used for storage
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    uint8_t T_atomicNumber>
+                class AtomicStateDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                {
+                public:
+                    using Idx = T_ConfigNumberDataType;
+                    using BufferConfigNumber = pmacc::HostDeviceBuffer<T_ConfigNumberDataType, 1u>;
+
+                private:
+                    std::unique_ptr< BufferConfigNumber > bufferConfigNumber;
+                    std::unique_ptr< BufferValue > bufferStateEnergy;
+
+                public:
+                    HINLINE AtomicStateDataBuffer( uint32_t numberAtomicStates)
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+
+                        bufferConfigNumber.reset( new BufferConfigNumber(layoutAtomicStates));
+                        bufferStateEnergy.reset( new BufferValue(layoutAtomicStates));
+                    }
+
+                    HINLINE AtomicStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    {
+                        return AtomicStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferConfigNumber->getHostBuffer().getDataBox(),
+                            bufferStateEnergy->getHostBuffer().getDataBox());
+                    }
+
+                    HINLINE ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferConfigNumber->getDeviceBuffer().getDataBox(),
+                            bufferStateEnergy->getDeviceBuffer().getDataBox());
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferConfigNumber->hostToDevice();
+                        bufferStateEnergy->hostToDevice();
+                    }
+
                 };
 
             } // namespace atomicData

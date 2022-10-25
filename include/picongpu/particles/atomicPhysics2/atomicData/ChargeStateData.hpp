@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
-//#include <memory>
-//#include <utility>
+#include <memory>
 
 /** @file implements the storage of charge state property data
  *
@@ -93,6 +93,54 @@ namespace picongpu
                     {
                         return m_boxScreenedCharge[chargeState]
                     }
+                };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    uint8_t T_atomicNumber>
+                class ChargeStateDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                {
+                    std::unique_ptr< BufferValue > bufferIonizationEnergy;
+                    std::unique_ptr< BufferValue > bufferScreenedCharge;
+
+                public:
+                    HINLINE ChargeStateDataBuffer()
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize);
+
+                        bufferIonizationEnergy.reset( new BufferValue(layoutChargeStates));
+                        bufferScreenedCharge.reset( new BufferValue(layoutChargeStates));
+                    }
+
+                    HINLINE ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    {
+                        return ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferIonizationEnergy->getHostBuffer().getDataBox(),
+                            bufferScreenedCharge->getHostBuffer().getDataBox());
+                    }
+
+                    HINLINE ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferIonizationEnergy->getDeviceBuffer().getDataBox(),
+                            bufferScreenedCharge->getDeviceBuffer().getDataBox());
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferIonizationEnergy->hostToDevice();
+                        bufferScreenedCharge->hostToDevice();
+                    }
+
                 };
 
             } // namespace atomicData

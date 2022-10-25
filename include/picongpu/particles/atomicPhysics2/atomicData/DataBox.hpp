@@ -60,4 +60,3 @@ namespace picongpu
         } // namespace atomicPhysics2
     } // namespace particles
 } // namespace picongpu
-

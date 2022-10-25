@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/TransitionDataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
+#include <memory>
 
 /** @file implements the storage of bound-bound transitions property data
  *
@@ -63,7 +65,7 @@ namespace picongpu
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
-                class BoundBoundTransitionDataBox :
+                class BoundFreeTransitionDataBox :
                     public TransitionDataBox<
                         T_DataBoxType,
                         T_Number,
@@ -105,7 +107,7 @@ namespace picongpu
                      * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
                      * @param T_numberTransitions number of atomic bound-free transitions stored
                      */
-                    BoundBoundTransitionDataBox(
+                    BoundFreeTransitionDataBox(
                         BoxValue boxCinx1,
                         BoxValue boxCinx2,
                         BoxValue boxCinx3,
@@ -249,6 +251,98 @@ namespace picongpu
                         if(collectionIndex < numberTransitions)
                             return m_boxCinx8(indexTransition);
                         return static_cast<ValueType>(0._X);
+                    }
+
+                };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    typename T_ConfigNumberDataType,
+                    uint8_t T_atomicNumber>
+                class BoundFreeTransitionDataBuffer : public TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
+                {
+                    std::unique_ptr< BufferValue > bufferCinx1;
+                    std::unique_ptr< BufferValue > bufferCinx2;
+                    std::unique_ptr< BufferValue > bufferCinx3;
+                    std::unique_ptr< BufferValue > bufferCinx4;
+                    std::unique_ptr< BufferValue > bufferCinx5;
+                    std::unique_ptr< BufferValue > bufferCinx6;
+                    std::unique_ptr< BufferValue > bufferCinx7;
+                    std::unique_ptr< BufferValue > bufferCinx8;
+
+                public:
+                    /** buffer corresponding to the above dataBox object
+                     *
+                     * @param numberAtomicStates number of atomic states, and number of buffer entries
+                     */
+                    HINLINE BoundFreeTransitionDataBuffer(uint32_t numberBoundFreeTransitions)
+                        : TransitionDataBuffer(numberBoundFreeTransitions)
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutBoundFreeTransitions = pmacc::GridLayout<1>(numberBoundFreeTransitions, guardSize);
+
+                        bufferCinx1.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx2.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx3.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx4.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx5.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx6.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx7.reset( new BufferValue(layoutBoundFreeTransitions));
+                        bufferCinx8.reset( new BufferValue(layoutBoundFreeTransitions));
+                    }
+
+                    HINLINE BoundFreeTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    {
+                        return BoundFreeTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                            bufferCinx1->getHostBuffer().getDataBox(),
+                            bufferCinx2->getHostBuffer().getDataBox(),
+                            bufferCinx3->getHostBuffer().getDataBox(),
+                            bufferCinx4->getHostBuffer().getDataBox(),
+                            bufferCinx5->getHostBuffer().getDataBox(),
+                            bufferCinx6->getHostBuffer().getDataBox(),
+                            bufferCinx7->getHostBuffer().getDataBox(),
+                            bufferCinx8->getHostBuffer().getDataBox(),
+                            bufferLowerConfigNumber->getHostBuffer().getDataBox(),
+                            bufferUpperConfigNumber->getHostBuffer().getDataBox(),
+                            m_numberTransitions);
+                    }
+
+                    HINLINE BoundFreeTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return BoundFreeTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                            bufferCinx1->getDeviceBuffer().getDataBox(),
+                            bufferCinx2->getDeviceBuffer().getDataBox(),
+                            bufferCinx3->getDeviceBuffer().getDataBox(),
+                            bufferCinx4->getDeviceBuffer().getDataBox(),
+                            bufferCinx5->getDeviceBuffer().getDataBox(),
+                            bufferCinx6->getDeviceBuffer().getDataBox(),
+                            bufferCinx7->getDeviceBuffer().getDataBox(),
+                            bufferCinx8->getDeviceBuffer().getDataBox(),
+                            bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
+                            bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
+                            m_numberTransitions);
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferCinx1->hostToDevice();
+                        bufferCinx2->hostToDevice();
+                        bufferCinx3->hostToDevice();
+                        bufferCinx4->hostToDevice();
+                        bufferCinx5->hostToDevice();
+                        bufferCinx6->hostToDevice();
+                        bufferCinx7->hostToDevice();
+                        bufferCinx8->hostToDevice();
+                        bufferLowerConfigNumber->hostToDevice();
+                        bufferUpperConfigNumber->hostToDevice();
                     }
 
                 };

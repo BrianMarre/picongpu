@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
+#include <memory>
 
 /** @file implements the storage of charge state orga data
  *
@@ -31,7 +33,6 @@
  *      [ (number of atomicStates of this charge state,
  *         startIndex of block of atomicStates in atomicState collection) ]
  */
-
 
 namespace picongpu
 {
@@ -56,7 +57,7 @@ namespace picongpu
                     typename T_Value,
                     uint8_t T_atomicNumber // element
                     >
-                class ChargeStateOrgaDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class ChargeStateOrgaDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
                     //! number of atomic states associated with the charge state, @todo could be left out to reduce memory but increase seek time in missing state case
                     BoxNumber m_boxNumberAtomicStates;
@@ -90,6 +91,54 @@ namespace picongpu
                     T_Number startIndexBlockAtomicStates(uint8_t chargeState)
                     {
                         return m_boxStartIndexBlockAtomicStates[chargeState];
+                    }
+
+                };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    uint8_t T_atomicNumber>
+                class ChargeStateOrgaDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                {
+                    std::unique_ptr< BufferNumber > bufferNumberAtomicStates;
+                    std::unique_ptr< BufferNumber > bufferStartIndexBlockAtomicStates;
+
+                public:
+                    HINLINE ChargeStateOrgaDataBuffer()
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize);
+
+                        bufferNumberAtomicStates.reset( new BufferNumber(layoutChargeStates));
+                        bufferStartIndexBlockAtomicStates.reset( new BufferNumber(layoutChargeStates));
+                    }
+
+                    HINLINE ChargeStateOrgaDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    {
+                        return ChargeStateOrgaDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferNumberAtomicStates->getHostBuffer().getDataBox(),
+                            bufferStartIndexBlockAtomicStates->getHostBuffer().getDataBox());
+                    }
+
+                    HINLINE TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return ChargeStateOrgaDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferNumberAtomicStates->getDeviceBuffer().getDataBox(),
+                            bufferStartIndexBlockAtomicStates->getDeviceBuffer().getDataBox());
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferNumberAtomicStates->hostToDevice();
+                        bufferStartIndexBlockAtomicStates->hostToDevice();
                     }
 
                 };

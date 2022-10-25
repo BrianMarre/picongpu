@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
+#include <memory>
 
 /** @file implements base class of atomic state start index block data with up- and downward transitions
  *
@@ -89,6 +91,51 @@ namespace picongpu
                     }
 
                 };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    uint8_t T_atomicNumber>
+                class AtomicStateStartIndexDataBuffer_Down : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                {
+                    std::unique_ptr< BufferNumber > bufferStartIndexBlockTransitionsDown;
+
+                public:
+                    HINLINE AtomicStateStartIndexDataBuffer_Down(uint32_t numberAtomicStates)
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+
+                        bufferStartIndexBlockTransitionsDown.reset( new BufferValue(layoutAtomicStates));
+                    }
+
+                    HINLINE AtomicStateStartIndexDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    {
+                        return AtomicStateStartIndexDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox());
+
+                    }
+
+                    HINLINE AtomicStateStartIndexDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return AtomicStateStartIndexDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferStartIndexBlockTransitionsDown->getDeviceBuffer().getDataBox());
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferStartIndexBlockTransitionsDown->hostToDevice();
+                    }
+
+                };
+
             } // namespace atomicData
         } // namespace atomicPhysics2
     } // namespace particles

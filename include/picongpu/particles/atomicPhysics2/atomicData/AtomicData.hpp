@@ -1,4 +1,4 @@
-/* Copyright 2022 Brian Marre
+/* Copyright 2022 Sergei Bastrakov, Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -20,33 +20,39 @@
 #pragma once
 
 // charge state data
-#include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateDataBox.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateOrgaDataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateOrgaData.hpp"
 
 // atomic state data
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateDataBox.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionDataBox.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsDataBox_Down.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsDataBox_UpDown.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockDataBox_Down.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockDataBox_UpDown.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_Down.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_UpDown.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_Down.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_UpDown.hpp"
 
 // transition data
-#include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionDataBox.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionDataBox.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionDataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionData.hpp"
 
 // precomputed cache for transition selection kernel
-#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionDataBox.hpp"
 
+// conversion of configNumber to charge state for checking
 #include "picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp"
+
+// Host DeviceBuffer for storage of data
+#include <pmacc/memory/buffers/HostDeviceBuffer.tpp>
 
 #include <cstdint>
 #include <string>
 #include <tuple>
+
 #include <list>
 #include <stdexcept>
 #include <fstream>
+
+#include <memory>
 
 /** @file gathers atomic data storage implementations and implements filling on runtime
  *
@@ -119,12 +125,9 @@ namespace picongpu
                     using TypeValue = T_Value;
                     using Idx = T_ConfigNumberDataType;
 
-                    using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
-                    using BoxNumber = T_DataBoxType<T_Number>;
-                    using BoxValue = T_DataBoxType<T_Value>;
-
-                    constexpr uint8_t atomicNumber = T_atomicNumber;
-                    constexpr uint8_t n_max = T_n_max;
+                    //using BufferValue = pmacc::GridBuffer<TypeValue, 1>;
+                    //using BufferNumber = pmacc::GridBuffer<TypeNumber, 1>;
+                    //using BufferConfigNumber = pmacc::GridBuffer<T_ConfigNumberDataType, 1>;
 
                     using ChargeStateTuple = std::tuple<
                         uint8_t,    // charge state
@@ -132,62 +135,97 @@ namespace picongpu
                         TypeValue>; // screened charge[e]
 
                     using AtomicStateTuple = std::tuple<
-                        T_ConfigNumberDataType // configNumber
-                        TypeValue>;            // energy over ground [eV]
+                        Idx,        // configNumber
+                        TypeValue>; // energy over ground [eV]
 
                     using BoundBoundTransitionTuple = std::tuple<
-                        TypeValue,                 // collisional oscillator strength
-                        TypeValue,                 // absorption oscillator strength
-                        TypeValue,                 // cinx1 gaunt tunnel coefficient
-                        TypeValue,                 // cinx2
-                        TypeValue,                 // cinx3
-                        TypeValue,                 // cinx4
-                        TypeValue,                 // cinx5
-                        T_ConfigNumberDataType,  // lowerState
-                        T_ConfigNumberDataType>; // upperState
+                        TypeValue, // collisional oscillator strength
+                        TypeValue, // absorption oscillator strength
+                        TypeValue, // cinx1 gaunt tunnel coefficient
+                        TypeValue, // cinx2
+                        TypeValue, // cinx3
+                        TypeValue, // cinx4
+                        TypeValue, // cinx5
+                        Idx,       // lowerState
+                        Idx>;      // upperState
 
                     using BoundFreeTransitionTuple = std::tuple<
-                        TypeValue,                 // cinx1 cross section parameter
-                        TypeValue,                 // cinx2
-                        TypeValue,                 // cinx3
-                        TypeValue,                 // cinx4
-                        TypeValue,                 // cinx5
-                        TypeValue,                 // cinx6
-                        TypeValue,                 // cinx7
-                        TypeValue,                 // cinx8
-                        T_ConfigNumberDataType,  // lowerState
-                        T_ConfigNumberDataType>; // upperState
+                        TypeValue, // cinx1 cross section parameter
+                        TypeValue, // cinx2
+                        TypeValue, // cinx3
+                        TypeValue, // cinx4
+                        TypeValue, // cinx5
+                        TypeValue, // cinx6
+                        TypeValue, // cinx7
+                        TypeValue, // cinx8
+                        Idx,       // lowerState
+                        Idx>;      // upperState
 
                     using AutonomousTransitionTuple = std::tuple<
-                        T_Value,                 // rate [1/s]
-                        T_ConfigNumberDataType,  // lowerState
-                        T_ConfigNumberDataType>; // upperState
+                        T_Value, // rate [1/s]
+                        Idx,     // lowerState
+                        Idx>;    // upperState
 
+                    constexpr uint8_t atomicNumber = T_atomicNumber;
+                    constexpr uint8_t n_max = T_n_max;
+
+                    // S_* for shortened name
+                    using S_ChargeStateDataBox =
+                        ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+                    using S_ChargeStateOrgaDataBox =
+                        ChargeStateOrgaDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+
+                    using S_AtomicStateDataBox =
+                        AtomicStateDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber >;
+                    using S_AtomicStateStartIndexBlockDataBox_UpDown =
+                        AtomicStateStartIndexBlockDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber >;
+                    using S_AtomicStateStartIndexBlockDataBox_Down =
+                        AtomicStateStartIndexBlockDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber >;
+                    using S_AtomicStateNumberOfTransitionsDataBox_UpDown =
+                        AtomicStateNumberOfTransitionsDataBox_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+                    using S_AtomicStateNumberOfTransitionsDataBox_Down =
+                        AtomicStateNumberTransitionsBuffer_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+
+                    using S_BoundBoundTransitionDataBox =
+                        BoundBoundTransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>;
+                    using S_BoundFreeTransitionDataBox =
+                        BoundFreeTransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>;
+                    using S_AutonomousTransitionDataBox =
+                        AutonomousTransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>;
+
+                    using S_TranstionTransitionSelectionDataBox =
+                        TransitionSelectionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+
+                    // buffer types
                 private:
+                    // pointers to storage
                     // charge state data
-                    ChargeStateDataBox chargeStateDataBox;
-                    ChargeStateOrgaDataBox chargeStateOrgaDataBox;
+                    std::unique_ptr<ChargeStateDataBuffer> chargeStateDataBuffer;
+                    std::unique_ptr<ChargeStateOrgaDataBuffer> chargeStateOrgaDataBuffer;
 
                     // atomic property data
-                    AtomicStateDataBox atomicStateDataBox;
+                    std::unique_ptr<AtomicStateDataBuffer> atomicStateDataBuffer;
                     // atomic orga data
-                    AtomicStateStartIndexBlockDataBox_UpDown atomicStateStartIndexBlockDataBox_BoundBound;
-                    AtomicStateStartIndexBlockDataBox_UpDown atomicStateStartIndexBlockDataBox_BoundFree;
-                    AtomicStateStartIndexBlockDataBox_Down atomicStateStartIndexBlockDataBox_Autonomous;
-                    AtomicStateNumberOfTransitionsDataBox_UpDown atomicStateNumberOfTransitionsDataBox_BoundBound;
-                    AtomicStateNumberOfTransitionsDataBox_UpDown atomicStateNumberOfTransitionsDataBox_BoundFree;
-                    AtomicStateNumberOfTransitionsDataBox_Down atomicStateNumberOfTransitionsDataBox_Autonomous;
+                    std::unique_ptr<AtomicStateStartIndexBlockDataBuffer_UpDown> atomicStateStartIndexBlockDataBuffer_BoundBound;
+                    std::unique_ptr<AtomicStateStartIndexBlockDataBuffer_UpDown> atomicStateStartIndexBlockDataBuffer_BoundFree;
+                    std::unique_ptr<AtomicStateStartIndexBlockDataBuffer_Down> atomicStateStartIndexBlockDataBuffer_Autonomous;
+                    std::unique_ptr<AtomicStateNumberOfTransitionsDataBuffer_UpDown> atomicStateNumberOfTransitionsDataBuffer_BoundBound;
+                    std::unique_ptr<AtomicStateNumberOfTransitionsDataBuffer_UpDown> atomicStateNumberOfTransitionsDataBuffer_BoundFree;
+                    std::unique_ptr<AtomicStateNumberOfTransitionsDataBuffer_Down> atomicStateNumberOfTransitionsDataBuffer_Autonomous;
 
                     // transition data
-                    BoundBoundTransitionDataBox boundBoundTransitionDataBox;
-                    BoundFreeTransitionDataBox boundFreeTransitionDataBox;
-                    AutonomousTransitionDataBox autonomousTransitionDataBox;
+                    std::unique_ptr<BoundBoundTransitionDataBuffer> boundBoundTransitionDataBuffer;
+                    std::unique_ptr<BoundFreeTransitionDataBuffer> boundFreeTransitionDataBuffer;
+                    std::unique_ptr<AutonomousTransitionDataBuffer> autonomousTransitionDataBuffer;
 
-                    uint32_t numberAtomicStates = 0u;
+                    // transition selection data
+                    std::unique_ptr<TransitionSelectionDataBuffer> transitionSelectionDataBuffer;
 
-                    uint32_t numberBoundBoundTransitions = 0u;
-                    uint32_t numberBoundFreeTransitions = 0u;
-                    uint32_t numberAutonomousTransitions = 0u;
+                    uint32_t m_numberAtomicStates = 0u;
+
+                    uint32_t m_numberBoundBoundTransitions = 0u;
+                    uint32_t m_numberBoundFreeTransitions = 0u;
+                    uint32_t m_numberAutonomousTransitions = 0u;
 
                     //! open file
                     HINLINE static std::ifstream openFile(std::string fileName, std::string fileContent)
@@ -270,7 +308,7 @@ namespace picongpu
                         while( file >> stateConfigNumber >> energyOverGround )
                         {
                             AtomicStateTuple item = std::make_tuple(
-                                static_cast<T_ConfigNumberDataType>(stateConfigNumber), //unitless
+                                static_cast<Idx>(stateConfigNumber), //unitless
                                 energyOverGround) // [eV]
 
                             atomicStateList.push_back(item);
@@ -309,7 +347,7 @@ namespace picongpu
                         TypeNumber cinx5;
 
                         while(file >> idxLower >> idxUpper
-                            >> collisionalOscillatorStrength >> absorptionOscillatorStrength 
+                            >> collisionalOscillatorStrength >> absorptionOscillatorStrength
                             >> cinx1 >> cinx2 >> cinx3 >> cinx4 >> cinx5 )
                         {
                             Idx stateLower = static_cast<Idx>(idxLower);
@@ -505,15 +543,15 @@ namespace picongpu
                     {
                         std::list<ChargeStateTuple>::iterator iter = atomicStateList.begin();
 
-                        T_ConfigNumberDataType lastAtomicStateConfigNumber;
+                        Idx lastAtomicStateConfigNumber;
                         uint8_t lastChargeState;
 
-                        T_ConfigNumberDataType currentAtomicStateConfigNumber;
+                        Idx currentAtomicStateConfigNumber;
                         uint8_t currentChargeState;
 
                         lastAtomicStateConfigNumber = std::get<0>(*iter);
                         lastChargeState = stateRepresentation::ConfigNumber<
-                            T_ConfigNumberDataType,
+                            Idx,
                             T_n_max,
                             T_atomicNumber>::getIonizationState(lastAtomicStateConfigNumber);
 
@@ -523,7 +561,7 @@ namespace picongpu
                         {
                             currentAtomicStateConfigNumber = std::get<0>(*iter);
                             currentChargeState = stateRepresentation::ConfigNumber<
-                                T_ConfigNumberDataType,
+                                Idx,
                                 T_n_max,
                                 T_atomicNumber>::getIonizationState(currentAtomicStateConfigNumber);
 
@@ -554,7 +592,6 @@ namespace picongpu
                             lastAtomicStateConfigNumber = currentAtomicStateConfigNumber;
                         }
                     }
-
 
                     //! helper function giving back transition type name
                     template<typename T_TransitionTuple>
@@ -615,28 +652,28 @@ namespace picongpu
                     void checkTransitionList(std::list<T_TransitionTuple>& const transitionList)
                     {
                         constexpr uint8_t tupleSize = std::tuple_size<T_TransitionTuple>;
-                        constexpr std::string transitionType = getStringTransitionType<T_TransitionTuple>();
+                        std::string transitionType = getStringTransitionType<T_TransitionTuple>();
 
                         std::list<T_TransitionTuple>::iterator iter = transitionList.begin();
 
-                        T_ConfigNumberDataType lastLowerAtomicStateConfigNumber;
-                        T_ConfigNumberDataType lastUpperAtomicStateConfigNumber;
+                        Idx lastLowerAtomicStateConfigNumber;
+                        Idx lastUpperAtomicStateConfigNumber;
                         uint8_t lastLowerChargeState;
                         uint8_t lastUpperChargeState;
 
-                        T_ConfigNumberDataType currentLowerAtomicStateConfigNumber;
-                        T_ConfigNumberDataType currentUpperAtomicStateConfigNumber;
+                        Idx currentLowerAtomicStateConfigNumber;
+                        Idx currentUpperAtomicStateConfigNumber;
                         uint8_t currentLowerChargeState;
                         uint8_t currentUpperChargeState;
 
                         lastLowerAtomicStateConfigNumber = std::get<tupelSize - 2u>(*iter);
                         lastUpperAtomicStateConfigNumber = std::get<tupelSize - 1u>(*iter);
                         lastLowerChargeState = stateRepresentation::ConfigNumber<
-                            T_ConfigNumberDataType,
+                            Idx,
                             T_n_max,
                             T_atomicNumber>::getIonizationState(lastLowerAtomicStateConfigNumber);
                         lastUpperChargeState = stateRepresentation::ConfigNumber<
-                            T_ConfigNumberDataType,
+                            Idx,
                             T_n_max,
                             T_atomicNumber>::getIonizationState(lastUpperAtomicStateConfigNumber);
                         iter++;
@@ -658,11 +695,11 @@ namespace picongpu
                             currentLowerAtomicStateConfigNumber = std::get<tupelSize - 2u>(*iter);
                             currentUpperAtomicStateConfigNumber = std::get<tupelSize - 1u>(*iter);
                             currentLowerChargeState = stateRepresentation::ConfigNumber<
-                                T_ConfigNumberDataType,
+                                Idx,
                                 T_n_max,
                                 T_atomicNumber>::getIonizationState(currentLowerAtomicStateConfigNumber);
                             currentUpperChargeState = stateRepresentation::ConfigNumber<
-                                    T_ConfigNumberDataType,
+                                    Idx,
                                     T_n_max,
                                     T_atomicNumber>::getIonizationState(currentUpperAtomicStateConfigNumber);
 
@@ -683,17 +720,43 @@ namespace picongpu
 
                             // unphysical lower charge state
                             if (currentLowerChargeState > T_atomicNumber)
-                                throw std::runtime_error("atomicPhysics ERROR: unphysical lower charge State");
+                                throw std::runtime_error("atomicPhysics ERROR: unphysical lower charge State in " + transitionType + " transitions");
 
                             // unphysical upper charge state
                             if (currentUpperChargeState > T_atomicNumber)
-                                throw std::runtime_error("atomicPhysics ERROR: unphysical upper charge State");
+                                throw std::runtime_error("atomicPhysics ERROR: unphysical upper charge State in " + transitionType + " transitions");
 
                             lastLowerChargeState = currentLowerChargeState;
                             lastUpperChargeState = currentUpperChargeState;
                             lastLowerAtomicStateConfigNumber = currentLowerAtomicStateConfigNumber;
                             lastUpperAtomicStateConfigNumber = currentUpperAtomicStateConfigNumber;
                         }
+                    }
+
+                    //! init buffers, @attention all readMethods must have been executed before exactly once!
+                    HINLINE void initBuffers()
+                    {
+                    // charge state data
+                    chargeStateDataBuffer.reset( new ChargeStateDataBuffer());
+                    chargeStateOrgaDataBuffer.reset( new ChargeStateOrgaDataBuffer());
+
+                    // atomic property data
+                    atomicStateDataBuffer.reset( new AtomicStateDataBuffer(numberAtomicStates));
+                    // atomic orga data
+                    atomicStateStartIndexBlockDataBuffer_BoundBound.reset( new AtomicStateStartIndexBlockDataBuffer_UpDown(numberAtomicStates));
+                    atomicStateStartIndexBlockDataBuffer_BoundFree.reset( new AtomicStateStartIndexBlockDataBuffer_UpDown(numberAtomicStates));
+                    atomicStateStartIndexBlockDataBuffer_Autonomous.reset( new AtomicStateStartIndexBlockDataBuffer_Down(numberAtomicStates));
+                    atomicStateNumberOfTransitionsDataBuffer_BoundBound.reset( new AtomicStateNumberOfTransitionsDataBuffer_UpDown(numberAtomicStates));
+                    atomicStateNumberOfTransitionsDataBuffer_BoundFree.reset( new AtomicStateNumberOfTransitionsDataBuffer_UpDown(numberAtomicStates));
+                    atomicStateNumberOfTransitionsDataBuffer_Autonomous.reset( new AtomicStateNumberOfTransitionsDataBuffer_Down(numberAtomicStates));
+
+                    // transition data
+                    boundBoundTransitionDataBuffer.reset( new BoundBoundTransitionDataBuffer(numberBoundBoundTransitions));
+                    boundFreeTransitionDataBuffer.reset( new BoundFreeTransitionDataBuffer(numberBoundFreeTransitions));
+                    autonomousTransitionDataBuffer.reset( new AutonomousTransitionDataBuffer(numberAutonomousTransitions));
+
+                    // transition selection data
+                    transitionSelectionDataBuffer.reset( new TransitionSelectionDataBuffer(numberAtomicStates));
                     }
 
                 public:
@@ -724,6 +787,9 @@ namespace picongpu
                         checkTransitionList<BoundBoundTransitionTuple>(boundBoundTransitions);
                         checkTransitionList<BoundFreeTransitionTuple>(boundFreeTransitions);
                         checkTransitionList<AutonomousTransitionTuple>(autonomousTransitions);
+
+                        // initialize buffers
+                        initBuffers();
 
                         /// @todo fill into property data box
                         /// @todo compute orga data boxes

@@ -113,6 +113,64 @@ namespace picongpu
 
                 };
 
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType
+                    typename T_Number,
+                    typename T_Value,
+                    typename T_ConfigNumberDataType,
+                    uint8_t T_atomicNumber>
+                class AutonomousTransitionDataBuffer : public TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
+                {
+                    std::unique_ptr< BufferValue > bufferTransitionRate;
+
+                public:
+                    /** buffer corresponding to the above dataBox object
+                     *
+                     * @param numberAtomicStates number of atomic states, and number of buffer entries
+                     */
+                    HINLINE AutonomousTransitionDataBuffer(uint32_t numberAutonomousTransitions)
+                        : TransitionDataBuffer(numberBoundBoundTransitions)
+                    {
+
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutAutonomousTransitions = pmacc::GridLayout<1>(numberBoundBoundTransitions, guardSize);
+
+                        bufferTransitionRate.reset( new BufferValue(layoutAutonomousTransitions));
+                    }
+
+                    HINLINE BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    {
+                        return BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                            bufferTransitionRate->getHostBuffer().getDataBox(),
+                            bufferLowerConfigNumber->getHostBuffer().getDataBox(),
+                            bufferUpperConfigNumber->getHostBuffer().getDataBox(),
+                            m_numberTransitions);
+                    }
+
+                    HINLINE BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                            bufferTransitionRate->getDeviceBuffer().getDataBox(),
+                            bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
+                            bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
+                            m_numberTransitions);
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferTransitionRate->hostToDevice();
+                        bufferLowerConfigNumber->hostToDevice();
+                        bufferUpperConfigNumber->hostToDevice();
+                    }
+
+                };
+
             } // namespace atomicData
         } // namespace atomicPhysics2
     } // namespace particles

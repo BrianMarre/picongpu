@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
+#include <memory>
 
 /** @file implements base class of transitions property data
  *
@@ -45,7 +47,7 @@ namespace picongpu
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
-                class TransitionDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class TransitionDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
@@ -143,6 +145,69 @@ namespace picongpu
                     }
 
                 };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    typename T_ConfigNumberDataType,
+                    uint8_t T_atomicNumber>
+                class TransitionDataBuffer : public DataBuffer<T_Number, T_Value, T_atomicNumber>
+                {
+                public:
+                    using Idx = T_ConfigNumberDataType;
+                    using BufferConfigNumber = pmacc::HostDeviceBuffer<T_ConfigNumberDataType, 1u>;
+
+                protected:
+                    std::unique_ptr< BufferConfigNumber > bufferLowerConfigNumber;
+                    std::unique_ptr< BufferConfigNumber > bufferUpperConfigNumber;
+
+                    uint32_t m_numberTransitions;
+
+                public:
+                    /** buffer corresponding to the above dataBox object
+                     *
+                     * @param numberAtomicStates number of atomic states, and number of buffer entries
+                     */
+                    HINLINE TransitionDataBuffer(uint32_t numberTransitions)
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutTransitions = pmacc::GridLayout<1>(numberTransitions, guardSize);
+
+                        bufferNumberPhysicalTransitionsTotal.reset( new BufferConfigNumber(layoutTransitions));
+                        m_numberTransitions = numberTransitions;
+                    }
+
+                    HINLINE TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    {
+                        return TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                            bufferLowerConfigNumber->getHostBuffer().getDataBox(),
+                            bufferUpperConfigNumber->getHostBuffer().getDataBox(),
+                            numberTransitions);
+                    }
+
+                    HINLINE TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                            bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
+                            bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
+                            numberTransitions);
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferLowerConfigNumber->hostToDevice();
+                        bufferUpperConfigNumber->hostToDevice();
+                    }
+
+                };
+
             } // namespace atomicData
         } // namespace atomicPhysics2
     } // namespace particles

@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/Data.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
+#include <memory>
 
 /**@file implements storage of numberInBlock data for each atomic state with up- and downward transitions
  *
@@ -123,6 +125,59 @@ namespace picongpu
                     }
 
                 };
+
+                /** complementing buffer class
+                 *
+                 * @tparam T_Number dataType used for number storage, typically uint32_t
+                 * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+                 */
+                template<
+                    typename T_DataBoxType,
+                    typename T_Number,
+                    typename T_Value,
+                    uint8_t T_atomicNumber>
+                class AtomicStateNumberOfTransitionsDataBuffer_UpDown : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                {
+
+                    std::unique_ptr< BufferNumber > bufferNumberOfTransitionsDown;
+                    std::unique_ptr< BufferNumber > bufferNumberOfTransitionsUp;
+                    std::unique_ptr< BufferNumber > bufferOffset;
+
+                public:
+                    HINLINE AtomicStateNumberOfTransitionsDataBuffer_UpDown(uint32_t numberAtomicStates)
+                    {
+                        auto const guardSize = pmacc::DataSpace<1>::create(0);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+
+                        bufferNumberOfTransitionsDown.reset( new BufferValue(layoutAtomicStates));
+                        bufferNumberOfTransitionsUp.reset( new BufferValue(layoutAtomicStates));
+                        bufferOffset.reset( new BufferValue(layoutAtomicStates));
+                    }
+
+                    HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    {
+                        return AtomicStateNumberOfTransitionsDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox(),
+                            bufferStartIndexBlockTransitionsUp->getHostBuffer().getDataBox());
+
+                    }
+
+                    HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    {
+                        return AtomicStateNumberOfTransitionsDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                            bufferStartIndexBlockTransitionsDown->getDeviceBuffer().getDataBox(),
+                            bufferStartIndexBlockTransitionsUp->getDeviceBuffer().getDataBox());
+                    }
+
+                    HINLINE void syncToDevice()
+                    {
+                        bufferStartIndexBlockTransitionsDown->hostToDevice();
+                        bufferStartIndexBlockTransitionsUp->hostToDevice();
+                    }
+
+                };
+
             } // namespace atomicData
         } // namespace atomicPhysics2
     } // namespace particles
