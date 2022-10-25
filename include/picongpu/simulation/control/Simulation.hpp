@@ -109,6 +109,7 @@
 #include <functional>
 #include <memory>
 
+
 namespace picongpu
 {
     using namespace pmacc;
@@ -337,7 +338,7 @@ namespace picongpu
             /// @todo load atomic input data, Brian Marre, 2022
 
             // initialize atomicPhyiscs superCell local fields
-            initAtomicPhyiscsSuperCellFields(dc);
+            initAtomicPhysicsSuperCellFields(dc);
 
             // make histogram
             // old
@@ -795,7 +796,7 @@ namespace picongpu
          *
          * used for atomicPhysics step
          */
-        void initAtomicPhyiscsSuperCellFields(DataConnector& dataConnector)
+        void initAtomicPhysicsSuperCellFields(DataConnector& dataConnector)
         {
             // local interaction histograms
             auto localSuperCellElectronHistogram = std::make_unique<

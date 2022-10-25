@@ -107,7 +107,7 @@ namespace picongpu
                     cupla::__syncthreads(acc);
 
                     // debug only
-                    debug::printHistogramToConsole(histogram);
+                    //debug::printHistogramToConsole(histogram);
                 }
             };
         } // namespace atomicPhysics2
