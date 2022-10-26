@@ -1,4 +1,4 @@
-/* Copyright 2020-2022 Brian Marre
+/* Copyright 2022 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -59,15 +59,17 @@ namespace picongpu
                     //! configNumber of the upper(higher excitation energy) state of the transition
                     BoxConfigNumber m_boxUpperConfigNumber;
 
-                    uint32_t numberTransitions;
+                    uint32_t m_numberTransitions;
 
                 public:
                     /** constructor
                      *
-                     * @attention transition data must be sorted block-wise by atomic state
+                     * @attention transition data must be sorted block-wise ascending by lower configNumber
                      *  and secondary ascending by upper configNumber.
-                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the transition
-                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
+                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
+                     * transition
+                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
+                     * transition
                      */
                     TransitionDataBox(
                         BoxConfigNumber boxLowerConfigNumber,
@@ -79,7 +81,29 @@ namespace picongpu
                     {
                     }
 
-                     /** returns collection index of transition in databox
+                protected:
+                    /** store transition in data box
+                     *
+                     * @attention do not forget to call syncToDevice() on the
+                     *  corresponding buffer, or the state is only added on the host side.
+                     * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     *
+                     * @param collectionIndex index of data box entry to rewrite
+                     * @param lowerStateConfigNumber configNumber of lower state of transition
+                     * @param upperStateConfigNumber configNumber of upper state of transition
+                     */
+                    HINLINE void storeTransition(
+                        uint32_t const collectionIndex,
+                        Idx lowerStateConfigNumber,
+                        Idx upperStateConfigNumber)
+                    {
+                        m_boxLowerConfigNumber[collectionIndex] = lowerStateConfigNumber;
+                        m_boxUpperConfigNumber[collectionIndex] = upperStateConfigNumber;
+                    }
+
+
+                public:
+                    /** returns collection index of transition in databox
                      *
                      * @param lowerConfigNumber configNumber of lower state
                      * @param upperConfigNumber configNumber of upper state
@@ -88,7 +112,7 @@ namespace picongpu
                      *
                      * @attention this search is slow, performant access should use collectionIndices directly
                      *
-                     * @return returns numberTransitions if transition not found
+                     * @return returns numberTransitionsTotal if transition not found
                      *
                      * @todo : replace linear search, Brian Marre, 2022
                      */
@@ -106,7 +130,7 @@ namespace picongpu
                                 return i + startIndexBlock;
                         }
 
-                        return numberTransitions;
+                        return m_numberTransitions;
                     }
 
                    /** returns upper states configNumber of the transition
@@ -119,7 +143,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
+                        if(collectionIndex < m_numberTransitions)
                             return m_boxUpperConfigNumber(collectionIndex);
                         return 0u;
                     }
@@ -134,14 +158,14 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
+                        if(collectionIndex < m_numberTransitions)
                             return m_boxLowerConfigNumber(collectionIndex);
                         return 0u;
                     }
 
-                    HDINLINE uint32_t getNumberOfTransitionsTotal()
+                    HDINLINE uint32_t getNumberOfTransitionsTotal() const
                     {
-                        return numberTransitions;
+                        return m_numberTransitions;
                     }
 
                 };
@@ -200,7 +224,7 @@ namespace picongpu
                             numberTransitions);
                     }
 
-                    HINLINE void syncToDevice()
+                    HINLINE void syncToDevice_BaseClass()
                     {
                         bufferLowerConfigNumber->hostToDevice();
                         bufferUpperConfigNumber->hostToDevice();

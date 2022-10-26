@@ -1,4 +1,4 @@
-/* Copyright 2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -79,6 +79,18 @@ namespace picongpu
                         : m_boxNumberAtomicStates(numberAtomicStates)
                         , m_boxStartIndexBlockAtomicStates(startIndexBlockAtomicStates)
                     {
+                    }
+
+                    /** store data
+                     *
+                     * @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
+                     *
+                     * @todo param
+                     */
+                    void store(uint8_t const chargeState, T_Number numberAtomicStates, T_Number startIndex)
+                    {
+                        m_boxNumberAtomicStates[chargeState] = numberAtomicStates;
+                        m_boxStartIndexBlockAtomicStates[chargeState] = startIndex;
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access

@@ -1,4 +1,4 @@
-/* Copyright 2022 Brian Marre, Sergei Bastrakov
+/* Copyright 2022 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -84,6 +84,24 @@ namespace picongpu
                         , m_boxNumberOfTransitionsDown(boxNumberOfBlockTransitionsDown)
                         , m_boxOffset(boxOffset)
                     {
+                    }
+
+                    //! @todo document
+                    void storeDown(uint32_t const collectionIndex, TypeNumber const numberDown)
+                    {
+                        m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
+                    }
+
+                    //! @todo document
+                    void storeUp(uint32_t const collectionIndex, TypeNumber const numberUp)
+                    {
+                        m_boxNumberOfTransitionsUp[collectionIndex] = numberUp;
+                    }
+
+                    //! @todo offset
+                    void storeOffset(uint32_t const collectionIndex, TypeNumber offset)
+                    {
+                        m_boxOffset[collectionOffset] = offset;
                     }
 
                     /** get number of transitions in block of transitions upward from the atomic state

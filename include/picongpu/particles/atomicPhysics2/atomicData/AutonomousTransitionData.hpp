@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionDataBox.hpp"
 
 #include <cstdint>
@@ -71,9 +72,14 @@ namespace picongpu
                         T_ConfigNumberDataType,
                         T_atomicNumber>
                 {
+                public:
+                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<TypeValue, Idx>;
+
+                private:
                     /// @todo better unit?, Brian Marre, 2022
                     BoxValue m_boxTransitionRate; // unit: 1/s
 
+                public:
                     /** constructor
                      *
                      * @attention transition data must be sorted block-wise by atomic state
@@ -85,7 +91,6 @@ namespace picongpu
                      * @param numberTransitions number of atomic bound-bound transitions stored
                      * @param numberTransitions number of atomic autonomous transitions stored
                      */
-
                     AutonomousTransitionDataBox(
                         BoxValue boxTransitionRate,
                         BoxConfigNumber boxLowerConfigNumber,
@@ -94,6 +99,21 @@ namespace picongpu
                         : m_boxTransitionRate(boxTransitionRate)
                         , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                     {
+                    }
+
+                    /** store transition in data box
+                     *
+                     * @attention do not forget to call syncToDevice() on the
+                     *  corresponding buffer, or the state is only added on the host side.
+                     * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     *
+                     * @param collectionIndex index of data box entry to rewrite
+                     * @param tuple tuple containing data of transition
+                     */
+                    HINLINE void store(uint32_t const collectionIndex, S_AutonomousTransitionTuple& tuple)
+                    {
+                        m_boxTransitionRate[collectionIndex] = std::get<0>(tuple);
+                        storeTransitions(collectionIndex, std::get<1>(tuple), std::get<2>(tuple));
                     }
 
                    /** returns rate of the transition
@@ -135,7 +155,7 @@ namespace picongpu
                      * @param numberAtomicStates number of atomic states, and number of buffer entries
                      */
                     HINLINE AutonomousTransitionDataBuffer(uint32_t numberAutonomousTransitions)
-                        : TransitionDataBuffer(numberBoundBoundTransitions)
+                        : TransitionDataBuffer(numberAutonomousTransitions)
                     {
 
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
@@ -165,8 +185,7 @@ namespace picongpu
                     HINLINE void syncToDevice()
                     {
                         bufferTransitionRate->hostToDevice();
-                        bufferLowerConfigNumber->hostToDevice();
-                        bufferUpperConfigNumber->hostToDevice();
+                        syncToDevice_BaseClass();
                     }
 
                 };

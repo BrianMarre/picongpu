@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
@@ -56,6 +57,12 @@ namespace picongpu
                     uint8_t T_atomicNumber>
                 class TransitionSelectionDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<TypeValue, Idx>;
+                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<TypeValue, Idx>;
+                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<TypeValue, Idx>;
+
+                private:
                     //! total number of physical transitions
                     BoxNumber m_boxNumberPhysicalTransitionsTotal;
 

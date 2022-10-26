@@ -1,4 +1,4 @@
-/* Copyright 2022 Brian Marre, Sergei Bastrakov
+/* Copyright 2022 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -79,6 +79,18 @@ namespace picongpu
                         : m_boxNumberOfTransitions(boxNumberOfTransitions)
                         , m_boxOffset(boxOffset)
                     {
+                    }
+
+                    //! @todo document
+                    void storeDown(uint32_t const collectionIndex, TypeNumber const numberDown)
+                    {
+                        m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
+                    }
+
+                    //! @todo offset
+                    void storeOffset(uint32_t const collectionIndex, TypeNumber offset)
+                    {
+                        m_boxOffset[collectionOffset] = offset;
                     }
 
                     /** get number of transitions from atomic state

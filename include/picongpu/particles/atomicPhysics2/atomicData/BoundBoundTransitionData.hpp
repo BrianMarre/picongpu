@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionDataBox.hpp"
 
 #include <cstdint>
@@ -71,6 +72,10 @@ namespace picongpu
                         T_ConfigNumberDataType,
                         T_atomicNumber>
                 {
+                public:
+                    using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<TypeValue, Idx>;
+
+                private:
                     //! unitless
                     BoxValue m_boxCollisionalOscillatorStrength;
                     //! unitless
@@ -123,6 +128,27 @@ namespace picongpu
                         , m_boxCinx5(boxCinx5)
                         , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                         {
+                        }
+
+                        /** store transition in data box
+                         *
+                         * @attention do not forget to call syncToDevice() on the
+                         *  corresponding buffer, or the state is only added on the host side.
+                         * @attention needs to fulfill all ordering and content assumptions of constructor!
+                         *
+                         * @param collectionIndex index of data box entry to rewrite
+                         * @param tuple tuple containing data of transition
+                         */
+                        HINLINE void store(uint32_t const collectionIndex, S_BoundBoundTransitionTuple& tuple)
+                        {
+                            m_boxCollisionalOscillatorStrength[collectionIndex] = std::get<0>(tuple);
+                            m_boxAbsorptionOscillatorStrength[collectionIndex] = std::get<1>(tuple);
+                            m_boxCinx1[collectionIndex] = std::get<2>(tuple);
+                            m_boxCinx2[collectionIndex] = std::get<3>(tuple);
+                            m_boxCinx3[collectionIndex] = std::get<4>(tuple);
+                            m_boxCinx4[collectionIndex] = std::get<5>(tuple);
+                            m_boxCinx5[collectionIndex] = std::get<6>(tuple);
+                            storeTransitions(collectionIndex, std::get<7>(tuple), std::get<8>(tuple));
                         }
 
                    /** returns collisional oscillator strength of the transition
@@ -316,8 +342,7 @@ namespace picongpu
                         bufferCinx3->hostToDevice();
                         bufferCinx4->hostToDevice();
                         bufferCinx5->hostToDevice();
-                        bufferLowerConfigNumber->hostToDevice();
-                        bufferUpperConfigNumber->hostToDevice();
+                        syncToDevice_BaseClass();
                     }
 
                 };

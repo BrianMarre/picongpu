@@ -1,0 +1,80 @@
+/* Copyright 2022 Brian Marre
+ *
+ * This file is part of PIConGPU.
+ *
+ * PIConGPU is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * PIConGPU is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PIConGPU.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include <cstdint>
+
+//! @file gathers all definitions of tuples for atomicPhysics
+
+namespace picongpu
+{
+    namespace particles
+    {
+        namespace atomicPhysics2
+        {
+            namespace atomicData
+            {
+
+                template<typename T_Value>
+                using ChargeStateTuple = std::tuple<
+                    uint8_t,  // charge state
+                    T_Value,  // ionization energy[eV]
+                    T_Value>; // screened charge[e]
+
+                template<typename T_Value, typename T_Idx>
+                using AtomicStateTuple = std::tuple<
+                    T_Idx,    // configNumber
+                    T_Value>; // energy over ground [eV]
+
+                template<typename T_Value, typename T_Idx>
+                using BoundBoundTransitionTuple = std::tuple<
+                    T_Value, // collisional oscillator strength
+                    T_Value, // absorption oscillator strength
+                    T_Value, // cinx1 gaunt tunnel coefficient
+                    T_Value, // cinx2
+                    T_Value, // cinx3
+                    T_Value, // cinx4
+                    T_Value, // cinx5
+                    T_Idx,       // lowerState
+                    T_Idx>;      // upperState
+
+                template<typename T_Value, typename T_Idx>
+                using BoundFreeTransitionTuple = std::tuple<
+                    T_Value, // cinx1 cross section parameter
+                    T_Value, // cinx2
+                    T_Value, // cinx3
+                    T_Value, // cinx4
+                    T_Value, // cinx5
+                    T_Value, // cinx6
+                    T_Value, // cinx7
+                    T_Value, // cinx8
+                    T_Idx,   // lowerState
+                    T_Idx>;  // upperState
+
+                template<typename T_Value, T_Idx>
+                using AutonomousTransitionTuple = std::tuple<
+                    T_Value, // rate [1/s]
+                    Idx,     // lowerState
+                    Idx>;    // upperState
+
+            } // namespace atomicData
+        } // namespace atomicPhysics2
+    } // namespace particles
+} // namespace picongpu

@@ -305,69 +305,6 @@ namespace picongpu
                     dataAbsorptionOscillatorStrength.reset(new BufferValue(layoutTransitions));
                 }
 
-                //! Get the host data box for the rate matrix values
-                HINLINE DataBoxType getHostDataBox(uint32_t numStates, uint32_t numberTransitions)
-                {
-                    return DataBoxType(
-                        dataStateEnergy->getHostBuffer().getDataBox(),
-                        dataNumTransitions->getHostBuffer().getDataBox(),
-                        dataStartIndexBlockTransitions->getHostBuffer().getDataBox(),
-                        dataConfigNumber->getHostBuffer().getDataBox(),
-                        numStates,
-                        this->m_maxNumberStates,
-
-                        // dataLowerConfigNumber->getHostBuffer().getDataBox(),
-                        dataUpperConfigNumber->getHostBuffer().getDataBox(),
-                        dataCollisionalOscillatorStrength->getHostBuffer().getDataBox(),
-                        dataCinx1->getHostBuffer().getDataBox(),
-                        dataCinx2->getHostBuffer().getDataBox(),
-                        dataCinx3->getHostBuffer().getDataBox(),
-                        dataCinx4->getHostBuffer().getDataBox(),
-                        dataCinx5->getHostBuffer().getDataBox(),
-                        dataAbsorptionOscillatorStrength->getHostBuffer().getDataBox(),
-                        numberTransitions,
-                        this->m_maxNumberTransitions);
-                }
-
-                //! Get the device data box for the rate matrix values
-                HINLINE DataBoxType getDeviceDataBox(uint32_t numStates, uint32_t numberTransitions)
-                {
-                    return DataBoxType(
-                        dataStateEnergy->getDeviceBuffer().getDataBox(),
-                        dataNumTransitions->getDeviceBuffer().getDataBox(),
-                        dataStartIndexBlockTransitions->getDeviceBuffer().getDataBox(),
-                        dataConfigNumber->getDeviceBuffer().getDataBox(),
-                        numStates,
-                        this->m_maxNumberStates,
-
-                        dataUpperConfigNumber->getDeviceBuffer().getDataBox(),
-                        dataCollisionalOscillatorStrength->getDeviceBuffer().getDataBox(),
-                        dataCinx1->getDeviceBuffer().getDataBox(),
-                        dataCinx2->getDeviceBuffer().getDataBox(),
-                        dataCinx3->getDeviceBuffer().getDataBox(),
-                        dataCinx4->getDeviceBuffer().getDataBox(),
-                        dataCinx5->getDeviceBuffer().getDataBox(),
-                        dataAbsorptionOscillatorStrength->getDeviceBuffer().getDataBox(),
-                        numberTransitions,
-                        this->m_maxNumberTransitions);
-                }
-
-                void syncToDevice()
-                {
-                    dataStateEnergy->hostToDevice();
-                    dataNumTransitions->hostToDevice();
-                    dataStartIndexBlockTransitions->hostToDevice();
-                    dataConfigNumber->hostToDevice();
-
-                    dataUpperConfigNumber->hostToDevice();
-                    dataCollisionalOscillatorStrength->hostToDevice();
-                    dataCinx1->hostToDevice();
-                    dataCinx2->hostToDevice();
-                    dataCinx3->hostToDevice();
-                    dataCinx4->hostToDevice();
-                    dataCinx5->hostToDevice();
-                    dataAbsorptionOscillatorStrength->hostToDevice();
-                }
             };
 
         } // namespace atomicPhysics2

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
@@ -73,6 +74,10 @@ namespace picongpu
                         T_ConfigNumberDataType,
                         T_atomicNumber>
                 {
+                public:
+                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<TypeValue, Idx>;
+
+                private:
                     //! cross section fit parameter 1, unitless
                     BoxValue m_boxCinx1;
                     //! cross section fit parameter 2, unitless
@@ -90,6 +95,7 @@ namespace picongpu
                     //! cross section fit parameter 8, unitless
                     BoxValue m_boxCinx8;
 
+                public:
                     /** constructor
                      *
                      * @attention transition data must be sorted block-wise by lower atomic state
@@ -131,21 +137,43 @@ namespace picongpu
                         {
                         }
 
-                    /// @todo find way to replace cinx getters with single template function
+                        /** store transition in data box
+                         *
+                         * @attention do not forget to call syncToDevice() on the
+                         *  corresponding buffer, or the state is only added on the host side.
+                         * @attention needs to fulfill all ordering and content assumptions of constructor!
+                         *
+                         * @param collectionIndex index of data box entry to rewrite
+                         * @param tuple tuple containing data of transition
+                         */
+                        HINLINE void store(uint32_t const collectionIndex, S_BoundFreeTransitionTuple& tuple)
+                        {
+                            m_boxCinx1[collectionIndex] = std::get<0>(tuple);
+                            m_boxCinx2[collectionIndex] = std::get<1>(tuple);
+                            m_boxCinx3[collectionIndex] = std::get<2>(tuple);
+                            m_boxCinx4[collectionIndex] = std::get<3>(tuple);
+                            m_boxCinx5[collectionIndex] = std::get<4>(tuple);
+                            m_boxCinx6[collectionIndex] = std::get<5>(tuple);
+                            m_boxCinx7[collectionIndex] = std::get<6>(tuple);
+                            m_boxCinx8[collectionIndex] = std::get<7>(tuple);
+                            storeTransitions(collectionIndex, std::get<8>(tuple), std::get<9>(tuple));
+                        }
 
-                   /** returns cross section fit parameter 1 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
-                    HDINLINE TypeValue getCinx1(uint32_t const collectionIndex) const
-                    {
-                        // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx1(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        /// @todo find way to replace cinx getters with single template function, Brian Marre, 2022
+
+                        /** returns cross section fit parameter 1 of the transition
+                         *
+                         * @param collectionIndex ... collection index of transition
+                         *
+                         * @attention no range checks
+                         */
+                        HDINLINE TypeValue getCinx1(uint32_t const collectionIndex) const
+                        {
+                            // debug only
+                            /// @todo find correct compile guard, Brian Marre, 2022
+                            if(collectionIndex < numberTransitions)
+                                return m_boxCinx1(indexTransition);
+                            return static_cast<ValueType>(0._X);
                     }
 
                    /** returns cross section fit parameter 2 of the transition
@@ -341,8 +369,7 @@ namespace picongpu
                         bufferCinx6->hostToDevice();
                         bufferCinx7->hostToDevice();
                         bufferCinx8->hostToDevice();
-                        bufferLowerConfigNumber->hostToDevice();
-                        bufferUpperConfigNumber->hostToDevice();
+                        syncToDevice_BaseClass();
                     }
 
                 };

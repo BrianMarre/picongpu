@@ -1,4 +1,4 @@
-/* Copyright 2022 Sergei Bastrakov, Brian Marre
+/* Copyright 2022 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
@@ -60,6 +61,10 @@ namespace picongpu
                     >
                 class ChargeStateDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using S_ChargeStateTuple = ChargeStateTuple<T_Value>;
+
+                private:
                     //! unit: eV
                     BoxValue m_boxIonizationEnergy;
                     //! unit: elementary charge
@@ -82,7 +87,23 @@ namespace picongpu
                     {
                     }
 
-                    //!@attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
+                    /** store charge state in data box
+                     *
+                     * @attention do not forget to call syncToDevice() on the
+                     *  corresponding buffer, or the state is only added on the host side.
+                     * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     *
+                     * @param collectionIndex index of data box entry to rewrite
+                     * @param configNumber configuration number of atomic state
+                     * @param stateEnergy energy of atomic state over ground state
+                     */
+                    HINLINE void store(uint32_t const collectionIndex, S_ChargeStateTuple& tuple)
+                    {
+                        m_boxIonizationEnergy[collectionIndex] = std::get<1>(tuple);
+                        m_boxScreenedCharge[collectionIndex] = std::get<2>(tuple);
+                    }
+
+                    //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
                     T_Value ionizationEnergy(uint8_t chargeState)
                     {
                         return m_boxIonizationEnergy[chargeState];

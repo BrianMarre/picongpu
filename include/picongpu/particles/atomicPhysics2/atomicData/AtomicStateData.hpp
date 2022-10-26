@@ -19,11 +19,13 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
 #include <cstdint>
 #include <memory>
+#include <tuple>
 
 /** @file implements the storage of atomic state property data
  *
@@ -69,6 +71,8 @@ namespace picongpu
                     using Idx = T_ConfigNumberDataType;
                     using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
 
+                    using S_AtomicStateTuple = AtomicStateTuple<TypeValue, Idx>;
+
                 private:
                     //! configNumber of atomic state, sorted block wise by ionization state
                     BoxStateConfigNumber m_boxConfigNumber;
@@ -97,13 +101,28 @@ namespace picongpu
                     {
                     }
 
+                    /** store atomic state in data box
+                     *
+                     * @attention do not forget to call syncToDevice() on the
+                     *  corresponding buffer, or the state is only added on the host side.
+                     * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     *
+                     * @param collectionIndex index of data box entry to rewrite
+                     * @param tuple tuple containing data of atomic state
+                     */
+                    HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
+                    {
+                        m_boxConfigNumber[collectionIndex] = std::get<0>(tuple);
+                        m_boxStateEnergy[collectionIndex] = std::get<1>(tuple);
+                    }
+
                     /** returns collection index of atomic state in dataBox with given ConfigNumber
                      *
                      * @param configNumber ... configNumber of atomic state
                      * @param startIndexBlock ... start index for search, not required but faster,
                      *  is available from chargeStateOrgaDataBox.startIndexBlockAtomicStates(chargeState)
                      *  with chargeState available from ConfigNumber::getIonizatioState(configNumber)
-                     * @param numberAtomicStates ... number of atomic states in model with charge state
+                     * @param numberAtomicStatesForChargeState ... number of atomic states in model with charge state
                      *  of configNumber, not required but faster,
                      *  is available from chargeStateOrgaDataBox.numberAtomicStates(chargeState).
                      *  with chargeState available from ConfigNumber::getIonizatioState(configNumber)
@@ -112,12 +131,12 @@ namespace picongpu
                      */
                     HDINLINE uint32_t findStateCollectionIndex(
                         Idx const configNumber,
-                        uint32_t const startIndexBlock = 0u,
-                        uint32_t const numberAtomicStatesForChargeState = T_numberAtomicStates) const
+                        uint32_t const numberAtomicStatesForChargeState,
+                        uint32_t const startIndexBlock = 0u) const
                     {
                         // special case completely ionized ion, is never stored
                         if(configNumber == 0u)
-                            return T_numberAtomicStates;
+                            return m_numberAtomicStates;
 
                         /// @todo replace linear search, BrianMarre, 2022
                         // search for state in dataBox
@@ -139,23 +158,29 @@ namespace picongpu
                      * @param startIndexBlock ... start index for search, not required but faster,
                      *  is available from chargeStateOrgaDataBox.startIndexBlockAtomicStates(chargeState)
                      *  with chargeState available from ConfigNumber::getIonizatioState(configNumber)
-                     * @param numberAtomicStates ... number of atomic states in model with charge state
+                     * @param numberAtomicStatesForChargeState ... number of atomic states in model with charge state
                      *  of configNumber, not required but faster,
                      *  is available from chargeStateOrgaDataBox.numberAtomicStates(chargeState).
                      *  with chargeState available from ConfigNumber::getIonizatioState(configNumber)
                      *
                      * @return unit: eV
                      */
-                    HDINLINE TypeValue getEnergy(Idx const configNumber) const
+                    HDINLINE TypeValue getEnergy(
+                        Idx const configNumber,
+                        uint32_t const numberAtomicStatesForChargeState,
+                        uint32_t const startIndexBlock = 0u) const
                     {
                         // special case completely ionized ion
                         if(configNumber == 0u)
                             return static_cast<TypeValue>(0.0_X);
 
-                        uint32_t collectionIndex = findStateCollectionIndex(configNumber);
+                        uint32_t collectionIndex = findStateCollectionIndex(
+                            configNumber,
+                            startIndexBlock,
+                            numberAtomicStatesForChargeState);
 
                         // atomic state not found, return zero, by definition isolated state
-                        if(collectionIndex == numberAtomicStates)
+                        if(collectionIndex == m_numberAtomicStates)
                         {
                             return static_cast<TypeValue>(0._X);
                         }
@@ -175,9 +200,10 @@ namespace picongpu
                         return this->m_boxStateEnergy(collectionIndex);
                     }
 
+                    //! get number of known atomic states
                     HDINLINE uint32_t getNumberAtomicStatesTotal()
                     {
-                        return numberAtomicStates;
+                        return m_numberAtomicStates;
                     }
                 };
 
@@ -203,8 +229,11 @@ namespace picongpu
                     std::unique_ptr< BufferConfigNumber > bufferConfigNumber;
                     std::unique_ptr< BufferValue > bufferStateEnergy;
 
+                    uint32_t m_numberAtomicStates;
+
                 public:
-                    HINLINE AtomicStateDataBuffer( uint32_t numberAtomicStates)
+                    HINLINE AtomicStateDataBuffer(uint32_t numberAtomicStates)
+                        : m_numberAtomicStates(numberAtomicStates)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
                         auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
@@ -215,16 +244,18 @@ namespace picongpu
 
                     HINLINE AtomicStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
                     {
-                        return AtomicStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
                             bufferConfigNumber->getHostBuffer().getDataBox(),
-                            bufferStateEnergy->getHostBuffer().getDataBox());
+                            bufferStateEnergy->getHostBuffer().getDataBox(),
+                            m_numberAtomicStates);
                     }
 
-                    HINLINE ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AtomicStateDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
                     {
-                        return ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
                             bufferConfigNumber->getDeviceBuffer().getDataBox(),
-                            bufferStateEnergy->getDeviceBuffer().getDataBox());
+                            bufferStateEnergy->getDeviceBuffer().getDataBox(),
+                            m_numberAtomicStates);
                     }
 
                     HINLINE void syncToDevice()
@@ -233,6 +264,11 @@ namespace picongpu
                         bufferStateEnergy->hostToDevice();
                     }
 
+                    //! get number of known atomic states
+                    HINLINE uint32_t getNumberAtomicStatesTotal() const
+                    {
+                        return m_numberAtomicStates;
+                    }
                 };
 
             } // namespace atomicData

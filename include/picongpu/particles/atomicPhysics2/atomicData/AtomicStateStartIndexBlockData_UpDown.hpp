@@ -1,4 +1,4 @@
-/* Copyright 2022 Brian Marre, Sergei Bastrakov
+/* Copyright 2022 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -78,6 +78,18 @@ namespace picongpu
                         : m_boxStartIndexBlockTransitionsDown(boxStartIndexBlockTransitionsDown)
                         , m_boxStartIndexBlockTransitionsUp(boxStartIndexBlockTransitionsUp)
                     {
+                    }
+
+                    //! @todo document
+                    void storeDown(uint32_t const collectionIndex, TypeNumber startIndexDown)
+                    {
+                        m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;
+                    }
+
+                    //! @todo document
+                    void storeUp(uint32_t const collectionIndex, TypeNumber startIndexUp)
+                    {
+                        m_boxStartIndexBlockTransitionsUp[collectionIndex] = startIndexUp;
                     }
 
                     /** get start index of block of transitions downward from atomic state
