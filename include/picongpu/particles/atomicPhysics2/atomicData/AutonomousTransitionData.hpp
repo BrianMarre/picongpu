@@ -23,6 +23,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionDataBox.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <stdexcept>
 
 /** @file implements the storage of autonomous transitions property data
  *
@@ -82,13 +84,14 @@ namespace picongpu
                 public:
                     /** constructor
                      *
-                     * @attention transition data must be sorted block-wise by atomic state
-                     *  and secondary ascending by upper configNumber.
+                     * @attention transition data must be sorted block-wise ascending by lower/upper
+                     *  atomic state and secondary ascending by upper/lower atomic state.
                      *
                      * @param boxTransitionRate rate over deexcitation [1/s]
-                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the transition
-                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
-                     * @param numberTransitions number of atomic bound-bound transitions stored
+                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
+                     * transition
+                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
+                     * transition
                      * @param numberTransitions number of atomic autonomous transitions stored
                      */
                     AutonomousTransitionDataBox(
@@ -106,29 +109,40 @@ namespace picongpu
                      * @attention do not forget to call syncToDevice() on the
                      *  corresponding buffer, or the state is only added on the host side.
                      * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     * @attention no range checks out side of debug compile
                      *
                      * @param collectionIndex index of data box entry to rewrite
                      * @param tuple tuple containing data of transition
                      */
                     HINLINE void store(uint32_t const collectionIndex, S_AutonomousTransitionTuple& tuple)
                     {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            std::runtime_error("atomicPhysics ERROR: out of range store");
+                            return;
+                        }
                         m_boxTransitionRate[collectionIndex] = std::get<0>(tuple);
                         storeTransitions(collectionIndex, std::get<1>(tuple), std::get<2>(tuple));
                     }
 
-                   /** returns rate of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
-                    TypeValue getTransitionRate(uint32_t const collectionIndex) const
+                    /** returns rate of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks out side of debug compile
+                     */
+                    HDINLINE TypeValue getTransitionRate(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < T_numberTransitions)
-                            return m_boxTransitionRate(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: out of range getTransitionRate() call");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxTransitionRate(indexTransition);
                     }
 
                 };

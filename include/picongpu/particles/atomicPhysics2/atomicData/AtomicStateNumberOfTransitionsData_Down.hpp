@@ -55,6 +55,11 @@ namespace picongpu
                     uint8_t T_atomicNumber>
                 class AtomicStateNumberOfTransitionsDataBox_Down : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using dataBoxType
+                        = AtomicStateNumberOfTransitionsDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+
+                private:
                     /** start collection index of the block of autonomous transitions
                      * from the atomic state in the collection of autonomous transitions
                      */
@@ -81,13 +86,13 @@ namespace picongpu
                     {
                     }
 
-                    //! @todo document
+                    //! @attention no range check
                     void storeDown(uint32_t const collectionIndex, TypeNumber const numberDown)
                     {
                         m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
                     }
 
-                    //! @todo offset
+                    //! @attention no range check
                     void storeOffset(uint32_t const collectionIndex, TypeNumber offset)
                     {
                         m_boxOffset[collectionOffset] = offset;

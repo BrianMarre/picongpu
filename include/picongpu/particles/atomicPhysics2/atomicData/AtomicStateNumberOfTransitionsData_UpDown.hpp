@@ -86,19 +86,19 @@ namespace picongpu
                     {
                     }
 
-                    //! @todo document
+                    //! @attention no range check
                     void storeDown(uint32_t const collectionIndex, TypeNumber const numberDown)
                     {
                         m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
                     }
 
-                    //! @todo document
+                    //! @attention no range check
                     void storeUp(uint32_t const collectionIndex, TypeNumber const numberUp)
                     {
                         m_boxNumberOfTransitionsUp[collectionIndex] = numberUp;
                     }
 
-                    //! @todo offset
+                    //! @attention no range check
                     void storeOffset(uint32_t const collectionIndex, TypeNumber offset)
                     {
                         m_boxOffset[collectionOffset] = offset;
@@ -157,7 +157,14 @@ namespace picongpu
                     uint8_t T_atomicNumber>
                 class AtomicStateNumberOfTransitionsDataBuffer_UpDown : public DataBuffer< T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using dataBoxType = AtomicStateNumberOfTransitionsDataBox_UpDown<
+                        T_DataBoxType,
+                        T_Number,
+                        T_Value,
+                        T_atomicNumber>;
 
+                private:
                     std::unique_ptr< BufferNumber > bufferNumberOfTransitionsDown;
                     std::unique_ptr< BufferNumber > bufferNumberOfTransitionsUp;
                     std::unique_ptr< BufferNumber > bufferOffset;

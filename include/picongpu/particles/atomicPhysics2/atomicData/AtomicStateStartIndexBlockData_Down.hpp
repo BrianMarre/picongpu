@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 
 /** @file implements base class of atomic state start index block data with up- and downward transitions
  *
@@ -78,7 +79,7 @@ namespace picongpu
                     {
                     }
 
-                    //! @todo document
+                    //! @attention no range check
                     void storeDown(uint32_t const collectionIndex, TypeNumber startIndexDown)
                     {
                         m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;
@@ -104,13 +105,14 @@ namespace picongpu
                  * @tparam T_Value dataType used for value storage, typically float_X
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
-                template<
-                    typename T_DataBoxType,
-                    typename T_Number,
-                    typename T_Value,
-                    uint8_t T_atomicNumber>
-                class AtomicStateStartIndexDataBuffer_Down : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                template<typename T_DataBoxType, typename T_Number, typename T_Value, uint8_t T_atomicNumber>
+                class AtomicStateStartIndexBlockDataBuffer_Down : public DataBuffer<T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using dataBoxType
+                        = AtomicStateStartIndexBlockDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+
+                private:
                     std::unique_ptr< BufferNumber > bufferStartIndexBlockTransitionsDown;
 
                 public:
@@ -122,11 +124,14 @@ namespace picongpu
                         bufferStartIndexBlockTransitionsDown.reset( new BufferValue(layoutAtomicStates));
                     }
 
-                    HINLINE AtomicStateStartIndexDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE AtomicStateStartIndexBlockDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                    getHostDataBox()
                     {
-                        return AtomicStateStartIndexDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
-                            bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox());
-
+                        return AtomicStateStartIndexBlockDataBox_Down<
+                            T_DataBoxType,
+                            T_Number,
+                            T_Value,
+                            T_atomicNumber>(bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox());
                     }
 
                     HINLINE AtomicStateStartIndexDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()

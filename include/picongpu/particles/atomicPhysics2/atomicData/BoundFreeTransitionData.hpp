@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 
 /** @file implements the storage of bound-bound transitions property data
  *
@@ -98,8 +99,8 @@ namespace picongpu
                 public:
                     /** constructor
                      *
-                     * @attention transition data must be sorted block-wise by lower atomic state
-                     *  and secondary ascending by upper configNumber.
+                     * @attention transition data must be sorted block-wise ascending by lower/upper
+                     *  atomic state and secondary ascending by upper/lower atomic state.
                      *
                      * @param boxCinx1 cross section fit parameter 1
                      * @param boxCinx2 cross section fit parameter 2
@@ -109,8 +110,10 @@ namespace picongpu
                      * @param boxCinx4 cross section fit parameter 6
                      * @param boxCinx5 cross section fit parameter 7
                      * @param boxCinx5 cross section fit parameter 8
-                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the transition
-                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
+                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
+                     * transition
+                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
+                     * transition
                      * @param T_numberTransitions number of atomic bound-free transitions stored
                      */
                     BoundFreeTransitionDataBox(
@@ -134,106 +137,128 @@ namespace picongpu
                         , m_boxCinx7(boxCinx7)
                         , m_boxCinx8(boxCinx8)
                         , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
-                        {
-                        }
-
-                        /** store transition in data box
-                         *
-                         * @attention do not forget to call syncToDevice() on the
-                         *  corresponding buffer, or the state is only added on the host side.
-                         * @attention needs to fulfill all ordering and content assumptions of constructor!
-                         *
-                         * @param collectionIndex index of data box entry to rewrite
-                         * @param tuple tuple containing data of transition
-                         */
-                        HINLINE void store(uint32_t const collectionIndex, S_BoundFreeTransitionTuple& tuple)
-                        {
-                            m_boxCinx1[collectionIndex] = std::get<0>(tuple);
-                            m_boxCinx2[collectionIndex] = std::get<1>(tuple);
-                            m_boxCinx3[collectionIndex] = std::get<2>(tuple);
-                            m_boxCinx4[collectionIndex] = std::get<3>(tuple);
-                            m_boxCinx5[collectionIndex] = std::get<4>(tuple);
-                            m_boxCinx6[collectionIndex] = std::get<5>(tuple);
-                            m_boxCinx7[collectionIndex] = std::get<6>(tuple);
-                            m_boxCinx8[collectionIndex] = std::get<7>(tuple);
-                            storeTransitions(collectionIndex, std::get<8>(tuple), std::get<9>(tuple));
-                        }
-
-                        /// @todo find way to replace cinx getters with single template function, Brian Marre, 2022
-
-                        /** returns cross section fit parameter 1 of the transition
-                         *
-                         * @param collectionIndex ... collection index of transition
-                         *
-                         * @attention no range checks
-                         */
-                        HDINLINE TypeValue getCinx1(uint32_t const collectionIndex) const
-                        {
-                            // debug only
-                            /// @todo find correct compile guard, Brian Marre, 2022
-                            if(collectionIndex < numberTransitions)
-                                return m_boxCinx1(indexTransition);
-                            return static_cast<ValueType>(0._X);
+                    {
                     }
 
-                   /** returns cross section fit parameter 2 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** store transition in data box
+                     *
+                     * @attention do not forget to call syncToDevice() on the
+                     *  corresponding buffer, or the state is only stored on the host side.
+                     * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     *
+                     * @param collectionIndex index of data box entry to rewrite
+                     * @param tuple tuple containing data of transition
+                     */
+                    HINLINE void store(uint32_t const collectionIndex, S_BoundFreeTransitionTuple& tuple)
+                    {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            std::runtime_error("atomicPhysics ERROR: outside range call");
+                            return;
+                        }
+                        m_boxCinx1[collectionIndex] = std::get<0>(tuple);
+                        m_boxCinx2[collectionIndex] = std::get<1>(tuple);
+                        m_boxCinx3[collectionIndex] = std::get<2>(tuple);
+                        m_boxCinx4[collectionIndex] = std::get<3>(tuple);
+                        m_boxCinx5[collectionIndex] = std::get<4>(tuple);
+                        m_boxCinx6[collectionIndex] = std::get<5>(tuple);
+                        m_boxCinx7[collectionIndex] = std::get<6>(tuple);
+                        m_boxCinx8[collectionIndex] = std::get<7>(tuple);
+                        storeTransitions(collectionIndex, std::get<8>(tuple), std::get<9>(tuple));
+                    }
+
+                    /// @todo find way to replace cinx getters with single template function, Brian Marre, 2022
+
+                    /** returns cross section fit parameter 1 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
+                    HDINLINE TypeValue getCinx1(uint32_t const collectionIndex) const
+                    {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx1\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx1(indexTransition);
+                    }
+
+                    /** returns cross section fit parameter 2 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx2(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx2(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx2\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx2(indexTransition);
                     }
 
-                   /** returns cross section fit parameter 3 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns cross section fit parameter 3 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx3(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx3(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx3\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx3(indexTransition);
                     }
 
-                   /** returns cross section fit parameter 4 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns cross section fit parameter 4 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx4(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx4(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx4\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx4(indexTransition);
                     }
 
-                   /** returns cross section fit parameter 5 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns cross section fit parameter 5 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx5(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx5(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx5\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx5(indexTransition);
                     }
 
                    /** returns cross section fit parameter 6 of the transition
@@ -246,39 +271,48 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx6(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx6\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx6(indexTransition);
                     }
 
-                   /** returns cross section fit parameter 7 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns cross section fit parameter 7 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx7(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx7(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx7\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx7(indexTransition);
                     }
 
-                   /** returns cross section fit parameter 8 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns cross section fit parameter 8 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx8(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx8(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransition)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx8\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx8(indexTransition);
                     }
 
                 };

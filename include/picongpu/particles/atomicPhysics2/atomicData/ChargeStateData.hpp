@@ -99,18 +99,35 @@ namespace picongpu
                      */
                     HINLINE void store(uint32_t const collectionIndex, S_ChargeStateTuple& tuple)
                     {
+                        if(collectionIndex != std::get<0>(tuple))
+                        {
+                            throw str::runtime_error(
+                                "atomicPhysics ERROR: chargeState and collectionIndex of tuple added inconsistent");
+                            return;
+                        }
+                        if(collectionIndex == T_atomicNumber)
+                        {
+                            throw
+                                : runtime_error(
+                                      "atomicPhysics ERROR: completely ionized charge state may not be stored");
+                        }
+                        if(collectionIndex > T_atomicNumber)
+                        {
+                            throw : runtime_error("atomicPhysics ERROR: unphysical charge state may not be stored");
+                        }
+
                         m_boxIonizationEnergy[collectionIndex] = std::get<1>(tuple);
                         m_boxScreenedCharge[collectionIndex] = std::get<2>(tuple);
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Value ionizationEnergy(uint8_t chargeState)
+                    DINLINE T_Value ionizationEnergy(uint8_t chargeState)
                     {
                         return m_boxIonizationEnergy[chargeState];
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Value screenedCharge(uint8_t chargeState)
+                    DINLINE T_Value screenedCharge(uint8_t chargeState)
                     {
                         return m_boxScreenedCharge[chargeState]
                     }

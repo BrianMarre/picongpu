@@ -64,8 +64,8 @@ namespace picongpu
                 public:
                     /** constructor
                      *
-                     * @attention transition data must be sorted block-wise ascending by lower configNumber
-                     *  and secondary ascending by upper configNumber.
+                     * @attention transition data must be sorted block-wise ascending by lower/upper
+                     *  atomic state and secondary ascending by upper/lower atomic state.
                      * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
                      * transition
                      * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
@@ -143,9 +143,12 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < m_numberTransitions)
-                            return m_boxUpperConfigNumber(collectionIndex);
-                        return 0u;
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition() call");
+                            return static_cast<Idx>(0u);
+                        }
+                        return m_boxUpperConfigNumber(collectionIndex);
                     }
 
                    /** returns lower states configNumber of the transition
@@ -158,9 +161,12 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < m_numberTransitions)
-                            return m_boxLowerConfigNumber(collectionIndex);
-                        return 0u;
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition() call");
+                            return static_cast<Idx>(0u);
+                        }
+                        return m_boxLowerConfigNumber(collectionIndex);
                     }
 
                     HDINLINE uint32_t getNumberOfTransitionsTotal() const

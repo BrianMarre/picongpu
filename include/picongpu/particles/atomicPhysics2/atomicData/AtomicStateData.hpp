@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 #include <tuple>
 
 /** @file implements the storage of atomic state property data
@@ -106,17 +107,26 @@ namespace picongpu
                      * @attention do not forget to call syncToDevice() on the
                      *  corresponding buffer, or the state is only added on the host side.
                      * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     * @attention no range check on collectionIndex, outside debug compile
                      *
                      * @param collectionIndex index of data box entry to rewrite
                      * @param tuple tuple containing data of atomic state
                      */
                     HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
                     {
+                        ///@todo find correct compile debug guards, Brian Marre, 2022
+                        if(collectionIndex >= T_numberAtomicStates)
+                        {
+                            throw std : runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
+                            return;
+                        }
                         m_boxConfigNumber[collectionIndex] = std::get<0>(tuple);
                         m_boxStateEnergy[collectionIndex] = std::get<1>(tuple);
                     }
 
                     /** returns collection index of atomic state in dataBox with given ConfigNumber
+                     *
+                     * @attention do not use to get energy of atomic state, use getEnergy() directly instead!
                      *
                      * @param configNumber ... configNumber of atomic state
                      * @param startIndexBlock ... start index for search, not required but faster,
@@ -189,18 +199,43 @@ namespace picongpu
                         return m_boxStateEnergy(collectionIndex);
                     }
 
-                    //! returns state corresponding to given index
+                    /** returns configNumber of state corresponding to given index
+                     *
+                     * @attention no range check outside debug compile
+                     * @param collectionIndex index of data box entry to query
+                     */
                     HDINLINE Idx configNumber(uint32_t const collectionIndex) const
                     {
+                        // debug only
+                        ///@todo find correct compile debug guards, Brian Marre, 2022
+                        if(collectionIndex >= T_numberAtomicStates)
+                        {
+                            printf("atomicPhysics ERROR: out of bounds atomic state configNumber call\n");
+                            return static_cast<TypeValue>(0._X);
+                        }
                         return this->m_boxConfigNumber(collectionIndex);
                     }
 
+                    /** directly query energy dataBox entry, use getEnergy() unless you know what you are doing!
+                     *
+                     * @attention does not respond correctly for configNumber == 0, since data for this
+                     *  case is not stored explicitly
+                     * @attention no range check outside debug compile
+                     * @param collectionIndex index of data box entry to query
+                     */
                     HDINLINE TypeValue stateEnergy(uint32_t const collectionIndex) const
                     {
+                        // debug only
+                        ///@todo find correct compile debug guards, Brian Marre, 2022
+                        if(collectionIndex >= T_numberAtomicStates)
+                        {
+                            printf("atomicPhysics ERROR: out of bounds atomic state energy call\n");
+                            return static_cast<TypeValue>(0._X);
+                        }
                         return this->m_boxStateEnergy(collectionIndex);
                     }
 
-                    //! get number of known atomic states
+                    //! directly query get number of known atomic states
                     HDINLINE uint32_t getNumberAtomicStatesTotal()
                     {
                         return m_numberAtomicStates;

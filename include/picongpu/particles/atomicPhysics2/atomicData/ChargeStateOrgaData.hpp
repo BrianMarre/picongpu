@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <stdexcept>
 
 /** @file implements the storage of charge state orga data
  *
@@ -85,23 +86,47 @@ namespace picongpu
                      *
                      * @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
                      *
-                     * @todo param
+                     * @param chargeState
+                     * @param numberAtomicStates number of atomic states associated with this charge state
+                     * @param startIndex start collectionIndex of block of atomic states in atomicState collection with
+                     * this charge state
                      */
-                    void store(uint8_t const chargeState, T_Number numberAtomicStates, T_Number startIndex)
+                    HINLINE void store(uint8_t const chargeState, T_Number numberAtomicStates, T_Number startIndex)
                     {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= T_atomicNumber)
+                        {
+                            std::runtime_error("atomicPhysics ERROR: outside range call");
+                            return;
+                        }
                         m_boxNumberAtomicStates[chargeState] = numberAtomicStates;
                         m_boxStartIndexBlockAtomicStates[chargeState] = startIndex;
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Number numberAtomicStates(uint8_t chargeState)
+                    HDINLINE T_Number numberAtomicStates(uint8_t chargeState)
                     {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= T_atomicNumber)
+                        {
+                            printf("atomicPhysics ERROR: outside range call\n");
+                            returnstatic_cast<T_Number>(0u);
+                        }
                         return m_boxNumberAtomicStates[chargeState];
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
                     T_Number startIndexBlockAtomicStates(uint8_t chargeState)
                     {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= T_atomicNumber)
+                        {
+                            printf("atomicPhysics ERROR: outside range call");
+                            return static_cast<T_Number>(0u);
+                        }
                         return m_boxStartIndexBlockAtomicStates[chargeState];
                     }
 

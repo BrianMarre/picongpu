@@ -23,6 +23,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionDataBox.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <stdexcept>
 
 /** @file implements the storage of bound-bound transitions property data
  *
@@ -94,8 +96,8 @@ namespace picongpu
                 public:
                     /** constructor
                      *
-                     * @attention transition data must be sorted block-wise ascending by lower atomic state configNumber
-                     *  and secondary ascending by upper state configNumber.
+                     * @attention transition data must be sorted block-wise ascending by lower/upper
+                     *  atomic state and secondary ascending by upper/lower atomic state.
                      *
                      * @param boxCollisionalOscillatorStrength
                      * @param boxAbsorptionOscillatorStrength
@@ -104,8 +106,10 @@ namespace picongpu
                      * @param boxCinx3 gaunt tunneling fit parameter 3
                      * @param boxCinx4 gaunt tunneling fit parameter 4
                      * @param boxCinx5 gaunt tunneling fit parameter 5
-                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the transition
-                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the transition
+                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
+                     * transition
+                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
+                     * transition
                      * @param numberTransitions number of atomic bound-bound transitions stored
                      */
                     BoundBoundTransitionDataBox(
@@ -127,43 +131,54 @@ namespace picongpu
                         , m_boxCinx4(boxCinx4)
                         , m_boxCinx5(boxCinx5)
                         , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
-                        {
-                        }
+                    {
+                    }
 
-                        /** store transition in data box
-                         *
-                         * @attention do not forget to call syncToDevice() on the
-                         *  corresponding buffer, or the state is only added on the host side.
-                         * @attention needs to fulfill all ordering and content assumptions of constructor!
-                         *
-                         * @param collectionIndex index of data box entry to rewrite
-                         * @param tuple tuple containing data of transition
-                         */
-                        HINLINE void store(uint32_t const collectionIndex, S_BoundBoundTransitionTuple& tuple)
+                    /** store transition in data box
+                     *
+                     * @attention do not forget to call syncToDevice() on the
+                     *  corresponding buffer, or the state is only added on the host side.
+                     * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     * @attention no range checks outside debug compile!
+                     *
+                     * @param collectionIndex index of data box entry to rewrite
+                     * @param tuple tuple containing data of transition
+                     */
+                    HINLINE void store(uint32_t const collectionIndex, S_BoundBoundTransitionTuple& tuple)
+                    {
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= m_numberTransitions)
                         {
-                            m_boxCollisionalOscillatorStrength[collectionIndex] = std::get<0>(tuple);
-                            m_boxAbsorptionOscillatorStrength[collectionIndex] = std::get<1>(tuple);
-                            m_boxCinx1[collectionIndex] = std::get<2>(tuple);
-                            m_boxCinx2[collectionIndex] = std::get<3>(tuple);
-                            m_boxCinx3[collectionIndex] = std::get<4>(tuple);
-                            m_boxCinx4[collectionIndex] = std::get<5>(tuple);
-                            m_boxCinx5[collectionIndex] = std::get<6>(tuple);
-                            storeTransitions(collectionIndex, std::get<7>(tuple), std::get<8>(tuple));
+                            std::runtime_error("atomicPhysics ERROR: out of range store()");
+                            return;
                         }
+                        m_boxCollisionalOscillatorStrength[collectionIndex] = std::get<0>(tuple);
+                        m_boxAbsorptionOscillatorStrength[collectionIndex] = std::get<1>(tuple);
+                        m_boxCinx1[collectionIndex] = std::get<2>(tuple);
+                        m_boxCinx2[collectionIndex] = std::get<3>(tuple);
+                        m_boxCinx3[collectionIndex] = std::get<4>(tuple);
+                        m_boxCinx4[collectionIndex] = std::get<5>(tuple);
+                        m_boxCinx5[collectionIndex] = std::get<6>(tuple);
+                        storeTransitions(collectionIndex, std::get<7>(tuple), std::get<8>(tuple));
+                    }
 
-                   /** returns collisional oscillator strength of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns collisional oscillator strength of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCollisionalOscillatorStrength(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCollisionalOscillatorStrength(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCollisionalOscillatorStrength\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCollisionalOscillatorStrength(indexTransition);
                     }
 
                    /** returns absorption oscillator strength of the transition
@@ -176,41 +191,50 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxAbsorptionOscillatorStrength(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getAbsorptionOscillatorStrength\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxAbsorptionOscillatorStrength(indexTransition);
                     }
 
                     /// @todo find way to replace cinx getters with single template function
 
-                   /** returns gaunt tunneling fit parameter 1 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns gaunt tunneling fit parameter 1 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx1(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx1(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx1\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx1(indexTransition);
                     }
 
-                   /** returns gaunt tunneling fit parameter 2 of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
+                    /** returns gaunt tunneling fit parameter 2 of the transition
+                     *
+                     * @param collectionIndex ... collection index of transition
+                     *
+                     * @attention no range checks outside debug compile
+                     */
                     HDINLINE TypeValue getCinx2(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx2(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx2\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx2(indexTransition);
                     }
 
                    /** returns gaunt tunneling fit parameter 3 of the transition
@@ -223,9 +247,12 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx3(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx3\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx3(indexTransition);
                     }
 
                    /** returns gaunt tunneling fit parameter 4 of the transition
@@ -238,9 +265,12 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < numberTransitions)
-                            return m_boxCinx4(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx4\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx4(indexTransition);
                     }
 
                    /** returns gaunt tunneling fit parameter 5 of the transition
@@ -253,9 +283,12 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex < umberTransitions)
-                            return m_boxCinx5(indexTransition);
-                        return static_cast<ValueType>(0._X);
+                        if(collectionIndex >= m_numberTransitions)
+                        {
+                            printf("atomicPhysics ERROR: outside range call getCinx5\n");
+                            return static_cast<ValueType>(0._X);
+                        }
+                        return m_boxCinx5(indexTransition);
                     }
 
                 };

@@ -55,6 +55,11 @@ namespace picongpu
                     uint8_t T_atomicNumber>
                 class AtomicStateStartIndexDataBox_UpDown : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using dataBoxType
+                        = AtomicStateStartIndexDataBox_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+
+                private:
                     //! start collection index of the block of downward transitions from the atomic state in the corresponding upward collection                    BoxNumber m_boxStartIndexBlockTransitionsDown;
                     BoxNumber m_boxStartIndexBlockTransitionsDown;
                     //! start collection index of the block of upward transitions from the atomic state in the corresponding upward collection
@@ -80,13 +85,13 @@ namespace picongpu
                     {
                     }
 
-                    //! @todo document
+                    //! @attention no range check
                     void storeDown(uint32_t const collectionIndex, TypeNumber startIndexDown)
                     {
                         m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;
                     }
 
-                    //! @todo document
+                    //! @attention no range check
                     void storeUp(uint32_t const collectionIndex, TypeNumber startIndexUp)
                     {
                         m_boxStartIndexBlockTransitionsUp[collectionIndex] = startIndexUp;
