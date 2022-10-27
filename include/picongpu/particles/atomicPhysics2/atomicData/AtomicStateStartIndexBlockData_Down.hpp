@@ -79,7 +79,7 @@ namespace picongpu
                     {
                     }
 
-                    //! @attention no range check
+                    //! @attention no range check!
                     void storeDown(uint32_t const collectionIndex, TypeNumber startIndexDown)
                     {
                         m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;

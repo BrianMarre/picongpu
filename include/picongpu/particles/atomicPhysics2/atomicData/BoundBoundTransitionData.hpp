@@ -150,7 +150,7 @@ namespace picongpu
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransitions)
                         {
-                            std::runtime_error("atomicPhysics ERROR: out of range store()");
+                            throw std::runtime_error("atomicPhysics ERROR: out of range store()");
                             return;
                         }
                         m_boxCollisionalOscillatorStrength[collectionIndex] = std::get<0>(tuple);

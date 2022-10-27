@@ -55,20 +55,17 @@
 #include <string>
 #include <tuple>
 
-/** @file gathers atomic data storage implementations and implements filling on runtime
+/** @file gathers atomic data storage implementations and implements filling them on runtime
  *
  * The atomicPhysics step relies on a model of atomic states and transitions for each
  * atomicPhysics ion species.
  * These model's parameters are provided by the user as a .txt file of specified format
- * at runtime.
+ * (see documentation) at runtime.
  *
  *  PIConGPU itself only includes charge state data, for ADK-, Thomas-Fermi- and BSI-ionization.
  *  All other atomic state data is kept separate from PIConGPU itself, due to license requirements.
  *
- * This file is read at the start of the simulation and stored distributed in several
- *  objects by set of kernels.
- *
- * Storage includes:
+ * This file is read at the start of the simulation and stored distributed over the following:
  *  - charge state property data [ChargeStateDataBox.hpp]
  *      * ionization energy
  *      * screened charge
@@ -91,7 +88,13 @@
  *      * parameters for cross section calculation for each modeled transition
  *
  * (orga data describes the structure of the property data for faster lookups, lookups are
- *  are always possible without it, but are possible non performant)
+ *  are always possible without it, but are possibly non performant)
+ *
+ * For each of data subsets exists a dataBox class, container class holding the actual data in pmacc::dataBox'es, and
+ *  a dataBuffer class, container class holding pmacc::buffers in turn holding the pmacc::dataBox'es.
+ *
+ * Each data Buffer will create on demand a host or device side dataBox class object which
+ *  in turn gives access to the data.
  */
 
 namespace picongpu
@@ -128,8 +131,8 @@ namespace picongpu
                     bool electronicExcitation,
                     bool electronicDeexcitation,
                     bool spontaneousDeexcitation,
+                    bool electronicIonization,
                     bool autonomousIonization,
-                    bool electonicIonization,
                     bool fieldIonization> /// @todo add photonic channels
                 class AtomicData
                 {
@@ -206,7 +209,7 @@ namespace picongpu
                         T_ConfigNumberDataType,
                         T_atomicNumber>;
 
-                    using S_TranstionTransitionSelectionDataBuffer
+                    using S_TransitionSelectionDataBuffer
                         = TransitionSelectionDataBuffer<T_DataBoxType, TypeNumber, TypeValue, T_atomicNumber>;
 
                     // dataBoxes: S_* for shortened name
@@ -259,7 +262,7 @@ namespace picongpu
                         T_ConfigNumberDataType,
                         T_atomicNumber>;
 
-                    using S_TranstionTransitionSelectionDataBox
+                    using S_TransitionSelectionDataBox
                         = TransitionSelectionDataBox<T_DataBoxType, TypeNumber, TypeValue, T_atomicNumber>;
 
                 private:
@@ -392,7 +395,7 @@ namespace picongpu
 
                                                       atomicStateList.push_back(item);
 
-                            numberAtomicStates++;
+                            m_numberAtomicStates++;
                         }
 
                         return atomicStateList;
@@ -863,7 +866,7 @@ namespace picongpu
                      * @param list correctly ordered list of data tuples to store
                      */
                     template<typename T_Tuple, typename T_DataBox, typename T_Buffer>
-                    void storeData(std::list<T_Tuple>& const list, T_Buffer buffer)
+                    void storeData(std::list<T_Tuple>& const list, T_Buffer& buffer)
                     {
                         std::list<T_Tuple>::iterator iter = list.begin();
 
@@ -942,14 +945,15 @@ namespace picongpu
                     template<typename T_Tuple>
                     void fill_UpTransition_OrgaData(
                         std::list<T_Tuple> transitionList,
-                        S_AtomicStateNumberOfTransitionsDataBuffer_UpDown numberBuffer,
-                        S_AtomicStateStartIndexBlockDataBuffer_UpDown startIndexBuffer)
+                        S_AtomicStateNumberOfTransitionsDataBuffer_UpDown& numberBuffer,
+                        S_AtomicStateStartIndexBlockDataBuffer_UpDown& startIndexBuffer)
                     {
                         std::list<T_Tuple>::iterator iter = transitionList.begin();
 
                         // quick lockup data
-                        S_AtomicStateDataBox atomicStateDataBox = atomicStateDataBuffer->getHostDataBox();
-                        S_ChargeStateOrgaDataBox chargeStateOrgaDataBox = chargeStateOrgaDataBuffer->getHostDataBox();
+                        S_AtomicStateDataBox atomicStateDataHostBox = atomicStateDataBuffer->getHostDataBox();
+                        S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox
+                            = chargeStateOrgaDataBuffer->getHostDataBox();
 
                         // data boxes we will fill
                         S_AtomicStateStartIndexBlockDataBox_UpDown startIndexHostBox
@@ -958,7 +962,7 @@ namespace picongpu
 
                         uint8_t lastChargeState;
                         uint32_t lastAtomicStateCollectionIndex;
-                        Idx currentLower;
+                        Idx currentLower; // transitions up from a state have the state as lower state
 
                         // read first entry
                         Idx lastLower = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
@@ -979,11 +983,15 @@ namespace picongpu
                                     getIonizationState(lastLower); // will always be < T_atomicNumber, since
                                                                    // q=T_atomicNumber may never be a lower state
 
-                                lastAtomicStateCollectionIndex = atomicStateDataBox.findStateCollectionIndex(
+                                lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                                     lastLower,
                                     // completely ionized state can never be lower state of an transition
-                                    chargeStateOrgaDataBox.numberAtomicStates(lastChargeState),
-                                    chargeStateOrgaDataBox.startIndexBlockAtomicStates(lastChargeState));
+                                    chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                                    chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+
+                                if(lastAtomicStateCollectionIndex
+                                   >= atomicStateDataHostBox.getNumberAtomicStatesTotal())
+                                    throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
 
                                 startIndexHostBox.storeUp(lastAtomicStateCollectionIndex, lastStartIndex);
                                 numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
@@ -1006,18 +1014,17 @@ namespace picongpu
                             = stateRepresentation::ConfigNumber<Idx, T_n_max, T_atomicNumber>::getIonizationState(
                                 lastLower);
 
-                        lastAtomicStateCollectionIndex = atomicStateDataBox.findStateCollectionIndex(
+                        lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                             lastLower,
                             // completely ionized state can never be lower state of an transition
-                            chargeStateOrgaDataBox.numberAtomicStates(lastChargeState),
-                            chargeStateOrgaDataBox.startIndexBlockAtomicStates(lastChargeState));
+                            chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                            chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
 
                         startIndexHostBox.storeUp(lastAtomicStateCollectionIndex, lastStartIndex);
                         numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
 
-                        // update buffer generally
-                        startIndexBuffer->syncToDevice();
                         numberBuffer->syncToDevice();
+                        startIndexBuffer->syncToDevice();
                     }
 
                     /** fill the downward atomic state orga buffers for a transition groups
@@ -1030,19 +1037,21 @@ namespace picongpu
                     template<typename T_Tuple, typename T_NumberBuffer, typename T_StartIndexBuffer>
                     void fill_DownTransition_OrgaData(
                         std::list<T_Tuple> transitionList,
-                        T_NumberBuffer numberBuffer,
-                        T_StartIndexBuffer startIndexBuffer)
+                        T_NumberBuffer& numberBuffer,
+                        T_StartIndexBuffer& startIndexBuffer)
                     {
                         std::list<T_Tuple>::iterator iter = transitionList.begin();
 
-                        S_AtomicStateDataBox atomicStateDataBox = atomicStateDataBuffer->getHostDataBox();
-                        S_ChargeStateOrgaDataBox chargeStateOrgaDataBox = chargeStateOrgaDataBuffer->getHostDataBox();
+                        S_AtomicStateDataBox atomicStateDataHostBox = atomicStateDataBuffer->getHostDataBox();
+                        S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox
+                            = chargeStateOrgaDataBuffer->getHostDataBox();
 
                         startIndexBuffer::dataBoxType startIndexHostBox = startIndexBuffer->getHostDataBox();
                         numberBuffer::dataBoxType numberHostBox = numberBuffer->getHostDataBox();
 
                         // read first entry
-                        Idx lastUpper = getUpperStateConfigNumber<Idx, TypeValue>(*iter);
+                        Idx lastUpper = getUpperStateConfigNumber<Idx, TypeValue>(
+                            *iter); // transitions down from a state have the state as upper
                         TypeNumber numberInBlock = 1u;
                         TypeNumber lastStartIndex = 0u;
                         iter++;
@@ -1063,18 +1072,22 @@ namespace picongpu
                                 lastChargeState = stateRepresentation::ConfigNumber<Idx, T_n_max, T_atomicNumber>::
                                     getIonizationState(lastUpper);
 
-                                lastAtomicStateCollectionIndex = atomicStateDataBox.findStateCollectionIndex(
+                                lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                                     lastUpper,
                                     // completely ionized state can never be lower state of an transition
-                                    chargeStateOrgaDataBox.numberAtomicStates(lastChargeState),
-                                    chargeStateOrgaDataBox.startIndexBlockAtomicStates(lastChargeState));
+                                    chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                                    chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+
+                                if(lastAtomicStateCollectionIndex
+                                   >= atomicStateDataHostBox.getNumberAtomicStatesTotal())
+                                    throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
 
                                 startIndexHostBox.storeDown(lastAtomicStateCollectionIndex, lastStartIndex);
                                 numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
 
                                 numberInBlock = 1u;
                                 lastStartIndex = i;
-                                lastLower = currentLower;
+                                lastUpper = currentUpper;
                             }
                             else
                             {
@@ -1088,19 +1101,80 @@ namespace picongpu
                         // finish last block
                         lastChargeState
                             = stateRepresentation::ConfigNumber<Idx, T_n_max, T_atomicNumber>::getIonizationState(
-                                lastLower);
+                                lastUpper);
 
-                        lastAtomicStateCollectionIndex = atomicStateDataBox.findStateCollectionIndex(
-                            lastLower,
+                        lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
+                            lastUpper,
                             // completely ionized state can never be lower state of an transition
-                            chargeStateOrgaDataBox.numberAtomicStates(lastChargeState),
-                            chargeStateOrgaDataBox.startIndexBlockAtomicStates(lastChargeState));
+                            chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                            chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
 
-                        startIndexHostBox.storeUp(lastAtomicStateCollectionIndex, lastStartIndex);
-                        numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
+                        startIndexHostBox.storeDown(lastAtomicStateCollectionIndex, lastStartIndex);
+                        numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
 
-                        startIndexBuffer->syncToDevice();
                         numberBuffer->syncToDevice();
+                        startIndexBuffer->syncToDevice();
+                    }
+
+                    /** fill the transition selectionBuffer
+                     *
+                     * @tparam electronicExcitation is channel active?
+                     * @tparam electronicDeexcitation is channel active?
+                     * @tparam spontaneousDeexcitation is channel active?
+                     * @tparam autonomousIonization is channel active?
+                     * @tparam electonicIonization is channel active?
+                     * @tparam fieldIonization is channel active?
+                     */
+                    template<
+                        bool electronicExcitation,
+                        bool electronicDeexcitation,
+                        bool spontaneousDeexcitation,
+                        bool electronicIonization,
+                        bool autonomousIonization,
+                        bool fieldIonization>
+                    void fillTransitionSelectionDataBuffer(
+                        S_AtomicStateNumberOfTransitionsDataBuffer_UpDown& bufferNumberBoundBound,
+                        S_AtomicStateNumberOfTransitionsDataBuffer_UpDown& bufferNumberBoundFree,
+                        S_AtomicStateNumberOfTransitionsDataBuffer_Down& bufferNumberAutonomous)
+                    {
+                        S_TransitionSelectionDataBox transitionSelectionDataHostBox
+                            = transitionSelectionDataBuffer->getHostDataBox();
+
+
+                        S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundBound
+                            = bufferNumberBoundBound->getHostDataBox();
+                        S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundFree
+                            = bufferNumberBoundFree->getHostDataBox();
+                        S_AtomicStateNumberOfTransitionsDataBox_Down hostBoxNumberAutonomous
+                            = bufferNumberAutonomous->getHostDataBox();
+
+                        TypeNumber numberPhysicalTransitionsTotal;
+
+                        for(uint32_t i = 0u; i < m_numberAtomicStates; i++)
+                        {
+                            numberPhysicalTransitionsTotal = 0u;
+
+                            if constexpr(electronicDeexcitation)
+                                numberPhysicalTransitionsTotal += hostBoxNumberBoundBound.numberOfTransitionsDown(i);
+                            if constexpr(spontaneousDeexcitation)
+                                numberPhysicalTransitionsTotal += hostBoxNumberBoundBound.numberOfTransitionsDown(i);
+
+                            if constexpr(electronicExcitation)
+                                numberPhysicalTransitionsTotal += hostBoxNumberBoundBound.numberOfTransitionsUp(i);
+
+                            if constexpr(electonicIonization)
+                                numberPhysicalTransitionsTotal += hostBoxNumberBoundFree.numberOfTransitionsUp(i);
+                            if constexpr(fieldIonization)
+                                numberPhysicalTransitionsTotal += hostBoxNumberBoundFree.numberOfTransitionsUp(i);
+                            /// @todo implement recombination
+
+                            if constexpr(autonomousIonization)
+                                numberPhysicalTransitionsTotal += hostBoxNumberAutonomous.numberOfTransitions(i);
+
+                            transitionSelectionDataHostBox.store(i, numberPhysicalTransitionsTotal);
+                        }
+
+                        transitionSelectionDataHostBox.syncToHost();
                     }
 
                 public:
@@ -1128,7 +1202,8 @@ namespace picongpu
                         std::list<S_AutonomousTransitionTuple> autonomousTransitions
                             = readAutonomousTransitions(fileAutonomousTransitionData);
 
-                        //      sort by lower transition
+                        //      sort by lower transition, optional since input files should already be sorted by lower
+                        //      transition
                         // boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
                         // boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
                         // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
@@ -1157,8 +1232,9 @@ namespace picongpu
                             autonomousTransitions,
                             autonomousTransitionDataBuffer);
 
-                        // fill orga buffers, for up direction
+                        // fill charge state orga
                         fillChargeStateOrgaData(atomicStates);
+                        // fill transition orga buffers for up direction
                         fill_UpTransition_OrgaData<S_BoundBoundTransitionTuple>(
                             boundBoundTransitions,
                             atomicStateNumberOfTransitionsDataBuffer_BoundBound,
@@ -1166,30 +1242,61 @@ namespace picongpu
                         fill_UpTransition_OrgaData<S_BoundFreeTransitionTuple>(
                             boundFreeTransitions,
                             atomicStateNumberOfTransitionsDataBuffer_BoundFree,
-                            atomicStateStartIndexBlockDataBuffer_BoundFree)
+                            atomicStateStartIndexBlockDataBuffer_BoundFree);
+                        // autonomous transitions are always only downward
 
-                            //      sort by upper state
-                            boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
+                        //      sort by upper state
+                        boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
                         boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
                         autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
 
                         //      store also in inverse order
                         storeData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox>(
                             boundBoundTransitions,
-                            boundBoundTransitionDataBuffer);
+                            inverseBoundBoundTransitionDataBuffer);
                         storeData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox>(
                             boundFreeTransitions,
-                            boundFreeTransitionDataBuffer);
+                            inverseBoundFreeTransitionDataBuffer);
                         storeData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox>(
                             autonomousTransitions,
-                            autonomousTransitionDataBuffer);
+                            inverseAutonomousTransitionDataBuffer);
 
-                        /// @todo fill orga buffers for inverse
+                        // fill transition orga buffers, for down direction
+                        fill_DownTransition_OrgaData<
+                            S_BoundBoundTransitionTuple,
+                            S_AtomicStateNumberOfTransitionsDataBuffer_UpDown,
+                            S_AtomicStateStartIndexBlockDataBuffer_UpDown>(
+                            boundBoundTransitions,
+                            atomicStateNumberOfTransitionsDataBuffer_BoundBound,
+                            atomicStateStartIndexBlockDataBuffer_BoundBound);
+                        fill_DownTransition_OrgaData<
+                            S_BoundFreeTransitionTuple,
+                            S_AtomicStateNumberOfTransitionsDataBuffer_UpDown,
+                            S_AtomicStateStartIndexBlockDataBuffer_UpDown>(
+                            boundFreeTransitions,
+                            atomicStateNumberOfTransitionsDataBuffer_BoundFree,
+                            atomicStateStartIndexBlockDataBuffer_BoundFree);
+                        fill_DownTransition_OrgaData<
+                            S_AutonomousTransitionTuple,
+                            S_AtomicStateNumberOfTransitionsDataBuffer_Down,
+                            S_AtomicStateStartIndexBlockDataBuffer_Down>(
+                            autonomousTransitions,
+                            atomicStateNumberOfTransitionsDataBuffer_Autonomous,
+                            atomicStateStartIndexBlockDataBuffer_Autonomous);
 
-                        // fill transitioSelectionBuffer
+                        // fill transitionSelectionBuffer
+                        fillTransitionSelectionDataBuffer<
+                            electronicExcitation,
+                            electronicDeexcitation,
+                            spontaneousDeexcitation,
+                            electronicIonization,
+                            autonomousIonization,
+                            fieldIonization>(
+                            atomicStateNumberOfTransitionsDataBuffer_BoundBound,
+                            atomicStateNumberOfTransitionsDataBuffer_BoundFree,
+                            atomicStateNumberOfTransitionsDataBuffer_Autonomous);
 
-                        /// @todo call for each species
-
+                        // just to make sure
                         this->syncToDevice()
                     }
 

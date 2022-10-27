@@ -335,13 +335,14 @@ namespace picongpu
             particleBoundaries.init();
 
             // inits for atomicPhysics
+            loadAtomicInputData();
             /// @todo load atomic input data, Brian Marre, 2022
 
             // initialize atomicPhyiscs superCell local fields
             initAtomicPhysicsSuperCellFields(dc);
 
             // make histogram
-            // old
+            /// old @todo remove
             this->atomicPhysics = std::make_unique<simulation::stage::AtomicPhysics>(*cellDescription);
 
             // initialize runtime density file paths
@@ -814,7 +815,7 @@ namespace picongpu
                 >(*cellDescription);
             dataConnector.consume(std::move(localSuperCellTimeRemaining));
 
-            // local time Remaining
+            // local time step
             auto localSuperCellTimeStep = std::make_unique<
                 particles::atomicPhysics2::LocalTimeStepField<picongpu::MappingDesc>
                 >(*cellDescription);

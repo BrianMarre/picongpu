@@ -80,6 +80,12 @@ namespace picongpu
                     {
                     }
 
+                    //! @attention no range check!
+                    void store(uint32_t collectionIndex, TypeNumber numberPhysicalTransitionsTotal)
+                    {
+                        m_boxNumberPhysicalTransitionsTotal[collectionIndex] = numberPhysicalTransitionsTotal;
+                    }
+
                     /** get total number of physical transitions for a atomic state
                      *
                      * @param collectionIndex atomic state collection index
