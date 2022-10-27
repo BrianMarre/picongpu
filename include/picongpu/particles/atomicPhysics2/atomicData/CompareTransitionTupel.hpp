@@ -20,8 +20,10 @@
 #pragma once
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
+#include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTupel.hpp"
 
 #include <tupel>
+#include <cstdint>
 
 namespace picongpu
 {
@@ -37,36 +39,27 @@ namespace picongpu
                  * @tparam T_idx data type used for condigNumbers
                  * @tparam orderByLowerState true: order by by lower , false: upper state
                  */
-                template<typename T_Number, typename T_Idx, bool orderByLowerState>
+                template<typename T_Value, typename T_Idx, bool orderByLowerState>
                 class CompareTransitionTupel
                 {
-                    using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<TypeValue, Idx>;
-                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<TypeValue, Idx>;
-                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<TypeValue, Idx>;
+                    using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<T_Value, Idx>;
+                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<T_Value, Idx>;
+                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<T_Value, Idx>;
 
                     bool operator(S_BoundBoundTransitionTuple tuple1_1, S_BoundBoundTransitionTuple tuple_2)
                     {
+                        T_Idx lowerState_1 = getLowerState<T_Idx, T_Value>(tuple1_1);
+                        T_Idx lowerState_2 = getLowerState<T_Idx, T_Value>(tuple1_2);
+
+                        T_Idx upperState_1 = getUpperState<T_Idx, T_Value>(tuple1_1);
+                        T_Idx upperState_2 = getUpperState<T_Idx, T_Value>(tuple1_2);
+
                         if constexpr(orderByLowerState)
-                            return std::get<7>(tuple1_1) < std::get<7>(tupel_2);
+                            return ( (lowerState_1 < lowerState_2) or ( (lowerState_1 == lowerState_2) and (upperState_1 < upperState_2) ) );
                         else
-                            return std::get<8>(tuple1_1) < std::get<8>(tupel_2);
+                            return ( (upperState_1 < upperState_2) or ( (upperState_1 == upperState_2) and (lowerState_1 < lowerState_2) ) );
                     }
 
-                    bool operator(S_BoundFreeTransitionTuple tuple1_1, S_BoundFreeTransitionTuple tuple_2)
-                    {
-                        if constexpr(orderByLowerState)
-                            return std::get<8>(tuple1_1) < std::get<8>(tupel_2);
-                        else
-                            return std::get<9>(tuple1_1) < std::get<9>(tupel_2);
-                    }
-
-                    bool operator(S_AutonomousTransitionTuple tuple1_1, S_AutonomousTransitionTuple tuple_2)
-                    {
-                        if constexpr(orderByLowerState)
-                            return std::get<1>(tuple1_1) < std::get<1>(tupel_2);
-                        else
-                            return std::get<2>(tuple1_1) < std::get<2>(tupel_2);
-                    }
                 };
             } // namespace atomicData
         } // namespace atomicPhysics2
