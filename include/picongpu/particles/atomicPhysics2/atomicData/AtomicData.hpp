@@ -1154,6 +1154,8 @@ namespace picongpu
                         {
                             numberPhysicalTransitionsTotal = 0u;
 
+                            // bound-bound transitions
+                            hostBoxNumberBoundBound.storeOffset(i, 0u);
                             if constexpr(electronicDeexcitation)
                                 numberPhysicalTransitionsTotal += hostBoxNumberBoundBound.numberOfTransitionsDown(i);
                             if constexpr(spontaneousDeexcitation)
@@ -1162,12 +1164,16 @@ namespace picongpu
                             if constexpr(electronicExcitation)
                                 numberPhysicalTransitionsTotal += hostBoxNumberBoundBound.numberOfTransitionsUp(i);
 
+                            // bound-free transitions
+                            hostBoxNumberBoundFree.storeOffset(i, numberPhysicalTransitionsTotal);
                             if constexpr(electonicIonization)
                                 numberPhysicalTransitionsTotal += hostBoxNumberBoundFree.numberOfTransitionsUp(i);
                             if constexpr(fieldIonization)
                                 numberPhysicalTransitionsTotal += hostBoxNumberBoundFree.numberOfTransitionsUp(i);
                             /// @todo implement recombination
 
+                            // autonomousTransitions
+                            hostBoxNumberAutonomous.storeOffset(i, numberPhysicalTransitionsTotal);
                             if constexpr(autonomousIonization)
                                 numberPhysicalTransitionsTotal += hostBoxNumberAutonomous.numberOfTransitions(i);
 
