@@ -128,12 +128,12 @@ namespace picongpu
                     typename T_ConfigNumberDataType,
                     uint32_t T_atomicNumber,
                     uint8_t T_n_max,
-                    bool electronicExcitation,
-                    bool electronicDeexcitation,
-                    bool spontaneousDeexcitation,
-                    bool electronicIonization,
-                    bool autonomousIonization,
-                    bool fieldIonization> /// @todo add photonic channels
+                    bool T_electronicExcitation,
+                    bool T_electronicDeexcitation,
+                    bool T_spontaneousDeexcitation,
+                    bool T_electronicIonization,
+                    bool T_autonomousIonization,
+                    bool T_fieldIonization> /// @todo add photonic channels
                 class AtomicData
                 {
                 public:
@@ -1132,21 +1132,18 @@ namespace picongpu
                         bool electronicIonization,
                         bool autonomousIonization,
                         bool fieldIonization>
-                    void fillTransitionSelectionDataBuffer(
-                        S_AtomicStateNumberOfTransitionsDataBuffer_UpDown& bufferNumberBoundBound,
-                        S_AtomicStateNumberOfTransitionsDataBuffer_UpDown& bufferNumberBoundFree,
-                        S_AtomicStateNumberOfTransitionsDataBuffer_Down& bufferNumberAutonomous)
+                    void fillTransitionSelectionDataBufferAndSetOffsets()
                     {
                         S_TransitionSelectionDataBox transitionSelectionDataHostBox
                             = transitionSelectionDataBuffer->getHostDataBox();
 
 
                         S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundBound
-                            = bufferNumberBoundBound->getHostDataBox();
+                            = atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
                         S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundFree
-                            = bufferNumberBoundFree->getHostDataBox();
+                            = atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox();
                         S_AtomicStateNumberOfTransitionsDataBox_Down hostBoxNumberAutonomous
-                            = bufferNumberAutonomous->getHostDataBox();
+                            = atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();
 
                         TypeNumber numberPhysicalTransitionsTotal;
 
@@ -1180,7 +1177,13 @@ namespace picongpu
                             transitionSelectionDataHostBox.store(i, numberPhysicalTransitionsTotal);
                         }
 
-                        transitionSelectionDataHostBox.syncToHost();
+                        // sync offsets
+                        hostBoxNumberBoundBound.syncToDevice();
+                        hostBoxNumberBoundFree.syncToDevice();
+                        hostBoxNumberAutonomous.syncToDevice();
+
+                        // sync transition selection data
+                        transitionSelectionDataHostBox.syncToDevice();
                     }
 
                 public:
@@ -1198,9 +1201,11 @@ namespace picongpu
                         std::string fileAutonomousTransitionData)
                     {
                         // read in files
+                        //      state data
                         std::list<S_ChargeStateTuple> chargeStates = readChargeStates(fileChargeData);
                         std::list<S_AtomicStateTuple> atomicStates = readAtomicStates(fileAtomicStateData);
 
+                        //      transition data
                         std::list<S_BoundBoundTransitionTuple> boundBoundTransitions
                             = readBoundBoundTransitions(fileBoundBoundTransitionData);
                         std::list<S_BoundFreeTransitionTuple> boundFreeTransitions
@@ -1208,8 +1213,7 @@ namespace picongpu
                         std::list<S_AutonomousTransitionTuple> autonomousTransitions
                             = readAutonomousTransitions(fileAutonomousTransitionData);
 
-                        //      sort by lower transition, optional since input files should already be sorted by lower
-                        //      transition
+                        //      sort by lower transition, optional since input files already sorted
                         // boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
                         // boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
                         // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
@@ -1225,9 +1229,11 @@ namespace picongpu
                         initBuffers();
 
                         // fill data buffers
+                        //      states
                         storeData<S_ChargeStateTuple, S_ChargeStateDataBox>(chargeStates, chargeStateDataBuffer);
                         storeData<S_AtomicStateTuple, S_AtomicStateDataBox>(atomicStatesStates, atomicStateDataBuffer);
 
+                        //      transitions
                         storeData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox>(
                             boundBoundTransitions,
                             boundBoundTransitionDataBuffer);
@@ -1238,9 +1244,10 @@ namespace picongpu
                             autonomousTransitions,
                             autonomousTransitionDataBuffer);
 
-                        // fill charge state orga
+                        // fill orga data buffers 1,)
+                        //          charge state
                         fillChargeStateOrgaData(atomicStates);
-                        // fill transition orga buffers for up direction
+                        //          atomic states, up direction
                         fill_UpTransition_OrgaData<S_BoundBoundTransitionTuple>(
                             boundBoundTransitions,
                             atomicStateNumberOfTransitionsDataBuffer_BoundBound,
@@ -1251,12 +1258,12 @@ namespace picongpu
                             atomicStateStartIndexBlockDataBuffer_BoundFree);
                         // autonomous transitions are always only downward
 
-                        //      sort by upper state
+                        // re-sort by upper state
                         boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
                         boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
                         autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
 
-                        //      store also in inverse order
+                        // store transition data in inverse order
                         storeData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox>(
                             boundBoundTransitions,
                             inverseBoundBoundTransitionDataBuffer);
@@ -1267,7 +1274,8 @@ namespace picongpu
                             autonomousTransitions,
                             inverseAutonomousTransitionDataBuffer);
 
-                        // fill transition orga buffers, for down direction
+                        // fill orga data buffers 2.)
+                        //      atomic state, down direction
                         fill_DownTransition_OrgaData<
                             S_BoundBoundTransitionTuple,
                             S_AtomicStateNumberOfTransitionsDataBuffer_UpDown,
@@ -1291,18 +1299,15 @@ namespace picongpu
                             atomicStateStartIndexBlockDataBuffer_Autonomous);
 
                         // fill transitionSelectionBuffer
-                        fillTransitionSelectionDataBuffer<
-                            electronicExcitation,
-                            electronicDeexcitation,
-                            spontaneousDeexcitation,
-                            electronicIonization,
-                            autonomousIonization,
-                            fieldIonization>(
-                            atomicStateNumberOfTransitionsDataBuffer_BoundBound,
-                            atomicStateNumberOfTransitionsDataBuffer_BoundFree,
-                            atomicStateNumberOfTransitionsDataBuffer_Autonomous);
+                        fillTransitionSelectionDataBufferAndSetOffsets<
+                            T_electronicExcitation,
+                            T_electronicDeexcitation,
+                            T_spontaneousDeexcitation,
+                            T_electronicIonization,
+                            T_autonomousIonization,
+                            T_fieldIonization>();
 
-                        // just to make sure
+                        // not strictly necessary, just to make sure
                         this->syncToDevice()
                     }
 
