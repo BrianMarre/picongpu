@@ -504,14 +504,14 @@ namespace picongpu
                             }
 
                             S_BoundFreeTransitionTuple item = std::make_tuple(
-                                Cxin1,
-                                Cxin2,
-                                Cxin3,
-                                Cxin4,
-                                Cxin5,
-                                Cxin6,
-                                Cxin7,
-                                Cxin8,
+                                cxin1,
+                                cxin2,
+                                cxin3,
+                                cxin4,
+                                cxin5,
+                                cxin6,
+                                cxin7,
+                                cxin8,
                                 stateLower,
                                 stateUpper);
 
@@ -621,21 +621,22 @@ namespace picongpu
                     {
                         std::list<S_AtomicStateTuple>::iterator iter = atomicStateList.begin();
 
-                        Idx lastAtomicStateConfigNumber;
-                        uint8_t lastChargeState;
-
                         Idx currentAtomicStateConfigNumber;
                         uint8_t currentChargeState;
 
-                        lastAtomicStateConfigNumber = std::get<0>(*iter);
-                        lastChargeState = stateRepresentation::ConfigNumber<
+                        // empty transition list
+                        if(iter == atomicStateList.end())
+                            return;
+
+                        Idx lastAtomicStateConfigNumber = std::get<0>(*iter);
+                        uint8_t lastChargeState = stateRepresentation::ConfigNumber<
                             Idx,
                             T_n_max,
                             T_atomicNumber>::getIonizationState(lastAtomicStateConfigNumber);
 
                         iter++;
 
-                        for (; iter != chargeStateList.end(); iter++)
+                        for (; iter != atomicStateList.end(); iter++)
                         {
                             currentAtomicStateConfigNumber = std::get<0>(*iter);
                             currentChargeState = stateRepresentation::ConfigNumber<
@@ -737,23 +738,23 @@ namespace picongpu
 
                         std::list<T_TransitionTuple>::iterator iter = transitionList.begin();
 
-                        Idx lastLowerAtomicStateConfigNumber;
-                        Idx lastUpperAtomicStateConfigNumber;
-                        uint8_t lastLowerChargeState;
-                        uint8_t lastUpperChargeState;
-
                         Idx currentLowerAtomicStateConfigNumber;
                         Idx currentUpperAtomicStateConfigNumber;
                         uint8_t currentLowerChargeState;
                         uint8_t currentUpperChargeState;
 
-                        lastLowerAtomicStateConfigNumber = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
-                        lastUpperAtomicStateConfigNumber = getUpperStateConfigNumber<Idx, TypeValue>(*iter);
-                        lastLowerChargeState = stateRepresentation::ConfigNumber<
+                        // empty transition list
+                        if(iter == transitionList.end())
+                            return;
+
+                        // read first entry
+                        Idx lastLowerAtomicStateConfigNumber = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
+                        Idx lastUpperAtomicStateConfigNumber = getUpperStateConfigNumber<Idx, TypeValue>(*iter);
+                        uint8_t lastLowerChargeState = stateRepresentation::ConfigNumber<
                             Idx,
                             T_n_max,
                             T_atomicNumber>::getIonizationState(lastLowerAtomicStateConfigNumber);
-                        lastUpperChargeState = stateRepresentation::ConfigNumber<
+                        uint8_t lastUpperChargeState = stateRepresentation::ConfigNumber<
                             Idx,
                             T_n_max,
                             T_atomicNumber>::getIonizationState(lastUpperAtomicStateConfigNumber);
@@ -771,7 +772,7 @@ namespace picongpu
                         if (lastUpperChargeState > T_atomicNumber)
                             throw std::runtime_error("atomicPhysics ERROR: unphysical upper charge State");
 
-                        for (; iter != chargeStateList.end(); iter++)
+                        for (; iter != transitionList.end(); iter++)
                         {
                             currentLowerAtomicStateConfigNumber = std::get<tupelSize - 2u>(*iter);
                             currentUpperAtomicStateConfigNumber = std::get<tupelSize - 1u>(*iter);
@@ -817,43 +818,43 @@ namespace picongpu
                     //! init buffers, @attention all readMethods must have been executed exactly once before!
                     void initBuffers()
                     {
-                    // charge state data
-                    chargeStateDataBuffer.reset(new S_ChargeStateDataBuffer());
-                    chargeStateOrgaDataBuffer.reset(new S_ChargeStateOrgaDataBuffer());
+                        // charge state data
+                        chargeStateDataBuffer.reset(new S_ChargeStateDataBuffer());
+                        chargeStateOrgaDataBuffer.reset(new S_ChargeStateOrgaDataBuffer());
 
-                    // atomic property data
-                    atomicStateDataBuffer.reset(new S_AtomicStateDataBuffer(numberAtomicStates));
-                    // atomic orga data
-                    atomicStateStartIndexBlockDataBuffer_BoundBound.reset(
-                        new S_AtomicStateStartIndexBlockDataBuffer_UpDown(numberAtomicStates));
-                    atomicStateStartIndexBlockDataBuffer_BoundFree.reset(
-                        new S_AtomicStateStartIndexBlockDataBuffer_UpDown(numberAtomicStates));
-                    atomicStateStartIndexBlockDataBuffer_Autonomous.reset(
-                        new S_AtomicStateStartIndexBlockDataBuffer_Down(numberAtomicStates));
-                    atomicStateNumberOfTransitionsDataBuffer_BoundBound.reset(
-                        new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown(numberAtomicStates));
-                    atomicStateNumberOfTransitionsDataBuffer_BoundFree.reset(
-                        new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown(numberAtomicStates));
-                    atomicStateNumberOfTransitionsDataBuffer_Autonomous.reset(
-                        new S_AtomicStateNumberOfTransitionsDataBuffer_Down(numberAtomicStates));
+                        // atomic property data
+                        atomicStateDataBuffer.reset(new S_AtomicStateDataBuffer(numberAtomicStates));
+                        // atomic orga data
+                        atomicStateStartIndexBlockDataBuffer_BoundBound.reset(
+                            new S_AtomicStateStartIndexBlockDataBuffer_UpDown(numberAtomicStates));
+                        atomicStateStartIndexBlockDataBuffer_BoundFree.reset(
+                            new S_AtomicStateStartIndexBlockDataBuffer_UpDown(numberAtomicStates));
+                        atomicStateStartIndexBlockDataBuffer_Autonomous.reset(
+                            new S_AtomicStateStartIndexBlockDataBuffer_Down(numberAtomicStates));
+                        atomicStateNumberOfTransitionsDataBuffer_BoundBound.reset(
+                            new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown(numberAtomicStates));
+                        atomicStateNumberOfTransitionsDataBuffer_BoundFree.reset(
+                            new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown(numberAtomicStates));
+                        atomicStateNumberOfTransitionsDataBuffer_Autonomous.reset(
+                            new S_AtomicStateNumberOfTransitionsDataBuffer_Down(numberAtomicStates));
 
-                    // transition data
-                    boundBoundTransitionDataBuffer.reset(
-                        new S_BoundBoundTransitionDataBuffer(numberBoundBoundTransitions));
-                    boundFreeTransitionDataBuffer.reset(
-                        new S_BoundFreeTransitionDataBuffer(numberBoundFreeTransitions));
-                    autonomousTransitionDataBuffer.reset(
-                        new S_AutonomousTransitionDataBuffer(numberAutonomousTransitions));
+                        // transition data
+                        boundBoundTransitionDataBuffer.reset(
+                            new S_BoundBoundTransitionDataBuffer(numberBoundBoundTransitions));
+                        boundFreeTransitionDataBuffer.reset(
+                            new S_BoundFreeTransitionDataBuffer(numberBoundFreeTransitions));
+                        autonomousTransitionDataBuffer.reset(
+                            new S_AutonomousTransitionDataBuffer(numberAutonomousTransitions));
 
-                    inverseBoundBoundTransitionDataBuffer.reset(
-                        new S_BoundBoundTransitionDataBuffer(numberBoundBoundTransitions));
-                    inverseBoundFreeTransitionDataBuffer.reset(
-                        new S_BoundFreeTransitionDataBuffer(numberBoundFreeTransitions));
-                    inverseAutonomousTransitionDataBuffer.reset(
-                        new S_AutonomousTransitionDataBuffer(numberAutonomousTransitions));
+                        inverseBoundBoundTransitionDataBuffer.reset(
+                            new S_BoundBoundTransitionDataBuffer(numberBoundBoundTransitions));
+                        inverseBoundFreeTransitionDataBuffer.reset(
+                            new S_BoundFreeTransitionDataBuffer(numberBoundFreeTransitions));
+                        inverseAutonomousTransitionDataBuffer.reset(
+                            new S_AutonomousTransitionDataBuffer(numberAutonomousTransitions));
 
-                    // transition selection data
-                    transitionSelectionDataBuffer.reset(new S_TransitionSelectionDataBuffer(numberAtomicStates));
+                        // transition selection data
+                        transitionSelectionDataBuffer.reset(new S_TransitionSelectionDataBuffer(numberAtomicStates));
                     }
 
                     /** fill pure data storage buffers from list
@@ -895,6 +896,10 @@ namespace picongpu
 
                         uint8_t currentChargeState;
 
+                        // empty atomic state list
+                        if(iter == atomicStateList.end())
+                            return;
+
                         // read first entry as first last entry
                         uint8_t lastChargeState
                             = stateRepresentation::ConfigNumber::getIonizationState<Idx, T_n_max, T_atomicNumber>(
@@ -906,7 +911,7 @@ namespace picongpu
 
                         // iterate over rest of the list
                         TypeNumber i = 1u;
-                        for(; iter != list.end(); iter++)
+                        for(; iter != atomicStateList.end(); iter++)
                         {
                             currentChargeState
                                 = stateRepresentation::ConfigNumber<Idx, T_n_max, T_atomicNumber>::getIonizationState(
@@ -963,6 +968,10 @@ namespace picongpu
                         uint32_t lastAtomicStateCollectionIndex;
                         Idx currentLower; // transitions up from a state have the state as lower state
 
+                        // empty transition list
+                        if(iter == transitionList.end())
+                            return;
+
                         // read first entry
                         Idx lastLower = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
                         TypeNumber numberInBlock = 1u;
@@ -971,7 +980,7 @@ namespace picongpu
 
                         // iterate over rest of the list
                         TypeNumber i = 1u;
-                        for(; iter != list.end(); iter++)
+                        for(; iter != transitionList.end(); iter++)
                         {
                             currentLower = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
 
@@ -1048,6 +1057,10 @@ namespace picongpu
                         startIndexBuffer::dataBoxType startIndexHostBox = startIndexBuffer->getHostDataBox();
                         numberBuffer::dataBoxType numberHostBox = numberBuffer->getHostDataBox();
 
+                        // empty transition list
+                        if(iter == transitionList.end())
+                            return;
+
                         // read first entry
                         Idx lastUpper = getUpperStateConfigNumber<Idx, TypeValue>(
                             *iter); // transitions down from a state have the state as upper
@@ -1061,7 +1074,7 @@ namespace picongpu
 
                         // iterate over rest of the list
                         TypeNumber i = 1u;
-                        for(; iter != list.end(); iter++)
+                        for(; iter != transitionList.end(); iter++)
                         {
                             currentUpper = getUpperStateConfigNumber<Idx, TypeValue>(*iter);
 
@@ -1135,7 +1148,6 @@ namespace picongpu
                     {
                         S_TransitionSelectionDataBox transitionSelectionDataHostBox
                             = transitionSelectionDataBuffer->getHostDataBox();
-
 
                         S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundBound
                             = atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
