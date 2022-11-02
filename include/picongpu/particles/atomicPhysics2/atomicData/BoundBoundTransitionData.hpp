@@ -83,15 +83,15 @@ namespace picongpu
                     //! unitless
                     BoxValue m_boxAbsorptionOscillatorStrength;
                     //! gaunt tunneling fit parameter 1, unitless
-                    BoxValue m_boxCinx1;
+                    BoxValue m_boxCxin1;
                     //! gaunt tunneling fit parameter 2, unitless
-                    BoxValue m_boxCinx2;
+                    BoxValue m_boxCxin2;
                     //! gaunt tunneling fit parameter 3, unitless
-                    BoxValue m_boxCinx3;
+                    BoxValue m_boxCxin3;
                     //! gaunt tunneling fit parameter 4, unitless
-                    BoxValue m_boxCinx4;
+                    BoxValue m_boxCxin4;
                     //! gaunt tunneling fit parameter 5, unitless
-                    BoxValue m_boxCinx5;
+                    BoxValue m_boxCxin5;
 
                 public:
                     /** constructor
@@ -101,11 +101,11 @@ namespace picongpu
                      *
                      * @param boxCollisionalOscillatorStrength
                      * @param boxAbsorptionOscillatorStrength
-                     * @param boxCinx1 gaunt tunneling fit parameter 1
-                     * @param boxCinx2 gaunt tunneling fit parameter 2
-                     * @param boxCinx3 gaunt tunneling fit parameter 3
-                     * @param boxCinx4 gaunt tunneling fit parameter 4
-                     * @param boxCinx5 gaunt tunneling fit parameter 5
+                     * @param boxCxin1 gaunt tunneling fit parameter 1
+                     * @param boxCxin2 gaunt tunneling fit parameter 2
+                     * @param boxCxin3 gaunt tunneling fit parameter 3
+                     * @param boxCxin4 gaunt tunneling fit parameter 4
+                     * @param boxCxin5 gaunt tunneling fit parameter 5
                      * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
                      * transition
                      * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
@@ -115,21 +115,21 @@ namespace picongpu
                     BoundBoundTransitionDataBox(
                         BoxValue boxCollisionalOscillatorStrength,
                         BoxValue boxAbsorptionOscillatorStrength,
-                        BoxValue boxCinx1,
-                        BoxValue boxCinx2,
-                        BoxValue boxCinx3,
-                        BoxValue boxCinx4,
-                        BoxValue boxCinx5,
+                        BoxValue boxCxin1,
+                        BoxValue boxCxin2,
+                        BoxValue boxCxin3,
+                        BoxValue boxCxin4,
+                        BoxValue boxCxin5,
                         BoxConfigNumber boxLowerConfigNumber,
                         BoxConfigNumber boxUpperConfigNumber,
                         uint32_t numberTransitions)
                         : m_boxCollisionalOscillatorStrength(boxCollisionalOscillatorStrength)
                         , m_boxAbsorptionOscillatorStrength(boxAbsorptionOscillatorStrength)
-                        , m_boxCinx1(boxCinx1)
-                        , m_boxCinx2(boxCinx2)
-                        , m_boxCinx3(boxCinx3)
-                        , m_boxCinx4(boxCinx4)
-                        , m_boxCinx5(boxCinx5)
+                        , m_boxCxin1(boxCxin1)
+                        , m_boxCxin2(boxCxin2)
+                        , m_boxCxin3(boxCxin3)
+                        , m_boxCxin4(boxCxin4)
+                        , m_boxCxin5(boxCxin5)
                         , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                     {
                     }
@@ -155,11 +155,11 @@ namespace picongpu
                         }
                         m_boxCollisionalOscillatorStrength[collectionIndex] = std::get<0>(tuple);
                         m_boxAbsorptionOscillatorStrength[collectionIndex] = std::get<1>(tuple);
-                        m_boxCinx1[collectionIndex] = std::get<2>(tuple);
-                        m_boxCinx2[collectionIndex] = std::get<3>(tuple);
-                        m_boxCinx3[collectionIndex] = std::get<4>(tuple);
-                        m_boxCinx4[collectionIndex] = std::get<5>(tuple);
-                        m_boxCinx5[collectionIndex] = std::get<6>(tuple);
+                        m_boxCxin1[collectionIndex] = std::get<2>(tuple);
+                        m_boxCxin2[collectionIndex] = std::get<3>(tuple);
+                        m_boxCxin3[collectionIndex] = std::get<4>(tuple);
+                        m_boxCxin4[collectionIndex] = std::get<5>(tuple);
+                        m_boxCxin5[collectionIndex] = std::get<6>(tuple);
                         storeTransitions(collectionIndex, std::get<7>(tuple), std::get<8>(tuple));
                     }
 
@@ -199,7 +199,7 @@ namespace picongpu
                         return m_boxAbsorptionOscillatorStrength(indexTransition);
                     }
 
-                    /// @todo find way to replace cinx getters with single template function
+                    /// @todo find way to replace Cxin getters with single template function
 
                     /** returns gaunt tunneling fit parameter 1 of the transition
                      *
@@ -207,16 +207,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCinx1(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue getCxin1(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransitions)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCinx1\n");
+                            printf("atomicPhysics ERROR: outside range call getCxin1\n");
                             return static_cast<ValueType>(0._X);
                         }
-                        return m_boxCinx1(indexTransition);
+                        return m_boxCxin1(indexTransition);
                     }
 
                     /** returns gaunt tunneling fit parameter 2 of the transition
@@ -225,16 +225,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCinx2(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue getCxin2(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransitions)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCinx2\n");
+                            printf("atomicPhysics ERROR: outside range call getCxin2\n");
                             return static_cast<ValueType>(0._X);
                         }
-                        return m_boxCinx2(indexTransition);
+                        return m_boxCxin2(indexTransition);
                     }
 
                    /** returns gaunt tunneling fit parameter 3 of the transition
@@ -243,16 +243,16 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE TypeValue getCinx3(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue getCxin3(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransitions)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCinx3\n");
+                            printf("atomicPhysics ERROR: outside range call getCxin3\n");
                             return static_cast<ValueType>(0._X);
                         }
-                        return m_boxCinx3(indexTransition);
+                        return m_boxCxin3(indexTransition);
                     }
 
                    /** returns gaunt tunneling fit parameter 4 of the transition
@@ -261,16 +261,16 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE TypeValue getCinx4(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue getCxin4(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransitions)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCinx4\n");
+                            printf("atomicPhysics ERROR: outside range call getCxin4\n");
                             return static_cast<ValueType>(0._X);
                         }
-                        return m_boxCinx4(indexTransition);
+                        return m_boxCxin4(indexTransition);
                     }
 
                    /** returns gaunt tunneling fit parameter 5 of the transition
@@ -279,16 +279,16 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE TypeValue getCinx5(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue getCxin5(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransitions)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCinx5\n");
+                            printf("atomicPhysics ERROR: outside range call getCxin5\n");
                             return static_cast<ValueType>(0._X);
                         }
-                        return m_boxCinx5(indexTransition);
+                        return m_boxCxin5(indexTransition);
                     }
 
                 };
@@ -309,11 +309,11 @@ namespace picongpu
                 {
                     std::unique_ptr< BufferValue > bufferCollisionalOscillatorStrength;
                     std::unique_ptr< BufferValue > bufferAbsorptionOscillatorStrength;
-                    std::unique_ptr< BufferValue > bufferCinx1;
-                    std::unique_ptr< BufferValue > bufferCinx2;
-                    std::unique_ptr< BufferValue > bufferCinx3;
-                    std::unique_ptr< BufferValue > bufferCinx4;
-                    std::unique_ptr< BufferValue > bufferCinx5;
+                    std::unique_ptr<BufferValue> bufferCxin1;
+                    std::unique_ptr<BufferValue> bufferCxin2;
+                    std::unique_ptr<BufferValue> bufferCxin3;
+                    std::unique_ptr<BufferValue> bufferCxin4;
+                    std::unique_ptr<BufferValue> bufferCxin5;
 
                 public:
                     /** buffer corresponding to the above dataBox object
@@ -329,23 +329,28 @@ namespace picongpu
 
                         bufferCollisionalOscillatorStrength.reset( new BufferValue(layoutBoundBoundTransitions));
                         bufferAbsorptionOscillatorStrength.reset( new BufferValue(layoutBoundBoundTransitions));
-                        bufferCinx1.reset( new BufferValue(layoutBoundBoundTransitions));
-                        bufferCinx2.reset( new BufferValue(layoutBoundBoundTransitions));
-                        bufferCinx3.reset( new BufferValue(layoutBoundBoundTransitions));
-                        bufferCinx4.reset( new BufferValue(layoutBoundBoundTransitions));
-                        bufferCinx5.reset( new BufferValue(layoutBoundBoundTransitions));
+                        bufferCxin1.reset(new BufferValue(layoutBoundBoundTransitions));
+                        bufferCxin2.reset(new BufferValue(layoutBoundBoundTransitions));
+                        bufferCxin3.reset(new BufferValue(layoutBoundBoundTransitions));
+                        bufferCxin4.reset(new BufferValue(layoutBoundBoundTransitions));
+                        bufferCxin5.reset(new BufferValue(layoutBoundBoundTransitions));
                     }
 
                     HINLINE BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
                     {
-                        return BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return BoundBoundTransitionDataBox<
+                            T_DataBoxType,
+                            T_Number,
+                            T_Value,
+                            T_ConfigNumberDataType,
+                            T_atomicNumber>(
                             bufferCollisionalOscillatorStrength->getHostBuffer().getDataBox(),
                             bufferAbsorptionOscillatorStrength->getHostBuffer().getDataBox(),
-                            bufferCinx1->getHostBuffer().getDataBox(),
-                            bufferCinx2->getHostBuffer().getDataBox(),
-                            bufferCinx3->getHostBuffer().getDataBox(),
-                            bufferCinx4->getHostBuffer().getDataBox(),
-                            bufferCinx5->getHostBuffer().getDataBox(),
+                            bufferCxin1->getHostBuffer().getDataBox(),
+                            bufferCxin2->getHostBuffer().getDataBox(),
+                            bufferCxin3->getHostBuffer().getDataBox(),
+                            bufferCxin4->getHostBuffer().getDataBox(),
+                            bufferCxin5->getHostBuffer().getDataBox(),
                             bufferLowerConfigNumber->getHostBuffer().getDataBox(),
                             bufferUpperConfigNumber->getHostBuffer().getDataBox(),
                             m_numberTransitions);
@@ -353,14 +358,19 @@ namespace picongpu
 
                     HINLINE BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
                     {
-                        return BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return BoundBoundTransitionDataBox<
+                            T_DataBoxType,
+                            T_Number,
+                            T_Value,
+                            T_ConfigNumberDataType,
+                            T_atomicNumber>(
                             bufferCollisionalOscillatorStrength->getDeviceBuffer().getDataBox(),
                             bufferAbsorptionOscillatorStrength->getDeviceBuffer().getDataBox(),
-                            bufferCinx1->getDeviceBuffer().getDataBox(),
-                            bufferCinx2->getDeviceBuffer().getDataBox(),
-                            bufferCinx3->getDeviceBuffer().getDataBox(),
-                            bufferCinx4->getDeviceBuffer().getDataBox(),
-                            bufferCinx5->getDeviceBuffer().getDataBox(),
+                            bufferCxin1->getDeviceBuffer().getDataBox(),
+                            bufferCxin2->getDeviceBuffer().getDataBox(),
+                            bufferCxin3->getDeviceBuffer().getDataBox(),
+                            bufferCxin4->getDeviceBuffer().getDataBox(),
+                            bufferCxin5->getDeviceBuffer().getDataBox(),
                             bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
                             bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
                             m_numberTransitions);
@@ -370,11 +380,11 @@ namespace picongpu
                     {
                         bufferCollisionalOscillatorStrength->hostToDevice();
                         bufferAbsorptionOscillatorStrength->hostToDevice();
-                        bufferCinx1->hostToDevice();
-                        bufferCinx2->hostToDevice();
-                        bufferCinx3->hostToDevice();
-                        bufferCinx4->hostToDevice();
-                        bufferCinx5->hostToDevice();
+                        bufferCxin1->hostToDevice();
+                        bufferCxin2->hostToDevice();
+                        bufferCxin3->hostToDevice();
+                        bufferCxin4->hostToDevice();
+                        bufferCxin5->hostToDevice();
                         syncToDevice_BaseClass();
                     }
 

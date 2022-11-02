@@ -422,15 +422,14 @@ namespace picongpu
                         TypeNumber absorptionOscillatorStrength;
 
                         // gauntCoeficients
-                        TypeNumber cinx1;
-                        TypeNumber cinx2;
-                        TypeNumber cinx3;
-                        TypeNumber cinx4;
-                        TypeNumber cinx5;
+                        TypeNumber cxin1;
+                        TypeNumber cxin2;
+                        TypeNumber cxin3;
+                        TypeNumber cxin4;
+                        TypeNumber cxin5;
 
-                        while(file >> idxLower >> idxUpper
-                            >> collisionalOscillatorStrength >> absorptionOscillatorStrength
-                            >> cinx1 >> cinx2 >> cinx3 >> cinx4 >> cinx5 )
+                        while(file >> idxLower >> idxUpper >> collisionalOscillatorStrength
+                              >> absorptionOscillatorStrength >> cxin1 >> cxin2 >> cxin3 >> cxin4 >> cxin5)
                         {
                             Idx stateLower = static_cast<Idx>(idxLower);
                             Idx stateUpper = static_cast<Idx>(idxUpper);
@@ -447,11 +446,11 @@ namespace picongpu
                             S_BoundBoundTransitionTuple item = std::make_tuple(
                                 collisionalOscillatorStrength,
                                 absorptionOscillatorStrength,
-                                cinx1,
-                                cinx2,
-                                cinx3,
-                                cinx4,
-                                cinx5,
+                                cxin1,
+                                cxin2,
+                                cxin3,
+                                cxin4,
+                                cxin5,
                                 stateLower,
                                 stateUpper);
 
@@ -480,17 +479,17 @@ namespace picongpu
                         double idxUpper;
 
                         // gauntCoeficients
-                        TypeNumber cinx1;
-                        TypeNumber cinx2;
-                        TypeNumber cinx3;
-                        TypeNumber cinx4;
-                        TypeNumber cinx5;
-                        TypeNumber cinx6;
-                        TypeNumber cinx7;
-                        TypeNumber cinx8;
+                        TypeNumber cxin1;
+                        TypeNumber cxin2;
+                        TypeNumber cxin3;
+                        TypeNumber cxin4;
+                        TypeNumber cxin5;
+                        TypeNumber cxin6;
+                        TypeNumber cxin7;
+                        TypeNumber cxin8;
 
-                        while(file >> idxLower >> idxUpper
-                            >> cinx1 >> cinx2 >> cinx3 >> cinx4 >> cinx5 >> cinx6 >> cinx7 >> cinx8)
+                        while(file >> idxLower >> idxUpper >> cxin1 >> cxin2 >> cxin3 >> cxin4 >> cxin5 >> cxin6
+                              >> cxin7 >> cxin8)
                         {
                             Idx stateLower = static_cast<Idx>(idxLower);
                             Idx stateUpper = static_cast<Idx>(idxUpper);
@@ -505,14 +504,14 @@ namespace picongpu
                             }
 
                             S_BoundFreeTransitionTuple item = std::make_tuple(
-                                cinx1,
-                                cinx2,
-                                cinx3,
-                                cinx4,
-                                cinx5,
-                                cinx6,
-                                cinx7,
-                                cinx8,
+                                Cxin1,
+                                Cxin2,
+                                Cxin3,
+                                Cxin4,
+                                Cxin5,
+                                Cxin6,
+                                Cxin7,
+                                Cxin8,
                                 stateLower,
                                 stateUpper);
 
