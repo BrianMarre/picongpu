@@ -133,7 +133,7 @@ namespace picongpu
                      *
                      * @attention no range checks out side of debug compile
                      */
-                    HDINLINE TypeValue getTransitionRate(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue rate(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022

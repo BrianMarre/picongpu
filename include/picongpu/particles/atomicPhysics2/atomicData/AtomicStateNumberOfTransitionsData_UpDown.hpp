@@ -137,7 +137,7 @@ namespace picongpu
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
                      */
-                    TypeNumber getOffset(uint32_t const collectionOffset)
+                    TypeNumber offset(uint32_t const collectionOffset)
                     {
                         return m_boxOffset(collectionIndex);
                     }

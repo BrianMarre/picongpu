@@ -94,7 +94,7 @@ namespace picongpu
                      *
                      * @attention no range check
                      */
-                    TypeNumber getNumberTransitions(uint32_t const collectionIndex) const
+                    TypeNumber numberTransitions(uint32_t const collectionIndex) const
                     {
                         return m_boxNumberPhysicalTransitionsTotal
                     }

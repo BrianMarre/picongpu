@@ -54,6 +54,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <iostream>
 
 /** @file gathers atomic data storage implementations and implements filling them on runtime
  *
@@ -1342,6 +1343,191 @@ namespace picongpu
                         boundBoundTransitionDataBuffer->syncToDevice();
                         boundFreeTransitionDataBuffer->syncToDevice();
                         autonomousTransitionDataBuffer->syncToDevice();
+                    }
+
+                    // charge states
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template < bool hostData >
+                    S_ChargeStateDataBox getChargeStateDataDataBox()
+                    {
+                        if constexpr (hostData)
+                            return chargeStateDataBuffer->getHostDataBox();
+                        else
+                            return chargeStateDataBuffer->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData>
+                    S_ChargeStateOrgaDataBox getChargeOrgaDataBox()
+                    {
+                        if constexpr (hostData)
+                            return chargeStateOrgaDataBuffer->getHostDataBox();
+                        else
+                            return chargeStateOrgaDataBuffer->getDeviceDataBox();
+                    }
+
+                    // atomic states
+                    //      property data
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData>
+                    S_AtomicStateDataBox getAtomicStateDataDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateDataBuffer->getHostDataBox();
+                        else
+                            return atomicStateDataBuffer->getDeviceDataBox();
+                    }
+
+                    //      start index orga data
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData>
+                    S_AtomicStateStartIndexBlockDataBox_UpDown getBoundBoundStartIndexBlockDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox();
+                        else
+                            return atomicStateStartIndexBlockDataBuffer_BoundBound->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData>
+                    S_AtomicStateStartIndexBlockDataBox_UpDown getBoundFreeStartIndexBlockDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox();
+                        else
+                            return atomicStateStartIndexBlockDataBuffer_BoundFree->getDeviceDataBox();
+                    }
+
+                    template< bool hostData>
+                    S_AtomicStateStartIndexBlockDataBox_Down getAutonomousStartIndexBlockDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateStartIndexBlockDataBuffer_Autonomous->getHostDataBox();
+                        else
+                            return atomicStateStartIndexBlockDataBuffer_Autonomous->getDeviceDataBox();
+                    }
+
+                    //      number transitions orga data
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundBoundNumberTransitionsDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
+                        else
+                            return atomicStateNumberOfTransitionsDataBuffer_BoundBound->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundFreeNumberTransitionsDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox();
+                        else
+                            return atomicStateNumberOfTransitionsDataBuffer_BoundFree->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_AtomicStateNumberOfTransitionsDataBox_Down getAutonomousNumberTransitionsDataBox()
+                    {
+                        if constexpr (hostData)
+                            return atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();
+                        else
+                            return atomicStateNumberOfTransitionsDataBuffer_Autonomous->getDeviceDataBox();
+                    }
+
+                    // transition data, normal
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_BoundBoundTransitionDataBox getBoundBoundTransitionDataBox()
+                    {
+                        if constexpr (hostData)
+                            return boundBoundTransitionDataBuffer->getHostDataBox();
+                        else
+                            return boundBoundTransitionDataBuffer->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_BoundFreeTransitionDataBox getBoundFreeTransitionDataBox()
+                    {
+                        if constexpr (hostData)
+                            return boundFreeTransitionDataBuffer->getHostDataBox();
+                        else
+                            return boundFreeTransitionDataBuffer->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_AutonomousTransitionDataBox getAutonomousTransitionDataBox()
+                    {
+                        if constexpr (hostData)
+                            return autonomousTransitionDataBuffer->getHostDataBox();
+                        else
+                            return autonomousTransitionDataBuffer->getDeviceDataBox();
+                    }
+
+                    // transition data, inverted
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_BoundBoundTransitionDataBox getInverseBoundBoundTranisionDataBox()
+                    {
+                        if constexpr (hostData)
+                            return inverseBoundBoundTransitionDataBuffer->getHostDataBox();
+                        else
+                            return inverseBoundBoundTransitionDataBuffer->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_BoundFreeTransitionDataBox getInverseBoundFreeTranisionDataBox()
+                    {
+                        if constexpr (hostData)
+                            return inverseBoundFreeTransitionDataBuffer->getHostDataBox();
+                        else
+                            return inverseBoundFreeTransitionDataBuffer->getDeviceDataBox();
+                    }
+
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_AutonomousTransitionDataBox getInverseAutonomousTranisionDataBox
+                    {
+                        if constexpr (hostData)
+                            return inverseAutonomousTransitionDataBuffer->getHostDataBox();
+                        else
+                            return inverseAutonomousTransitionDataBuffer->getDeviceDataBox();
+                    }
+
+                    // transition selection data
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template< bool hostData >
+                    S_TransitionSelectionDataBox getTransitionSelectionDataBox()
+                    {
+                        if constexpr (hostData)
+                            return transitionSelectionDataBuffer->getHostDataBox();
+                        else
+                            return transitionSelectionDataBuffer->getDeviceDataBox();
+                    }
+
+                    // debug queries
+                    uint32_t getNumberAtomicStates() const
+                    {
+                        return m_numberAtomicStates;
+                    }
+                    uint32_t getNumberBoundBoundTransitions() const
+                    {
+                        return m_numberBoundBoundTransitions;
+                    }
+                    uint32_t getNumberBoundFreeTransitions() const
+                    {
+                        return m_numberBoundFreeTransitions;
+                    }
+                    uint32_t getNumberAutonomousTransitions() const
+                    {
+                        return m_numberAutonomousTransitions;
                     }
 
                 };

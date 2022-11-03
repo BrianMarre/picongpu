@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/electronDistribution/LogSpaceHistogram.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
+#include "picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp"
+
+
 #include <cstdint>
 #include <iostream>
 
@@ -65,35 +70,201 @@ namespace picongpu
                     std::cout << "\t overFlow: w0=" << histogram.getOverflowWeight() << std::endl;
                 }
 
-                ////! debug only, write atomic data to console, must be called serially and cpu build only
-                // template<typename T_AtomicData>
-                // void writeToConsoleAtomicData(T_AtomicData atomicData)
-                //{
-                //    ///@todo convert to new move out form atomicDataBox
-                //    std::cout << "(" << m_numStates << ", " << m_numberTransitions << ")" << std::endl;
-                //
-                //    for(uint32_t i = 0u; i < this->m_numStates; i++)
-                //    {
-                //        std::cout << i << " : "
-                //                  << "[" << m_boxStateConfigNumber(i) << "]" << m_boxStateEnergy(i) << " ("
-                //                  << m_boxNumTransitions(i) << "): " << m_boxStartIndexBlockTransitions(i)
-                //                  << std::endl;
-                //
-                //        for(uint32_t j = 0; j < m_boxNumTransitions(i); j++)
-                //        {
-                //            uint32_t indexTransition = m_boxStartIndexBlockTransitions(i) + j;
-                //
-                //            std::cout << "\t" << indexTransition << " : " << m_boxStateConfigNumber(i) << " -> "
-                //                      << m_boxUpperConfigNumber(indexTransition)
-                //                      << "; C: " << m_boxCollisionalOscillatorStrength(indexTransition)
-                //                      << ", A: " << m_boxAbsorptionOscillatorStrength(indexTransition) << ", Gaunt: (
-                //                      "
-                //                      << m_boxCinx1(indexTransition) << ", " << m_boxCinx2(indexTransition) << ", "
-                //                      << m_boxCinx3(indexTransition) << ", " << m_boxCinx4(indexTransition) << ", "
-                //                      << m_boxCinx5(indexTransition) << ")" << std::endl;
-                //        }
-                //    }
-                //}
+                //! debug only, write atomic data to console, must be called serially and cpu build only
+                template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
+                void printAtomicDataToConsole(T_AtomicData atomicData)
+                {
+                    uint32_t numberAtomicStates = atomicData.getNumberAtomicStates();
+                    uint32_t numberBoundBoundTransitions = atomicData.getNumberBoundBoundTransitions();
+                    uint32_t numberBoundFreeTransitions  = atomicData.getNumberBoundFreeTransitions();
+                    uint32_t numberAutonomousTransitions = atomicData.getNumberAutonomousTransitions();
+
+                    // basic numbers
+                    std::cout << "(#s " << numberAtomicStates
+                        << ", #b " << numberBoundBoundTransitions
+                        << ", #f " << numberBoundFreeTransitions
+                        << ", #a " << numberAutonomousTransitions
+                        << ")" << std::endl;
+
+                    // ChargeState data
+                    auto chargeStateDataBox = atomicData.getChargeStateDataDataBox<true>(); // true: get hostDataBox
+                    auto chargeStateOrgaBox = atomicData.getChargeStateOrgaDataBox<true>();
+
+                    std::cout << "ChargeState Data index : (E_ionization[eV], Z_screened[e])[#AtomicStates, startIndexBlock]" << std::endl;
+                    for (uint8_t i = 0u; i < T_AtomicData::atomicNumber; i++)
+                    {
+                        std::cout << "\t" << i << ":( " << chargeStateDataBox.ionizationEnergy(i) << ", "
+                            << chargeStateDataBox.screenedCharge(i) << " )[ "
+                            << chargeStateOrgaBox.numberAtomicStates(i) << ", "
+                            << chargeStateOrgaBox.startIndexBlock(i) << std::endl;
+                    }
+
+                    // AtomicState data
+                    auto atomicStateDataBox = atomicData.getAtomicStateDataDataBox<true>(); // true: get hostDataBox
+
+                    auto boundBoundStartIndexBox = atomicData.getBoundBoundStartIndexBlockDataBox<true>();
+                    auto boundFreeStartIndexBox  = atomicData.getBoundFreeStartIndexBlockDataBox<true>();
+                    auto autonomousStartIndexBox = atomicData.getAutonomousStartIndexBlockDataBox<true>();
+
+                    auto boundBoundNumberTransitionsBox = atomicData.getBoundBoundNumberTransitionsDataBox<true>();
+                    auto boundFreeNumberTransitionsBox  = atomicData.getBoundFreeNumberTransitionsDataBox<true>();
+                    auto autonomousNumberTransitionsBox = atomicData.getAutonomousNumberTransitionsDataBox<true>();
+
+                    auto transitionSelectionBox = atomicData.getTransitionSelectionDataBox<true>();
+
+                    using S_ConfigNumber = stateRepresentation::ConfigNumber<
+                        uint64_t,
+                        T_AtomicData::n_max,
+                        T_AtomicData::atomicNumber>;
+
+                    std::cout << "AtomicState Data index : [ConfigNumber, chargeState, levelVector]: E_overGround" << std::endl;
+                    std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown (offset)" << std::endl;
+                    std::cout << "\t transitionSelectionData: #pyhsical transitions" << std::endl;
+                    for(uint32_t i = 0u; i < numberAtomicStates; i++)
+                    {
+                        uint64_t stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(i));
+
+                        std::cout << "\t"
+                            << i << " : [" << stateConfigNumber << ", "
+                            << S_ConfigNumber::getIonizationState(stateConfigNumber << ", ";
+
+                        auto levelVector = S_ConfigNumber::getLevelVector(stateConfigNumber)
+                        std::cout << "( ";
+                        for (uint8_t j=0u; j < T_AtomicData::n_max; j++)
+                        {
+                            std::cout << levelVector[j] << ", ";
+                        }
+                        std::cout << ")";
+                        std::cout << "]: " << stateEnergy(i) << std::endl;
+                        std::cout << "\t\t b: "
+                            << boundBoundNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
+                            << boundBoundNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
+                            << boundBoundStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
+                            << boundBoundStartIndexBox.startIndexBlockTransitionsDown(i)
+                            << " (" << boundBoundNumberTransitionsBox.offset(i) << ")" << std::endl;
+                        std::cout << "\t\t f: "
+                            << boundFreeNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
+                            << boundFreeNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
+                            << boundFreeStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
+                            << boundFreeStartIndexBox.startIndexBlockTransitionsDown(i)
+                            << " (" << boundFreeNumberTransitionsBox.offset(i) << ")"  << std::endl;
+                        std::cout << "\t\t a: "
+                            << autonomousNumberTransitionsBox.numberOfTransitions(i) << ", "
+                            << autonomousStartIndexBox.startIndexBlockTransitions(i)
+                            << " (" << boundBoundNumberTransitionsBox.offset(i) << ")" << std::endl;
+                        std::cout << "\t\t" << transitionSelectionBox.numberTransitions(i) << std::endl;
+                    }
+
+                    // transitionData
+                    if constexpr (T_printTransitionData)
+                    {
+                        // bound-bound transitions
+                        auto boundBoundTransitionDataBox = atomicData.getBoundBoundTransitionDataBox<true>();
+                        std::cout << "bound-bound transition" << std::endl;
+                        std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+                        for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
+                        {
+                            std::cout << i << "("
+                                << boundBoundTransitionDataBox.lowerConfigNumberTransition(i) << ", "
+                                << boundBoundTransitionDataBox.upperConfigNumberTransition(i) << ")"
+                                << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorSrength(i)
+                                << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
+                                << "\"Gaunt\"(" << boundBoundTransitionDataBox.cxin1(i) << ", "
+                                << boundBoundTransitionDataBox.cxin2(i) << ", "
+                                << boundBoundTransitionDataBox.cxin3(i) << ", "
+                                << boundBoundTransitionDataBox.cxin4(i) << ", "
+                                << boundBoundTransitionDataBox.cxin5(i) << ")" << std::endl;
+                        }
+
+                        // bound-free transitions
+                        auto boundFreeTransitionDataBox = atomicData.getBoundFreeTransitionDataBox<true>();
+                        std::cout << "bound-free transition" << std::endl;
+                        std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
+                        for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
+                        {
+                            std::cout << i << "("
+                                << boundFreeTransitionDataBox.lowerConfigNumberTransition(i) << ", "
+                                << boundFreeTransitionDataBox.upperConfigNumberTransition(i) << ")"
+                                << "Coeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
+                                << boundFreeTransitionDataBox.cxin2(i) << ", "
+                                << boundFreeTransitionDataBox.cxin3(i) << ", "
+                                << boundFreeTransitionDataBox.cxin4(i) << ", "
+                                << boundFreeTransitionDataBox.cxin5(i) << ", "
+                                << boundFreeTransitionDataBox.cxin6(i) << ", "
+                                << boundFreeTransitionDataBox.cxin7(i) << ", "
+                                << boundFreeTransitionDataBox.cxin8(i) << ")" << std::endl;
+                        }
+
+                        // autonomous transitions
+                        auto autonomousTransitionDataBox = atomicData.getAutonomousTransitionDataBox<true>();
+
+                        std::cout << "autonomous transitions" << std::endl;
+                        std::cout << "index :(low, up), rate" << std::endl;
+
+                        for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
+                        {
+                            std::cout << i << "("
+                                << autonomousTransitionDataBox.lowerConfigNumberTransition(i) << ", "
+                                << autonomousTransitionDataBox.upperConfigNumberTransition(i) << ") "
+                                << autonomousTransitionDataBox.rate(i)<< std::endl;
+                        }
+                    }
+
+                    // inverse transitionData
+                    if constexpr (T_printInverseTransitions)
+                    {
+                        // bound-bound transitions
+                        auto boundBoundTransitionDataBox = atomicData.getInverseBoundBoundTransitionDataBox<true>();
+                        std::cout << "bound-bound transition" << std::endl;
+                        std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+                        for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
+                        {
+                            std::cout << i << "("
+                                << boundBoundTransitionDataBox.lowerConfigNumberTransition(i) << ", "
+                                << boundBoundTransitionDataBox.upperConfigNumberTransition(i) << ")"
+                                << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorSrength(i)
+                                << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
+                                << "\"Gaunt\"(" << boundBoundTransitionDataBox.cxin1(i) << ", "
+                                << boundBoundTransitionDataBox.cxin2(i) << ", "
+                                << boundBoundTransitionDataBox.cxin3(i) << ", "
+                                << boundBoundTransitionDataBox.cxin4(i) << ", "
+                                << boundBoundTransitionDataBox.cxin5(i) << ")" << std::endl;
+                        }
+
+                        // bound-free transitions
+                        auto boundFreeTransitionDataBox = atomicData.getInverseBoundFreeTransitionDataBox<true>();
+                        std::cout << "bound-free transition" << std::endl;
+                        std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
+                        for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
+                        {
+                            std::cout << i << "("
+                                << boundFreeTransitionDataBox.lowerConfigNumberTransition(i) << ", "
+                                << boundFreeTransitionDataBox.upperConfigNumberTransition(i) << ")"
+                                << "Coeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
+                                << boundFreeTransitionDataBox.cxin2(i) << ", "
+                                << boundFreeTransitionDataBox.cxin3(i) << ", "
+                                << boundFreeTransitionDataBox.cxin4(i) << ", "
+                                << boundFreeTransitionDataBox.cxin5(i) << ", "
+                                << boundFreeTransitionDataBox.cxin6(i) << ", "
+                                << boundFreeTransitionDataBox.cxin7(i) << ", "
+                                << boundFreeTransitionDataBox.cxin8(i) << ")" << std::endl;
+                        }
+
+                        // autonomous transitions
+                        auto autonomousTransitionDataBox = atomicData.getInverseAutonomousTransitionDataBox<true>();
+
+                        std::cout << "autonomous transitions" << std::endl;
+                        std::cout << "index :(low, up), rate" << std::endl;
+
+                        for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
+                        {
+                            std::cout << i << "("
+                                << autonomousTransitionDataBox.lowerConfigNumberTransition(i) << ", "
+                                << autonomousTransitionDataBox.upperConfigNumberTransition(i) << ") "
+                                << autonomousTransitionDataBox.rate(i)<< std::endl;
+                        }
+                    }
+                }
 
             } // namespace debug
         } // namespace atomicPhysics2

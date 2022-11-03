@@ -139,7 +139,7 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE Idx getUpperConfigNumberTransition(uint32_t const collectionIndex) const
+                    HDINLINE Idx upperConfigNumberTransition(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
@@ -157,7 +157,7 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE Idx getLowerConfigNumberTransition(uint32_t const collectionIndex) const
+                    HDINLINE Idx lowerConfigNumberTransition(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022

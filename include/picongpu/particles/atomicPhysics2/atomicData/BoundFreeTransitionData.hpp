@@ -177,13 +177,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin1(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin1(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin1\n");
+                            printf("atomicPhysics ERROR: outside range call cxin1\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin1(indexTransition);
@@ -195,13 +195,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin2(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin2(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin2\n");
+                            printf("atomicPhysics ERROR: outside range call cxin2\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin2(indexTransition);
@@ -213,13 +213,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin3(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin3(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin3\n");
+                            printf("atomicPhysics ERROR: outside range call cxin3\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin3(indexTransition);
@@ -231,13 +231,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin4(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin4(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin4\n");
+                            printf("atomicPhysics ERROR: outside range call cxin4\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin4(indexTransition);
@@ -249,13 +249,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin5(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin5(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin5\n");
+                            printf("atomicPhysics ERROR: outside range call cxin5\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin5(indexTransition);
@@ -267,13 +267,13 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE TypeValue getCxin6(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin6(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin6\n");
+                            printf("atomicPhysics ERROR: outside range call cxin6\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin6(indexTransition);
@@ -285,13 +285,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin7(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin7(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin7\n");
+                            printf("atomicPhysics ERROR: outside range call cxin7\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin7(indexTransition);
@@ -303,13 +303,13 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue getCxin8(uint32_t const collectionIndex) const
+                    HDINLINE TypeValue cxin8(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= m_numberTransition)
                         {
-                            printf("atomicPhysics ERROR: outside range call getCxin8\n");
+                            printf("atomicPhysics ERROR: outside range call cxin8\n");
                             return static_cast<ValueType>(0._X);
                         }
                         return m_boxCxin8(indexTransition);
