@@ -38,7 +38,6 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber // element
@@ -46,15 +45,20 @@ namespace picongpu
                 class DataBox
                 {
                 public:
+                    template<typename T_DataType>
+                    using T_DataBoxType = pmacc::DataBox<pmacc::PitchedBox<T_DataType, 1u>>;
+
                     using BoxNumber = T_DataBoxType<T_Number>;
                     using BoxValue = T_DataBoxType<T_Value>;
 
                     using TypeNumber = T_Number;
                     using TypeValue = T_Value;
-                    using DataBoxType = T_DataBoxType;
+
+                    template<typename T_DataType>
+                    using DataBoxType = T_DataBoxType<T_DataType>;
 
                     constexpr static uint8_t atomicNumber = T_atomicNumber;
-                }
+                };
 
             } // namespace atomicData
         } // namespace atomicPhysics2

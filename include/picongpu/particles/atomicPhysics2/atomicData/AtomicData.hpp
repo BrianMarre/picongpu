@@ -36,7 +36,7 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionData.hpp"
 
 // precomputed cache for transition selection kernel
-#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionDataBox.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionData.hpp"
 
 // conversion of configNumber to charge state for checking
 #include "picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp"
@@ -44,17 +44,17 @@
 // tuple definitions
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 // helper stuff for transition tuples
-#include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTupel.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTupel.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTuple.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
 #include <cstdint>
 #include <fstream>
+#include <iostream>
 #include <list>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <iostream>
 
 /** @file gathers atomic data storage implementations and implements filling them on runtime
  *

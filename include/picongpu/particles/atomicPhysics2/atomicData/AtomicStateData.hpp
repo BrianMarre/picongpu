@@ -60,25 +60,21 @@ namespace picongpu
                  *      The configNumber of a given state is always the same, its collection index depends
                  *      on input file,it should therefore only be used internally!
                  */
-                template<
-                    typename T_DataBoxType,
-                    typename T_Number,
-                    typename T_Value,
-                    typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber>
-                class AtomicStateDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                template<typename T_Number, typename T_Value, typename T_ConfigNumberDataType, uint8_t T_atomicNumber>
+                class AtomicStateDataBox : public DataBox<T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
-                    using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
+                    using BoxConfigNumber = pmacc::DataBox<pmacc::PitchedBox<T_ConfigNumberDataType, 1u>>;
 
-                    using S_AtomicStateTuple = AtomicStateTuple<TypeValue, Idx>;
+                    using S_AtomicStateTuple = AtomicStateTuple<T_Value, Idx>;
+                    using S_DataBox = DataBox<T_Number, T_Value, T_atomicNumber>;
 
                 private:
                     //! configNumber of atomic state, sorted block wise by ionization state
-                    BoxStateConfigNumber m_boxConfigNumber;
+                    BoxConfigNumber m_boxConfigNumber;
                     //! energy respective to ground state of ionization state[eV], sorted block wise by ionizatioState
-                    BoxValue m_boxStateEnergy; // unit: eV
+                    typename S_DataBox::BoxValue m_boxStateEnergy; // unit: eV
                     uint32_t m_numberAtomicStates;
 
                 public:
@@ -93,8 +89,8 @@ namespace picongpu
                      * @param numberAtomicStates number of atomic states
                      */
                     AtomicStateDataBox(
-                        BoxStateConfigNumber boxConfigNumber,
-                        BoxValue boxStateEnergy,
+                        BoxConfigNumber boxConfigNumber,
+                        typename S_DataBox::BoxValue boxStateEnergy,
                         uint32_t numberAtomicStates)
                         : m_boxConfigNumber(boxConfigNumber)
                         , m_boxStateEnergy(boxStateEnergy)
@@ -115,9 +111,9 @@ namespace picongpu
                     HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
                     {
                         ///@todo find correct compile debug guards, Brian Marre, 2022
-                        if(collectionIndex >= T_numberAtomicStates)
+                        if(collectionIndex >= m_numberAtomicStates)
                         {
-                            throw std : runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
+                            throw std::runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
                             return;
                         }
                         m_boxConfigNumber[collectionIndex] = std::get<0>(tuple);
@@ -159,7 +155,7 @@ namespace picongpu
                         }
 
                         // atomic state not found return known bad value
-                        return T_numberAtomicStates;
+                        return m_numberAtomicStates;
                     }
 
                     /**returns the energy of the given state respective to the ground state of its ionization
@@ -175,14 +171,14 @@ namespace picongpu
                      *
                      * @return unit: eV
                      */
-                    HDINLINE TypeValue getEnergy(
+                    HDINLINE typename S_DataBox::TypeValue getEnergy(
                         Idx const configNumber,
                         uint32_t const numberAtomicStatesForChargeState,
                         uint32_t const startIndexBlock = 0u) const
                     {
                         // special case completely ionized ion
                         if(configNumber == 0u)
-                            return static_cast<TypeValue>(0.0_X);
+                            return static_cast<typename S_DataBox::TypeValue>(0.0_X);
 
                         uint32_t collectionIndex = findStateCollectionIndex(
                             configNumber,
@@ -192,7 +188,7 @@ namespace picongpu
                         // atomic state not found, return zero, by definition isolated state
                         if(collectionIndex == m_numberAtomicStates)
                         {
-                            return static_cast<TypeValue>(0._X);
+                            return static_cast<typename S_DataBox::TypeValue>(0._X);
                         }
 
                         // standard case
@@ -208,10 +204,10 @@ namespace picongpu
                     {
                         // debug only
                         ///@todo find correct compile debug guards, Brian Marre, 2022
-                        if(collectionIndex >= T_numberAtomicStates)
+                        if(collectionIndex >= m_numberAtomicStates)
                         {
                             printf("atomicPhysics ERROR: out of bounds atomic state configNumber call\n");
-                            return static_cast<TypeValue>(0._X);
+                            return static_cast<typename S_DataBox::TypeValue>(0._X);
                         }
                         return this->m_boxConfigNumber(collectionIndex);
                     }
@@ -223,14 +219,14 @@ namespace picongpu
                      * @attention no range check outside debug compile
                      * @param collectionIndex index of data box entry to query
                      */
-                    HDINLINE TypeValue stateEnergy(uint32_t const collectionIndex) const
+                    HDINLINE typename S_DataBox::TypeValue stateEnergy(uint32_t const collectionIndex) const
                     {
                         // debug only
                         ///@todo find correct compile debug guards, Brian Marre, 2022
-                        if(collectionIndex >= T_numberAtomicStates)
+                        if(collectionIndex >= m_numberAtomicStates)
                         {
                             printf("atomicPhysics ERROR: out of bounds atomic state energy call\n");
-                            return static_cast<TypeValue>(0._X);
+                            return static_cast<typename S_DataBox::TypeValue>(0._X);
                         }
                         return this->m_boxStateEnergy(collectionIndex);
                     }
@@ -249,20 +245,17 @@ namespace picongpu
                  * @tparam T_Value dataType used for value storage, typically float_X
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
-                template<
-                    typename T_DataBoxType,
-                    typename T_Number,
-                    typename T_Value,
-                    uint8_t T_atomicNumber>
-                class AtomicStateDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                template<typename T_Number, typename T_Value, typename T_ConfigNumberDataType, uint8_t T_atomicNumber>
+                class AtomicStateDataBuffer : public DataBuffer<T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
                     using BufferConfigNumber = pmacc::HostDeviceBuffer<T_ConfigNumberDataType, 1u>;
+                    using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
 
                 private:
-                    std::unique_ptr< BufferConfigNumber > bufferConfigNumber;
-                    std::unique_ptr< BufferValue > bufferStateEnergy;
+                    std::unique_ptr<typename S_DataBuffer::BufferConfigNumber> bufferConfigNumber;
+                    std::unique_ptr<typename S_DataBuffer::BufferValue> bufferStateEnergy;
 
                     uint32_t m_numberAtomicStates;
 
@@ -273,21 +266,23 @@ namespace picongpu
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
                         auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
 
-                        bufferConfigNumber.reset( new BufferConfigNumber(layoutAtomicStates));
-                        bufferStateEnergy.reset( new BufferValue(layoutAtomicStates));
+                        bufferConfigNumber.reset(new typename S_DataBuffer::BufferConfigNumber(layoutAtomicStates));
+                        bufferStateEnergy.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates));
                     }
 
-                    HINLINE AtomicStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE AtomicStateDataBox<T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
+                    getHostDataBox()
                     {
-                        return AtomicStateDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateDataBox<T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
                             bufferConfigNumber->getHostBuffer().getDataBox(),
                             bufferStateEnergy->getHostBuffer().getDataBox(),
                             m_numberAtomicStates);
                     }
 
-                    HINLINE AtomicStateDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AtomicStateDataBox<T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
+                    getDeviceDataBox()
                     {
-                        return AtomicStateDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateDataBox<T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
                             bufferConfigNumber->getDeviceBuffer().getDataBox(),
                             bufferStateEnergy->getDeviceBuffer().getDataBox(),
                             m_numberAtomicStates);

@@ -21,7 +21,7 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 
-#include <tupel>
+#include <tuple>
 
 /** @file implements a unified getter for the upper and lower atomicState configNumbers from Transition Tuples
  */

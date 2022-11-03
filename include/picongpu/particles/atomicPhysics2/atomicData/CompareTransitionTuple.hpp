@@ -20,10 +20,10 @@
 #pragma once
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
-#include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTupel.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
-#include <tupel>
 #include <cstdint>
+#include <tuple>
 
 namespace picongpu
 {
@@ -55,11 +55,14 @@ namespace picongpu
                         T_Idx upperState_2 = getUpperState<T_Idx, T_Value>(tuple1_2);
 
                         if constexpr(orderByLowerState)
-                            return ( (lowerState_1 < lowerState_2) or ( (lowerState_1 == lowerState_2) and (upperState_1 < upperState_2) ) );
+                            return (
+                                (lowerState_1 < lowerState_2)
+                                or ((lowerState_1 == lowerState_2) and (upperState_1 < upperState_2)));
                         else
-                            return ( (upperState_1 < upperState_2) or ( (upperState_1 == upperState_2) and (lowerState_1 < lowerState_2) ) );
+                            return (
+                                (upperState_1 < upperState_2)
+                                or ((upperState_1 == upperState_2) and (lowerState_1 < lowerState_2)));
                     }
-
                 };
             } // namespace atomicData
         } // namespace atomicPhysics2

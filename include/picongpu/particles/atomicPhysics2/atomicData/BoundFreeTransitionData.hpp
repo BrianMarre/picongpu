@@ -20,8 +20,7 @@
 #pragma once
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
-#include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 
 #include <cstdint>
 #include <memory>

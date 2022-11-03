@@ -53,17 +53,20 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber // element
                     >
-                class ChargeStateOrgaDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class ChargeStateOrgaDataBox : public DataBox<T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using S_DataBox = DataBox<T_Number, T_Value, T_atomicNumber>;
+
+                private:
                     //! number of atomic states associated with the charge state, @todo could be left out to reduce memory but increase seek time in missing state case
-                    BoxNumber m_boxNumberAtomicStates;
+                    typename S_DataBox::BoxNumber m_boxNumberAtomicStates;
                     //! start collection index of block of atomic states for charge state in collection of AtomicStates
-                    BoxNumber m_boxStartIndexBlockAtomicStates;
+                    typename S_DataBox::BoxNumber m_boxStartIndexBlockAtomicStates;
 
                 public:
                     /** constructor
@@ -75,8 +78,8 @@ namespace picongpu
                      * @param startIndexBlockAtomicStates start collection index of block of atomicStates in atomicState
                      */
                     ChargeStateOrgaDataBox(
-                        BoxNumber numberAtomicStates,
-                        BoxNumber startIndexBlockAtomicStates)
+                        typename S_DataBox::BoxNumber numberAtomicStates,
+                        typename S_DataBox::BoxNumber startIndexBlockAtomicStates)
                         : m_boxNumberAtomicStates(numberAtomicStates)
                         , m_boxStartIndexBlockAtomicStates(startIndexBlockAtomicStates)
                     {
@@ -95,7 +98,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= T_atomicNumber)
+                        if(chargeState >= T_atomicNumber)
                         {
                             throw std::runtime_error("atomicPhysics ERROR: outside range call");
                             return;
@@ -109,10 +112,10 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= T_atomicNumber)
+                        if(chargeState >= T_atomicNumber)
                         {
                             printf("atomicPhysics ERROR: outside range call\n");
-                            returnstatic_cast<T_Number>(0u);
+                            return static_cast<T_Number>(0u);
                         }
                         return m_boxNumberAtomicStates[chargeState];
                     }
@@ -122,7 +125,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= T_atomicNumber)
+                        if(chargeState >= T_atomicNumber)
                         {
                             printf("atomicPhysics ERROR: outside range call");
                             return static_cast<T_Number>(0u);
@@ -145,8 +148,14 @@ namespace picongpu
                     uint8_t T_atomicNumber>
                 class ChargeStateOrgaDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
                 {
-                    std::unique_ptr< BufferNumber > bufferNumberAtomicStates;
-                    std::unique_ptr< BufferNumber > bufferStartIndexBlockAtomicStates;
+                public:
+                    using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
+                    using S_ChargeStateorgaDataBox = ChargeStateOrgaDataBox<T_Number, T_Value, T_atomicNumber>;
+
+
+                private:
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberAtomicStates;
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferStartIndexBlockAtomicStates;
 
                 public:
                     HINLINE ChargeStateOrgaDataBuffer()
@@ -154,20 +163,21 @@ namespace picongpu
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
                         auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize);
 
-                        bufferNumberAtomicStates.reset( new BufferNumber(layoutChargeStates));
-                        bufferStartIndexBlockAtomicStates.reset( new BufferNumber(layoutChargeStates));
+                        bufferNumberAtomicStates.reset(new typename S_DataBuffer::BufferNumber(layoutChargeStates));
+                        bufferStartIndexBlockAtomicStates.reset(
+                            new typename S_DataBuffer::BufferNumber(layoutChargeStates));
                     }
 
-                    HINLINE ChargeStateOrgaDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE S_ChargeStateorgaDataBox getHostDataBox()
                     {
-                        return ChargeStateOrgaDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return ChargeStateOrgaDataBox<T_Number, T_Value, T_atomicNumber>(
                             bufferNumberAtomicStates->getHostBuffer().getDataBox(),
                             bufferStartIndexBlockAtomicStates->getHostBuffer().getDataBox());
                     }
 
-                    HINLINE TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE S_ChargeStateorgaDataBox getDeviceDataBox()
                     {
-                        return ChargeStateOrgaDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return ChargeStateOrgaDataBox<T_Number, T_Value, T_atomicNumber>(
                             bufferNumberAtomicStates->getDeviceBuffer().getDataBox(),
                             bufferStartIndexBlockAtomicStates->getDeviceBuffer().getDataBox());
                     }

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <pmacc/memory/buffer/HostDeviceBuffer.tpp>
+#include <pmacc/memory/buffers/HostDeviceBuffer.tpp>
 
 namespace picongpu
 {
@@ -53,7 +53,7 @@ namespace picongpu
                     using TypeValue = T_Value;
 
                     constexpr static uint8_t atomicNumber = T_atomicNumber;
-                }
+                };
 
             } // namespace atomicData
         } // namespace atomicPhysics2

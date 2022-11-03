@@ -836,7 +836,8 @@ namespace picongpu
             using DataBoxType = pmacc::DataBox<pmacc::PitchedBox<T_DataType, 1u>>;
 
             using S_AtomicData = particles::atomicPhysics2::atomicData::AtomicData<
-                typename DataBoxType,
+                template<T_DataType>
+                DataBoxType<T_DataType>,
                 uint32_t,
                 floatX,
                 uint64_t,

@@ -48,24 +48,20 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  * @param boxOffset offset of transition type in chooseTransition selection
                  */
-                template<
-                    typename T_DataBoxType,
-                    typename T_Number,
-                    typename T_Value,
-                    uint8_t T_atomicNumber>
-                class AtomicStateNumberOfTransitionsDataBox_Down : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                template<typename T_Number, typename T_Value, uint8_t T_atomicNumber>
+                class AtomicStateNumberOfTransitionsDataBox_Down : public DataBox<T_Number, T_Value, T_atomicNumber>
                 {
                 public:
-                    using dataBoxType
-                        = AtomicStateNumberOfTransitionsDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+                    using dataBoxType = AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>;
+                    using S_DataBox = DataBox<T_Number, T_Value, T_atomicNumber>;
 
                 private:
                     /** start collection index of the block of autonomous transitions
                      * from the atomic state in the collection of autonomous transitions
                      */
-                    BoxNumber m_boxNumberOfTransitions;
+                    typename S_DataBox::BoxNumber m_boxNumberOfTransitions;
                     //! offset of transition type in chooseTransition selection
-                    BoxNumber m_boxOffset;
+                    typename S_DataBox::BoxNumber m_boxOffset;
 
                     /// @todo transitions from configNumber 0u?
 
@@ -79,23 +75,23 @@ namespace picongpu
                      * @param boxNumberTransitions number of transitions from the atomic state
                      */
                     AtomicStateNumberOfTransitionsDataBox_Down(
-                        BoxNumber boxNumberOfTransitions,
-                        BoxNumber boxOffset)
+                        typename S_DataBox::BoxNumber boxNumberOfTransitions,
+                        typename S_DataBox::BoxNumber boxOffset)
                         : m_boxNumberOfTransitions(boxNumberOfTransitions)
                         , m_boxOffset(boxOffset)
                     {
                     }
 
                     //! @attention no range check
-                    void storeDown(uint32_t const collectionIndex, TypeNumber const numberDown)
+                    void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberDown)
                     {
-                        m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
+                        m_boxNumberOfTransitions[collectionIndex] = numberDown;
                     }
 
                     //! @attention no range check
-                    void storeOffset(uint32_t const collectionIndex, TypeNumber offset)
+                    void storeOffset(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const offset)
                     {
-                        m_boxOffset[collectionOffset] = offset;
+                        m_boxOffset[collectionIndex] = offset;
                     }
 
                     /** get number of transitions from atomic state
@@ -105,7 +101,7 @@ namespace picongpu
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
                      */
-                    TypeNumber numberOfTransitions(uint32_t const collectionIndex) const
+                    typename S_DataBox::TypeNumber numberOfTransitions(uint32_t const collectionIndex) const
                     {
                         return m_boxNumberOfTransitions(collectionIndex);
                     }
@@ -117,7 +113,7 @@ namespace picongpu
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
                      */
-                    TypeNumber offset(uint32_t const collectionOffset)
+                    typename S_DataBox::TypeNumber offset(uint32_t const collectionIndex)
                     {
                         return m_boxOffset(collectionIndex);
                     }
@@ -131,13 +127,16 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
                 class AtomicStateNumberOfTransitionsDataBuffer_Down : public DataBuffer< T_Number, T_Value, T_atomicNumber>
                 {
-                    std::unique_ptr< BufferNumber > bufferNumberOfTransitionsBlockTransitionsDown;
+                public:
+                    using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
+
+                private:
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberOfTransitionsBlockTransitionsDown;
 
                 public:
                     HINLINE AtomicStateNumberOfTransitionsDataBuffer_Down(uint32_t numberAtomicStates)
@@ -145,19 +144,21 @@ namespace picongpu
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
                         auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
 
-                        bufferNumberOfTransitionsBlockTransitionsDown.reset( new BufferValue(layoutAtomicStates));
+                        bufferNumberOfTransitionsBlockTransitionsDown.reset(
+                            new typename S_DataBuffer::BufferValue(layoutAtomicStates));
                     }
 
-                    HINLINE AtomicStateNumberOfTransitionsDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>
+                    getHostDataBox()
                     {
-                        return AtomicStateNumberOfTransitionsDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>(
                             bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox());
-
                     }
 
-                    HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>
+                    getDeviceDataBox()
                     {
-                        return AtomicStateNumberOfTransitionsDataBox_Down< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>(
                             bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox());
                     }
 

@@ -54,21 +54,20 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
-                    uint8_t T_atomicNumber // element
-                    >
-                class ChargeStateDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                    uint8_t T_atomicNumber> // element
+                class ChargeStateDataBox : public DataBox<T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using S_ChargeStateTuple = ChargeStateTuple<T_Value>;
+                    using S_DataBox = DataBox<T_Number, T_Value, T_atomicNumber>;
 
                 private:
                     //! unit: eV
-                    BoxValue m_boxIonizationEnergy;
+                    typename S_DataBox::BoxValue m_boxIonizationEnergy;
                     //! unit: elementary charge
-                    BoxValue m_boxScreenedCharge;
+                    typename S_DataBox::BoxValue m_boxScreenedCharge;
 
                 public:
                     /** constructor
@@ -80,8 +79,8 @@ namespace picongpu
                      * @param screenedCharge screenedCharge[e] of charge states
                      */
                     ChargeStateDataBox(
-                        BoxValue ionizationEnergy,
-                        BoxValue screenedCharge)
+                        typename S_DataBox::BoxValue ionizationEnergy,
+                        typename S_DataBox::BoxValue screenedCharge)
                         : m_boxIonizationEnergy(ionizationEnergy)
                         , m_boxScreenedCharge(screenedCharge)
                     {
@@ -101,19 +100,18 @@ namespace picongpu
                     {
                         if(collectionIndex != std::get<0>(tuple))
                         {
-                            throw str::runtime_error(
+                            throw std::runtime_error(
                                 "atomicPhysics ERROR: chargeState and collectionIndex of tuple added inconsistent");
                             return;
                         }
                         if(collectionIndex == T_atomicNumber)
                         {
-                            throw
-                                : runtime_error(
-                                      "atomicPhysics ERROR: completely ionized charge state may not be stored");
+                            throw std::runtime_error(
+                                "atomicPhysics ERROR: completely ionized charge state may not be stored");
                         }
                         if(collectionIndex > T_atomicNumber)
                         {
-                            throw : runtime_error("atomicPhysics ERROR: unphysical charge state may not be stored");
+                            throw std::runtime_error("atomicPhysics ERROR: unphysical charge state may not be stored");
                         }
 
                         m_boxIonizationEnergy[collectionIndex] = std::get<1>(tuple);
@@ -129,7 +127,7 @@ namespace picongpu
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
                     DINLINE T_Value screenedCharge(uint8_t chargeState)
                     {
-                        return m_boxScreenedCharge[chargeState]
+                        return m_boxScreenedCharge[chargeState];
                     }
                 };
 
@@ -140,14 +138,20 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
+                    template<typename T_DataType>
                     typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class ChargeStateDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                class ChargeStateDataBuffer : public DataBuffer<T_Number, T_Value, T_atomicNumber>
                 {
-                    std::unique_ptr< BufferValue > bufferIonizationEnergy;
-                    std::unique_ptr< BufferValue > bufferScreenedCharge;
+                public:
+                    using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
+                    using S_ChargeStateDataBox = ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>;
+
+                private:
+                    std::unique_ptr<typename S_DataBuffer::BufferValue> bufferIonizationEnergy;
+                    std::unique_ptr<typename S_DataBuffer::BufferValue> bufferScreenedCharge;
 
                 public:
                     HINLINE ChargeStateDataBuffer()
@@ -155,20 +159,20 @@ namespace picongpu
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
                         auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize);
 
-                        bufferIonizationEnergy.reset( new BufferValue(layoutChargeStates));
-                        bufferScreenedCharge.reset( new BufferValue(layoutChargeStates));
+                        bufferIonizationEnergy.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates));
+                        bufferScreenedCharge.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates));
                     }
 
-                    HINLINE ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE S_ChargeStateDataBox getHostDataBox()
                     {
-                        return ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>(
                             bufferIonizationEnergy->getHostBuffer().getDataBox(),
                             bufferScreenedCharge->getHostBuffer().getDataBox());
                     }
 
-                    HINLINE ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE S_ChargeStateDataBox getDeviceDataBox()
                     {
-                        return ChargeStateDataBox< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>(
                             bufferIonizationEnergy->getDeviceBuffer().getDataBox(),
                             bufferScreenedCharge->getDeviceBuffer().getDataBox());
                     }

@@ -68,11 +68,11 @@ namespace picongpu
                     T_Idx,   // lowerState
                     T_Idx>;  // upperState
 
-                template<typename T_Value, T_Idx>
+                template<typename T_Value, typename T_Idx>
                 using AutonomousTransitionTuple = std::tuple<
                     T_Value, // rate [1/s]
-                    Idx,     // lowerState
-                    Idx>;    // upperState
+                    T_Idx,     // lowerState
+                    T_Idx>;    // upperState
 
             } // namespace atomicData
         } // namespace atomicPhysics2

@@ -48,20 +48,20 @@ namespace picongpu
                  * @tparam T_Value dataType used for value storage, typically float_X
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
-                template<
-                    typename T_DataBoxType,
-                    typename T_Number,
-                    typename T_Value,
-                    uint8_t T_atomicNumber>
-                class AtomicStateNumberOfTransitionsDataBox_UpDown : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                template<typename T_Number, typename T_Value, uint8_t T_atomicNumber>
+                class AtomicStateNumberOfTransitionsDataBox_UpDown : public DataBox<T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using S_DataBox = DataBox<T_Number, T_Value, T_atomicNumber>;
+
+                private:
                     //! start collection index of the block of upward transitions from the atomic state in the corresponding upward collection
-                    BoxNumber m_boxNumberOfTransitionsUp;
+                    typename S_DataBox::BoxNumber m_boxNumberOfTransitionsUp;
 
                     //! start collection index of the block of downward transitions from the atomic state in the corresponding upward collection
-                    BoxNumber m_boxNumberOfTransitionsDown;
+                    typename S_DataBox::BoxNumber m_boxNumberOfTransitionsDown;
                     //! offset of transition type in chooseTransition selection
-                    BoxNumber m_boxOffset;
+                    typename S_DataBox::BoxNumber m_boxOffset;
 
                 public:
                     /** constructor
@@ -77,31 +77,31 @@ namespace picongpu
                      * @param boxOffset offset of transition type in chooseTransition selection
                      */
                     AtomicStateNumberOfTransitionsDataBox_UpDown(
-                        BoxNumber boxNumberOfTransitionsUp,
-                        BoxNumber boxNumberOfTransitionsDown,
-                        BoxNumber boxOffset)
-                        : m_boxNumberOfTransitionsUp(boxNumberOfBlockTransitionsUp)
-                        , m_boxNumberOfTransitionsDown(boxNumberOfBlockTransitionsDown)
+                        typename S_DataBox::BoxNumber boxNumberOfTransitionsUp,
+                        typename S_DataBox::BoxNumber boxNumberOfTransitionsDown,
+                        typename S_DataBox::BoxNumber boxOffset)
+                        : m_boxNumberOfTransitionsUp(boxNumberOfTransitionsUp)
+                        , m_boxNumberOfTransitionsDown(boxNumberOfTransitionsDown)
                         , m_boxOffset(boxOffset)
                     {
                     }
 
                     //! @attention no range check
-                    void storeDown(uint32_t const collectionIndex, TypeNumber const numberDown)
+                    void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberDown)
                     {
                         m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
                     }
 
                     //! @attention no range check
-                    void storeUp(uint32_t const collectionIndex, TypeNumber const numberUp)
+                    void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberUp)
                     {
                         m_boxNumberOfTransitionsUp[collectionIndex] = numberUp;
                     }
 
                     //! @attention no range check
-                    void storeOffset(uint32_t const collectionIndex, TypeNumber offset)
+                    void storeOffset(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const offset)
                     {
-                        m_boxOffset[collectionOffset] = offset;
+                        m_boxOffset[collectionIndex] = offset;
                     }
 
                     /** get number of transitions in block of transitions upward from the atomic state
@@ -112,7 +112,7 @@ namespace picongpu
                      *
                      * @attention no range check
                      */
-                    TypeNumber numberOfTransitionsUp(uint32_t const collectionIndex) const
+                    typename S_DataBox::TypeNumber numberOfTransitionsUp(uint32_t const collectionIndex) const
                     {
                         return m_boxNumberOfTransitionsUp(collectionIndex);
                     }
@@ -125,7 +125,7 @@ namespace picongpu
                      *
                      * @attention no range check
                      */
-                    TypeNumber numberOfTransitionsDown(uint32_t const collectionIndex) const
+                    typename S_DataBox::TypeNumber numberOfTransitionsDown(uint32_t const collectionIndex) const
                     {
                         return m_boxNumberOfTransitionsDown(collectionIndex);
                     }
@@ -137,7 +137,7 @@ namespace picongpu
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
                      */
-                    TypeNumber offset(uint32_t const collectionOffset)
+                    typename S_DataBox::TypeNumber offset(uint32_t const collectionIndex)
                     {
                         return m_boxOffset(collectionIndex);
                     }
@@ -151,7 +151,6 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
@@ -159,15 +158,15 @@ namespace picongpu
                 {
                 public:
                     using dataBoxType = AtomicStateNumberOfTransitionsDataBox_UpDown<
-                        T_DataBoxType,
                         T_Number,
                         T_Value,
                         T_atomicNumber>;
+                    using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
 
                 private:
-                    std::unique_ptr< BufferNumber > bufferNumberOfTransitionsDown;
-                    std::unique_ptr< BufferNumber > bufferNumberOfTransitionsUp;
-                    std::unique_ptr< BufferNumber > bufferOffset;
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberOfTransitionsDown;
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberOfTransitionsUp;
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferOffset;
 
                 public:
                     HINLINE AtomicStateNumberOfTransitionsDataBuffer_UpDown(uint32_t numberAtomicStates)
@@ -175,30 +174,32 @@ namespace picongpu
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
                         auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
 
-                        bufferNumberOfTransitionsDown.reset( new BufferValue(layoutAtomicStates));
-                        bufferNumberOfTransitionsUp.reset( new BufferValue(layoutAtomicStates));
-                        bufferOffset.reset( new BufferValue(layoutAtomicStates));
+                        bufferNumberOfTransitionsDown.reset(new
+                                                            typename S_DataBuffer::BufferValue(layoutAtomicStates));
+                        bufferNumberOfTransitionsUp.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates));
+                        bufferOffset.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates));
                     }
 
-                    HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>
+                    getHostDataBox()
                     {
-                        return AtomicStateNumberOfTransitionsDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
-                            bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox(),
-                            bufferStartIndexBlockTransitionsUp->getHostBuffer().getDataBox());
-
+                        return AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>(
+                            bufferNumberOfTransitionsDown->getHostBuffer().getDataBox(),
+                            bufferNumberOfTransitionsUp->getHostBuffer().getDataBox());
                     }
 
-                    HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>
+                    getDeviceDataBox()
                     {
-                        return AtomicStateNumberOfTransitionsDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
-                            bufferStartIndexBlockTransitionsDown->getDeviceBuffer().getDataBox(),
-                            bufferStartIndexBlockTransitionsUp->getDeviceBuffer().getDataBox());
+                        return AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>(
+                            bufferNumberOfTransitionsDown->getDeviceBuffer().getDataBox(),
+                            bufferNumberOfTransitionsUp->getDeviceBuffer().getDataBox());
                     }
 
                     HINLINE void syncToDevice()
                     {
-                        bufferStartIndexBlockTransitionsDown->hostToDevice();
-                        bufferStartIndexBlockTransitionsUp->hostToDevice();
+                        bufferNumberOfTransitionsDown->hostToDevice();
+                        bufferNumberOfTransitionsUp->hostToDevice();
                     }
 
                 };
