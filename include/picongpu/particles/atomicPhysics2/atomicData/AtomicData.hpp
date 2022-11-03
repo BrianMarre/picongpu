@@ -1206,7 +1206,7 @@ namespace picongpu
                      * @param fileTransitionData path to file containing atomic state data
                      */
                     AtomicData(
-                        std::string fileChargeData,
+                        std::string fileChargeStateData,
                         std::string fileAtomicStateData,
                         std::string fileBoundBoundTransitionData,
                         std::string fileBoundFreeTransitionData,

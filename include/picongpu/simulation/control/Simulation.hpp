@@ -37,6 +37,7 @@
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/atomicPhysics2/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
@@ -109,6 +110,8 @@
 #include <functional>
 #include <memory>
 
+// debug only
+#include <string>
 
 namespace picongpu
 {
@@ -335,7 +338,7 @@ namespace picongpu
             particleBoundaries.init();
 
             // inits for atomicPhysics
-            loadAtomicInputData();
+            loadAtomicInputData(dc);
             /// @todo load atomic input data, Brian Marre, 2022
 
             // initialize atomicPhyiscs superCell local fields
@@ -821,6 +824,56 @@ namespace picongpu
                 >(*cellDescription);
             dataConnector.consume(std::move(localSuperCellTimeStep));
         }
+
+        /** create the atomicData dataBase
+         *
+         * used for atomicPhysics step
+         */
+        void loadAtomicInputData(DataConnector& dataConnector)
+        {
+            // debug only
+            template<T_DataType>
+            using DataBoxType = pmacc::DataBox<pmacc::PitchedBox<T_DataType, 1u>>;
+
+            using S_AtomicData = particles::atomicPhysics2::atomicData::AtomicData<
+                typename DataBoxType,
+                uint32_t,
+                floatX,
+                uint64_t,
+                1u,
+                10u,
+                true,
+                true,
+                true,
+                true,
+                true,
+                true>;
+
+            auto atomicDataHydrogen = S_AtomicData(
+                "../ChargeStates_H.txt",
+                "../AtomicStates_H.txt",
+                "../BoundBoundTranistions_H.txt",
+                "../BoundFreeTransitions_H.txt",
+                "../AutonomousTransitions_H.txt");
+            printAtomicDataToConsole<
+                S_AtomicData,
+                true, // print transitions
+                true // print inverse ordered transitions
+                >(atomicDataHydrogen);
+
+            auto atomicDataHydrogen = S_AtomicData(
+                "../ChargeStates_H.txt",
+                "../AtomicStates_H.txt",
+                "../BoundBoundTranistions_H.txt",
+                "../BoundFreeTransitions_H.txt",
+                "../AutonomousTransitions_H.txt");
+            printAtomicDataToConsole<
+                S_AtomicData,
+                true, // print transitions
+                true // print inverse ordered transitions
+                >(atomicDataHydrogen);
+        }
+
 
         /** Reset all fields
          *

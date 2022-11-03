@@ -59,7 +59,7 @@ namespace picongpu
                     typename T_Value,
                     uint8_t T_atomicNumber // element
                     >
-                class ChargeStateDataBox : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class ChargeStateDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using S_ChargeStateTuple = ChargeStateTuple<T_Value>;

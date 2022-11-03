@@ -157,7 +157,7 @@ namespace picongpu
     //! atomic state storage of ions, see also atomicPhysics.param
     alias(atomicConfigNumber);
 
-    /** path to file containing atomic physics state input data,
+    /** path to file containing charge state input data for atomicPhysics,
      *
      * file gives parameter of atomic physics states for ion species
      * - must follow PIConGPU specific formatting
@@ -165,9 +165,19 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsStatesFileName);
+    alias(atomicPhysicsChargeStatesFileName);
 
-    /** path to file containing atomic physics transition input data,
+    /** path to file containing atomic state input data for atomicPhysics,,
+     *
+     * file gives parameter of atomic physics states for ion species
+     * - must follow PIConGPU specific formatting
+     * - files are not shipped with PIConGPU, see documentation for creation and sources
+     *      @todo create documentation, Brian Marre, 2022
+     * - all paths are either relative to the simOutput folder, or absolute
+     */
+    alias(atomicPhysicsAtomicStatesFileName);
+
+    /** path to file containing bound-bound transitions input data for atomicPhysics,
      *
      * file gives parameter of modelled atomic physics transition for ion species
      * - must follow PIConGPU specific formatting
@@ -175,7 +185,27 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsTransitionsFileName);
+    alias(atomicPhysicsBoundBoundTransitionsFileName);
+
+    /** path to file containing bound-free transitions input data for atomicPhysics,
+     *
+     * file gives parameter of modelled atomic physics transition for ion species
+     * - must follow PIConGPU specific formatting
+     * - files are not shipped with PIConGPU, see documentation for creation and sources
+     *      @todo create documentation, Brian Marre, 2022
+     * - all paths are either relative to the simOutput folder, or absolute
+     */
+    alias(atomicPhysicsBoundFreeTransitionsFileName);
+
+    /** path to file containing autonomous transitions input data for atomicPhysics,
+     *
+     * file gives parameter of modelled atomic physics transition for ion species
+     * - must follow PIConGPU specific formatting
+     * - files are not shipped with PIConGPU, see documentation for creation and sources
+     *      @todo create documentation, Brian Marre, 2022
+     * - all paths are either relative to the simOutput folder, or absolute
+     */
+    alias(atomicPhysicsAutonomousTransitionsFileName);
 
     //! alias for particle flag describing atomicPhysics solver
     alias(atomicPhysicsSolver);
@@ -183,8 +213,11 @@ namespace picongpu
     //! alias for particle flag describing atomicPhysics solver
     alias(atomicPhysicsSolver2);
 
-    //! alias for particle flag, noting a species as representing an Electron
+    //! alias for particle flag, notes that a species is representing Electrons
     alias(isElectron);
+
+    //! alias for particle flag, notes that a species represents an ion
+    alias(isIon);
 
     /** Total cell index of a particle.
      *

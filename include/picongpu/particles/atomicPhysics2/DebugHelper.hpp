@@ -72,7 +72,7 @@ namespace picongpu
 
                 //! debug only, write atomic data to console, must be called serially and cpu build only
                 template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
-                void printAtomicDataToConsole(T_AtomicData atomicData)
+                void printAtomicDataToConsole(T_AtomicData& atomicData)
                 {
                     uint32_t numberAtomicStates = atomicData.getNumberAtomicStates();
                     uint32_t numberBoundBoundTransitions = atomicData.getNumberBoundBoundTransitions();
@@ -80,11 +80,9 @@ namespace picongpu
                     uint32_t numberAutonomousTransitions = atomicData.getNumberAutonomousTransitions();
 
                     // basic numbers
-                    std::cout << "(#s " << numberAtomicStates
-                        << ", #b " << numberBoundBoundTransitions
-                        << ", #f " << numberBoundFreeTransitions
-                        << ", #a " << numberAutonomousTransitions
-                        << ")" << std::endl;
+                    std::cout << "AtomicNumber: " << T_AtomicData::atomicNumber << "(#s " << numberAtomicStates
+                              << ", #b " << numberBoundBoundTransitions << ", #f " << numberBoundFreeTransitions
+                              << ", #a " << numberAutonomousTransitions << ")" << std::endl;
 
                     // ChargeState data
                     auto chargeStateDataBox = atomicData.getChargeStateDataDataBox<true>(); // true: get hostDataBox
