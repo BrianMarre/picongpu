@@ -20,6 +20,8 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <exception>
 
 //! @file gathers all definitions of tuples for atomicPhysics
 
@@ -73,6 +75,73 @@ namespace picongpu
                     T_Value, // rate [1/s]
                     T_Idx,     // lowerState
                     T_Idx>;    // upperState
+
+                //! helper function giving back transition type name
+                template<typename T_TransitionTuple>
+                HINLINE std::string getStringTransitionType()
+                {
+                    throw std::runtime_error("not implemented!");
+                }
+
+                template<>
+                HINLINE std::string getStringTransitionType<
+                    BoundBoundTransitionTuple<float_X, uint64_t>
+                    >()
+                {
+                    return "bound-bound";
+                }
+
+                template<>
+                HINLINE std::string getStringTransitionType<
+                    BoundFreeTransitionTuple<float_X, uint64_t>
+                    >()
+                {
+                    return "bound-free";
+                }
+
+                template<>
+                HINLINE std::string getStringTransitionType<
+                    AutonomousTransitionTuple<float_X, uint64_t>
+                    >()
+                {
+                    return "autonomous";
+                }
+
+                //! helper function checking for charge states compatibility with transition type
+                template<typename T_TransitionTuple>
+                HINLINE bool wrongForTransitionType(uint8_t lowerChargeState, uint8_t upperChargeState)
+                {
+                    throw std::runtime_error("not implemented!");
+                    return false;
+                }
+
+                template<>
+                HINLINE bool wrongForTransitionType<
+                    BoundBoundTransitionTuple<float_X, uint64_t>
+                    >( uint8_t lowerChargeState, uint8_t upperChargeState )
+                {
+                    if (lowerChargeState == upperChargeState)
+                        return false; // correct case
+                    return true; // error case
+                }
+
+                template<>
+                HINLINE bool wrongForTransitionType<
+                    BoundFreeTransitionTuple<float_X, uint64_t>
+                    >( uint8_t lowerChargeState, uint8_t upperChargeState )
+                {
+                    if (lowerChargeState > upperChargeState)
+                        return false; // correct case
+                    return true; // error case
+                }
+
+                template<>
+                HINLINE bool wrongForTransitionType<
+                    AutonomousTransitionTuple<float_X, uint64_t>
+                    >( uint8_t lowerChargeState, uint8_t upperChargeState )
+                {
+                    return false; // charge state might change or not
+                }
 
             } // namespace atomicData
         } // namespace atomicPhysics2

@@ -45,26 +45,23 @@ namespace picongpu
                  *
                  * for use on device.
                  *
-                 * @tparam T_DataBoxType dataBox type used for storage
                  * @tparam T_Number dataType used for number storage, typically uint32_t
                  * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_ConfigNumberDataType data type used for storage of confignUmber
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class TransitionSelectionDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class TransitionSelectionDataBox : public DataBox< T_Number, T_Value, T_atomicNumber>
                 {
                 public:
-                    using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<TypeValue, Idx>;
-                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<TypeValue, Idx>;
-                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<TypeValue, Idx>;
+                    using S_DataBox = DataBox< T_Number, T_Value, T_atomicNumber>;
 
                 private:
                     //! total number of physical transitions
-                    BoxNumber m_boxNumberPhysicalTransitionsTotal;
+                    typename S_DataBox::BoxNumber m_boxNumberPhysicalTransitionsTotal;
 
                 public:
                     /** constructor
@@ -75,13 +72,13 @@ namespace picongpu
                      *
                      * @param boxNumberPhysicalTransitionsTotal number of physical transitions from the atomic state
                      */
-                    TransitionSelectionDataBox( BoxNumber boxNumberPhysicalTransitionsTotal)
+                    TransitionSelectionDataBox( typename S_DataBox::BoxNumber boxNumberPhysicalTransitionsTotal)
                     : m_boxNumberPhysicalTransitionsTotal(boxNumberPhysicalTransitionsTotal)
                     {
                     }
 
                     //! @attention no range check!
-                    void store(uint32_t collectionIndex, TypeNumber numberPhysicalTransitionsTotal)
+                    void store(uint32_t collectionIndex, typename S_DataBox::TypeNumber numberPhysicalTransitionsTotal)
                     {
                         m_boxNumberPhysicalTransitionsTotal[collectionIndex] = numberPhysicalTransitionsTotal;
                     }
@@ -94,9 +91,9 @@ namespace picongpu
                      *
                      * @attention no range check
                      */
-                    TypeNumber numberTransitions(uint32_t const collectionIndex) const
+                    typename S_DataBox::TypeNumber numberTransitions(uint32_t const collectionIndex) const
                     {
-                        return m_boxNumberPhysicalTransitionsTotal
+                        return m_boxNumberPhysicalTransitionsTotal[collectionIndex];
                     }
                 };
 
@@ -107,36 +104,38 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class TransitionSelectionBuffer : public DataBuffer<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class TransitionSelectionDataBuffer : public DataBuffer< T_Number, T_Value, T_atomicNumber>
                 {
+                public:
+                    using S_DataBuffer = DataBuffer< T_Number, T_Value, T_atomicNumber>;
+                private:
                     //! total number of physical transitions
-                    std::unique_ptr<BufferNumber> bufferNumberPhysicalTransitionsTotal;
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberPhysicalTransitionsTotal;
 
                 public:
                     /** buffer corresponding to the above dataBox object
                      *
                      * @param numberAtomicStates number of atomic states, and number of buffer entries
                      */
-                    HINLINE TransitionSelectionBuffer(uint32_t numberAtomicStates)
+                    HINLINE TransitionSelectionDataBuffer(uint32_t numberAtomicStates)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferNumberPhysicalTransitionsTotal.reset( new BufferNumber(layoutAtomicStates));
+                        bufferNumberPhysicalTransitionsTotal.reset( new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
                     }
 
-                    HINLINE TransitionSelectionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE TransitionSelectionDataBox< T_Number, T_Value, T_atomicNumber> getHostDataBox()
                     {
-                        return TransitionSelectionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(bufferNumberPhysicalTransitionsTotal->getHostBuffer().getDataBox());
+                        return TransitionSelectionDataBox< T_Number, T_Value, T_atomicNumber>(bufferNumberPhysicalTransitionsTotal->getHostBuffer().getDataBox());
                     }
 
-                    HINLINE TransitionSelectionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE TransitionSelectionDataBox< T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
                     {
-                        return TransitionSelectionDataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>(bufferNumberPhysicalTransitionsTotal->getDeviceBuffer().getDataBox());
+                        return TransitionSelectionDataBox< T_Number, T_Value, T_atomicNumber>(bufferNumberPhysicalTransitionsTotal->getDeviceBuffer().getDataBox());
                     }
 
                     HINLINE void syncToDevice()

@@ -54,9 +54,6 @@ namespace picongpu
                     using TypeNumber = T_Number;
                     using TypeValue = T_Value;
 
-                    template<typename T_DataType>
-                    using DataBoxType = T_DataBoxType<T_DataType>;
-
                     constexpr static uint8_t atomicNumber = T_atomicNumber;
                 };
 

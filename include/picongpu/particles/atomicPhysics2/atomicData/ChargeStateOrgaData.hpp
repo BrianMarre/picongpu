@@ -142,7 +142,6 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
@@ -161,11 +160,11 @@ namespace picongpu
                     HINLINE ChargeStateOrgaDataBuffer()
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize);
+                        auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber + 1u, guardSize).getDataSpaceWithoutGuarding(); // +1 for completely ionized charge state
 
-                        bufferNumberAtomicStates.reset(new typename S_DataBuffer::BufferNumber(layoutChargeStates));
+                        bufferNumberAtomicStates.reset(new typename S_DataBuffer::BufferNumber(layoutChargeStates, false));
                         bufferStartIndexBlockAtomicStates.reset(
-                            new typename S_DataBuffer::BufferNumber(layoutChargeStates));
+                            new typename S_DataBuffer::BufferNumber(layoutChargeStates, false));
                     }
 
                     HINLINE S_ChargeStateorgaDataBox getHostDataBox()

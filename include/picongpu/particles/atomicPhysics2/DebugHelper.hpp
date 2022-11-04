@@ -85,8 +85,8 @@ namespace picongpu
                               << ", #a " << numberAutonomousTransitions << ")" << std::endl;
 
                     // ChargeState data
-                    auto chargeStateDataBox = atomicData.getChargeStateDataDataBox<true>(); // true: get hostDataBox
-                    auto chargeStateOrgaBox = atomicData.getChargeStateOrgaDataBox<true>();
+                    auto chargeStateDataBox = atomicData.getChargeStateDataDataBox(true); // true: get hostDataBox
+                    auto chargeStateOrgaBox = atomicData.getChargeStateOrgaDataBox(true);
 
                     std::cout << "ChargeState Data index : (E_ionization[eV], Z_screened[e])[#AtomicStates, startIndexBlock]" << std::endl;
                     for (uint8_t i = 0u; i < T_AtomicData::atomicNumber; i++)
@@ -94,21 +94,21 @@ namespace picongpu
                         std::cout << "\t" << i << ":( " << chargeStateDataBox.ionizationEnergy(i) << ", "
                             << chargeStateDataBox.screenedCharge(i) << " )[ "
                             << chargeStateOrgaBox.numberAtomicStates(i) << ", "
-                            << chargeStateOrgaBox.startIndexBlock(i) << std::endl;
+                            << chargeStateOrgaBox.startIndexBlockAtomicStates(i) << std::endl;
                     }
 
                     // AtomicState data
-                    auto atomicStateDataBox = atomicData.getAtomicStateDataDataBox<true>(); // true: get hostDataBox
+                    auto atomicStateDataBox = atomicData.getAtomicStateDataDataBox(true); // true: get hostDataBox
 
-                    auto boundBoundStartIndexBox = atomicData.getBoundBoundStartIndexBlockDataBox<true>();
-                    auto boundFreeStartIndexBox  = atomicData.getBoundFreeStartIndexBlockDataBox<true>();
-                    auto autonomousStartIndexBox = atomicData.getAutonomousStartIndexBlockDataBox<true>();
+                    auto boundBoundStartIndexBox = atomicData.getBoundBoundStartIndexBlockDataBox(true);
+                    auto boundFreeStartIndexBox  = atomicData.getBoundFreeStartIndexBlockDataBox(true);
+                    auto autonomousStartIndexBox = atomicData.getAutonomousStartIndexBlockDataBox(true);
 
-                    auto boundBoundNumberTransitionsBox = atomicData.getBoundBoundNumberTransitionsDataBox<true>();
-                    auto boundFreeNumberTransitionsBox  = atomicData.getBoundFreeNumberTransitionsDataBox<true>();
-                    auto autonomousNumberTransitionsBox = atomicData.getAutonomousNumberTransitionsDataBox<true>();
+                    auto boundBoundNumberTransitionsBox = atomicData.getBoundBoundNumberTransitionsDataBox(true);
+                    auto boundFreeNumberTransitionsBox  = atomicData.getBoundFreeNumberTransitionsDataBox(true);
+                    auto autonomousNumberTransitionsBox = atomicData.getAutonomousNumberTransitionsDataBox(true);
 
-                    auto transitionSelectionBox = atomicData.getTransitionSelectionDataBox<true>();
+                    auto transitionSelectionBox = atomicData.getTransitionSelectionDataBox(true);
 
                     using S_ConfigNumber = stateRepresentation::ConfigNumber<
                         uint64_t,
@@ -124,16 +124,16 @@ namespace picongpu
 
                         std::cout << "\t"
                             << i << " : [" << stateConfigNumber << ", "
-                            << S_ConfigNumber::getIonizationState(stateConfigNumber << ", ";
+                            << S_ConfigNumber::getIonizationState(stateConfigNumber) << ", ";
 
-                        auto levelVector = S_ConfigNumber::getLevelVector(stateConfigNumber)
+                        auto levelVector = S_ConfigNumber::getLevelVector(stateConfigNumber);
                         std::cout << "( ";
                         for (uint8_t j=0u; j < T_AtomicData::n_max; j++)
                         {
                             std::cout << levelVector[j] << ", ";
                         }
                         std::cout << ")";
-                        std::cout << "]: " << stateEnergy(i) << std::endl;
+                        std::cout << "]: " << atomicStateDataBox.stateEnergy(i) << std::endl;
                         std::cout << "\t\t b: "
                             << boundBoundNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
                             << boundBoundNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
@@ -157,7 +157,7 @@ namespace picongpu
                     if constexpr (T_printTransitionData)
                     {
                         // bound-bound transitions
-                        auto boundBoundTransitionDataBox = atomicData.getBoundBoundTransitionDataBox<true>();
+                        auto boundBoundTransitionDataBox = atomicData.getBoundBoundTransitionDataBox(true);
                         std::cout << "bound-bound transition" << std::endl;
                         std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
@@ -165,7 +165,7 @@ namespace picongpu
                             std::cout << i << "("
                                 << boundBoundTransitionDataBox.lowerConfigNumberTransition(i) << ", "
                                 << boundBoundTransitionDataBox.upperConfigNumberTransition(i) << ")"
-                                << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorSrength(i)
+                                << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
                                 << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
                                 << "\"Gaunt\"(" << boundBoundTransitionDataBox.cxin1(i) << ", "
                                 << boundBoundTransitionDataBox.cxin2(i) << ", "
@@ -175,7 +175,7 @@ namespace picongpu
                         }
 
                         // bound-free transitions
-                        auto boundFreeTransitionDataBox = atomicData.getBoundFreeTransitionDataBox<true>();
+                        auto boundFreeTransitionDataBox = atomicData.getBoundFreeTransitionDataBox(true);
                         std::cout << "bound-free transition" << std::endl;
                         std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
@@ -194,7 +194,7 @@ namespace picongpu
                         }
 
                         // autonomous transitions
-                        auto autonomousTransitionDataBox = atomicData.getAutonomousTransitionDataBox<true>();
+                        auto autonomousTransitionDataBox = atomicData.getAutonomousTransitionDataBox(true);
 
                         std::cout << "autonomous transitions" << std::endl;
                         std::cout << "index :(low, up), rate" << std::endl;
@@ -212,7 +212,7 @@ namespace picongpu
                     if constexpr (T_printInverseTransitions)
                     {
                         // bound-bound transitions
-                        auto boundBoundTransitionDataBox = atomicData.getInverseBoundBoundTransitionDataBox<true>();
+                        auto boundBoundTransitionDataBox = atomicData.getInverseBoundBoundTransitionDataBox(true);
                         std::cout << "bound-bound transition" << std::endl;
                         std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
@@ -220,7 +220,7 @@ namespace picongpu
                             std::cout << i << "("
                                 << boundBoundTransitionDataBox.lowerConfigNumberTransition(i) << ", "
                                 << boundBoundTransitionDataBox.upperConfigNumberTransition(i) << ")"
-                                << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorSrength(i)
+                                << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
                                 << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
                                 << "\"Gaunt\"(" << boundBoundTransitionDataBox.cxin1(i) << ", "
                                 << boundBoundTransitionDataBox.cxin2(i) << ", "
@@ -230,7 +230,7 @@ namespace picongpu
                         }
 
                         // bound-free transitions
-                        auto boundFreeTransitionDataBox = atomicData.getInverseBoundFreeTransitionDataBox<true>();
+                        auto boundFreeTransitionDataBox = atomicData.getInverseBoundFreeTransitionDataBox(true);
                         std::cout << "bound-free transition" << std::endl;
                         std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
@@ -249,7 +249,7 @@ namespace picongpu
                         }
 
                         // autonomous transitions
-                        auto autonomousTransitionDataBox = atomicData.getInverseAutonomousTransitionDataBox<true>();
+                        auto autonomousTransitionDataBox = atomicData.getInverseAutonomousTransitionDataBox(true);
 
                         std::cout << "autonomous transitions" << std::endl;
                         std::cout << "index :(low, up), rate" << std::endl;

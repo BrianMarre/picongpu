@@ -49,21 +49,21 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class AtomicStateStartIndexDataBox_UpDown : public Data<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class AtomicStateStartIndexBlockDataBox_UpDown : public DataBox< T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using dataBoxType
-                        = AtomicStateStartIndexDataBox_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber>;
+                        = AtomicStateStartIndexBlockDataBox_UpDown< T_Number, T_Value, T_atomicNumber>;
+                    using S_DataBox = DataBox<T_Number, T_Value, T_atomicNumber>;
 
                 private:
                     //! start collection index of the block of downward transitions from the atomic state in the corresponding upward collection                    BoxNumber m_boxStartIndexBlockTransitionsDown;
-                    BoxNumber m_boxStartIndexBlockTransitionsDown;
+                    typename S_DataBox::BoxNumber m_boxStartIndexBlockTransitionsDown;
                     //! start collection index of the block of upward transitions from the atomic state in the corresponding upward collection
-                    BoxNumber m_boxStartIndexBlockTransitionsUp;
+                    typename S_DataBox::BoxNumber m_boxStartIndexBlockTransitionsUp;
 
                 public:
                     /** constructor
@@ -77,22 +77,22 @@ namespace picongpu
                      * @param startIndexBlockAtomicStatesDown start collection index of the block of
                      *  bound-bound transitions in the downward bound-bound transition collection
                      */
-                    AtomicStateStartIndexDataBox_UpDown(
-                        BoxNumber boxStartIndexBlockTransitionsDown,
-                        BoxNumber boxStartIndexBlockTransitionsUp)
+                    AtomicStateStartIndexBlockDataBox_UpDown(
+                        typename S_DataBox::BoxNumber boxStartIndexBlockTransitionsDown,
+                        typename S_DataBox::BoxNumber boxStartIndexBlockTransitionsUp)
                         : m_boxStartIndexBlockTransitionsDown(boxStartIndexBlockTransitionsDown)
                         , m_boxStartIndexBlockTransitionsUp(boxStartIndexBlockTransitionsUp)
                     {
                     }
 
                     //! @attention no range check
-                    void storeDown(uint32_t const collectionIndex, TypeNumber startIndexDown)
+                    void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexDown)
                     {
                         m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;
                     }
 
                     //! @attention no range check
-                    void storeUp(uint32_t const collectionIndex, TypeNumber startIndexUp)
+                    void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexUp)
                     {
                         m_boxStartIndexBlockTransitionsUp[collectionIndex] = startIndexUp;
                     }
@@ -104,7 +104,7 @@ namespace picongpu
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
                      */
-                    TypeNumber startIndexBlockTransitionsDown(uint32_t const collectionIndex) const
+                    typename S_DataBox::TypeNumber startIndexBlockTransitionsDown(uint32_t const collectionIndex) const
                     {
                         return m_boxStartIndexBlockTransitionsDown(collectionIndex);
                     }
@@ -116,7 +116,7 @@ namespace picongpu
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
                      * @attention no range check
                      */
-                    TypeNumber startIndexBlockTransitionsUp(uint32_t const collectionIndex) const
+                    typename S_DataBox::TypeNumber startIndexBlockTransitionsUp(uint32_t const collectionIndex) const
                     {
                         return m_boxStartIndexBlockTransitionsUp(collectionIndex);
                     }
@@ -130,37 +130,39 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
-                class AtomicStateStartIndexDataBuffer_UpDown : public DataBuffer< T_Number, T_Value, T_atomicNumber>
+                class AtomicStateStartIndexBlockDataBuffer_UpDown : public DataBuffer< T_Number, T_Value, T_atomicNumber >
                 {
+                public:
+                    using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
 
-                    std::unique_ptr< BufferNumber > bufferStartIndexBlockTransitionsDown;
-                    std::unique_ptr< BufferNumber > bufferStartIndexBlockTransitionsUp;
+                private:
+                    std::unique_ptr< typename S_DataBuffer::BufferNumber > bufferStartIndexBlockTransitionsDown;
+                    std::unique_ptr< typename S_DataBuffer::BufferNumber > bufferStartIndexBlockTransitionsUp;
 
                 public:
-                    HINLINE AtomicStateStartIndexDataBuffer_UpDown(uint32_t numberAtomicStates)
+                    HINLINE AtomicStateStartIndexBlockDataBuffer_UpDown(uint32_t numberAtomicStates)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferStartIndexBlockTransitionsDown.reset( new BufferValue(layoutAtomicStates));
-                        bufferStartIndexBlockTransitionsUp.reset( new BufferValue(layoutAtomicStates));
+                        bufferStartIndexBlockTransitionsDown.reset( new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
+                        bufferStartIndexBlockTransitionsUp.reset( new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
                     }
 
-                    HINLINE AtomicStateStartIndexDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber> getHostDataBox()
+                    HINLINE AtomicStateStartIndexBlockDataBox_UpDown< T_Number, T_Value, T_atomicNumber> getHostDataBox()
                     {
-                        return AtomicStateStartIndexDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateStartIndexBlockDataBox_UpDown< T_Number, T_Value, T_atomicNumber>(
                             bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox(),
                             bufferStartIndexBlockTransitionsUp->getHostBuffer().getDataBox());
 
                     }
 
-                    HINLINE AtomicStateStartIndexDataBox_UpDown<T_DataBoxType, T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AtomicStateStartIndexBlockDataBox_UpDown< T_Number, T_Value, T_atomicNumber> getDeviceDataBox()
                     {
-                        return AtomicStateStartIndexDataBox_UpDown< T_DataBoxType, T_Number, T_Value, T_atomicNumber>(
+                        return AtomicStateStartIndexBlockDataBox_UpDown< T_Number, T_Value, T_atomicNumber>(
                             bufferStartIndexBlockTransitionsDown->getDeviceBuffer().getDataBox(),
                             bufferStartIndexBlockTransitionsUp->getDeviceBuffer().getDataBox());
                     }

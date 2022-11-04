@@ -42,17 +42,19 @@ namespace picongpu
                 template<typename T_Value, typename T_Idx, bool orderByLowerState>
                 class CompareTransitionTupel
                 {
-                    using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<T_Value, Idx>;
-                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<T_Value, Idx>;
-                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<T_Value, Idx>;
+                    //using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<T_Value, T_Idx>;
+                    //using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<T_Value, T_Idx>;
+                    //using S_AutonomousTransitionTuple = AutonomousTransitionTuple<T_Value, T_Idx>;
 
-                    bool operator(S_BoundBoundTransitionTuple tuple1_1, S_BoundBoundTransitionTuple tuple_2)
+                public:
+                    template< typename T_Tuple >
+                    bool operator()(T_Tuple& tuple_1, T_Tuple& tuple_2)
                     {
-                        T_Idx lowerState_1 = getLowerState<T_Idx, T_Value>(tuple1_1);
-                        T_Idx lowerState_2 = getLowerState<T_Idx, T_Value>(tuple1_2);
+                        T_Idx lowerState_1 = getLowerStateConfigNumber<T_Idx, T_Value>(tuple_1);
+                        T_Idx lowerState_2 = getLowerStateConfigNumber<T_Idx, T_Value>(tuple_2);
 
-                        T_Idx upperState_1 = getUpperState<T_Idx, T_Value>(tuple1_1);
-                        T_Idx upperState_2 = getUpperState<T_Idx, T_Value>(tuple1_2);
+                        T_Idx upperState_1 = getUpperStateConfigNumber<T_Idx, T_Value>(tuple_1);
+                        T_Idx upperState_2 = getUpperStateConfigNumber<T_Idx, T_Value>(tuple_2);
 
                         if constexpr(orderByLowerState)
                             return (

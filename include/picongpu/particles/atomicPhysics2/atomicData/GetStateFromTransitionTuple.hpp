@@ -36,42 +36,42 @@ namespace picongpu
             {
                 template<typename T_ConfigNumberDataType, typename T_Value>
                 T_ConfigNumberDataType getLowerStateConfigNumber(
-                    BoundBoundTransitionTupel<T_Value, T_ConfigNumberDataType>& tupel)
+                    BoundBoundTransitionTuple<T_Value, T_ConfigNumberDataType>& tupel)
                 {
                     return std::get<7>(tupel);
                 }
 
                 template<typename T_ConfigNumberDataType, typename T_Value>
                 T_ConfigNumberDataType getUpperStateConfigNumber(
-                    BoundBoundTransitionTupel<T_Value, T_ConfigNumberDataType>& tupel)
+                    BoundBoundTransitionTuple<T_Value, T_ConfigNumberDataType>& tupel)
                 {
                     return std::get<8>(tupel);
                 }
 
                 template<typename T_ConfigNumberDataType, typename T_Value>
                 T_ConfigNumberDataType getLowerStateConfigNumber(
-                    BoundFreeTransitionTupel<T_Value, T_ConfigNumberDataType>& tupel)
+                    BoundFreeTransitionTuple<T_Value, T_ConfigNumberDataType>& tupel)
                 {
                     return std::get<8>(tupel);
                 }
 
                 template<typename T_ConfigNumberDataType, typename T_Value>
                 T_ConfigNumberDataType getUpperStateConfigNumber(
-                    BoundFreeTransitionTupel<T_Value, T_ConfigNumberDataType>& tupel)
+                    BoundFreeTransitionTuple<T_Value, T_ConfigNumberDataType>& tupel)
                 {
                     return std::get<9>(tupel);
                 }
 
                 template<typename T_ConfigNumberDataType, typename T_Value>
                 T_ConfigNumberDataType getLowerStateConfigNumber(
-                    AutonomousTransitionTupel<T_Value, T_ConfigNumberDataType>& tupel)
+                    AutonomousTransitionTuple<T_Value, T_ConfigNumberDataType>& tupel)
                 {
                     return std::get<1>(tupel);
                 }
 
                 template<typename T_ConfigNumberDataType, typename T_Value>
                 T_ConfigNumberDataType getUpperStateConfigNumber(
-                    AutonomousTransitionTupel<T_Value, T_ConfigNumberDataType>& tupel)
+                    AutonomousTransitionTuple<T_Value, T_ConfigNumberDataType>& tupel)
                 {
                     return std::get<2>(tupel);
                 }

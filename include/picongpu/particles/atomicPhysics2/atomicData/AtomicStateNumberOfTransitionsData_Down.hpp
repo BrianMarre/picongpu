@@ -137,34 +137,39 @@ namespace picongpu
 
                 private:
                     std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberOfTransitionsBlockTransitionsDown;
+                    std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferOffset;
 
                 public:
                     HINLINE AtomicStateNumberOfTransitionsDataBuffer_Down(uint32_t numberAtomicStates)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
 
                         bufferNumberOfTransitionsBlockTransitionsDown.reset(
-                            new typename S_DataBuffer::BufferValue(layoutAtomicStates));
+                            new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
+                        bufferOffset.reset(new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
                     }
 
                     HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>
                     getHostDataBox()
                     {
                         return AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>(
-                            bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox());
+                            bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox(),
+                            bufferOffset->getHostBuffer().getDataBox());
                     }
 
                     HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>
                     getDeviceDataBox()
                     {
                         return AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_atomicNumber>(
-                            bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox());
+                            bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox(),
+                            bufferOffset->getHostBuffer().getDataBox());
                     }
 
                     HINLINE void syncToDevice()
                     {
                         bufferNumberOfTransitionsBlockTransitionsDown->hostToDevice();
+                        bufferOffset->hostToDevice();
                     }
 
                 };

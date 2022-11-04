@@ -46,7 +46,6 @@ namespace picongpu
                  *
                  * for use on device.
                  *
-                 * @tparam T_DataBoxType dataBox type used for storage
                  * @tparam T_Number dataType used for number storage, typically uint32_t
                  * @tparam T_Value dataType used for value storage, typically float_X
                  * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
@@ -61,39 +60,42 @@ namespace picongpu
                  *      on input file,it should therefore only be used internally!
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
                 class BoundFreeTransitionDataBox :
                     public TransitionDataBox<
-                        T_DataBoxType,
                         T_Number,
                         T_Value,
                         T_ConfigNumberDataType,
                         T_atomicNumber>
                 {
                 public:
-                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<TypeValue, Idx>;
+                    using S_TransitionDataBox = TransitionDataBox<
+                        T_Number,
+                        T_Value,
+                        T_ConfigNumberDataType,
+                        T_atomicNumber>;
+                    using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<typename S_TransitionDataBox::TypeValue, typename S_TransitionDataBox::Idx>;
 
                 private:
                     //! cross section fit parameter 1, unitless
-                    BoxValue m_boxCxin1;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin1;
                     //! cross section fit parameter 2, unitless
-                    BoxValue m_boxCxin2;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin2;
                     //! cross section fit parameter 3, unitless
-                    BoxValue m_boxCxin3;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin3;
                     //! cross section fit parameter 4, unitless
-                    BoxValue m_boxCxin4;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin4;
                     //! cross section fit parameter 5, unitless
-                    BoxValue m_boxCxin5;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin5;
                     //! cross section fit parameter 6, unitless
-                    BoxValue m_boxCxin6;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin6;
                     //! cross section fit parameter 7, unitless
-                    BoxValue m_boxCxin7;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin7;
                     //! cross section fit parameter 8, unitless
-                    BoxValue m_boxCxin8;
+                    typename S_TransitionDataBox::BoxValue m_boxCxin8;
 
                 public:
                     /** constructor
@@ -116,16 +118,16 @@ namespace picongpu
                      * @param T_numberTransitions number of atomic bound-free transitions stored
                      */
                     BoundFreeTransitionDataBox(
-                        BoxValue boxCxin1,
-                        BoxValue boxCxin2,
-                        BoxValue boxCxin3,
-                        BoxValue boxCxin4,
-                        BoxValue boxCxin5,
-                        BoxValue boxCxin6,
-                        BoxValue boxCxin7,
-                        BoxValue boxCxin8,
-                        BoxConfigNumber boxLowerConfigNumber,
-                        BoxConfigNumber boxUpperConfigNumber,
+                        typename S_TransitionDataBox::BoxValue boxCxin1,
+                        typename S_TransitionDataBox::BoxValue boxCxin2,
+                        typename S_TransitionDataBox::BoxValue boxCxin3,
+                        typename S_TransitionDataBox::BoxValue boxCxin4,
+                        typename S_TransitionDataBox::BoxValue boxCxin5,
+                        typename S_TransitionDataBox::BoxValue boxCxin6,
+                        typename S_TransitionDataBox::BoxValue boxCxin7,
+                        typename S_TransitionDataBox::BoxValue boxCxin8,
+                        typename S_TransitionDataBox::BoxConfigNumber boxLowerConfigNumber,
+                        typename S_TransitionDataBox::BoxConfigNumber boxUpperConfigNumber,
                         uint32_t numberTransitions)
                         : m_boxCxin1(boxCxin1)
                         , m_boxCxin2(boxCxin2)
@@ -135,7 +137,11 @@ namespace picongpu
                         , m_boxCxin6(boxCxin6)
                         , m_boxCxin7(boxCxin7)
                         , m_boxCxin8(boxCxin8)
-                        , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
+                        , TransitionDataBox<
+                            T_Number,
+                            T_Value,
+                            T_ConfigNumberDataType,
+                            T_atomicNumber>(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                     {
                     }
 
@@ -152,7 +158,7 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransitions)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             throw std::runtime_error("atomicPhysics ERROR: outside range call");
                             return;
@@ -165,7 +171,7 @@ namespace picongpu
                         m_boxCxin6[collectionIndex] = std::get<5>(tuple);
                         m_boxCxin7[collectionIndex] = std::get<6>(tuple);
                         m_boxCxin8[collectionIndex] = std::get<7>(tuple);
-                        storeTransitions(collectionIndex, std::get<8>(tuple), std::get<9>(tuple));
+                        this->storeTransition(collectionIndex, std::get<8>(tuple), std::get<9>(tuple));
                     }
 
                     /// @todo find way to replace Cxin getters with single template function, Brian Marre, 2022
@@ -176,16 +182,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin1(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin1(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin1\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin1(indexTransition);
+                        return m_boxCxin1(collectionIndex);
                     }
 
                     /** returns cross section fit parameter 2 of the transition
@@ -194,16 +200,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin2(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin2(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin2\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin2(indexTransition);
+                        return m_boxCxin2(collectionIndex);
                     }
 
                     /** returns cross section fit parameter 3 of the transition
@@ -212,16 +218,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin3(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin3(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin3\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin3(indexTransition);
+                        return m_boxCxin3(collectionIndex);
                     }
 
                     /** returns cross section fit parameter 4 of the transition
@@ -230,16 +236,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin4(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin4(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin4\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin4(indexTransition);
+                        return m_boxCxin4(collectionIndex);
                     }
 
                     /** returns cross section fit parameter 5 of the transition
@@ -248,16 +254,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin5(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin5(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin5\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin5(indexTransition);
+                        return m_boxCxin5(collectionIndex);
                     }
 
                    /** returns cross section fit parameter 6 of the transition
@@ -266,16 +272,16 @@ namespace picongpu
                     *
                     * @attention no range checks
                     */
-                    HDINLINE TypeValue cxin6(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin6(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin6\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin6(indexTransition);
+                        return m_boxCxin6(collectionIndex);
                     }
 
                     /** returns cross section fit parameter 7 of the transition
@@ -284,16 +290,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin7(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin7(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin7\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin7(indexTransition);
+                        return m_boxCxin7(collectionIndex);
                     }
 
                     /** returns cross section fit parameter 8 of the transition
@@ -302,16 +308,16 @@ namespace picongpu
                      *
                      * @attention no range checks outside debug compile
                      */
-                    HDINLINE TypeValue cxin8(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::TypeValue cxin8(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransition)
+                        if(collectionIndex >= this->m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: outside range call cxin8\n");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
                         }
-                        return m_boxCxin8(indexTransition);
+                        return m_boxCxin8(collectionIndex);
                     }
 
                 };
@@ -323,21 +329,23 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
                 class BoundFreeTransitionDataBuffer : public TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
                 {
-                    std::unique_ptr<BufferValue> bufferCxin1;
-                    std::unique_ptr<BufferValue> bufferCxin2;
-                    std::unique_ptr<BufferValue> bufferCxin3;
-                    std::unique_ptr<BufferValue> bufferCxin4;
-                    std::unique_ptr<BufferValue> bufferCxin5;
-                    std::unique_ptr<BufferValue> bufferCxin6;
-                    std::unique_ptr<BufferValue> bufferCxin7;
-                    std::unique_ptr<BufferValue> bufferCxin8;
+                public:
+                    using S_TransitionDataBuffer = TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>;
+                private:
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin1;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin2;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin3;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin4;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin5;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin6;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin7;
+                    std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin8;
 
                 public:
                     /** buffer corresponding to the above dataBox object
@@ -345,25 +353,24 @@ namespace picongpu
                      * @param numberAtomicStates number of atomic states, and number of buffer entries
                      */
                     HINLINE BoundFreeTransitionDataBuffer(uint32_t numberBoundFreeTransitions)
-                        : TransitionDataBuffer(numberBoundFreeTransitions)
+                        : TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(numberBoundFreeTransitions)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutBoundFreeTransitions = pmacc::GridLayout<1>(numberBoundFreeTransitions, guardSize);
+                        auto const layoutBoundFreeTransitions = pmacc::GridLayout<1>(numberBoundFreeTransitions, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferCxin1.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin2.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin3.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin4.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin5.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin6.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin7.reset(new BufferValue(layoutBoundFreeTransitions));
-                        bufferCxin8.reset(new BufferValue(layoutBoundFreeTransitions));
+                        bufferCxin1.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin2.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin3.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin4.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin5.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin6.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin7.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
+                        bufferCxin8.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
                     }
 
-                    HINLINE BoundFreeTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    HINLINE BoundFreeTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
                     {
                         return BoundFreeTransitionDataBox<
-                            T_DataBoxType,
                             T_Number,
                             T_Value,
                             T_ConfigNumberDataType,
@@ -376,15 +383,14 @@ namespace picongpu
                             bufferCxin6->getHostBuffer().getDataBox(),
                             bufferCxin7->getHostBuffer().getDataBox(),
                             bufferCxin8->getHostBuffer().getDataBox(),
-                            bufferLowerConfigNumber->getHostBuffer().getDataBox(),
-                            bufferUpperConfigNumber->getHostBuffer().getDataBox(),
-                            m_numberTransitions);
+                            this->bufferLowerConfigNumber->getHostBuffer().getDataBox(),
+                            this->bufferUpperConfigNumber->getHostBuffer().getDataBox(),
+                            this->m_numberTransitions);
                     }
 
-                    HINLINE BoundFreeTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    HINLINE BoundFreeTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
                     {
                         return BoundFreeTransitionDataBox<
-                            T_DataBoxType,
                             T_Number,
                             T_Value,
                             T_ConfigNumberDataType,
@@ -397,9 +403,9 @@ namespace picongpu
                             bufferCxin6->getDeviceBuffer().getDataBox(),
                             bufferCxin7->getDeviceBuffer().getDataBox(),
                             bufferCxin8->getDeviceBuffer().getDataBox(),
-                            bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
-                            bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
-                            m_numberTransitions);
+                            this->bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
+                            this->bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
+                            this->m_numberTransitions);
                     }
 
                     HINLINE void syncToDevice()
@@ -412,7 +418,7 @@ namespace picongpu
                         bufferCxin6->hostToDevice();
                         bufferCxin7->hostToDevice();
                         bufferCxin8->hostToDevice();
-                        syncToDevice_BaseClass();
+                        this->syncToDevice_BaseClass();
                     }
 
                 };

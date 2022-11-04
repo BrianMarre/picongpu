@@ -172,12 +172,13 @@ namespace picongpu
                     HINLINE AtomicStateNumberOfTransitionsDataBuffer_UpDown(uint32_t numberAtomicStates)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferNumberOfTransitionsDown.reset(new
-                                                            typename S_DataBuffer::BufferValue(layoutAtomicStates));
-                        bufferNumberOfTransitionsUp.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates));
-                        bufferOffset.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates));
+                        bufferNumberOfTransitionsDown.reset(
+                            new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
+                        bufferNumberOfTransitionsUp.reset(
+                            new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
+                        bufferOffset.reset(new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
                     }
 
                     HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>
@@ -185,7 +186,8 @@ namespace picongpu
                     {
                         return AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>(
                             bufferNumberOfTransitionsDown->getHostBuffer().getDataBox(),
-                            bufferNumberOfTransitionsUp->getHostBuffer().getDataBox());
+                            bufferNumberOfTransitionsUp->getHostBuffer().getDataBox(),
+                            bufferOffset->getHostBuffer().getDataBox());
                     }
 
                     HINLINE AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>
@@ -193,13 +195,15 @@ namespace picongpu
                     {
                         return AtomicStateNumberOfTransitionsDataBox_UpDown<T_Number, T_Value, T_atomicNumber>(
                             bufferNumberOfTransitionsDown->getDeviceBuffer().getDataBox(),
-                            bufferNumberOfTransitionsUp->getDeviceBuffer().getDataBox());
+                            bufferNumberOfTransitionsUp->getDeviceBuffer().getDataBox(),
+                            bufferOffset->getDeviceBuffer().getDataBox());
                     }
 
                     HINLINE void syncToDevice()
                     {
                         bufferNumberOfTransitionsDown->hostToDevice();
                         bufferNumberOfTransitionsUp->hostToDevice();
+                        bufferOffset->hostToDevice();
                     }
 
                 };

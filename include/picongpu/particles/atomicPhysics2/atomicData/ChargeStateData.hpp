@@ -96,9 +96,14 @@ namespace picongpu
                      * @param configNumber configuration number of atomic state
                      * @param stateEnergy energy of atomic state over ground state
                      */
-                    HINLINE void store(uint32_t const collectionIndex, S_ChargeStateTuple& tuple)
+                    HINLINE void store(uint8_t const collectionIndex, S_ChargeStateTuple& tuple)
                     {
-                        if(collectionIndex != std::get<0>(tuple))
+                        std::cout << static_cast<uint16_t>(collectionIndex) << std::endl;
+                        uint8_t chargeState = static_cast<uint8_t>(std::get<0>(tuple));
+                        std::cout << chargeState << std::endl;
+                        std::cout << (chargeState != collectionIndex) << std::endl;
+
+                        if(collectionIndex != chargeState)
                         {
                             throw std::runtime_error(
                                 "atomicPhysics ERROR: chargeState and collectionIndex of tuple added inconsistent");
@@ -138,8 +143,6 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    template<typename T_DataType>
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     uint8_t T_atomicNumber>
@@ -157,10 +160,10 @@ namespace picongpu
                     HINLINE ChargeStateDataBuffer()
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize);
+                        auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferIonizationEnergy.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates));
-                        bufferScreenedCharge.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates));
+                        bufferIonizationEnergy.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates, false));
+                        bufferScreenedCharge.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates, false));
                     }
 
                     HINLINE S_ChargeStateDataBox getHostDataBox()

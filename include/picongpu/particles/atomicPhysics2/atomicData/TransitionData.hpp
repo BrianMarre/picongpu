@@ -42,16 +42,16 @@ namespace picongpu
             namespace atomicData
             {
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
-                class TransitionDataBox : public DataBox<T_DataBoxType, T_Number, T_Value, T_atomicNumber>
+                class TransitionDataBox : public DataBox< T_Number, T_Value, T_atomicNumber>
                 {
                 public:
                     using Idx = T_ConfigNumberDataType;
-                    using BoxConfigNumber = T_DataBoxType<T_ConfigNumberDataType>;
+                    using BoxConfigNumber = pmacc::DataBox<pmacc::PitchedBox<T_ConfigNumberDataType, 1u>>;
+                    using S_DataBox = DataBox< T_Number, T_Value, T_atomicNumber>;
 
                 protected:
                     //! configNumber of the lower(lower excitation energy) state of the transition
@@ -183,7 +183,6 @@ namespace picongpu
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
@@ -208,26 +207,28 @@ namespace picongpu
                     HINLINE TransitionDataBuffer(uint32_t numberTransitions)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutTransitions = pmacc::GridLayout<1>(numberTransitions, guardSize);
+                        auto const layoutTransitions = pmacc::GridLayout<1>(numberTransitions, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferNumberPhysicalTransitionsTotal.reset( new BufferConfigNumber(layoutTransitions));
+                        bufferLowerConfigNumber.reset( new BufferConfigNumber(layoutTransitions, false));
+                        bufferUpperConfigNumber.reset( new BufferConfigNumber(layoutTransitions, false));
+
                         m_numberTransitions = numberTransitions;
                     }
 
-                    HINLINE TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    HINLINE TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
                     {
-                        return TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
                             bufferLowerConfigNumber->getHostBuffer().getDataBox(),
                             bufferUpperConfigNumber->getHostBuffer().getDataBox(),
-                            numberTransitions);
+                            m_numberTransitions);
                     }
 
-                    HINLINE TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    HINLINE TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
                     {
-                        return TransitionDataBox<T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
                             bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
                             bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
-                            numberTransitions);
+                            m_numberTransitions);
                     }
 
                     HINLINE void syncToDevice_BaseClass()

@@ -26,7 +26,7 @@
 #include "picongpu/particles/atomicPhysics2/GetPhysicalEnergy.hpp"
 
 // debug only
-#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+//#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
 
 namespace picongpu
 {

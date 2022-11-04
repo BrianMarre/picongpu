@@ -61,25 +61,28 @@ namespace picongpu
                  *      on input file,it should therefore only be used internally!
                  */
                 template<
-                    typename T_DataBoxType,
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
                 class AutonomousTransitionDataBox :
                     public TransitionDataBox<
-                        T_DataBoxType,
                         T_Number,
                         T_Value,
                         T_ConfigNumberDataType,
                         T_atomicNumber>
                 {
                 public:
-                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<TypeValue, Idx>;
+                    using S_TransitionDataBox = TransitionDataBox<
+                        T_Number,
+                        T_Value,
+                        T_ConfigNumberDataType,
+                        T_atomicNumber>;
+                    using S_AutonomousTransitionTuple = AutonomousTransitionTuple<typename S_TransitionDataBox::S_DataBox::TypeValue, typename S_TransitionDataBox::Idx>;
 
                 private:
                     /// @todo better unit?, Brian Marre, 2022
-                    BoxValue m_boxTransitionRate; // unit: 1/s
+                    typename S_TransitionDataBox::S_DataBox::BoxValue m_boxTransitionRate; // unit: 1/s
 
                 public:
                     /** constructor
@@ -95,12 +98,16 @@ namespace picongpu
                      * @param numberTransitions number of atomic autonomous transitions stored
                      */
                     AutonomousTransitionDataBox(
-                        BoxValue boxTransitionRate,
-                        BoxConfigNumber boxLowerConfigNumber,
-                        BoxConfigNumber boxUpperConfigNumber,
+                        typename S_TransitionDataBox::S_DataBox::BoxValue boxTransitionRate,
+                        typename S_TransitionDataBox::BoxConfigNumber boxLowerConfigNumber,
+                        typename S_TransitionDataBox::BoxConfigNumber boxUpperConfigNumber,
                         uint32_t numberTransitions)
                         : m_boxTransitionRate(boxTransitionRate)
-                        , TransitionDataBox(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
+                        , TransitionDataBox<
+                            T_Number,
+                            T_Value,
+                            T_ConfigNumberDataType,
+                            T_atomicNumber>(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
                     {
                     }
 
@@ -118,13 +125,13 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransitions)
+                        if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                         {
                             throw std::runtime_error("atomicPhysics ERROR: out of range store");
                             return;
                         }
                         m_boxTransitionRate[collectionIndex] = std::get<0>(tuple);
-                        storeTransitions(collectionIndex, std::get<1>(tuple), std::get<2>(tuple));
+                        this->storeTransition(collectionIndex, std::get<1>(tuple), std::get<2>(tuple));
                     }
 
                     /** returns rate of the transition
@@ -133,16 +140,16 @@ namespace picongpu
                      *
                      * @attention no range checks out side of debug compile
                      */
-                    HDINLINE TypeValue rate(uint32_t const collectionIndex) const
+                    HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue rate(uint32_t const collectionIndex) const
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= m_numberTransitions)
+                        if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                         {
                             printf("atomicPhysics ERROR: out of range getTransitionRate() call");
-                            return static_cast<ValueType>(0._X);
+                            return static_cast<typename S_TransitionDataBox::S_DataBox::TypeValue>(0._X);
                         }
-                        return m_boxTransitionRate(indexTransition);
+                        return m_boxTransitionRate(collectionIndex);
                     }
 
                 };
@@ -151,17 +158,20 @@ namespace picongpu
                  *
                  * @tparam T_Number dataType used for number storage, typically uint32_t
                  * @tparam T_Value dataType used for value storage, typically float_X
+                 * @tparam T_ConfigNumberDataType data type used for configNumber storage
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
-                    typename T_DataBoxType
                     typename T_Number,
                     typename T_Value,
                     typename T_ConfigNumberDataType,
                     uint8_t T_atomicNumber>
                 class AutonomousTransitionDataBuffer : public TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
                 {
-                    std::unique_ptr< BufferValue > bufferTransitionRate;
+                public:
+                    using S_TransitionDataBuffer = TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>;
+                private:
+                    std::unique_ptr< typename S_TransitionDataBuffer::BufferValue > bufferTransitionRate;
 
                 public:
                     /** buffer corresponding to the above dataBox object
@@ -169,37 +179,37 @@ namespace picongpu
                      * @param numberAtomicStates number of atomic states, and number of buffer entries
                      */
                     HINLINE AutonomousTransitionDataBuffer(uint32_t numberAutonomousTransitions)
-                        : TransitionDataBuffer(numberAutonomousTransitions)
+                        : TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(numberAutonomousTransitions)
                     {
 
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutAutonomousTransitions = pmacc::GridLayout<1>(numberBoundBoundTransitions, guardSize);
+                        auto const layoutAutonomousTransitions = pmacc::GridLayout<1>(numberAutonomousTransitions, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferTransitionRate.reset( new BufferValue(layoutAutonomousTransitions));
+                        bufferTransitionRate.reset( new typename S_TransitionDataBuffer::BufferValue(layoutAutonomousTransitions, false));
                     }
 
-                    HINLINE BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    HINLINE AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
                     {
-                        return BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
                             bufferTransitionRate->getHostBuffer().getDataBox(),
-                            bufferLowerConfigNumber->getHostBuffer().getDataBox(),
-                            bufferUpperConfigNumber->getHostBuffer().getDataBox(),
-                            m_numberTransitions);
+                            this->bufferLowerConfigNumber->getHostBuffer().getDataBox(),
+                            this->bufferUpperConfigNumber->getHostBuffer().getDataBox(),
+                            this->m_numberTransitions);
                     }
 
-                    HINLINE BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
                     {
-                        return BoundBoundTransitionDataBox< T_DataBoxType, T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
                             bufferTransitionRate->getDeviceBuffer().getDataBox(),
-                            bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
-                            bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
-                            m_numberTransitions);
+                            this->bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
+                            this->bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
+                            this->m_numberTransitions);
                     }
 
                     HINLINE void syncToDevice()
                     {
                         bufferTransitionRate->hostToDevice();
-                        syncToDevice_BaseClass();
+                        this->syncToDevice_BaseClass();
                     }
 
                 };

@@ -254,7 +254,7 @@ namespace picongpu
                     using S_DataBuffer = DataBuffer<T_Number, T_Value, T_atomicNumber>;
 
                 private:
-                    std::unique_ptr<typename S_DataBuffer::BufferConfigNumber> bufferConfigNumber;
+                    std::unique_ptr<BufferConfigNumber> bufferConfigNumber;
                     std::unique_ptr<typename S_DataBuffer::BufferValue> bufferStateEnergy;
 
                     uint32_t m_numberAtomicStates;
@@ -264,10 +264,10 @@ namespace picongpu
                         : m_numberAtomicStates(numberAtomicStates)
                     {
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize);
+                        auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
 
-                        bufferConfigNumber.reset(new typename S_DataBuffer::BufferConfigNumber(layoutAtomicStates));
-                        bufferStateEnergy.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates));
+                        bufferConfigNumber.reset(new BufferConfigNumber(layoutAtomicStates, false));
+                        bufferStateEnergy.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates, false));
                     }
 
                     HINLINE AtomicStateDataBox<T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
