@@ -89,22 +89,26 @@ namespace picongpu
                      *
                      * @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
                      *
-                     * @param chargeState
+                     * @param collectionIndex charge state of state, used as index for charge states
                      * @param numberAtomicStates number of atomic states associated with this charge state
                      * @param startIndex start collectionIndex of block of atomic states in atomicState collection with
                      * this charge state
                      */
-                    HINLINE void store(uint8_t const chargeState, T_Number numberAtomicStates, T_Number startIndex)
+                    HINLINE void store(
+                        uint32_t const collectionIndex,
+                        T_Number numberAtomicStates,
+                        T_Number startIndex)
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(chargeState >= T_atomicNumber)
+                        if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber + 1u))
                         {
-                            throw std::runtime_error("atomicPhysics ERROR: outside range call");
+                            throw std::runtime_error(
+                                "atomicPhysics ERROR: outside range call store chargeState orga data");
                             return;
                         }
-                        m_boxNumberAtomicStates[chargeState] = numberAtomicStates;
-                        m_boxStartIndexBlockAtomicStates[chargeState] = startIndex;
+                        m_boxNumberAtomicStates[collectionIndex] = numberAtomicStates;
+                        m_boxStartIndexBlockAtomicStates[collectionIndex] = startIndex;
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
@@ -112,10 +116,10 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(chargeState >= T_atomicNumber)
+                        if(chargeState > T_atomicNumber)
                         {
-                            printf("atomicPhysics ERROR: outside range call\n");
-                            return static_cast<T_Number>(0u);
+                            printf("atomicPhysics ERROR: outside range call numberAtomicStates\n");
+                            return static_cast<T_Number>(T_atomicNumber + 1u);
                         }
                         return m_boxNumberAtomicStates[chargeState];
                     }
@@ -125,10 +129,10 @@ namespace picongpu
                     {
                         // debug only
                         /// @todo find correct compile guard, Brian Marre, 2022
-                        if(chargeState >= T_atomicNumber)
+                        if(chargeState > T_atomicNumber)
                         {
-                            printf("atomicPhysics ERROR: outside range call");
-                            return static_cast<T_Number>(0u);
+                            printf("atomicPhysics ERROR: outside range call startIndexBlockAtomicStates\n");
+                            return static_cast<T_Number>(T_atomicNumber + 1u);
                         }
                         return m_boxStartIndexBlockAtomicStates[chargeState];
                     }

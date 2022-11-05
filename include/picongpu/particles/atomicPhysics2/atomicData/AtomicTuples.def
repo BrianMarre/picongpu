@@ -36,7 +36,7 @@ namespace picongpu
 
                 template<typename T_Value>
                 using ChargeStateTuple = std::tuple<
-                    uint8_t,  // charge state
+                    uint32_t,  // charge state
                     T_Value,  // ionization energy[eV]
                     T_Value>; // screened charge[e]
 
@@ -130,7 +130,7 @@ namespace picongpu
                     BoundFreeTransitionTuple<float_X, uint64_t>
                     >( uint8_t lowerChargeState, uint8_t upperChargeState )
                 {
-                    if (lowerChargeState > upperChargeState)
+                    if (lowerChargeState < upperChargeState)
                         return false; // correct case
                     return true; // error case
                 }

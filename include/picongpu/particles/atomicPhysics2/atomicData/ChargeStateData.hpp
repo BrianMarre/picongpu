@@ -96,12 +96,17 @@ namespace picongpu
                      * @param configNumber configuration number of atomic state
                      * @param stateEnergy energy of atomic state over ground state
                      */
-                    HINLINE void store(uint8_t const collectionIndex, S_ChargeStateTuple& tuple)
+                    HINLINE void store(uint32_t const collectionIndex, S_ChargeStateTuple& tuple)
                     {
-                        std::cout << static_cast<uint16_t>(collectionIndex) << std::endl;
                         uint8_t chargeState = static_cast<uint8_t>(std::get<0>(tuple));
-                        std::cout << chargeState << std::endl;
-                        std::cout << (chargeState != collectionIndex) << std::endl;
+
+                        // debug only
+                        /// @todo find correct compile guard, Brian Marre, 2022
+                        if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber))
+                        {
+                            throw std::runtime_error("atomicPhysics ERROR: outside range call store chargeState");
+                            return;
+                        }
 
                         if(collectionIndex != chargeState)
                         {

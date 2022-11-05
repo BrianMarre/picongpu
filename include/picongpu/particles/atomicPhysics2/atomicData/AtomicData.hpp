@@ -56,6 +56,11 @@
 #include <string>
 #include <tuple>
 
+// debug only
+#include <typeinfo>
+
+#include <cxxabi.h>
+
 /** @file gathers atomic data storage implementations and implements filling them on runtime
  *
  * The atomicPhysics step relies on a model of atomic states and transitions for each
@@ -325,12 +330,12 @@ namespace picongpu
 
                         TypeValue ionizationEnergy;
                         TypeValue screenedCharge;
-                        uint8_t chargeState;
+                        uint32_t chargeState;
                         uint8_t numberChargeStates = 0u;
 
                         while( file >> chargeState >> ionizationEnergy >> screenedCharge )
                         {
-                            if (chargeState == T_atomicNumber)
+                            if(chargeState == static_cast<uint32_t>(T_atomicNumber))
                                 throw std::runtime_error("charge state " + std::to_string(chargeState)
                                     + " should not be included in input file for Z = " + std::to_string(T_atomicNumber));
 
@@ -399,17 +404,17 @@ namespace picongpu
 
                         std::list<S_BoundBoundTransitionTuple> boundBoundTransitions;
 
-                        double idxLower;
-                        double idxUpper;
-                        TypeNumber collisionalOscillatorStrength;
-                        TypeNumber absorptionOscillatorStrength;
+                        uint64_t idxLower;
+                        uint64_t idxUpper;
+                        TypeValue collisionalOscillatorStrength;
+                        TypeValue absorptionOscillatorStrength;
 
                         // gauntCoeficients
-                        TypeNumber cxin1;
-                        TypeNumber cxin2;
-                        TypeNumber cxin3;
-                        TypeNumber cxin4;
-                        TypeNumber cxin5;
+                        TypeValue cxin1;
+                        TypeValue cxin2;
+                        TypeValue cxin3;
+                        TypeValue cxin4;
+                        TypeValue cxin5;
 
                         while(file >> idxLower >> idxUpper >> collisionalOscillatorStrength
                               >> absorptionOscillatorStrength >> cxin1 >> cxin2 >> cxin3 >> cxin4 >> cxin5)
@@ -440,6 +445,7 @@ namespace picongpu
                             boundBoundTransitions.push_back(item);
                             m_numberBoundBoundTransitions++;
                         }
+
                         return boundBoundTransitions;
                     }
 
@@ -458,18 +464,18 @@ namespace picongpu
 
                         std::list<S_BoundFreeTransitionTuple> boundFreeTransitions;
 
-                        double idxLower;
-                        double idxUpper;
+                        uint64_t idxLower;
+                        uint64_t idxUpper;
 
                         // gauntCoeficients
-                        TypeNumber cxin1;
-                        TypeNumber cxin2;
-                        TypeNumber cxin3;
-                        TypeNumber cxin4;
-                        TypeNumber cxin5;
-                        TypeNumber cxin6;
-                        TypeNumber cxin7;
-                        TypeNumber cxin8;
+                        TypeValue cxin1;
+                        TypeValue cxin2;
+                        TypeValue cxin3;
+                        TypeValue cxin4;
+                        TypeValue cxin5;
+                        TypeValue cxin6;
+                        TypeValue cxin7;
+                        TypeValue cxin8;
 
                         while(file >> idxLower >> idxUpper >> cxin1 >> cxin2 >> cxin3 >> cxin4 >> cxin5 >> cxin6
                               >> cxin7 >> cxin8)
@@ -519,11 +525,11 @@ namespace picongpu
 
                         std::list<S_AutonomousTransitionTuple> autonomousTransitions;
 
-                        double idxLower;
-                        double idxUpper;
+                        uint64_t idxLower;
+                        uint64_t idxUpper;
 
                         // unit: 1/s
-                        TypeNumber rate;
+                        TypeValue rate;
 
                         while(file >> idxLower >> idxUpper >> rate)
                         {
@@ -539,7 +545,7 @@ namespace picongpu
                                 continue;
                             }
 
-                            S_AutonomousTransitionTuple item = std::make_tuple(rate, stateLower, stateUpper);
+                            const S_AutonomousTransitionTuple item = std::make_tuple(rate, stateLower, stateUpper);
 
                             autonomousTransitions.push_back(item);
                             m_numberAutonomousTransitions++;
@@ -557,10 +563,13 @@ namespace picongpu
                         typename std::list<S_ChargeStateTuple>::iterator iter = chargeStateList.begin();
 
                         uint8_t chargeState = 1u;
-                        uint8_t lastChargeState;
+                        uint32_t lastChargeState;
                         uint8_t currentChargeState;
 
+                        if(iter == chargeStateList.end())
+                            throw std::runtime_error("atomicPhysics ERROR: empty charge state list");
                         lastChargeState = std::get<0>(*iter);
+
                         iter++;
 
                         if (lastChargeState != 0u)
@@ -690,7 +699,9 @@ namespace picongpu
 
                         // transitionType <-> charge state pair
                         if ( wrongForTransitionType<T_TransitionTuple>(lastLowerChargeState, lastUpperChargeState) )
-                            throw std::runtime_error("atomicPhysics ERROR: wrong upper-/lower charge state pair for transition type" + transitionType);
+                            throw std::runtime_error(
+                                "atomicPhysics ERROR: wrong last upper-/lower charge state pair for transition type "
+                                + transitionType);
 
                         // unphysical lower charge state
                         if (lastLowerChargeState > T_atomicNumber)
@@ -726,7 +737,10 @@ namespace picongpu
 
                             // transitionType <-> charge state pair
                             if ( wrongForTransitionType<T_TransitionTuple>(currentLowerChargeState, currentUpperChargeState) )
-                                throw std::runtime_error("atomicPhysics ERROR: wrong upper-/lower charge state pair for transition type" + transitionType);
+                                throw std::runtime_error(
+                                    "atomicPhysics ERROR: wrong current upper-/lower charge state pair for transition "
+                                    "type "
+                                    + transitionType);
 
                             // unphysical lower charge state
                             if (currentLowerChargeState > T_atomicNumber)
@@ -799,7 +813,7 @@ namespace picongpu
                     {
                         typename std::list<T_Tuple>::iterator iter = list.begin();
 
-                        uint8_t i = 0u;
+                        uint32_t i = 0u;
 
                         for(; iter != list.end(); iter++)
                         {
@@ -1144,11 +1158,11 @@ namespace picongpu
                         // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
 
                         // check assumptions
-                        //checkChargeStateList(chargeStates);
-                        //checkAtomicStateList(atomicStates);
-                        //checkTransitionList<S_BoundBoundTransitionTuple>(boundBoundTransitions);
-                        //checkTransitionList<S_BoundFreeTransitionTuple>(boundFreeTransitions);
-                        //checkTransitionList<S_AutonomousTransitionTuple>(autonomousTransitions);
+                        checkChargeStateList(chargeStates);
+                        checkAtomicStateList(atomicStates);
+                        checkTransitionList<S_BoundBoundTransitionTuple>(boundBoundTransitions);
+                        checkTransitionList<S_BoundFreeTransitionTuple>(boundFreeTransitions);
+                        checkTransitionList<S_AutonomousTransitionTuple>(autonomousTransitions);
 
                         // initialize buffers
                         initBuffers();
@@ -1260,7 +1274,7 @@ namespace picongpu
                             T_autonomousIonization,
                             T_fieldIonization>();
 
-                        // 
+                        // just to be sure
                         this->syncToDevice();
                     }
 
@@ -1287,19 +1301,21 @@ namespace picongpu
                     }
 
                     // charge states
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_ChargeStateDataBox getChargeStateDataDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_ChargeStateDataBox getChargeStateDataDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return chargeStateDataBuffer->getHostDataBox();
                         else
                             return chargeStateDataBuffer->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_ChargeStateOrgaDataBox getChargeStateOrgaDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_ChargeStateOrgaDataBox getChargeStateOrgaDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return chargeStateOrgaDataBuffer->getHostDataBox();
                         else
                             return chargeStateOrgaDataBuffer->getDeviceDataBox();
@@ -1307,131 +1323,146 @@ namespace picongpu
 
                     // atomic states
                     //      property data
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AtomicStateDataBox getAtomicStateDataDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateDataBox getAtomicStateDataDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateDataBuffer->getHostDataBox();
                         else
                             return atomicStateDataBuffer->getDeviceDataBox();
                     }
 
                     //      start index orga data
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AtomicStateStartIndexBlockDataBox_UpDown getBoundBoundStartIndexBlockDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateStartIndexBlockDataBox_UpDown getBoundBoundStartIndexBlockDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox();
                         else
                             return atomicStateStartIndexBlockDataBuffer_BoundBound->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AtomicStateStartIndexBlockDataBox_UpDown getBoundFreeStartIndexBlockDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateStartIndexBlockDataBox_UpDown getBoundFreeStartIndexBlockDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox();
                         else
                             return atomicStateStartIndexBlockDataBuffer_BoundFree->getDeviceDataBox();
                     }
 
-                    S_AtomicStateStartIndexBlockDataBox_Down getAutonomousStartIndexBlockDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateStartIndexBlockDataBox_Down getAutonomousStartIndexBlockDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateStartIndexBlockDataBuffer_Autonomous->getHostDataBox();
                         else
                             return atomicStateStartIndexBlockDataBuffer_Autonomous->getDeviceDataBox();
                     }
 
                     //      number transitions orga data
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundBoundNumberTransitionsDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundBoundNumberTransitionsDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
                         else
                             return atomicStateNumberOfTransitionsDataBuffer_BoundBound->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundFreeNumberTransitionsDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundFreeNumberTransitionsDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox();
                         else
                             return atomicStateNumberOfTransitionsDataBuffer_BoundFree->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AtomicStateNumberOfTransitionsDataBox_Down getAutonomousNumberTransitionsDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AtomicStateNumberOfTransitionsDataBox_Down getAutonomousNumberTransitionsDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();
                         else
                             return atomicStateNumberOfTransitionsDataBuffer_Autonomous->getDeviceDataBox();
                     }
 
                     // transition data, normal
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_BoundBoundTransitionDataBox getBoundBoundTransitionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_BoundBoundTransitionDataBox getBoundBoundTransitionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return boundBoundTransitionDataBuffer->getHostDataBox();
                         else
                             return boundBoundTransitionDataBuffer->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_BoundFreeTransitionDataBox getBoundFreeTransitionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_BoundFreeTransitionDataBox getBoundFreeTransitionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return boundFreeTransitionDataBuffer->getHostDataBox();
                         else
                             return boundFreeTransitionDataBuffer->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AutonomousTransitionDataBox getAutonomousTransitionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AutonomousTransitionDataBox getAutonomousTransitionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return autonomousTransitionDataBuffer->getHostDataBox();
                         else
                             return autonomousTransitionDataBuffer->getDeviceDataBox();
                     }
 
                     // transition data, inverted
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_BoundBoundTransitionDataBox getInverseBoundBoundTransitionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_BoundBoundTransitionDataBox getInverseBoundBoundTransitionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return inverseBoundBoundTransitionDataBuffer->getHostDataBox();
                         else
                             return inverseBoundBoundTransitionDataBuffer->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_BoundFreeTransitionDataBox getInverseBoundFreeTransitionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_BoundFreeTransitionDataBox getInverseBoundFreeTransitionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return inverseBoundFreeTransitionDataBuffer->getHostDataBox();
                         else
                             return inverseBoundFreeTransitionDataBuffer->getDeviceDataBox();
                     }
 
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_AutonomousTransitionDataBox getInverseAutonomousTransitionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_AutonomousTransitionDataBox getInverseAutonomousTransitionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return inverseAutonomousTransitionDataBuffer->getHostDataBox();
                         else
                             return inverseAutonomousTransitionDataBuffer->getDeviceDataBox();
                     }
 
                     // transition selection data
-                    //! @param hostData true: get hostDataBox, false: get DeviceDataBox
-                    S_TransitionSelectionDataBox getTransitionSelectionDataBox(bool hostData)
+                    //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+                    template<bool hostData>
+                    S_TransitionSelectionDataBox getTransitionSelectionDataBox()
                     {
-                        if (hostData)
+                        if constexpr(hostData)
                             return transitionSelectionDataBuffer->getHostDataBox();
                         else
                             return transitionSelectionDataBuffer->getDeviceDataBox();

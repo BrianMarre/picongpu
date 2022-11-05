@@ -160,7 +160,7 @@ namespace picongpu
                         /// @todo find correct compile guard, Brian Marre, 2022
                         if(collectionIndex >= this->m_numberTransitions)
                         {
-                            throw std::runtime_error("atomicPhysics ERROR: outside range call");
+                            throw std::runtime_error("atomicPhysics ERROR: outside range call store bound-bound");
                             return;
                         }
                         m_boxCxin1[collectionIndex] = std::get<0>(tuple);
