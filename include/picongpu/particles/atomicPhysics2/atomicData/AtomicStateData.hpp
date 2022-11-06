@@ -133,17 +133,13 @@ namespace picongpu
                      *  is available from chargeStateOrgaDataBox.numberAtomicStates(chargeState).
                      *  with chargeState available from ConfigNumber::getIonizatioState(configNumber)
                      *
-                     * @return returns numStates if not found or configNumber == 0u(never stored explicitly)
+                     * @return returns numStates if not found
                      */
                     HDINLINE uint32_t findStateCollectionIndex(
-                        Idx const configNumber,
-                        uint32_t const numberAtomicStatesForChargeState,
-                        uint32_t const startIndexBlock = 0u) const
+                        Idx const configNumber, // 0
+                        uint32_t const numberAtomicStatesForChargeState, // 1
+                        uint32_t const startIndexBlock = 0u) const // 10
                     {
-                        // special case completely ionized ion, is never stored
-                        if(configNumber == 0u)
-                            return m_numberAtomicStates;
-
                         /// @todo replace linear search, BrianMarre, 2022
                         // search for state in dataBox
                         for(uint32_t i = 0; i < numberAtomicStatesForChargeState; i++)

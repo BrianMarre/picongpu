@@ -119,7 +119,7 @@ namespace picongpu
                         if(chargeState > T_atomicNumber)
                         {
                             printf("atomicPhysics ERROR: outside range call numberAtomicStates\n");
-                            return static_cast<T_Number>(T_atomicNumber + 1u);
+                            return static_cast<T_Number>(0._X);
                         }
                         return m_boxNumberAtomicStates[chargeState];
                     }
@@ -132,7 +132,7 @@ namespace picongpu
                         if(chargeState > T_atomicNumber)
                         {
                             printf("atomicPhysics ERROR: outside range call startIndexBlockAtomicStates\n");
-                            return static_cast<T_Number>(T_atomicNumber + 1u);
+                            return static_cast<T_Number>(0._X);
                         }
                         return m_boxStartIndexBlockAtomicStates[chargeState];
                     }

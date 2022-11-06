@@ -1046,11 +1046,22 @@ namespace picongpu
                             = stateRepresentation::ConfigNumber<Idx, T_n_max, T_atomicNumber>::getIonizationState(
                                 lastUpper);
 
+                        // debug only
+                        std::cout << "charge State: " << static_cast<uint16_t>(lastChargeState) << std::endl;
+                        std::cout << "CN: " << lastUpper << std::endl;
+
                         lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                             lastUpper,
                             // completely ionized state can never be lower state of an transition
                             chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
                             chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+
+                        // debug only
+                        std::cout << "startIndex: " << chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState)
+                            << ", numberStates: " << chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState)
+                            << std::endl;
+                        std::cout << "collectionIndex: " << lastAtomicStateCollectionIndex << std::endl;
+                        std::cout << "numberInBlock: " << numberInBlock << std::endl;
 
                         startIndexHostBox.storeDown(lastAtomicStateCollectionIndex, lastStartIndex);
                         numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
@@ -1106,7 +1117,7 @@ namespace picongpu
                                 numberPhysicalTransitionsTotal += hostBoxNumberBoundFree.numberOfTransitionsUp(i);
                             if constexpr(fieldIonization)
                                 numberPhysicalTransitionsTotal += hostBoxNumberBoundFree.numberOfTransitionsUp(i);
-                            /// @todo implement recombination
+                            /// recombination missing, @todo implement recombination, Brian Marre
 
                             // autonomousTransitions
                             hostBoxNumberAutonomous.storeOffset(i, numberPhysicalTransitionsTotal);

@@ -101,6 +101,13 @@ namespace picongpu
                                   << chargeStateOrgaBox.numberAtomicStates(i) << ", "
                                   << chargeStateOrgaBox.startIndexBlockAtomicStates(i) << " ]" << std::endl;
                     }
+                    //      completely ionized state
+                    std::cout << "\t" << static_cast<uint16_t>(T_AtomicData::atomicNumber) << ":( "
+                                  << "na" << ", "
+                                  << "na" << " ) [ "
+                                  << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::atomicNumber) << ", "
+                                  << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::atomicNumber) << " ]" << std::endl;
+
 
                     // AtomicState data
                     auto atomicStateDataBox
@@ -161,7 +168,7 @@ namespace picongpu
                             << autonomousNumberTransitionsBox.numberOfTransitions(i) << ", "
                             << autonomousStartIndexBox.startIndexBlockTransitions(i)
                             << " (" << boundBoundNumberTransitionsBox.offset(i) << ")" << std::endl;
-                        std::cout << "\t\t total: " << transitionSelectionBox.numberTransitions(i) << std::endl;
+                        std::cout << "\t\t physical transitions: " << transitionSelectionBox.numberTransitions(i) << std::endl;
                     }
 
                     // transitionData
@@ -178,11 +185,11 @@ namespace picongpu
                                 << boundBoundTransitionDataBox.upperConfigNumberTransition(i) << ")"
                                 << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
                                 << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
-                                << "\"Gaunt\"(" << boundBoundTransitionDataBox.cxin1(i) << ", "
+                                << " \"Gaunt\"( " << boundBoundTransitionDataBox.cxin1(i) << ", "
                                 << boundBoundTransitionDataBox.cxin2(i) << ", "
                                 << boundBoundTransitionDataBox.cxin3(i) << ", "
                                 << boundBoundTransitionDataBox.cxin4(i) << ", "
-                                << boundBoundTransitionDataBox.cxin5(i) << ")" << std::endl;
+                                << boundBoundTransitionDataBox.cxin5(i) << " )" << std::endl;
                         }
 
                         // bound-free transitions
