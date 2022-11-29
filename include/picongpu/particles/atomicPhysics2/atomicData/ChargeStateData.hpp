@@ -101,42 +101,57 @@ namespace picongpu
                         uint8_t chargeState = static_cast<uint8_t>(std::get<0>(tuple));
 
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber))
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
                         {
-                            throw std::runtime_error("atomicPhysics ERROR: outside range call store chargeState");
-                            return;
-                        }
-
-                        if(collectionIndex != chargeState)
-                        {
-                            throw std::runtime_error(
-                                "atomicPhysics ERROR: chargeState and collectionIndex of tuple added inconsistent");
-                            return;
-                        }
-                        if(collectionIndex == T_atomicNumber)
-                        {
-                            throw std::runtime_error(
-                                "atomicPhysics ERROR: completely ionized charge state may not be stored");
-                        }
-                        if(collectionIndex > T_atomicNumber)
-                        {
-                            throw std::runtime_error("atomicPhysics ERROR: unphysical charge state may not be stored");
+                            if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber))
+                            {
+                                throw std::runtime_error("atomicPhysics ERROR: out of range call store() chargeState property data");
+                                return;
+                            }
+                            if(collectionIndex != chargeState)
+                            {
+                                throw std::runtime_error(
+                                    "atomicPhysics ERROR: chargeState and collectionIndex of tuple added inconsistent");
+                                return;
+                            }
+                            if(collectionIndex == T_atomicNumber)
+                            {
+                                throw std::runtime_error(
+                                    "atomicPhysics ERROR: completely ionized charge state property data must not be stored");
+                            }
+                            if(collectionIndex > T_atomicNumber)
+                            {
+                                throw std::runtime_error("atomicPhysics ERROR: unphysical charge state may not be stored");
+                            }
                         }
 
                         m_boxIonizationEnergy[collectionIndex] = std::get<1>(tuple);
                         m_boxScreenedCharge[collectionIndex] = std::get<2>(tuple);
                     }
 
-                    //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    DINLINE T_Value ionizationEnergy(uint8_t chargeState)
+                    //! @attention NEVER call with chargeState >= T_atomicNumber, otherwise invalid memory access
+                    HDINLINE T_Value ionizationEnergy(uint8_t chargeState)
                     {
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if (chargeState >= static_cast<uint32_t>(T_atomicNumber))
+                            {
+                                printf("atomicPhysics ERROR: out of range ionizationEnergy() call");
+                                return static_cast<T_Value>(0.);
+                            }
+
                         return m_boxIonizationEnergy[chargeState];
                     }
 
-                    //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    DINLINE T_Value screenedCharge(uint8_t chargeState)
+                    //! @attention NEVER call with chargeState >= T_atomicNumber, otherwise invalid memory access
+                    HDINLINE T_Value screenedCharge(uint8_t chargeState)
                     {
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if (chargeState >= static_cast<uint32_t>(T_atomicNumber))
+                            {
+                                printf("atomicPhysics ERROR: out of range ionizationEnergy() call");
+                                return static_cast<T_Value>(0.);
+                            }
+
                         return m_boxScreenedCharge[chargeState];
                     }
                 };

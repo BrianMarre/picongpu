@@ -33,7 +33,7 @@ namespace picongpu
         {
             namespace atomicData
             {
-                /** comparison functor in between transition tupels
+                /** comparison functor in between transition tuples
                  *
                  * @tparam T_Number data type used for numbers
                  * @tparam T_idx data type used for condigNumbers
@@ -42,9 +42,6 @@ namespace picongpu
                 template<typename T_Value, typename T_Idx, bool orderByLowerState>
                 class CompareTransitionTupel
                 {
-                    //using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<T_Value, T_Idx>;
-                    //using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<T_Value, T_Idx>;
-                    //using S_AutonomousTransitionTuple = AutonomousTransitionTuple<T_Value, T_Idx>;
 
                 public:
                     template< typename T_Tuple >

@@ -38,11 +38,8 @@ namespace picongpu
 
         using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<uint32_t, 100u, static_cast<uint32_t>(float_X(1e7))>;
 
-        /// @todo remove
-        // state data
-        const std::string stateDataFileName = "../ArgonLevels.txt";
-        // transition data,
-        const std::string transitionDataFileName = "../ArgonTransitions.txt";
+        //! debug compile setting
+        constexpr bool ATOMIC_PHYSCIS_DEBUG = true;
 
         /// @todo remove
         // datatype to be used for configNumber storage

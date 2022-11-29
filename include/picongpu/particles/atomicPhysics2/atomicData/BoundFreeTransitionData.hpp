@@ -150,6 +150,7 @@ namespace picongpu
                      * @attention do not forget to call syncToDevice() on the
                      *  corresponding buffer, or the state is only stored on the host side.
                      * @attention needs to fulfill all ordering and content assumptions of constructor!
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      *
                      * @param collectionIndex index of data box entry to rewrite
                      * @param tuple tuple containing data of transition
@@ -157,12 +158,13 @@ namespace picongpu
                     HINLINE void store(uint32_t const collectionIndex, S_BoundFreeTransitionTuple& tuple)
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            throw std::runtime_error("atomicPhysics ERROR: outside range call store bound-bound");
-                            return;
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                throw std::runtime_error("atomicPhysics ERROR: outside range call store bound-free");
+                                return;
+                            }
+
                         m_boxCxin1[collectionIndex] = std::get<0>(tuple);
                         m_boxCxin2[collectionIndex] = std::get<1>(tuple);
                         m_boxCxin3[collectionIndex] = std::get<2>(tuple);
@@ -180,17 +182,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin1(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin1\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range bound-free cxin1() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin1(collectionIndex);
                     }
 
@@ -198,17 +201,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin2(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin2\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range bound-free cxin2() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin2(collectionIndex);
                     }
 
@@ -216,17 +220,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin3(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin3\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: outside range bound-free cxin3() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin3(collectionIndex);
                     }
 
@@ -234,17 +239,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin4(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin4\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range bound-free cxin4() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin4(collectionIndex);
                     }
 
@@ -252,17 +258,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin5(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin5\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range bound-free cxin5() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin5(collectionIndex);
                     }
 
@@ -270,17 +277,18 @@ namespace picongpu
                     *
                     * @param collectionIndex ... collection index of transition
                     *
-                    * @attention no range checks
+                    * @attention no range checks outisde debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                     */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin6(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin6\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range cxin6() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin6(collectionIndex);
                     }
 
@@ -288,17 +296,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin7(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin7\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range cxin7() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin7(collectionIndex);
                     }
 
@@ -306,17 +315,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks outside debug compile
+                     * @attention no range checks outside debug compile, invalid memory , invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin8(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= this->m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: outside range call cxin8\n");
-                            return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= this->m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range bound-free cxin8() call\n");
+                                return static_cast<typename S_TransitionDataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxCxin8(collectionIndex);
                     }
 

@@ -70,7 +70,6 @@ namespace picongpu
                      *
                      * @attention atomic state data must be sorted block-wise by charge state
                      *  and secondary ascending by configNumber.
-                     * @attention the completely ionized state must be left out.
                      *
                      * @param boxNumberTransitions number of transitions from the atomic state
                      */
@@ -82,13 +81,13 @@ namespace picongpu
                     {
                     }
 
-                    //! @attention no range check
+                    //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
                     void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberDown)
                     {
                         m_boxNumberOfTransitions[collectionIndex] = numberDown;
                     }
 
-                    //! @attention no range check
+                    //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
                     void storeOffset(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const offset)
                     {
                         m_boxOffset[collectionIndex] = offset;
@@ -99,7 +98,7 @@ namespace picongpu
                      * @param collectionIndex atomic state collection index
                      *
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-                     * @attention no range check
+                     * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
                      */
                     typename S_DataBox::TypeNumber numberOfTransitions(uint32_t const collectionIndex) const
                     {
@@ -111,7 +110,7 @@ namespace picongpu
                      * @param collectionIndex atomic state collection index
                      *
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-                     * @attention no range check
+                     * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
                      */
                     typename S_DataBox::TypeNumber offset(uint32_t const collectionIndex)
                     {

@@ -1183,6 +1183,7 @@ namespace picongpu
                         storeData<S_ChargeStateTuple, S_ChargeStateDataBox>(
                             chargeStates, chargeStateDataBuffer->getHostDataBox());
                         chargeStateDataBuffer->syncToDevice();
+
                         storeData<S_AtomicStateTuple, S_AtomicStateDataBox>(
                             atomicStates, atomicStateDataBuffer->getHostDataBox());
                         atomicStateDataBuffer->syncToDevice();
@@ -1192,10 +1193,12 @@ namespace picongpu
                             boundBoundTransitions,
                             boundBoundTransitionDataBuffer->getHostDataBox());
                         boundBoundTransitionDataBuffer->syncToDevice();
+
                         storeData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox>(
                             boundFreeTransitions,
                             boundFreeTransitionDataBuffer->getHostDataBox());
                         boundFreeTransitionDataBuffer->syncToDevice();
+
                         storeData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox>(
                             autonomousTransitions,
                             autonomousTransitionDataBuffer->getHostDataBox());
@@ -1204,12 +1207,12 @@ namespace picongpu
                         // fill orga data buffers 1,)
                         //          charge state
                         fillChargeStateOrgaData(atomicStates);
+
                         //          atomic states, up direction
                         fill_UpTransition_OrgaData<S_BoundBoundTransitionTuple>(
                             boundBoundTransitions,
                             atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox(),
                             atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox());
-
                         atomicStateNumberOfTransitionsDataBuffer_BoundBound->syncToDevice(),
                         atomicStateStartIndexBlockDataBuffer_BoundBound->syncToDevice();
 
@@ -1217,9 +1220,9 @@ namespace picongpu
                             boundFreeTransitions,
                             atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
                             atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
-
                         atomicStateNumberOfTransitionsDataBuffer_BoundFree->syncToDevice(),
                         atomicStateStartIndexBlockDataBuffer_BoundFree->syncToDevice();
+
                         // autonomous transitions are always only downward
 
                         // re-sort by upper state
@@ -1232,10 +1235,12 @@ namespace picongpu
                             boundBoundTransitions,
                             inverseBoundBoundTransitionDataBuffer->getHostDataBox());
                         inverseBoundBoundTransitionDataBuffer->syncToDevice();
+
                         storeData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox>(
                             boundFreeTransitions,
                             inverseBoundFreeTransitionDataBuffer->getHostDataBox());
                         inverseBoundFreeTransitionDataBuffer->syncToDevice();
+
                         storeData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox>(
                             autonomousTransitions,
                             inverseAutonomousTransitionDataBuffer->getHostDataBox());
@@ -1286,7 +1291,8 @@ namespace picongpu
                             T_fieldIonization>();
 
                         // just to be sure
-                        this->syncToDevice();
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                            this->syncToDevice();
                     }
 
                     void syncToDevice()

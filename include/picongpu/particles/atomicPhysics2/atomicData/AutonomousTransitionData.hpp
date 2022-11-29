@@ -116,7 +116,7 @@ namespace picongpu
                      * @attention do not forget to call syncToDevice() on the
                      *  corresponding buffer, or the state is only added on the host side.
                      * @attention needs to fulfill all ordering and content assumptions of constructor!
-                     * @attention no range checks out side of debug compile
+                     * @attention no range checks outside of debug compile, invalid memory access if collectionIndex >= numberTransitions
                      *
                      * @param collectionIndex index of data box entry to rewrite
                      * @param tuple tuple containing data of transition
@@ -124,12 +124,13 @@ namespace picongpu
                     HINLINE void store(uint32_t const collectionIndex, S_AutonomousTransitionTuple& tuple)
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
-                        {
-                            throw std::runtime_error("atomicPhysics ERROR: out of range store");
-                            return;
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                            if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
+                            {
+                                throw std::runtime_error("atomicPhysics ERROR: out of range store");
+                                return;
+                            }
+
                         m_boxTransitionRate[collectionIndex] = std::get<0>(tuple);
                         this->storeTransition(collectionIndex, std::get<1>(tuple), std::get<2>(tuple));
                     }
@@ -138,17 +139,18 @@ namespace picongpu
                      *
                      * @param collectionIndex ... collection index of transition
                      *
-                     * @attention no range checks out side of debug compile
+                     * @attention no range checks outside of debug compile, invalid memory access if collectionIndex >= numberTransitions
                      */
                     HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue rate(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
-                        {
-                            printf("atomicPhysics ERROR: out of range getTransitionRate() call");
-                            return static_cast<typename S_TransitionDataBox::S_DataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
+                            {
+                                printf("atomicPhysics ERROR: out of range getTransitionRate() call");
+                                return static_cast<typename S_TransitionDataBox::S_DataBox::TypeValue>(0._X);
+                            }
+
                         return m_boxTransitionRate(collectionIndex);
                     }
 

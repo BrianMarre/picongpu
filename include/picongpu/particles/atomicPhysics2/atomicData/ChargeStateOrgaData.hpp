@@ -87,7 +87,7 @@ namespace picongpu
 
                     /** store data
                      *
-                     * @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
+                     * @attention NEVER call with chargeState > T_atomicNumber, otherwise invalid memory access
                      *
                      * @param collectionIndex charge state of state, used as index for charge states
                      * @param numberAtomicStates number of atomic states associated with this charge state
@@ -100,40 +100,43 @@ namespace picongpu
                         T_Number startIndex)
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber + 1u))
-                        {
-                            throw std::runtime_error(
-                                "atomicPhysics ERROR: outside range call store chargeState orga data");
-                            return;
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                            if(collectionIndex > static_cast<uint32_t>(T_atomicNumber))
+                            {
+                                throw std::runtime_error(
+                                    "atomicPhysics ERROR: out of range call store() chargeState orga data");
+                                return;
+                            }
+
                         m_boxNumberAtomicStates[collectionIndex] = numberAtomicStates;
                         m_boxStartIndexBlockAtomicStates[collectionIndex] = startIndex;
                     }
 
-                    //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
+                    //! @attention NEVER call with chargeState > T_atomicNumber, otherwise invalid memory access
                     HDINLINE T_Number numberAtomicStates(uint8_t chargeState)
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(chargeState > T_atomicNumber)
-                        {
-                            printf("atomicPhysics ERROR: outside range call numberAtomicStates\n");
-                            return static_cast<T_Number>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(chargeState > static_cast<uint32_t>(T_atomicNumber))
+                            {
+                                printf("atomicPhysics ERROR: out of range numberAtomicStates() call\n");
+                                return static_cast<T_Number>(0._X);
+                            }
+
                         return m_boxNumberAtomicStates[chargeState];
                     }
 
                     //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
-                    T_Number startIndexBlockAtomicStates(uint8_t chargeState)
+                    HDINLINE T_Number startIndexBlockAtomicStates(uint8_t chargeState)
                     {
                         // debug only
-                        /// @todo find correct compile guard, Brian Marre, 2022
-                        if(chargeState > T_atomicNumber)
-                        {
-                            printf("atomicPhysics ERROR: outside range call startIndexBlockAtomicStates\n");
-                            return static_cast<T_Number>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS__HOT_DEBUG)
+                            if(chargeState > static_cast<uint32_t>(T_atomicNumber))
+                            {
+                                printf("atomicPhysics ERROR: out of range startIndexBlockAtomicStates() call\n");
+                                return static_cast<T_Number>(0._X);
+                            }
+
                         return m_boxStartIndexBlockAtomicStates[chargeState];
                     }
 

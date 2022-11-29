@@ -82,7 +82,6 @@ namespace picongpu
                      *
                      * @attention atomic state data must be sorted block-wise ascending by
                      *  charge state and secondary ascending by configNumber.
-                     * @attention the completely ionized state must be left out.
                      *
                      * @param boxConfigNumber dataBox of atomic state configNumber(fancy index)
                      * @param boxStateEnergy dataBox of energy respective to ground state of ionization state [eV]
@@ -103,19 +102,21 @@ namespace picongpu
                      * @attention do not forget to call syncToDevice() on the
                      *  corresponding buffer, or the state is only added on the host side.
                      * @attention needs to fulfill all ordering and content assumptions of constructor!
-                     * @attention no range check on collectionIndex, outside debug compile
+                     * @attention no range check outside debug compile, invalid memory access if collectionIndex >= numberAtomicStates
                      *
                      * @param collectionIndex index of data box entry to rewrite
                      * @param tuple tuple containing data of atomic state
                      */
                     HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
                     {
-                        ///@todo find correct compile debug guards, Brian Marre, 2022
-                        if(collectionIndex >= m_numberAtomicStates)
-                        {
-                            throw std::runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
-                            return;
-                        }
+                        // debug only
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                            if(collectionIndex >= m_numberAtomicStates)
+                            {
+                                throw std::runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
+                                return;
+                            }
+
                         m_boxConfigNumber[collectionIndex] = std::get<0>(tuple);
                         m_boxStateEnergy[collectionIndex] = std::get<1>(tuple);
                     }
@@ -193,18 +194,19 @@ namespace picongpu
 
                     /** returns configNumber of state corresponding to given index
                      *
-                     * @attention no range check outside debug compile
+                     * @attention no range check outside debug compile, invalid memory access if collectionIndex >= numberAtomicStates
                      * @param collectionIndex index of data box entry to query
                      */
                     HDINLINE Idx configNumber(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        ///@todo find correct compile debug guards, Brian Marre, 2022
-                        if(collectionIndex >= m_numberAtomicStates)
-                        {
-                            printf("atomicPhysics ERROR: out of bounds atomic state configNumber call\n");
-                            return static_cast<typename S_DataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= m_numberAtomicStates)
+                            {
+                                printf("atomicPhysics ERROR: out of bounds atomic state configNumber call\n");
+                                return static_cast<typename S_DataBox::TypeValue>(0._X);
+                            }
+
                         return this->m_boxConfigNumber(collectionIndex);
                     }
 
@@ -212,18 +214,19 @@ namespace picongpu
                      *
                      * @attention does not respond correctly for configNumber == 0, since data for this
                      *  case is not stored explicitly
-                     * @attention no range check outside debug compile
+                     * @attention no range check outside debug compile, invalid memory access if collectionIndex >= numberAtomicStates
                      * @param collectionIndex index of data box entry to query
                      */
                     HDINLINE typename S_DataBox::TypeValue stateEnergy(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        ///@todo find correct compile debug guards, Brian Marre, 2022
-                        if(collectionIndex >= m_numberAtomicStates)
-                        {
-                            printf("atomicPhysics ERROR: out of bounds atomic state energy call\n");
-                            return static_cast<typename S_DataBox::TypeValue>(0._X);
-                        }
+                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                            if(collectionIndex >= m_numberAtomicStates)
+                            {
+                                printf("atomicPhysics ERROR: out of bounds atomic state energy call\n");
+                                return static_cast<typename S_DataBox::TypeValue>(0._X);
+                            }
+
                         return this->m_boxStateEnergy(collectionIndex);
                     }
 

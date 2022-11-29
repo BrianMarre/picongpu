@@ -68,7 +68,6 @@ namespace picongpu
                      *
                      * @attention atomic state data must be sorted block-wise by charge state
                      *  and secondary ascending by configNumber.
-                     * @attention the completely ionized state must be left out.
                      *
                      * @param boxNumberTransitions number of autonomous transitions from the atomic state
                      * @param startIndexBlockAtomicStates start collection index of block of
@@ -80,7 +79,7 @@ namespace picongpu
                     {
                     }
 
-                    //! @attention no range check!
+                    //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
                     void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexDown)
                     {
                         m_boxStartIndexBlockTransitions[collectionIndex] = startIndexDown;
@@ -91,7 +90,7 @@ namespace picongpu
                      * @param collectionIndex atomic state collection index
                      *
                      * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-                     * @attention no range check
+                     * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
                      */
                     typename S_DataBox::TypeNumber startIndexBlockTransitions(uint32_t const collectionIndex) const
                     {
