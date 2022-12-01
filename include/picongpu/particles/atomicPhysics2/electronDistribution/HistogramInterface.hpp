@@ -62,7 +62,8 @@ namespace picongpu
                      * @param weight ... weight of the macroParticle, unitless
                      */
                     // template<typename T_Acc>
-                    // virtual void binParticle(T_Acc const& acc, float_X const energy, float_X const weight) = 0;
+                    // virtual void binParticle(T_Worker const& worker, float_X const energy, float_X const weight) =
+                    // 0;
 
                     /* add to the deltaWeight of a given bin
                      *
@@ -73,8 +74,8 @@ namespace picongpu
                      * @param weight ... weight of the macroParticle, unitless
                      */
                     // template<typename T_Acc>
-                    // virtual void addDeltaWeight(T_Acc const& acc, uint32_t const binIndex, float_X const weight) =
-                    // 0;
+                    // virtual void addDeltaWeight(T_Worker const& worker, uint32_t const binIndex, float_X const
+                    // weight) = 0;
 
                     /* add to the deltaEnergy of a given bin
                      *
@@ -85,7 +86,8 @@ namespace picongpu
                      * @param weight ... weight of the macroParticle, unitless
                      */
                     // template<typename T_Acc>
-                    // void addDeltaEnergy(T_Acc const& acc, uint32_t const binIndex, float_X const deltaEnergy) = 0;
+                    // void addDeltaEnergy(T_Worker const& worker, uint32_t const binIndex, float_X const deltaEnergy)
+                    // = 0;
 
                     virtual void setOversubscribed(uint32_t const binIndex) = 0;
 

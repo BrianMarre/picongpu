@@ -130,7 +130,7 @@ namespace picongpu
                     HDINLINE T_Number startIndexBlockAtomicStates(uint8_t chargeState)
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS__HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
                             if(chargeState > static_cast<uint32_t>(T_atomicNumber))
                             {
                                 printf("atomicPhysics ERROR: out of range startIndexBlockAtomicStates() call\n");

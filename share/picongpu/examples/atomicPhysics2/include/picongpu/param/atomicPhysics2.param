@@ -38,8 +38,11 @@ namespace picongpu
 
         using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<uint32_t, 100u, static_cast<uint32_t>(float_X(1e7))>;
 
-        //! debug compile setting
-        constexpr bool ATOMIC_PHYSCIS_DEBUG = true;
+        // debug compile settings
+        //! activate more performance relevant debug checks
+        constexpr bool ATOMIC_PHYSICS_HOT_DEBUG = true;
+        //! activate less performance relevant debug checks
+        constexpr bool ATOMIC_PHYSICS_COLD_DEBUG = true;
 
         /// @todo remove
         // datatype to be used for configNumber storage

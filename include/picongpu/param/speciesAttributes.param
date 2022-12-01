@@ -110,15 +110,6 @@ namespace picongpu
      */
     value_identifier(bool, transitionRadiationMask, false);
 
-    /** atomic superconfiguration
-     *
-     * atomic configuration of an ion for collisional-radiative modeling,
-     * see also flylite.param
-     *
-     * @todo remove
-     */
-    value_identifier(flylite::Superconfig, superconfig, flylite::Superconfig::create(0.));
-
     /** number of electrons bound to the atom / ion
      *
      * value type is float_X to avoid casts during the runtime

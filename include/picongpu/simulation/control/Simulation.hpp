@@ -838,31 +838,31 @@ namespace picongpu
             using S_AtomicData_He = particles::atomicPhysics2::atomicData::
                 AtomicData<uint32_t, float_X, uint64_t, 2u, 10u, true, true, true, true, true, true>;
 
-            auto atomicDataHydrogen = S_AtomicData_H(
-                "/home/marre55/picInputs/testCompileRefactor/ChargeStates_H.txt",
-                "/home/marre55/picInputs/testCompileRefactor/AtomicStates_H.txt",
-                "/home/marre55/picInputs/testCompileRefactor/BoundBoundTransitions_H.txt",
-                "/home/marre55/picInputs/testCompileRefactor/BoundFreeTransitions_H.txt",
-                "/home/marre55/picInputs/testCompileRefactor/AutonomousTransitions_H.txt");
-            particles::atomicPhysics2::debug::printAtomicDataToConsole<
-                S_AtomicData_H,
-                true, // print transitions
-                true // print inverse ordered transitions
-                >(atomicDataHydrogen);
+            // auto atomicDataHydrogen = S_AtomicData_H(
+            //    "/home/marre55/picInputs/testCompileRefactor/ChargeStates_H.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/AtomicStates_H.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/BoundBoundTransitions_H.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/BoundFreeTransitions_H.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/AutonomousTransitions_H.txt");
+            // particles::atomicPhysics2::debug::printAtomicDataToConsole<
+            //    S_AtomicData_H,
+            //    true, // print transitions
+            //    true // print inverse ordered transitions
+            //    >(atomicDataHydrogen);
 
-            std::cout << std::endl << "Hydrogen completed" << std::endl << std::endl;
+            // std::cout << std::endl << "Hydrogen completed" << std::endl << std::endl;
 
-            auto atomicDataHelium = S_AtomicData_He(
-                "/home/marre55/picInputs/testCompileRefactor/ChargeStates_He.txt",
-                "/home/marre55/picInputs/testCompileRefactor/AtomicStates_He.txt",
-                "/home/marre55/picInputs/testCompileRefactor/BoundBoundTransitions_He.txt",
-                "/home/marre55/picInputs/testCompileRefactor/BoundFreeTransitions_He.txt",
-                "/home/marre55/picInputs/testCompileRefactor/AutonomousTransitions_He.txt");
-            particles::atomicPhysics2::debug::printAtomicDataToConsole<
-                S_AtomicData_He,
-                true, // print transitions
-                true // print inverse ordered transitions
-                >(atomicDataHelium);
+            // auto atomicDataHelium = S_AtomicData_He(
+            //    "/home/marre55/picInputs/testCompileRefactor/ChargeStates_He.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/AtomicStates_He.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/BoundBoundTransitions_He.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/BoundFreeTransitions_He.txt",
+            //    "/home/marre55/picInputs/testCompileRefactor/AutonomousTransitions_He.txt");
+            // particles::atomicPhysics2::debug::printAtomicDataToConsole<
+            //    S_AtomicData_He,
+            //    true, // print transitions
+            //    true // print inverse ordered transitions
+            //    >(atomicDataHelium);
         }
 
 
