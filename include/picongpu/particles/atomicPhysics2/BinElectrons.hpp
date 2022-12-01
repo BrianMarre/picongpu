@@ -26,7 +26,7 @@
 
 #include <pmacc/Environment.hpp>
 #include <pmacc/mappings/kernel/AreaMapping.hpp>
-#include <pmacc/traits/GetNumWorkers.hpp>
+//#include <pmacc/traits/GetNumWorkers.hpp>
 #include <pmacc/type/Area.hpp>
 
 #include <cstdint>
@@ -50,57 +50,48 @@
  *      else: spurious reset in between different species calls
  */
 
-namespace picongpu
+namespace picongpu::particles::atomicPhysics2
 {
-    namespace particles
+    /** @class atomicPhysics sub-stage for a species calling the kernel per superCell
+     *
+     * is called once per time step for the entire local simulation volume and for
+     * every isElectron species by the atomicPhysics stage by the atomicPhysicsStage
+     *
+     * @tparam T_ElectronSpecies species for which to call the functor
+     */
+    template<typename T_ElectronSpecies>
+    struct BinElectrons
     {
-        namespace atomicPhysics2
+        // might be alias, from here on out no more
+        //! resolved type of alias T_ElectronSpecies
+        using ElectronSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_ElectronSpecies>;
+
+        //! call of kernel for every superCell
+        DINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
         {
-            /** @class atomicPhysics sub-stage for a species calling the kernel per superCell
-             *
-             * is called once per time step for the entire local simulation volume and for
-             * every isElectron species by the atomicPhysics stage by the atomicPhysicsStage
-             *
-             * @tparam T_ElectronSpecies species for which to call the functor
-             */
-            template<typename T_ElectronSpecies>
-            struct BinElectrons
-            {
-                // might be alias, from here on out no more
-                //! resolved type of alias T_ElectronSpecies
-                using ElectronSpecies
-                    = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_ElectronSpecies>;
+            // full local domain, no guards
+            pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
+            pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-                //! call of kernel for every superCell
-                DINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
-                {
-                    // full local domain, no guards
-                    pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
-                    pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg(MappingDesc::SuperCellSize{});
 
-                    // number per superCell
-                    constexpr uint32_t numWorkers = pmacc::traits::GetNumWorkers<
-                        pmacc::math::CT::volume<MappingDesc::SuperCellSize>::type::value>::value;
+            // pointer to memory, we will only work on device, no sync required
+            // init pointer to electrons and localElectronHistogramField
+            auto& electrons = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName(), true);
+            auto& localElectronHistogramField
+                = *dc.get<electronDistribution::
+                              LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
+                    "Electron_localHistogramField",
+                    true);
 
-                    // pointer to memory, we will only work on device, no sync required
-                    // init pointer to electrons and localElectronHistogramField
-                    auto& electrons = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName(), true);
-                    auto& localElectronHistogramField = *dc.get<electronDistribution::LocalHistogramField<
-                        picongpu::atomicPhysics2::ElectronHistogram,
-                        picongpu::MappingDesc>>("Electron_localHistogramField", true);
+            using BinElectrons = BinElectronsKernel<ElectronSpecies, picongpu::atomicPhysics2::ElectronHistogram>;
 
-                    // macro for call of kernel
-                    PMACC_KERNEL(BinElectronsKernel<
-                                 ElectronSpecies,
-                                 picongpu::atomicPhysics2::ElectronHistogram,
-                                 numWorkers>()) // kernel to call
-                    (mapper.getGridDim(), // how many blocks(superCells in local domain)
-                     numWorkers // how many threads per block
-                     )(mapper,
-                       electrons.getDeviceParticlesBox(),
-                       localElectronHistogramField.getDeviceDataBox()); // standard data box
-                }
-            };
-        } // namespace atomicPhysics2
-    } // namespace particles
-} // namespace picongpu
+            // macro for call of kernel, see pull request #4321
+            PMACC_LOCKSTEP_KERNEL(BinElectrons(), workerCfg)
+            (mapper.getGridDim())(
+                mapper,
+                electrons.getDeviceParticlesBox(),
+                localElectronHistogramField.getDeviceDataBox()); // standard data box
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2

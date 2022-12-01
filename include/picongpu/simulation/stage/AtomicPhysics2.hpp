@@ -34,78 +34,70 @@
  * MySimulation class.
  */
 
-namespace picongpu
+namespace picongpu::simulation::stage
 {
-    namespace simulation
+    /** atomic physics stage
+     *
+     * one instance of this class is initialized and it's operator() called for every time step
+     */
+    struct AtomicPhysics2
     {
-        namespace stage
+    private:
+        /** list of all species of macro particles with flag isElectron
+         *
+         * as defined in species.param, is list of types
+         */
+        using SpeciesRepresentingElectrons =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isElectron<>>::type;
+
+        //! kernel to be called for each species
+        pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::BinElectrons<bmpl::_1>>
+            ForEachElectronSpeciesBinElectrons;
+
+        //! reset the histogram on device side
+        static void resetHistograms(MappingDesc const mappingDesc)
         {
-            /** atomic physics stage
-             *
-             * one instance of this class is initialized and it's operator() called for every time step
-             */
-            struct AtomicPhysics2
-            {
-            private:
-                /** list of all species of macro particles with flag isElectron
-                 *
-                 * as defined in species.param, is list of types
-                 */
-                using SpeciesRepresentingElectrons =
-                    typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isElectron<>>::type;
+            pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-                //! kernel to be called for each species
-                pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::BinElectrons<bmpl::_1>>
-                    ForEachElectronSpeciesBinElectrons;
+            auto& localElectronHistogramField
+                = *dc.get<particles::atomicPhysics2::electronDistribution::
+                              LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
+                    "Electron_localHistogramField",
+                    true);
 
-                //! reset the histogram on device side
-                static void resetHistograms(MappingDesc const mappingDesc)
-                {
-                    pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+            localElectronHistogramField.getDeviceBuffer().setValue(picongpu::atomicPhysics2::ElectronHistogram());
+        }
 
-                    auto& localElectronHistogramField
-                        = *dc.get<particles::atomicPhysics2::electronDistribution::LocalHistogramField<
-                            picongpu::atomicPhysics2::ElectronHistogram,
-                            picongpu::MappingDesc>>("Electron_localHistogramField", true);
+        //! set local timeRemaining to PIC-time step
+        static void setTimeRemaining(MappingDesc const mappingDesc)
+        {
+            pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-                    localElectronHistogramField.getDeviceBuffer().setValue(
-                        picongpu::atomicPhysics2::ElectronHistogram());
-                }
+            auto& localTimeRemainingField
+                = *dc.get<particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc>>(
+                    "LocalTimeRemainingField",
+                    true);
 
-                //! set local timeRemaining to PIC-time step
-                static void setTimeRemaining(MappingDesc const mappingDesc)
-                {
-                    pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+            localTimeRemainingField.getDeviceBuffer().setValue(picongpu::SI::DELTA_T_SI);
+        }
 
-                    auto& localTimeRemainingField
-                        = *dc.get<particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                            "LocalTimeRemainingField",
-                            true);
+    public:
+        AtomicPhysics2() = default;
 
-                    localTimeRemainingField.getDeviceBuffer().setValue(picongpu::SI::DELTA_T_SI);
-                }
+        //! calls the substages
+        void operator()(MappingDesc const mappingDesc)
+        {
+            // set timeRemaining
+            setTimeRemaining(mappingDesc);
 
-            public:
-                AtomicPhysics2() = default;
+            // bin Electrons
+            // reset Histogram
+            resetHistograms(mappingDesc);
 
-                //! calls the substages
-                void operator()(MappingDesc const mappingDesc)
-                {
-                    // set timeRemaining
-                    setTimeRemaining(mappingDesc);
+            // actual binning
+            ForEachElectronSpeciesBinElectrons(mappingDesc);
 
-                    // bin Electrons
-                    // reset Histogram
-                    resetHistograms(mappingDesc);
-
-                    // actual binning
-                    ForEachElectronSpeciesBinElectrons(mappingDesc);
-
-                    //
-                }
-
-            };
-
-        } // namespace stage
-    } // namespace simulation
-} // namespace picongpu
+            //
+        }
+    };
+} // namespace picongpu::simulation::stage
