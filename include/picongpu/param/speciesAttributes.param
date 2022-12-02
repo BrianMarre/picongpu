@@ -208,7 +208,7 @@ namespace picongpu
     alias(isElectron);
 
     //! alias for particle flag, notes that a species represents an ion
-    alias(isIon);
+    alias(isIonWithAtomicPhysicsInputData);
 
     /** Total cell index of a particle.
      *

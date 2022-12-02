@@ -826,12 +826,30 @@ namespace picongpu
             dataConnector.consume(std::move(localSuperCellTimeStep));
         }
 
-        /** create the atomicData dataBase
+        /** load the atomic input files, for each create an atomicData data base object
+         *    and store them in the data connector
          *
-         * used for atomicPhysics step
+         * necessary for each species for atomicPhysics step
+         *
+         * @todo allow reuse of atomicData dataBase objects in between species, Brian Marre, 2022
          */
         void loadAtomicInputData(DataConnector& dataConnector)
         {
+            /** list of all species of macro particles with atomicPhysics input data
+             *
+             * as defined in species.param, is list of types
+             * @todo find better version for detecting
+             */
+            using SpeciesWithAtomicPhysicsInputData =
+                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isIonWithAtomicPhysics<>>::type;
+
+            //! load atomic data pre stage call for each
+            pmacc::meta::ForEach<SpeciesWithAtomicPhysicsInputData, particles::atomicPhysics2::LoadInputData<bmpl::_1>>
+                ForEachIonSpeciesLoadAtomicInputData;
+
+            ForEachIonSpeciesLoadAtomicInputData(dataConnector);
+
+            //! @todo
             using S_AtomicData_H = particles::atomicPhysics2::atomicData::
                 AtomicData<uint32_t, float_X, uint64_t, 1u, 10u, true, true, true, true, true, true>;
 

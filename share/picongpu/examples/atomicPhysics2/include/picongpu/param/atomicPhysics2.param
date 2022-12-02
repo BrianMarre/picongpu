@@ -28,58 +28,69 @@
 
 #include <string>
 
-#include <picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp>
 #include <picongpu/particles/atomicPhysics2/electronDistribution/LogSpaceHistogram.hpp>
+#include <picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp>
+#include <picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp>
 
-namespace picongpu
+namespace picongpu::atomicPhysics2
 {
-    namespace atomicPhysics2
-    {
+    // debug compile settings
+    //! activate more performance relevant debug checks
+    constexpr bool ATOMIC_PHYSICS_HOT_DEBUG = true;
+    //! activate less performance relevant debug checks
+    constexpr bool ATOMIC_PHYSICS_COLD_DEBUG = true;
 
-        using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<uint32_t, 100u, static_cast<uint32_t>(float_X(1e7))>;
+    using ElectronHistogram =
+        particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
+            uint32_t,                               // T_Storage, magic ;)
+            100u,                                   // T_numberBins
+            static_cast<uint32_t>(float_X(1e7)),    // T_maxEnergy, stored as T_Storage
+            ATOMIC_PHYSICS_HOT_DEBUG>;              // T_debug
 
-        // debug compile settings
-        //! activate more performance relevant debug checks
-        constexpr bool ATOMIC_PHYSICS_HOT_DEBUG = true;
-        //! activate less performance relevant debug checks
-        constexpr bool ATOMIC_PHYSICS_COLD_DEBUG = true;
+    /// @todo move to species definition?, Brian Marre, 2022
+    // Argon Definition basics
+    using configNumberStorageDataType_Ar = uint64_t;
+    constexpr uint8_t protonNumber_Ar = 18u;
+    constexpr uint8_t numLevels_Ar = 10u;
 
-        /// @todo remove
-        // datatype to be used for configNumber storage
-        using configNumberDataType = uint64_t;
-        constexpr uint8_t protonNumber = 18u;
-        constexpr uint8_t numLevels = 10u;
-
-
-    } // namespace atomicPhysics2
-
-    /** atomicConfigNumber
+    /** atomicConfigNumber definition for species argon
      *
-     * atomic state of ions, description by index number, corresponding to a super
-     *  configurations.
+     * data type for ion atomic state storage of one species,
+     *  actually object holding an analytic index corresponding to a super configuration.
      *
-     * Must be defined for each ion species seperatly by giving the number of modelled
-     * atomic levels N, the proton number Z and the datatype to be used,
-     * eg. float_x, uint32_t, ..., for storage of index.
+     * Must be defined for each ion species separately by giving the number of modeled
+     * atomic levels N, the proton number Z and the data type to be used,
+     *  eg. float_x, uint32_t, ..., for storage of index.
      *
-     * -> more efficient representation of atomicLevels
-     *
-     * BEWARE: index variable must cover the number of states possible,
      * See particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp for further
-     * information
-     */
-
-    /// @todo move to species definition
-    /* definition of a configNumber type as an example,
-     * other ion speceis can be added similarly as a new value identifier
+     * information.
      *
-     * actual datatype must be defined separately from value_identifier,
-     * since all "," are interpreted as separating macro arguments
+     * @attention index variable must cover the number of states possible,
+     * @attention actual data type must be defined separately from value_identifier,
+     *  since all "," are interpreted as separating macro arguments
      */
-    using ConfigNumber_Ar = particles::atomicPhysics2::stateRepresentation::ConfigNumber<
-        picongpu::atomicPhysics2::configNumberDataType,
-        picongpu::atomicPhysics2::numLevels,
-        picongpu::atomicPhysics2::protonNumber>;
-    value_identifier(ConfigNumber_Ar, configNumber_Argon, ConfigNumber_Ar(1u));
+    using ConfigNumber_Argon =
+        particles::atomicPhysics2::stateRepresentation::ConfigNumber<
+            configNumberStorageDataType_Ar,
+            numLevels,
+            protonNumber>;
 
-} // namespace picongpu
+    // datatype to be used for configNumber storage
+    value_identifier(ConfigNumber_Argon, ConfigNumber_Ar, ConfigNumber_Argon(1u));
+
+    // atomicData dataBase type
+    using AtomicData_Ar = particles::atomicPhysics2::atomicData::
+        AtomicData<
+            uint32_t,                       // T_Number
+            float_X,                        // T_Value
+            configNumberStorageDataType_Ar, // T_ConfigNumber, data type used for storage
+            protonNumber_Ar,                // T_atomicNumber
+            10u,                            // T_n_max, set by input data set
+            true,                           // T_electronicExcitation
+            true,                           // T_electronicDeexcitation
+            true,                           // T_spontaneousDeexcitation
+            true,                           // T_electronicIonization
+            true,                           // T_autonomousIonization
+            true>;                          // T_fieldIonization
+
+} // namespace picongpu::atomicPhysics2

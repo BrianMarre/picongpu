@@ -67,7 +67,7 @@ namespace picongpu::particles::atomicPhysics2
         using ElectronSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_ElectronSpecies>;
 
         //! call of kernel for every superCell
-        DINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
+        HDINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
         {
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);

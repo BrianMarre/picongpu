@@ -42,7 +42,7 @@
 #include <pmacc/particles/Identifier.hpp>
 #include <pmacc/particles/traits/FilterByFlag.hpp>
 
-// carbon + thermal electrons
+// argon + thermal electrons
 namespace picongpu
 {
     /*########################### define default attributes ######################*/
@@ -103,15 +103,20 @@ namespace picongpu
         chargeRatio<ChargeRatioArgon>,
         densityRatio<DensityRatioArgon>,
 
-        atomicPhysicsStatesFileName<PMACC_CSTRING("../ArgonLevels.txt")>,
-        atomicPhysicsTransitionsFileName<PMACC_CSTRING("../ArgonTransitions.txt")>,
+        isIonWithAtomicPhysicsInputData<atomicPhysics2::AtomicData_Ar>,
+        atomicPhysicsChargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
+        atomicPhysicsAtomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
+        atomicPhysicsBoundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,
+        atomicPhysicsBoundFreeTransitionsFileName< PMACC_CSTRING("../BoundFreeTransitions_Ar.txt" )>,
+        atomicPhysicsAutonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
-        ionizationEnergies<ionization::energies::AU::Argon_t>,
-        effectiveNuclearCharge<ionization::effectiveNuclearCharge::Argon_t>,
         atomicPhysicsSolver2<BulkElectrons>>;
 
     using ArgonAttributes
-        = MakeSeq_t<DefaultParticleAttributes, atomicConfigNumber<configNumber_Argon>, boundElectrons>;
+        = MakeSeq_t<
+            DefaultParticleAttributes,
+            atomicConfigNumber< atomicPhysics2::ConfigNumber_Ar >,
+            boundElectrons>;
 
     /* define species ions */
     using ArgonIons = Particles<PMACC_CSTRING("Ar"), ParticleFlagsArgon, ArgonAttributes>;

@@ -50,7 +50,7 @@ namespace picongpu::simulation::stage
         using SpeciesRepresentingElectrons =
             typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isElectron<>>::type;
 
-        //! kernel to be called for each species
+        //! bin electrons sub stage call for each species
         pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::BinElectrons<bmpl::_1>>
             ForEachElectronSpeciesBinElectrons;
 
@@ -84,7 +84,7 @@ namespace picongpu::simulation::stage
     public:
         AtomicPhysics2() = default;
 
-        //! calls the substages
+        //! calls the sub stages of atomic Physics
         void operator()(MappingDesc const mappingDesc)
         {
             // set timeRemaining
