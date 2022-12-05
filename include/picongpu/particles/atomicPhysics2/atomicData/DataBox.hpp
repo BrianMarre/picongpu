@@ -19,6 +19,9 @@
 
 #pragma once
 
+#include <pmacc/memory/boxes/DataBox.hpp>
+#include <pmacc/memory/boxes/PitchedBox.hpp>
+
 
 namespace picongpu
 {
