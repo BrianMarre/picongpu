@@ -35,6 +35,7 @@
 #include "picongpu/initialization/ParserGridDistribution.hpp"
 #include "picongpu/param/atomicPhysics2.param"
 #include "picongpu/particles/Manipulate.hpp"
+#include "picongpu/particles/atomicPhysics2/LoadAtomicInputData.stage"
 #include "picongpu/particles/atomicPhysics2/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/LocalTimeStepField.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
@@ -838,49 +839,16 @@ namespace picongpu
             /** list of all species of macro particles with atomicPhysics input data
              *
              * as defined in species.param, is list of types
-             * @todo find better version for detecting
+             * @todo use different Flag?, Brian Marre, 2022
              */
             using SpeciesWithAtomicPhysicsInputData =
                 typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
 
-            //! load atomic data pre stage call for each
+            //! load atomic input data in pre-stage call for each species with atomic Input data
             pmacc::meta::ForEach<SpeciesWithAtomicPhysicsInputData, particles::atomicPhysics2::LoadInputData<bmpl::_1>>
                 ForEachIonSpeciesLoadAtomicInputData;
 
             ForEachIonSpeciesLoadAtomicInputData(dataConnector);
-
-            //! @todo
-            using S_AtomicData_H = particles::atomicPhysics2::atomicData::
-                AtomicData<uint32_t, float_X, uint64_t, 1u, 10u, true, true, true, true, true, true>;
-
-            using S_AtomicData_He = particles::atomicPhysics2::atomicData::
-                AtomicData<uint32_t, float_X, uint64_t, 2u, 10u, true, true, true, true, true, true>;
-
-            // auto atomicDataHydrogen = S_AtomicData_H(
-            //    "/home/marre55/picInputs/testCompileRefactor/ChargeStates_H.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/AtomicStates_H.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/BoundBoundTransitions_H.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/BoundFreeTransitions_H.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/AutonomousTransitions_H.txt");
-            // particles::atomicPhysics2::debug::printAtomicDataToConsole<
-            //    S_AtomicData_H,
-            //    true, // print transitions
-            //    true // print inverse ordered transitions
-            //    >(atomicDataHydrogen);
-
-            // std::cout << std::endl << "Hydrogen completed" << std::endl << std::endl;
-
-            // auto atomicDataHelium = S_AtomicData_He(
-            //    "/home/marre55/picInputs/testCompileRefactor/ChargeStates_He.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/AtomicStates_He.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/BoundBoundTransitions_He.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/BoundFreeTransitions_He.txt",
-            //    "/home/marre55/picInputs/testCompileRefactor/AutonomousTransitions_He.txt");
-            // particles::atomicPhysics2::debug::printAtomicDataToConsole<
-            //    S_AtomicData_He,
-            //    true, // print transitions
-            //    true // print inverse ordered transitions
-            //    >(atomicDataHelium);
         }
 
 

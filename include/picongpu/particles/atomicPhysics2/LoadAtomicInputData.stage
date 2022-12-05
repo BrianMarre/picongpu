@@ -26,6 +26,11 @@
 #include <pmacc/traits/GetFlagType.hpp>
 #include <pmacc/traits/Resolve.hpp>
 
+#include "picongpu/particles/traits/GetSpeciesFlagName.hpp"
+
+#include "picongpu/param/atomicPhysics2.param"
+
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2
 {
@@ -41,16 +46,12 @@ namespace picongpu::particles::atomicPhysics2
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
-        /** check for existence of flag atomicInputDataType
-         */
-        template<typename FrameType>
-        ALPAKA_FN_HOST static bool checkForAtomicPhysics()
+        /** check for existence of flag atomicDataType flag */
+        template<typename FrameType, typename Flag, typename ErrorMessage>
+        HINLINE constexpr void ForFlagExistence()
         {
-            using hasAtomicDataType = typename HasFlag<FrameType, atomicInputDataType<>>::type;
-
-            PMACC_CASSERT_MSG( // compile time assert
-                This_species_has_no_atomicData_Type_,_required_for_atomicPhysics,
-                hasAtomicDataType::value == true);
+            using hasFlag = typename HasFlag<FrameType, Flag>::type;
+            PMACC_CASSERT_MSG(ErrorMessage, hasFlag::value == true);
         }
 
         ALPAKA_FN_HOST void operator()(DataConnector& dataConnector)
@@ -58,13 +59,52 @@ namespace picongpu::particles::atomicPhysics2
             /// @todo move to trait functor?, Brian Marre, 2022
             using FrameType = typename IonSpecies::FrameType;
 
-            checkForAtomicPhysics<FrameType>();
+            // atomicData dataBase type
+            checkForFlag<false, FrameType, atomicDataType<>, Species_missing_atomicDataType_flag>();
+            using AliasAtomicDataType = typename GetFlagType<FrameType, atomicDataType<>>::type;
+            using AtomicDataType = typename pmacc::traits::Resolve<AliasAtomicDataType>::type;
 
-            using PossiblyAliasType = typename GetFlagType<FrameType, isIonWithAtomicPhysicsInputData<>>::type;
-            using AtomicDataType = typename pmacc::traits::Resolve<AtomicDataType>::type;
+            //      charge states input file name
+            checkForFlag< FrameType, atomicPhysicsChargeStatesFileName<>, Species_missing_charge_states_file_name_flag>();
+            using AliasChargeStatesFileName = typename GetFlagType<FrameType, atomicPhysicsChargeStatesFileName<>>::type;
+            using ChargeStatesFileName = typename pmacc::traits::Resolve<AliasChargeStatesFileName>::type;
 
-            
+            //      atomic states input file name
+            checkForFlag< FrameType, atomicPhysicsAtomicStatesFileName<>, Species_missing_atomic_states_file_name_flag>();
+            using AliasAtomicStatesFileName = typename GetFlagType<FrameType, atomicPhysicsAtomicStatesFileName<>>::type;
+            using AtomicStatesFileName = typename pmacc::traits::Resolve<AliasAtomicStatesFileName>::type;
 
+            //      bound-bound transitions input file name
+            checkForFlag< FrameType, atomicPhysicsBoundBoundTransitionsFileName<>, Species_missing_bound_bound_transitions_file_name_flag>();
+            using AliasBoundBoundFileName = typename GetFlagType<FrameType, atomicPhysicsBoundBoundTransitionsFileName<>>::type;
+            using BoundBoundFileName = typename pmacc::traits::Resolve<AliasBoundBoundFileName>::type;
+
+            //      bound-free transitions input file name
+            checkForFlag< FrameType, atomicPhysicsBoundFreeTransitionsFileName<>, Species_missing_bound_free_transitions_file_name_flag>();
+            using AliasBoundFreeFileName = typename GetFlagType<FrameType, atomicPhysicsBoundFreeTransitionsFileName<>>::type;
+            using BoundFreeFileName = typename pmacc::traits::Resolve<AliasBoundFreeFileName>::type;
+
+            //      autonomous transitions input file name
+            checkForFlag< FrameType, atomicPhysicsAutonomousTransitionsFileName<>, Species_missing_autonomous_transitions_file_name_flag>();
+            using AliasAutonomousFileName = typename GetFlagType<FrameType, atomicPhysicsAutonomousTransitionsFileName<>>::type;
+            using AutonomousFileName = typename pmacc::traits::Resolve<AliasAutonomousFileName>::type;
+
+            auto atomicData = std::make_unique<AtomicDataType>(
+                ChargeStatesFileName::str(),
+                AtomicStatesFileName::str(),
+                BoundBoundFileName::str(),
+                BoundFreeFileName::str(),
+                AutonomousFileName::str(),
+                FrameType::getName()); // name of species
+
+            if constexpr (ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT)
+                particles::atomicPhysics2::debug::printAtomicDataToConsole<
+                    AtomicDataType,
+                    true, // print summary standard ordered transitions
+                    true  // print summary inverse ordered transitions
+                    >(atomicData);
+
+            dataConnector.consume(std::move(atomicData));
         }
     };
 

@@ -200,12 +200,17 @@ namespace picongpu
                             bufferScreenedCharge->getDeviceBuffer().getDataBox());
                     }
 
-                    HINLINE void syncToDevice()
+                    HDINLINE void hostToDevice()
                     {
                         bufferIonizationEnergy->hostToDevice();
                         bufferScreenedCharge->hostToDevice();
                     }
 
+                    HDINLINE void deviceToHost()
+                    {
+                        bufferIonizationEnergy->deviceToHost();
+                        bufferScreenedCharge->deviceToHost();
+                    }
                 };
 
             } // namespace atomicData

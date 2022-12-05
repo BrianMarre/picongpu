@@ -166,12 +166,17 @@ namespace picongpu
                             bufferStartIndexBlockTransitionsUp->getDeviceBuffer().getDataBox());
                     }
 
-                    HINLINE void syncToDevice()
+                    HDINLINE void hostToDevice()
                     {
                         bufferStartIndexBlockTransitionsDown->hostToDevice();
                         bufferStartIndexBlockTransitionsUp->hostToDevice();
                     }
 
+                    HDINLINE void deviceToHost()
+                    {
+                        bufferStartIndexBlockTransitionsDown->deviceToHost();
+                        bufferStartIndexBlockTransitionsUp->deviceToHost();
+                    }
                 };
 
             } // namespace atomicData

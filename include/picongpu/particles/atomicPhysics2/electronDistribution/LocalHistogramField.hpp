@@ -44,17 +44,19 @@ namespace picongpu
                 template<typename T_Histogram, typename T_MappingDescription>
                 struct LocalHistogramField : SuperCellField<T_Histogram, T_MappingDescription>
                 {
+                private:
                     /// @todo should these be private?
                     //! type of physical particle represented in histogram, usually "Electron" or "Photon"
                     std::string histogramType;
 
+                public:
                     LocalHistogramField(T_MappingDescription const& mappingDesc, std::string const histogramType)
                         : SuperCellField<T_Histogram, T_MappingDescription>(mappingDesc)
                         , histogramType(histogramType)
                     {
                     }
 
-                    // required by ISimulationData
+                    //! required by ISimulationData
                     std::string getUniqueId() override
                     {
                         return histogramType + "_localHistogramField";

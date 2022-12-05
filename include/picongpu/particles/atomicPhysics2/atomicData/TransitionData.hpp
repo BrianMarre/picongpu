@@ -240,12 +240,17 @@ namespace picongpu
                             m_numberTransitions);
                     }
 
-                    HINLINE void syncToDevice_BaseClass()
+                    HDINLINE void hostToDevice_BaseClass()
                     {
                         bufferLowerConfigNumber->hostToDevice();
                         bufferUpperConfigNumber->hostToDevice();
                     }
 
+                    HDINLINE void deviceToHost_BaseClass()
+                    {
+                        bufferLowerConfigNumber->deviceToHost();
+                        bufferUpperConfigNumber->deviceToHost();
+                    }
                 };
 
             } // namespace atomicData

@@ -103,14 +103,19 @@ namespace picongpu
         chargeRatio<ChargeRatioArgon>,
         densityRatio<DensityRatioArgon>,
 
+        // core flag for loading atomic input data, rest is unused if not set
         atomicDataType<atomicPhysics2::AtomicData_Ar>,
+
+        /// currently all are required, @todo change?, Brian Marre
         atomicPhysicsChargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
         atomicPhysicsAtomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
         atomicPhysicsBoundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,
         atomicPhysicsBoundFreeTransitionsFileName< PMACC_CSTRING("../BoundFreeTransitions_Ar.txt" )>,
         atomicPhysicsAutonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
+
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
-        atomicPhysicsSolver2<BulkElectrons>>;
+        atomicPhysicsSolver2<BulkElectrons, true, true, true, true, true, true>>;
+        //! @attention only channels activated in both data and solver are actually possible
 
     using ArgonAttributes
         = MakeSeq_t<

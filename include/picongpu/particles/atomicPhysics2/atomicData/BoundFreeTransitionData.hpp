@@ -418,7 +418,7 @@ namespace picongpu
                             this->m_numberTransitions);
                     }
 
-                    HINLINE void syncToDevice()
+                    HDINLINE void hostToDevice()
                     {
                         bufferCxin1->hostToDevice();
                         bufferCxin2->hostToDevice();
@@ -428,9 +428,21 @@ namespace picongpu
                         bufferCxin6->hostToDevice();
                         bufferCxin7->hostToDevice();
                         bufferCxin8->hostToDevice();
-                        this->syncToDevice_BaseClass();
+                        this->hostToDevice_BaseClass();
                     }
 
+                    HDINLINE void deviceToHost()
+                    {
+                        bufferCxin1->deviceToHost();
+                        bufferCxin2->deviceToHost();
+                        bufferCxin3->deviceToHost();
+                        bufferCxin4->deviceToHost();
+                        bufferCxin5->deviceToHost();
+                        bufferCxin6->deviceToHost();
+                        bufferCxin7->deviceToHost();
+                        bufferCxin8->deviceToHost();
+                        this->deviceToHost_BaseClass();
+                    }
                 };
 
             } // namespace atomicData

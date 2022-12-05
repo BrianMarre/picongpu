@@ -138,11 +138,15 @@ namespace picongpu
                         return TransitionSelectionDataBox< T_Number, T_Value, T_atomicNumber>(bufferNumberPhysicalTransitionsTotal->getDeviceBuffer().getDataBox());
                     }
 
-                    HINLINE void syncToDevice()
+                    HDINLINE void hostToDevice()
                     {
                         bufferNumberPhysicalTransitionsTotal->hostToDevice();
                     }
 
+                    HDINLINE void deviceToHost()
+                    {
+                        bufferNumberPhysicalTransitionsTotal->deviceToHost();
+                    }
                 };
             } // namespace atomicData
         } // namespace atomicPhysics2

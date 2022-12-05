@@ -391,7 +391,7 @@ namespace picongpu
                             this->m_numberTransitions);
                     }
 
-                    HINLINE void syncToDevice()
+                    HDINLINE void hostToDevice()
                     {
                         bufferCollisionalOscillatorStrength->hostToDevice();
                         bufferAbsorptionOscillatorStrength->hostToDevice();
@@ -400,9 +400,20 @@ namespace picongpu
                         bufferCxin3->hostToDevice();
                         bufferCxin4->hostToDevice();
                         bufferCxin5->hostToDevice();
-                        this->syncToDevice_BaseClass();
+                        this->hostToDevice_BaseClass();
                     }
 
+                    HDINLINE void deviceToHost()
+                    {
+                        bufferCollisionalOscillatorStrength->deviceToHost();
+                        bufferAbsorptionOscillatorStrength->deviceToHost();
+                        bufferCxin1->deviceToHost();
+                        bufferCxin2->deviceToHost();
+                        bufferCxin3->deviceToHost();
+                        bufferCxin4->deviceToHost();
+                        bufferCxin5->deviceToHost();
+                        this->deviceToHost_BaseClass();
+                    }
                 };
 
             } // namespace atomicData

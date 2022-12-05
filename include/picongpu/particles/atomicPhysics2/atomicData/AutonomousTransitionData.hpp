@@ -208,12 +208,17 @@ namespace picongpu
                             this->m_numberTransitions);
                     }
 
-                    HINLINE void syncToDevice()
+                    HDINLINE void hostToDevice()
                     {
                         bufferTransitionRate->hostToDevice();
-                        this->syncToDevice_BaseClass();
+                        this->hostToDevice_BaseClass();
                     }
 
+                    HDINLINE void deviceToHost()
+                    {
+                        bufferTransitionRate->deviceToHost();
+                        this->deviceToHost_BaseClass();
+                    }
                 };
 
             } // namespace atomicData

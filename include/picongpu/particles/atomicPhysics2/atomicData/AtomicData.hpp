@@ -47,6 +47,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTuple.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
+#include <pmacc/dataManagement/ISimulationData.hpp>
+
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -132,7 +134,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         bool T_electronicIonization,
         bool T_autonomousIonization,
         bool T_fieldIonization> /// @todo add photonic channels, Brian Marre, 2022
-    class AtomicData
+    class AtomicData : public pmacc::ISimulationData
     {
     public:
         using TypeNumber = T_Number;
@@ -236,6 +238,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         uint32_t m_numberBoundFreeTransitions = 0u;
         uint32_t m_numberAutonomousTransitions = 0u;
 
+        const std::string m_speciesName;
+
         //! open file
         HINLINE static std::ifstream openFile(std::string fileName, std::string fileContent)
         {
@@ -250,7 +254,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             return file;
         }
 
-        /// @todo generalize to single template filling template tuple from line?, Brian Marre, 2022
         /** read charge state data file
          *
          * @attention assumes input to already fulfills all ordering and unit assumptions
@@ -259,7 +262,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @return returns empty list if file not found/accessible
          */
-        std::list<S_ChargeStateTuple> readChargeStates(std::string fileName)
+        ALPAKA_FN_HOST std::list<S_ChargeStateTuple> readChargeStates(std::string fileName)
         {
             std::ifstream file = openFile(fileName, "charge state data");
             if(!file)
@@ -305,7 +308,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @return returns empty list if file not found/accessible
          */
-        std::list<S_AtomicStateTuple> readAtomicStates(std::string fileName)
+        ALPAKA_FN_HOST std::list<S_AtomicStateTuple> readAtomicStates(std::string fileName)
         {
             std::ifstream file = openFile(fileName, "atomic state data");
             if(!file)
@@ -338,7 +341,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @return returns empty list if file not found/accessible
          */
-        std::list<S_BoundBoundTransitionTuple> readBoundBoundTransitions(std::string fileName)
+        ALPAKA_FN_HOST std::list<S_BoundBoundTransitionTuple> readBoundBoundTransitions(std::string fileName)
         {
             std::ifstream file = openFile(fileName, "bound-bound transition data");
             if(!file)
@@ -399,7 +402,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @return returns empty list if file not found/accessible
          */
-        std::list<S_BoundFreeTransitionTuple> readBoundFreeTransitions(std::string fileName)
+        ALPAKA_FN_HOST std::list<S_BoundFreeTransitionTuple> readBoundFreeTransitions(std::string fileName)
         {
             std::ifstream file = openFile(fileName, "bound-free transition data");
             if(!file)
@@ -451,7 +454,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @return returns empty list if file not found/accessible
          */
-        std::list<S_AutonomousTransitionTuple> readAutonomousTransitions(std::string fileName)
+        ALPAKA_FN_HOST std::list<S_AutonomousTransitionTuple> readAutonomousTransitions(std::string fileName)
         {
             std::ifstream file = openFile(fileName, "autonomous transition data");
             if(!file)
@@ -492,7 +495,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @throws runtime error if duplicate charge state, missing charge state,
          *  order broken, completely ionized state included or unphysical charge state
          */
-        void checkChargeStateList(std::list<S_ChargeStateTuple>& chargeStateList)
+        ALPAKA_FN_HOST void checkChargeStateList(std::list<S_ChargeStateTuple>& chargeStateList)
         {
             typename std::list<S_ChargeStateTuple>::iterator iter = chargeStateList.begin();
 
@@ -543,7 +546,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @throws runtime error if duplicate atomic state, primary order broken,
          *  secondary order broken, or unphysical charge state found
          */
-        void checkAtomicStateList(std::list<S_AtomicStateTuple>& atomicStateList)
+        ALPAKA_FN_HOST void checkAtomicStateList(std::list<S_AtomicStateTuple>& atomicStateList)
         {
             typename std::list<S_AtomicStateTuple>::iterator iter = atomicStateList.begin();
 
@@ -601,7 +604,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *  wrong transition type for lower/upper charge state pair
          */
         template<typename T_TransitionTuple>
-        void checkTransitionList(std::list<T_TransitionTuple>& transitionList)
+        ALPAKA_FN_HOST void checkTransitionList(std::list<T_TransitionTuple>& transitionList)
         {
             std::string transitionType = getStringTransitionType<T_TransitionTuple>();
 
@@ -689,7 +692,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         }
 
         //! init buffers, @attention all readMethods must have been executed exactly once before!
-        void initBuffers()
+        ALPAKA_FN_HOST void initBuffers()
         {
             // charge state data
             chargeStateDataBuffer.reset(new S_ChargeStateDataBuffer());
@@ -737,7 +740,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @attention does not sync to device, must be synced externally explicitly
          */
         template<typename T_Tuple, typename T_DataBox>
-        void storeData(std::list<T_Tuple>& list, T_DataBox hostBox)
+        ALPAKA_FN_HOST void storeData(std::list<T_Tuple>& list, T_DataBox hostBox)
         {
             typename std::list<T_Tuple>::iterator iter = list.begin();
 
@@ -756,7 +759,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param atomicStateList list of all atomicStates, sorted block wise by charge state
          */
-        void fillChargeStateOrgaData(std::list<S_AtomicStateTuple> atomicStateList)
+        ALPAKA_FN_HOST void fillChargeStateOrgaData(std::list<S_AtomicStateTuple> atomicStateList)
         {
             typename std::list<S_AtomicStateTuple>::iterator iter = atomicStateList.begin();
 
@@ -804,7 +807,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // finish last block
             chargeStateOrgaDataHostBox.store(lastChargeState, numberStates, startIndexLastBlock);
 
-            chargeStateOrgaDataBuffer->syncToDevice();
+            chargeStateOrgaDataBuffer->hostToDevice();
         }
 
         /** fill the upward atomic state orga buffers for a transition groups
@@ -816,7 +819,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @attention changes have to synced to device separately
          */
         template<typename T_Tuple>
-        void fill_UpTransition_OrgaData(
+        ALPAKA_FN_HOST void fill_UpTransition_OrgaData(
             std::list<T_Tuple> transitionList,
             S_AtomicStateNumberOfTransitionsDataBox_UpDown numberHostBox,
             S_AtomicStateStartIndexBlockDataBox_UpDown startIndexHostBox)
@@ -902,7 +905,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @attention assumes that transitionList is sorted by upper state block wise
          */
         template<typename T_Tuple, typename T_NumberHostBox, typename T_StartIndexHostBox>
-        void fill_DownTransition_OrgaData(
+        ALPAKA_FN_HOST void fill_DownTransition_OrgaData(
             std::list<T_Tuple> transitionList,
             T_NumberHostBox numberHostBox,
             T_StartIndexHostBox startIndexHostBox)
@@ -1006,7 +1009,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             bool electronicIonization,
             bool autonomousIonization,
             bool fieldIonization>
-        void fillTransitionSelectionDataBufferAndSetOffsets()
+        ALPAKA_FN_HOST void fillTransitionSelectionDataBufferAndSetOffsets()
         {
             S_TransitionSelectionDataBox transitionSelectionDataHostBox
                 = transitionSelectionDataBuffer->getHostDataBox();
@@ -1051,12 +1054,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
 
             // sync offsets
-            atomicStateNumberOfTransitionsDataBuffer_BoundBound->syncToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_BoundFree->syncToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_Autonomous->syncToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
 
             // sync transition selection data
-            transitionSelectionDataBuffer->syncToDevice();
+            transitionSelectionDataBuffer->hostToDevice();
         }
 
     public:
@@ -1071,7 +1074,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             std::string fileAtomicStateData,
             std::string fileBoundBoundTransitionData,
             std::string fileBoundFreeTransitionData,
-            std::string fileAutonomousTransitionData)
+            std::string fileAutonomousTransitionData,
+            std::string speciesName)
+            : m_speciesName(speciesName)
         {
             // read in files
             //      state data
@@ -1104,26 +1109,26 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // fill data buffers
             //      states
             storeData<S_ChargeStateTuple, S_ChargeStateDataBox>(chargeStates, chargeStateDataBuffer->getHostDataBox());
-            chargeStateDataBuffer->syncToDevice();
+            chargeStateDataBuffer->hostToDevice();
 
             storeData<S_AtomicStateTuple, S_AtomicStateDataBox>(atomicStates, atomicStateDataBuffer->getHostDataBox());
-            atomicStateDataBuffer->syncToDevice();
+            atomicStateDataBuffer->hostToDevice();
 
             //      transitions
             storeData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox>(
                 boundBoundTransitions,
                 boundBoundTransitionDataBuffer->getHostDataBox());
-            boundBoundTransitionDataBuffer->syncToDevice();
+            boundBoundTransitionDataBuffer->hostToDevice();
 
             storeData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox>(
                 boundFreeTransitions,
                 boundFreeTransitionDataBuffer->getHostDataBox());
-            boundFreeTransitionDataBuffer->syncToDevice();
+            boundFreeTransitionDataBuffer->hostToDevice();
 
             storeData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox>(
                 autonomousTransitions,
                 autonomousTransitionDataBuffer->getHostDataBox());
-            autonomousTransitionDataBuffer->syncToDevice();
+            autonomousTransitionDataBuffer->hostToDevice();
 
             // fill orga data buffers 1,)
             //          charge state
@@ -1134,15 +1139,15 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 boundBoundTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox());
-            atomicStateNumberOfTransitionsDataBuffer_BoundBound->syncToDevice(),
-                atomicStateStartIndexBlockDataBuffer_BoundBound->syncToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice(),
+                atomicStateStartIndexBlockDataBuffer_BoundBound->hostToDevice();
 
             fill_UpTransition_OrgaData<S_BoundFreeTransitionTuple>(
                 boundFreeTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
-            atomicStateNumberOfTransitionsDataBuffer_BoundFree->syncToDevice(),
-                atomicStateStartIndexBlockDataBuffer_BoundFree->syncToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice(),
+                atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
 
             // autonomous transitions are always only downward
 
@@ -1155,17 +1160,17 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             storeData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox>(
                 boundBoundTransitions,
                 inverseBoundBoundTransitionDataBuffer->getHostDataBox());
-            inverseBoundBoundTransitionDataBuffer->syncToDevice();
+            inverseBoundBoundTransitionDataBuffer->hostToDevice();
 
             storeData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox>(
                 boundFreeTransitions,
                 inverseBoundFreeTransitionDataBuffer->getHostDataBox());
-            inverseBoundFreeTransitionDataBuffer->syncToDevice();
+            inverseBoundFreeTransitionDataBuffer->hostToDevice();
 
             storeData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox>(
                 autonomousTransitions,
                 inverseAutonomousTransitionDataBuffer->getHostDataBox());
-            inverseAutonomousTransitionDataBuffer->syncToDevice();
+            inverseAutonomousTransitionDataBuffer->hostToDevice();
 
             // fill orga data buffers 2.)
             //      atomic state, down direction
@@ -1177,8 +1182,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox());
 
-            atomicStateNumberOfTransitionsDataBuffer_BoundBound->syncToDevice();
-            atomicStateStartIndexBlockDataBuffer_BoundBound->syncToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_BoundBound->hostToDevice();
 
             fill_DownTransition_OrgaData<
                 S_BoundFreeTransitionTuple,
@@ -1188,8 +1193,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
 
-            atomicStateNumberOfTransitionsDataBuffer_BoundFree->syncToDevice();
-            atomicStateStartIndexBlockDataBuffer_BoundFree->syncToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
 
             fill_DownTransition_OrgaData<
                 S_AutonomousTransitionTuple,
@@ -1199,8 +1204,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_Autonomous->getHostDataBox());
 
-            atomicStateNumberOfTransitionsDataBuffer_Autonomous->syncToDevice();
-            atomicStateStartIndexBlockDataBuffer_Autonomous->syncToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_Autonomous->hostToDevice();
 
             // fill transitionSelectionBuffer
             fillTransitionSelectionDataBufferAndSetOffsets<
@@ -1213,29 +1218,65 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             // just to be sure
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
-                this->syncToDevice();
+                this->hostToDevice();
         }
 
-        void syncToDevice()
+        void hostToDevice()
         {
             // charge state data
-            chargeStateDataBuffer->syncToDevice();
-            chargeStateOrgaDataBuffer->syncToDevice();
+            chargeStateDataBuffer->hostToDevice();
+            chargeStateOrgaDataBuffer->hostToDevice();
 
             // atomic property data
-            atomicStateDataBuffer->syncToDevice();
+            atomicStateDataBuffer->hostToDevice();
             // atomic orga data
-            atomicStateStartIndexBlockDataBuffer_BoundBound->syncToDevice();
-            atomicStateStartIndexBlockDataBuffer_BoundFree->syncToDevice();
-            atomicStateStartIndexBlockDataBuffer_Autonomous->syncToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_BoundBound->syncToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_BoundFree->syncToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_Autonomous->syncToDevice();
+            atomicStateStartIndexBlockDataBuffer_BoundBound->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_Autonomous->hostToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
+            atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
 
             // transition data
-            boundBoundTransitionDataBuffer->syncToDevice();
-            boundFreeTransitionDataBuffer->syncToDevice();
-            autonomousTransitionDataBuffer->syncToDevice();
+            boundBoundTransitionDataBuffer->hostToDevice();
+            boundFreeTransitionDataBuffer->hostToDevice();
+            autonomousTransitionDataBuffer->hostToDevice();
+
+            // inverse transition data
+            inverseBoundBoundTransitionDataBuffer->hostToDevice();
+            inverseBoundFreeTransitionDataBuffer->hostToDevice();
+            inverseAutonomousTransitionDataBuffer->hostToDevice();
+
+            transitionSelectionBuffer->hostToDevice();
+        }
+
+        void deviceToHost()
+        {
+            // charge state data
+            chargeStateDataBuffer->deviceToHost();
+            chargeStateOrgaDataBuffer->deviceToHost();
+
+            // atomic property data
+            atomicStateDataBuffer->deviceToHost();
+            // atomic orga data
+            atomicStateStartIndexBlockDataBuffer_BoundBound->deviceToHost();
+            atomicStateStartIndexBlockDataBuffer_BoundFree->deviceToHost();
+            atomicStateStartIndexBlockDataBuffer_Autonomous->deviceToHost();
+            atomicStateNumberOfTransitionsDataBuffer_BoundBound->deviceToHost();
+            atomicStateNumberOfTransitionsDataBuffer_BoundFree->deviceToHost();
+            atomicStateNumberOfTransitionsDataBuffer_Autonomous->deviceToHost();
+
+            // transition data
+            boundBoundTransitionDataBuffer->deviceToHost();
+            boundFreeTransitionDataBuffer->deviceToHost();
+            autonomousTransitionDataBuffer->deviceToHost();
+
+            // inverse transition data
+            inverseBoundBoundTransitionDataBuffer->deviceToHost();
+            inverseBoundFreeTransitionDataBuffer->deviceToHost();
+            inverseAutonomousTransitionDataBuffer->deviceToHost();
+
+            transitionSelectionBuffer->deviceToHost();
         }
 
         // charge states
@@ -1422,6 +1463,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         uint32_t getNumberAutonomousTransitions() const
         {
             return m_numberAutonomousTransitions;
+        }
+
+        //! == deviceToHost, required by ISimulationData
+        void synchronize() override
+        {
+            this->deviceToHost();
+        }
+
+        //! required by ISimulationData
+        std::string getUniqueId() override
+        {
+            return m_speciesName + "_atomicData";
         }
     };
 

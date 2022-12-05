@@ -39,6 +39,8 @@ namespace picongpu::atomicPhysics2
     constexpr bool ATOMIC_PHYSICS_HOT_DEBUG = true;
     //! activate less performance relevant debug checks
     constexpr bool ATOMIC_PHYSICS_COLD_DEBUG = true;
+    //! activate debug print of atomic data to console
+    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT = true;
 
     using ElectronHistogram =
         particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
@@ -92,5 +94,6 @@ namespace picongpu::atomicPhysics2
             true,                           // T_electronicIonization
             true,                           // T_autonomousIonization
             true>;                          // T_fieldIonization
+
 
 } // namespace picongpu::atomicPhysics2

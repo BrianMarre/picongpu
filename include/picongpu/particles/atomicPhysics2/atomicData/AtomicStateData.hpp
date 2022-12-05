@@ -287,16 +287,22 @@ namespace picongpu
                             m_numberAtomicStates);
                     }
 
-                    HINLINE void syncToDevice()
+                    //! get number of known atomic states
+                    HINLINE uint32_t getNumberAtomicStatesTotal() const
+                    {
+                        return m_numberAtomicStates;
+                    }
+
+                    HDINLINE void hostToDevice()
                     {
                         bufferConfigNumber->hostToDevice();
                         bufferStateEnergy->hostToDevice();
                     }
 
-                    //! get number of known atomic states
-                    HINLINE uint32_t getNumberAtomicStatesTotal() const
+                    HDINLINE void deviceToHost()
                     {
-                        return m_numberAtomicStates;
+                        bufferConfigNumber->deviceToHost();
+                        bufferStateEnergy->deviceToHost();
                     }
                 };
 
