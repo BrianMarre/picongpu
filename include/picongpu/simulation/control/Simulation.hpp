@@ -841,7 +841,7 @@ namespace picongpu
              * @todo find better version for detecting
              */
             using SpeciesWithAtomicPhysicsInputData =
-                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isIonWithAtomicPhysics<>>::type;
+                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
 
             //! load atomic data pre stage call for each
             pmacc::meta::ForEach<SpeciesWithAtomicPhysicsInputData, particles::atomicPhysics2::LoadInputData<bmpl::_1>>

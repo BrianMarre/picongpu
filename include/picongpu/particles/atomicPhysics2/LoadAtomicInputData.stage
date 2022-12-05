@@ -32,6 +32,7 @@ namespace picongpu::particles::atomicPhysics2
     /** pre-simulation stage for loading the user provided atomic input data
      *
      * @tparam T_IonSpecies species for which to call the functor
+     *
      */
     template<typename T_IonSpecies>
     struct LoadAtomicInputData
@@ -40,20 +41,30 @@ namespace picongpu::particles::atomicPhysics2
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
-        HINLINE void operator()(DataConnector& dataConnector)
+        /** check for existence of flag atomicInputDataType
+         */
+        template<typename FrameType>
+        ALPAKA_FN_HOST static bool checkForAtomicPhysics()
+        {
+            using hasAtomicDataType = typename HasFlag<FrameType, atomicInputDataType<>>::type;
+
+            PMACC_CASSERT_MSG( // compile time assert
+                This_species_has_no_atomicData_Type_,_required_for_atomicPhysics,
+                hasAtomicDataType::value == true);
+        }
+
+        ALPAKA_FN_HOST void operator()(DataConnector& dataConnector)
         {
             /// @todo move to trait functor?, Brian Marre, 2022
-            using FrameType = typename T_IonSpecies::FrameType;
+            using FrameType = typename IonSpecies::FrameType;
 
-            using hasAtomicInputData = typename HasFlag<FrameType, isIonWithAtomicPhysicsInputData<>>::type;
+            checkForAtomicPhysics<FrameType>();
 
-            /* throw static assert if species has no atomicData Type */
-            PMACC_CASSERT_MSG(This_species_has_no_atomicData_Type, hasAtomicNumbers::value == true);
+            using PossiblyAliasType = typename GetFlagType<FrameType, isIonWithAtomicPhysicsInputData<>>::type;
+            using AtomicDataType = typename pmacc::traits::Resolve<AtomicDataType>::type;
 
-            using AtomicDataType = typename GetFlagType<FrameType, isIonWithAtomicPhysicsInputData<>>::type;
-            using type = typename pmacc::traits::Resolve<AtomicDataType>::type;
+            
 
-            using S_AtomicData =
         }
     };
 

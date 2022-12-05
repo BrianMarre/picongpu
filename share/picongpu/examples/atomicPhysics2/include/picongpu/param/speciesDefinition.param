@@ -103,7 +103,7 @@ namespace picongpu
         chargeRatio<ChargeRatioArgon>,
         densityRatio<DensityRatioArgon>,
 
-        isIonWithAtomicPhysicsInputData<atomicPhysics2::AtomicData_Ar>,
+        atomicDataType<atomicPhysics2::AtomicData_Ar>,
         atomicPhysicsChargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
         atomicPhysicsAtomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
         atomicPhysicsBoundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,

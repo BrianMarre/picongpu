@@ -21,7 +21,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/BinElectrons.hpp"
+#include "picongpu/particles/atomicPhysics2/BinElectrons.stage"
 
 #include <pmacc/meta/ForEach.hpp>
 
