@@ -35,8 +35,9 @@
 #include "picongpu/param/memory.param"
 #include "picongpu/param/random.param"
 #include "picongpu/param/physicalConstants.param"
-#include "picongpu/param/atomicPhysics.param"
+#include "picongpu/param/atomicPhysics.param" ///@todo remove
 #include "picongpu/param/atomicPhysics2.param"
+#include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/param/speciesConstants.param"
 #include "picongpu/param/speciesAttributes.param"
 #include "picongpu/param/synchrotronPhotons.param"

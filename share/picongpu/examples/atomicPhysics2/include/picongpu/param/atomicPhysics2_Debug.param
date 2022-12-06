@@ -25,6 +25,8 @@
  *  -
  */
 
+#pragma once
+
 namespace picongpu::atomicPhysics2
 {
     // debug compile settings

@@ -22,8 +22,6 @@
 
 #pragma once
 
-#include "picongpu/simulation_defines.hpp"
-
 #include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/HistogramInterface.hpp"
 
@@ -151,7 +149,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
                 (binIndex >= 0u) and (binIndex < T_numberBins),
                 "binIndex must be >= 0 < T_numberBins");
 
-            if constexpr(ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return 0u;
 

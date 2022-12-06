@@ -34,13 +34,11 @@
 
 namespace picongpu::atomicPhysics2
 {
-
     using ElectronHistogram =
         particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
             uint32_t,                               // T_Storage, magic ;)
             100u,                                   // T_numberBins
-            static_cast<uint32_t>(float_X(1e7)),    // T_maxEnergy, stored as T_Storage
-            ATOMIC_PHYSICS_HOT_DEBUG>;              // T_debug
+            static_cast<uint32_t>(float_X(1e7))>;   // T_maxEnergy, stored as T_Storage
 
     /// @todo move to species definition?, Brian Marre, 2022
     // Argon Definition basics
