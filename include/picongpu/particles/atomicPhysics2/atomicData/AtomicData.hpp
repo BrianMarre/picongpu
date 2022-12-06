@@ -61,8 +61,7 @@
 #include <tuple>
 
 // debug only
-//#include <typeinfo>
-//#include <cxxabi.h>
+#include <iostream>
 
 /** @file gathers atomic data storage implementations and implements filling them on runtime
  *
@@ -1249,7 +1248,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             inverseBoundFreeTransitionDataBuffer->hostToDevice();
             inverseAutonomousTransitionDataBuffer->hostToDevice();
 
-            transitionSelectionBuffer->hostToDevice();
+            transitionSelectionDataBuffer->hostToDevice();
         }
 
         void deviceToHost()
@@ -1278,7 +1277,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             inverseBoundFreeTransitionDataBuffer->deviceToHost();
             inverseAutonomousTransitionDataBuffer->deviceToHost();
 
-            transitionSelectionBuffer->deviceToHost();
+            transitionSelectionDataBuffer->deviceToHost();
         }
 
         // charge states

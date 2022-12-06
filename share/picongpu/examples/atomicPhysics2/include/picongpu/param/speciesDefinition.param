@@ -114,7 +114,7 @@ namespace picongpu
         atomicPhysicsAutonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
 
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
-        atomicPhysicsSolver2<BulkElectrons, true, true, true, true, true, true>>;
+        atomicPhysicsSolver2<BulkElectrons>>;
         //! @attention only channels activated in both data and solver are actually possible
 
     using ArgonAttributes

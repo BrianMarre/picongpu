@@ -845,8 +845,9 @@ namespace picongpu
                 typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
 
             //! load atomic input data in pre-stage call for each species with atomic Input data
-            pmacc::meta::ForEach<SpeciesWithAtomicPhysicsInputData, particles::atomicPhysics2::LoadInputData<bmpl::_1>>
-                ForEachIonSpeciesLoadAtomicInputData;
+            pmacc::meta::
+                ForEach<SpeciesWithAtomicPhysicsInputData, particles::atomicPhysics2::LoadAtomicInputData<bmpl::_1>>
+                    ForEachIonSpeciesLoadAtomicInputData;
 
             ForEachIonSpeciesLoadAtomicInputData(dataConnector);
         }

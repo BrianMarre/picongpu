@@ -37,7 +37,7 @@ namespace picongpu
             {
                 //! debug only, print content and bins of histogram to console, serial and cpu build only
                 template<typename T_Histogram>
-                void printHistogramToConsole(T_Histogram& histogram)
+                void printHistogramToConsole(T_Histogram const& histogram)
                 {
                     constexpr uint32_t numBins = T_Histogram::numberBins;
 
@@ -72,12 +72,12 @@ namespace picongpu
 
                 //! debug only, write atomic data to console, must be called serially and cpu build only
                 template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
-                void printAtomicDataToConsole(T_AtomicData& atomicData)
+                std::unique_ptr<T_AtomicData> printAtomicDataToConsole(std::unique_ptr<T_AtomicData> atomicData)
                 {
-                    uint32_t numberAtomicStates = atomicData.getNumberAtomicStates();
-                    uint32_t numberBoundBoundTransitions = atomicData.getNumberBoundBoundTransitions();
-                    uint32_t numberBoundFreeTransitions  = atomicData.getNumberBoundFreeTransitions();
-                    uint32_t numberAutonomousTransitions = atomicData.getNumberAutonomousTransitions();
+                    uint32_t numberAtomicStates = atomicData->getNumberAtomicStates();
+                    uint32_t numberBoundBoundTransitions = atomicData->getNumberBoundBoundTransitions();
+                    uint32_t numberBoundFreeTransitions = atomicData->getNumberBoundFreeTransitions();
+                    uint32_t numberAutonomousTransitions = atomicData->getNumberAutonomousTransitions();
 
                     // basic numbers
                     std::cout << "AtomicNumber: " << static_cast<uint16_t>(T_AtomicData::atomicNumber) << "(#s "
@@ -87,8 +87,8 @@ namespace picongpu
 
                     // ChargeState data
                     auto chargeStateDataBox
-                        = atomicData.template getChargeStateDataDataBox<true>(); // true: get hostDataBox
-                    auto chargeStateOrgaBox = atomicData.template getChargeStateOrgaDataBox<true>();
+                        = atomicData->template getChargeStateDataDataBox<true>(); // true: get hostDataBox
+                    auto chargeStateOrgaBox = atomicData->template getChargeStateOrgaDataBox<true>();
 
                     std::cout << "ChargeState Data index : (E_ionization[eV], Z_screened[e]) [#AtomicStates, "
                                  "startIndexBlock]"
@@ -111,20 +111,20 @@ namespace picongpu
 
                     // AtomicState data
                     auto atomicStateDataBox
-                        = atomicData.template getAtomicStateDataDataBox<true>(); // true: get hostDataBox
+                        = atomicData->template getAtomicStateDataDataBox<true>(); // true: get hostDataBox
 
-                    auto boundBoundStartIndexBox = atomicData.template getBoundBoundStartIndexBlockDataBox<true>();
-                    auto boundFreeStartIndexBox = atomicData.template getBoundFreeStartIndexBlockDataBox<true>();
-                    auto autonomousStartIndexBox = atomicData.template getAutonomousStartIndexBlockDataBox<true>();
+                    auto boundBoundStartIndexBox = atomicData->template getBoundBoundStartIndexBlockDataBox<true>();
+                    auto boundFreeStartIndexBox = atomicData->template getBoundFreeStartIndexBlockDataBox<true>();
+                    auto autonomousStartIndexBox = atomicData->template getAutonomousStartIndexBlockDataBox<true>();
 
                     auto boundBoundNumberTransitionsBox
-                        = atomicData.template getBoundBoundNumberTransitionsDataBox<true>();
+                        = atomicData->template getBoundBoundNumberTransitionsDataBox<true>();
                     auto boundFreeNumberTransitionsBox
-                        = atomicData.template getBoundFreeNumberTransitionsDataBox<true>();
+                        = atomicData->template getBoundFreeNumberTransitionsDataBox<true>();
                     auto autonomousNumberTransitionsBox
-                        = atomicData.template getAutonomousNumberTransitionsDataBox<true>();
+                        = atomicData->template getAutonomousNumberTransitionsDataBox<true>();
 
-                    auto transitionSelectionBox = atomicData.template getTransitionSelectionDataBox<true>();
+                    auto transitionSelectionBox = atomicData->template getTransitionSelectionDataBox<true>();
 
                     using S_ConfigNumber = stateRepresentation::ConfigNumber<
                         uint64_t,
@@ -175,7 +175,7 @@ namespace picongpu
                     if constexpr (T_printTransitionData)
                     {
                         // bound-bound transitions
-                        auto boundBoundTransitionDataBox = atomicData.template getBoundBoundTransitionDataBox<true>();
+                        auto boundBoundTransitionDataBox = atomicData->template getBoundBoundTransitionDataBox<true>();
                         std::cout << "bound-bound transition" << std::endl;
                         std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
@@ -193,7 +193,7 @@ namespace picongpu
                         }
 
                         // bound-free transitions
-                        auto boundFreeTransitionDataBox = atomicData.template getBoundFreeTransitionDataBox<true>();
+                        auto boundFreeTransitionDataBox = atomicData->template getBoundFreeTransitionDataBox<true>();
                         std::cout << "bound-free transition" << std::endl;
                         std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
@@ -212,7 +212,7 @@ namespace picongpu
                         }
 
                         // autonomous transitions
-                        auto autonomousTransitionDataBox = atomicData.template getAutonomousTransitionDataBox<true>();
+                        auto autonomousTransitionDataBox = atomicData->template getAutonomousTransitionDataBox<true>();
 
                         std::cout << "autonomous transitions" << std::endl;
                         std::cout << "index :(low, up), rate" << std::endl;
@@ -231,7 +231,7 @@ namespace picongpu
                     {
                         // bound-bound transitions
                         auto boundBoundTransitionDataBox
-                            = atomicData.template getInverseBoundBoundTransitionDataBox<true>();
+                            = atomicData->template getInverseBoundBoundTransitionDataBox<true>();
                         std::cout << "inverse bound-bound transition" << std::endl;
                         std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
@@ -250,7 +250,7 @@ namespace picongpu
 
                         // bound-free transitions
                         auto boundFreeTransitionDataBox
-                            = atomicData.template getInverseBoundFreeTransitionDataBox<true>();
+                            = atomicData->template getInverseBoundFreeTransitionDataBox<true>();
                         std::cout << "inverse bound-free transition" << std::endl;
                         std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
                         for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
@@ -270,7 +270,7 @@ namespace picongpu
 
                         // autonomous transitions
                         auto autonomousTransitionDataBox
-                            = atomicData.template getInverseAutonomousTransitionDataBox<true>();
+                            = atomicData->template getInverseAutonomousTransitionDataBox<true>();
 
                         std::cout << "inverse autonomous transitions" << std::endl;
                         std::cout << "index :(low, up), rate" << std::endl;
@@ -282,6 +282,8 @@ namespace picongpu
                                 << autonomousTransitionDataBox.upperConfigNumberTransition(i) << ") "
                                 << autonomousTransitionDataBox.rate(i)<< std::endl;
                         }
+
+                        return atomicData;
                     }
                 }
 

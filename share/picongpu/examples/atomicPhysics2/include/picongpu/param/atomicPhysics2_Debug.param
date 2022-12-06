@@ -48,5 +48,4 @@ namespace picongpu::atomicPhysics2
      *  if disabled, uncaught error will lead to invalid memory access
      */
     constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG = true;
-
 } // namespace picongpu::atomicPhysics2

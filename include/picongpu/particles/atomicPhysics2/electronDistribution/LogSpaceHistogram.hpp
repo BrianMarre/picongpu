@@ -67,12 +67,12 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         {
             if(binIndex < 0)
             {
-                printf("ATOMIC PHYSICS ERROR: binIndex < 0");
+                printf("atomicPhysics ERROR: binIndex < 0");
                 return false;
             }
             if(binIndex >= T_numberBins)
             {
-                printf("ATOMIC PHYSICS ERROR: binIndex >= T_numberBins");
+                printf("atomicPhysics ERROR: binIndex >= T_numberBins");
                 return false;
             }
             return true;
@@ -101,12 +101,12 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
             {
                 if(energy < 0._X)
                 {
-                    printf("ATOMIC PHYSICS ERROR: energy < 0 in histogram getBinIndec() call");
+                    printf("atomicPhysics ERROR: energy < 0 in histogram getBinIndec() call");
                     return 0u;
                 }
                 if(energy >= maxEnergy)
                 {
-                    printf("ATOMIC PHYSICS ERROR: energy > maxEnergy in histogram getBinIndec() call");
+                    printf("atomicPhysics ERROR: energy > maxEnergy in histogram getBinIndec() call");
                     return 0u;
                 }
             }
@@ -253,7 +253,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(energy < 0)
                 {
-                    printf("ATOMIC PHYSICS ERROR: energy < 0 in histogram binParticle() call");
+                    printf("atomicPhysics ERROR: energy < 0 in histogram binParticle() call");
                     return;
                 }
 
