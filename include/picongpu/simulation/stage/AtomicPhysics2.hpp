@@ -97,7 +97,7 @@ namespace picongpu::simulation::stage
             // actual binning
             ForEachElectronSpeciesBinElectrons(mappingDesc);
 
-            //
+            // find time step length
         }
     };
 } // namespace picongpu::simulation::stage

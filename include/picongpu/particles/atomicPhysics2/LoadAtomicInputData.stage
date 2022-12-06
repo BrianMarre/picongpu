@@ -44,7 +44,7 @@ namespace picongpu::particles::atomicPhysics2
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
-        ALPAKA_FN_HOST void operator()(DataConnector& dataConnector)
+        ALPAKA_FN_HOST void operator()(DataConnector& dataConnector) const
         {
             /// @todo move to trait functor?, Brian Marre, 2022
             using FrameType = typename IonSpecies::FrameType;

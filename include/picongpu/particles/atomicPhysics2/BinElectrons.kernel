@@ -24,6 +24,7 @@
 #include <cstdint>
 
 #include "picongpu/particles/atomicPhysics2/GetPhysicalEnergy.hpp"
+#include "picongpu/param/atomicPhysics2_Debug.param"
 
 // debug only
 //#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
@@ -58,12 +59,12 @@ namespace picongpu::particles::atomicPhysics2
             typename T_Worker,
             typename T_AreaMapping,
             typename T_ElectronBox,
-            typename T_localElectronHistogramDataBox>
+            typename T_LocalElectronHistogramDataBox>
         HDINLINE void operator() (
             T_Worker const& worker,
-            T_AreaMapping areaMapping,
+            T_AreaMapping const areaMapping,
             T_ElectronBox const electronBox,
-            T_localElectronHistogramDataBox localElectronHistogramDataBox
+            T_LocalElectronHistogramDataBox localElectronHistogramDataBox
             ) const
         {
             // by definition our frameSize is always equal to the superCellSize
@@ -97,8 +98,8 @@ namespace picongpu::particles::atomicPhysics2
 
             worker.sync();
 
-            // debug only
-            //debug::printHistogramToConsole(histogram);
+            if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG_PRINT)
+                debug::printHistogramToConsole(histogram);
         }
     };
 } // namespace picongpu::particles::atomicPhysics2

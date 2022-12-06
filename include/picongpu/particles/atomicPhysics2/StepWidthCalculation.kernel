@@ -1,0 +1,57 @@
+/* Copyright 2022 Brian Marre
+ * 
+ * This file is part of PIConGPU.
+ * 
+ * PIConGPU is free software you can redistribute it andor modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * PIConGPU is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with PIConGPU.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+# pragma once
+
+
+namespace picongpu::particles::atomicPhysics2
+{
+    template<typename T_IonSpecies, typename T_Histogram>
+    struct FindStepWidthKernel
+    {
+        /** call operator
+         *
+         */
+        template<
+            typename T_Worker,
+            typename T_AreaMapping,
+            typename T_LocalElectronHistogramDataBox,
+            typename T_TransitionDataBox,
+            typename T_CacheDiogonalRates>
+        HDINLINE void operator(
+            T_Worker const& worker,
+            T_AreaMapping const areaMapping,
+            T_LocalElectronHistogramDataBox const localElectronHistogramDataBox,
+            T_TransitionDataBox const transitionDataBox,
+            T_CacheDiogonalRates cacheDiaogonalRates) const
+        {
+            // by definition our frameSize is always equal to the superCellSize
+            constexpr uint32_t frameSize = pmacc::math::CT::volume<SuperCellSize>::type::value;
+
+            pmacc::DataSpace<simDim> const superCellIdx(
+                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+
+            // get histogram for current superCell
+            T_Histogram const& histogram = localElectronHistogramDataBox(superCellIdx);
+
+            auto forEachAtomicState
+        }
+    };
+
+} // namespace picongpu::particles::atomicPhysics2

@@ -17,28 +17,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
-
-#include "picongpu/simulation_defines.hpp"
-
-#include "picongpu/particles/atomicPhysics2/BinElectrons.kernel"
-#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
-
-#include <pmacc/Environment.hpp>
-#include <pmacc/mappings/kernel/AreaMapping.hpp>
-//#include <pmacc/traits/GetNumWorkers.hpp>
-#include <pmacc/type/Area.hpp>
-
-#include <cstdint>
-#include <cstring>
-
 /** @file binElectrons sub-stage of atomicPhysics
  *
  * implements the binning of all electron species into a super cell field shared histogram for use with the
  * atomicPhysics rate calculation.
  */
 
-/* @todo Tests: test need to check correct binning in following cases
+/** @todo Tests: test need to check correct binning in following cases
  * 1. no temperature and no drift, single species, bin to bin-0
  *      else: incorrect binning
  * 2. 200keV drift, single species, bin to 200keV bin
@@ -49,6 +34,19 @@
  * 4. no temperature and no drift, multiple species, all species weights are actually accounted
  *      else: spurious reset in between different species calls
  */
+
+#pragma once
+
+#include "picongpu/simulation_defines.hpp"
+
+#include "picongpu/particles/atomicPhysics2/BinElectrons.kernel"
+#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+
+#include <pmacc/Environment.hpp>
+#include <pmacc/mappings/kernel/AreaMapping.hpp>
+#include <pmacc/type/Area.hpp>
+
+#include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2
 {
