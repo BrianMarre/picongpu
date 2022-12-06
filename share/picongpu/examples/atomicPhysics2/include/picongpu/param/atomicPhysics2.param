@@ -18,8 +18,8 @@
  */
 
 /** @file
- * configuration file for atomicPhysics, see speciesDefinition.param for
- * actual modeling of atomic Physics of ions.
+ * configuration file for atomicPhysics, also see speciesDefinition.param for further
+ *  necessary settings to enable atomicPhysics.
  */
 
 #pragma once
@@ -34,13 +34,6 @@
 
 namespace picongpu::atomicPhysics2
 {
-    // debug compile settings
-    //! activate more performance relevant debug checks
-    constexpr bool ATOMIC_PHYSICS_HOT_DEBUG = true;
-    //! activate less performance relevant debug checks
-    constexpr bool ATOMIC_PHYSICS_COLD_DEBUG = true;
-    //! activate debug print of atomic data to console
-    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT = true;
 
     using ElectronHistogram =
         particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<

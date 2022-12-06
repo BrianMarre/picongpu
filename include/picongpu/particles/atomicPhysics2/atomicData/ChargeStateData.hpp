@@ -20,6 +20,7 @@
 #pragma once
 
 #include "picongpu/param/atomicPhysics2.param"
+#include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
@@ -93,7 +94,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             uint8_t chargeState = static_cast<uint8_t>(std::get<0>(tuple));
 
             // debug only
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
             {
                 if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber))
                 {
@@ -125,7 +126,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         //! @attention NEVER call with chargeState >= T_atomicNumber, otherwise invalid memory access
         HDINLINE T_Value ionizationEnergy(uint8_t chargeState)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(chargeState >= static_cast<uint32_t>(T_atomicNumber))
                 {
                     printf("atomicPhysics ERROR: out of range ionizationEnergy() call");
@@ -138,7 +139,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         //! @attention NEVER call with chargeState >= T_atomicNumber, otherwise invalid memory access
         HDINLINE T_Value screenedCharge(uint8_t chargeState)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(chargeState >= static_cast<uint32_t>(T_atomicNumber))
                 {
                     printf("atomicPhysics ERROR: out of range ionizationEnergy() call");

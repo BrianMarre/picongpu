@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 
@@ -124,7 +125,7 @@ namespace picongpu
                     HINLINE void store(uint32_t const collectionIndex, S_AutonomousTransitionTuple& tuple)
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                             if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                             {
                                 throw std::runtime_error("atomicPhysics ERROR: out of range store");
@@ -144,7 +145,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue rate(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range getTransitionRate() call");

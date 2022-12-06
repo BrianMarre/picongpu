@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 
@@ -158,7 +159,7 @@ namespace picongpu
                     HINLINE void store(uint32_t const collectionIndex, S_BoundFreeTransitionTuple& tuple)
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 throw std::runtime_error("atomicPhysics ERROR: outside range call store bound-free");
@@ -187,7 +188,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin1(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range bound-free cxin1() call\n");
@@ -206,7 +207,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin2(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range bound-free cxin2() call\n");
@@ -225,7 +226,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin3(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: outside range bound-free cxin3() call\n");
@@ -244,7 +245,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin4(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range bound-free cxin4() call\n");
@@ -263,7 +264,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin5(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range bound-free cxin5() call\n");
@@ -282,7 +283,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin6(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range cxin6() call\n");
@@ -301,7 +302,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin7(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range cxin7() call\n");
@@ -320,7 +321,7 @@ namespace picongpu
                     HDINLINE typename S_TransitionDataBox::TypeValue cxin8(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= this->m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range bound-free cxin8() call\n");

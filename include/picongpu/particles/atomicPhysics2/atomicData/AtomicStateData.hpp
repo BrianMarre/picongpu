@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "picongpu/param/atomicPhysics2.param"
+#include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
@@ -106,7 +106,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
         {
             // debug only
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
                     throw std::runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
@@ -195,7 +195,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HDINLINE Idx configNumber(uint32_t const collectionIndex) const
         {
             // debug only
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of bounds atomic state configNumber call\n");
@@ -216,7 +216,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HDINLINE typename S_DataBox::TypeValue stateEnergy(uint32_t const collectionIndex) const
         {
             // debug only
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of bounds atomic state energy call\n");

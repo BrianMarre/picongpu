@@ -98,7 +98,7 @@ namespace picongpu
                         Idx lowerStateConfigNumber,
                         Idx upperStateConfigNumber)
                     {
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                             if (collectionIndex >= m_numberTransitions)
                             {
                                 throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition() call");
@@ -149,7 +149,7 @@ namespace picongpu
                     */
                     HDINLINE Idx upperConfigNumberTransition(uint32_t const collectionIndex) const
                     {
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition() call");
@@ -168,7 +168,7 @@ namespace picongpu
                     HDINLINE Idx lowerConfigNumberTransition(uint32_t const collectionIndex) const
                     {
                         // debug only
-                        if constexpr (picongpu::atomicPhysics2::ATOMIC_PHYSICS_HOT_DEBUG)
+                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                             if(collectionIndex >= m_numberTransitions)
                             {
                                 printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition() call");

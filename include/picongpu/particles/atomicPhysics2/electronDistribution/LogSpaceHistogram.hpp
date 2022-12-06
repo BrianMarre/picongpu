@@ -24,12 +24,10 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/param/atomicPhysics2_Debug.param"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/HistogramInterface.hpp"
 
 #include <cstdint>
-
-// debug only
-#include <iostream>
 
 namespace picongpu::particles::atomicPhysics2::electronDistribution
 {
@@ -51,7 +49,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
      * @tparam T_numberBins number of bins, does not include the overflow bin, unitless
      * @tparam T_Storage storage type of T_maxEnergy
      */
-    template<typename T_Storage, uint32_t T_numberBins, T_Storage T_maxEnergy, bool T_debug>
+    template<typename T_Storage, uint32_t T_numberBins, T_Storage T_maxEnergy>
     class LogSpaceHistogram : HistogramInterface
     {
     public:
@@ -71,12 +69,12 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         {
             if(binIndex < 0)
             {
-                printf("Error: binIndex < 0");
+                printf("ATOMIC PHYSICS ERROR: binIndex < 0");
                 return false;
             }
             if(binIndex >= T_numberBins)
             {
-                printf("Error: binIndex >= T_numberBins");
+                printf("ATOMIC PHYSICS ERROR: binIndex >= T_numberBins");
                 return false;
             }
             return true;
@@ -98,18 +96,19 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         static HDINLINE uint32_t getBinIndex(float_X const energy)
         {
             // negative energies are always wrong
+            /// @todo remove, doubling up?, Brian Marre, 2022
             PMACC_ASSERT_MSG(energy >= 0, "energies must be >= 0");
 
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
             {
                 if(energy < 0._X)
                 {
-                    printf("Error: energy < 0");
+                    printf("ATOMIC PHYSICS ERROR: energy < 0 in histogram getBinIndec() call");
                     return 0u;
                 }
                 if(energy >= maxEnergy)
                 {
-                    printf("Error: energy > maxEnergy");
+                    printf("ATOMIC PHYSICS ERROR: energy > maxEnergy in histogram getBinIndec() call");
                     return 0u;
                 }
             }
@@ -147,13 +146,14 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         HDINLINE float_X getBinEnergy(uint32_t const binIndex) const final
         {
             // check binIndex Boundaries
+            /// @todo remove, since already covered?, Brian Marre, 2022
             PMACC_DEVICE_ASSERT_MSG(
                 (binIndex >= 0u) and (binIndex < T_numberBins),
                 "binIndex must be >= 0 < T_numberBins");
 
-            /// @todo find correct debug compile guard, Brian Marre, 2022
-            if(not debugCheckBinIndexInRange(binIndex))
-                return 0u;
+            if constexpr(ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
+                if(not debugCheckBinIndexInRange(binIndex))
+                    return 0u;
 
             if(binIndex == 0u)
                 return 1._X / 2._X; //[eV]
@@ -184,7 +184,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          */
         DINLINE float_X getBinWeight0(uint32_t const binIndex) const final
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return 0._X;
 
@@ -197,7 +197,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          */
         HDINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const final
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return 0._X;
 
@@ -210,7 +210,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          */
         HDINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const final
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return 0._X;
 
@@ -223,7 +223,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          */
         HDINLINE bool isBinOverSubscribed(uint32_t const binIndex) const final
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return false;
 
@@ -252,10 +252,10 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         template<typename T_Worker>
         HDINLINE void binParticle(T_Worker const& worker, float_X const energy, float_X const weight)
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(energy < 0)
                 {
-                    std::cout << "Error: energy < 0" << std::endl;
+                    printf("ATOMIC PHYSICS ERROR: energy < 0 in histogram binParticle() call");
                     return;
                 }
 
@@ -286,7 +286,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         template<typename T_Worker>
         HDINLINE void addDeltaWeight(T_Worker const& worker, uint32_t const binIndex, float_X const weight)
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return;
 
@@ -308,7 +308,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         HDINLINE void addDeltaEnergy(T_Worker const& worker, uint32_t const binIndex, float_X const deltaEnergy)
         {
             // debug only
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return;
 
@@ -319,7 +319,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         //! BEWARE: does not check binIndex range outside a debug compile
         HDINLINE void setOversubscribed(uint32_t const binIndex) final
         {
-            if constexpr(T_debug)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(not debugCheckBinIndexInRange(binIndex))
                     return;
 

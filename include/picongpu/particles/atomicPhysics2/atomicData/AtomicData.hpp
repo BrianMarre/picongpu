@@ -19,6 +19,10 @@
 
 #pragma once
 
+#include "picongpu/param/atomicPhysics2_Debug.param"
+
+#include <pmacc/dataManagement/ISimulationData.hpp>
+
 // charge state data
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateOrgaData.hpp"
@@ -47,8 +51,6 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTuple.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
-#include <pmacc/dataManagement/ISimulationData.hpp>
-
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -59,8 +61,8 @@
 #include <tuple>
 
 // debug only
-#include <typeinfo>
-#include <cxxabi.h>
+//#include <typeinfo>
+//#include <cxxabi.h>
 
 /** @file gathers atomic data storage implementations and implements filling them on runtime
  *
@@ -1217,7 +1219,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 T_fieldIonization>();
 
             // just to be sure
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_COLD_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST)
                 this->hostToDevice();
         }
 
