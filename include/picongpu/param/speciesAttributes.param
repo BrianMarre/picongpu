@@ -44,6 +44,7 @@
 #include <pmacc/particles/IdProvider.def>
 #include <pmacc/particles/Identifier.hpp>
 
+#include <cstdint>
 
 namespace picongpu
 {
@@ -148,6 +149,9 @@ namespace picongpu
     //! atomic state storage of ions, see also atomicPhysics.param
     alias(atomicConfigNumber);
 
+    //! alias for particle flag, specifies atomicData type to use for this species
+    alias(atomicDataType);
+
     /** path to file containing charge state input data for atomicPhysics,
      *
      * file gives parameter of atomic physics states for ion species
@@ -198,7 +202,7 @@ namespace picongpu
      */
     alias(atomicPhysicsAutonomousTransitionsFileName);
 
-    //! alias for particle flag describing atomicPhysics solver
+    //! alias for particle flag describing atomicPhysics solver, @todo remove
     alias(atomicPhysicsSolver);
 
     //! alias for particle flag describing atomicPhysics solver
@@ -207,8 +211,17 @@ namespace picongpu
     //! alias for particle flag, notes that a species is representing Electrons
     alias(isElectron);
 
-    //! alias for particle flag, notes that a species represents an ion
-    alias(atomicDataType);
+    //! particle attribute, process class of selected atomicPhysics transition
+    value_identifier(uint8_t, processClass, 0u);
+
+    //! particle attribute, index of chosen atomicPhysics transition
+    value_identifier(uint32_t, transitionIndex, 0u);
+
+    //! particle attribute, index of bin chosen for atomicPhysics transition, if applicable for 
+    value_identifier(uint32_t, binIndex, 0u);
+
+    //! particle attribute, whether the selected transition was accepted
+    value_identifier(bool, accepted, false);
 
     /** Total cell index of a particle.
      *

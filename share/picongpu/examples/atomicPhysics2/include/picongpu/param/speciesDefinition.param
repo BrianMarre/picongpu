@@ -120,7 +120,18 @@ namespace picongpu
     using ArgonAttributes
         = MakeSeq_t<
             DefaultParticleAttributes,
+
+            // atomic physics attributes
+            //      storage of atomic state
             atomicConfigNumber< atomicPhysics2::ConfigNumber_Ar >,
+            //      solver support
+            processClass,
+            transitionIndex,
+            binIndex,
+            accepted,
+            // legacy ionization support
+
+            /// @todo remove?, Brian Marre, 2022
             boundElectrons>;
 
     /* define species ions */
