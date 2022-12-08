@@ -29,30 +29,23 @@
 #include <cstdint>
 #include <string>
 
-namespace picongpu
+namespace picongpu::particles::atomicPhysics2
 {
-    namespace particles
+    /**@class superCell field of the current timeStep:float_X for one atomicPhysics iteration
+     *
+     */
+    template<typename T_MappingDescription>
+    struct LocalTimeStepField : public SuperCellField<float_X, T_MappingDescription>
     {
-        namespace atomicPhysics2
+        LocalTimeStepField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<float_X, T_MappingDescription>(mappingDesc)
         {
-            /**@class superCell field of the current timeStep:float_X for one atomicPhysics iteration
-             *
-             */
-            template<typename T_MappingDescription>
-            struct LocalTimeStepField
-                : public SuperCellField<float_X, T_MappingDescription>
-            {
+        }
 
-                LocalTimeStepField(T_MappingDescription const& mappingDesc)
-                    : SuperCellField<float_X, T_MappingDescription>(mappingDesc) {}
-
-                // required by ISimulationData
-                std::string getUniqueId() override
-                {
-                    return "LocalTimeStepField";
-                }
-
-            };
-        } // namespace atomicPhysics2
-    } // namespace particles
-} // namespace picongpu
+        // required by ISimulationData
+        std::string getUniqueId() override
+        {
+            return "LocalTimeStepField";
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2

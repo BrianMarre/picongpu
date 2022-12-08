@@ -48,7 +48,7 @@
 
 #include <cstdint>
 
-namespace picongpu::particles::atomicPhysics2
+namespace picongpu::particles::atomicPhysics2::stage
 {
     /** @class atomicPhysics sub-stage for a species calling the kernel per superCell
      *
@@ -92,4 +92,4 @@ namespace picongpu::particles::atomicPhysics2
                 localElectronHistogramField.getDeviceDataBox()); // standard data box
         }
     };
-} // namespace picongpu::particles::atomicPhysics2
+} // namespace picongpu::particles::atomicPhysics2::stage

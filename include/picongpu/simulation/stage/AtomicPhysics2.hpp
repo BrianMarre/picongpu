@@ -21,7 +21,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/BinElectrons.stage"
+#include "picongpu/particles/atomicPhysics2/stage/BinElectrons.stage"
 
 #include <pmacc/meta/ForEach.hpp>
 
@@ -51,7 +51,7 @@ namespace picongpu::simulation::stage
             typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isElectron<>>::type;
 
         //! bin electrons sub stage call for each species
-        pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::BinElectrons<bmpl::_1>>
+        pmacc::meta::ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::stage::BinElectrons<bmpl::_1>>
             ForEachElectronSpeciesBinElectrons;
 
         //! reset the histogram on device side

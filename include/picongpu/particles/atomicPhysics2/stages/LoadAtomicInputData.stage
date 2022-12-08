@@ -30,7 +30,7 @@
 
 #include <string>
 
-namespace picongpu::particles::atomicPhysics2
+namespace picongpu::particles::atomicPhysics2::stage
 {
     /** pre-simulation stage for loading the user provided atomic input data
      *
@@ -98,4 +98,4 @@ namespace picongpu::particles::atomicPhysics2
         }
     };
 
-} // namespace picongpu::particles::atomicPhysics2
+} // namespace picongpu::particles::atomicPhysics2::stage
