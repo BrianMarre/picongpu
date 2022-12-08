@@ -29,7 +29,7 @@
 #include <cstdint>
 #include <string>
 
-namespace picongpu::particles::atomicPhysics2
+namespace picongpu::particles::atomicPhysics2::localHelperFields
 {
     /**@class superCell field of the current timeStep:float_X for one atomicPhysics iteration
      *
@@ -48,4 +48,4 @@ namespace picongpu::particles::atomicPhysics2
             return "LocalTimeStepField";
         }
     };
-} // namespace picongpu::particles::atomicPhysics2
+} // namespace picongpu::particles::atomicPhysics2::localHelperFields

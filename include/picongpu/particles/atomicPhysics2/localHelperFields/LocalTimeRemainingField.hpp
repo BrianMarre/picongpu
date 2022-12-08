@@ -29,29 +29,23 @@
 #include <cstdint>
 #include <string>
 
-namespace picongpu
+namespace picongpu::particles::atomicPhysics2::localHelperFields
 {
-    namespace particles
+    /**@class holds a gridBuffer of the per-superCell timeRemaining:float_X for atomicPhysics
+     *
+     */
+    template<typename T_MappingDescription>
+    struct LocalTimeRemainingField : public SuperCellField<float_X, T_MappingDescription>
     {
-        namespace atomicPhysics2
+        LocalTimeRemainingField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<float_X, T_MappingDescription>(mappingDesc)
         {
-            /**@class holds a gridBuffer of the per-superCell timeRemaining:float_X for atomicPhysics
-             *
-             */
-            template<typename T_MappingDescription>
-            struct LocalTimeRemainingField
-                : public SuperCellField<float_X, T_MappingDescription>
-            {
+        }
 
-                LocalTimeRemainingField(T_MappingDescription const& mappingDesc)
-                    : SuperCellField<float_X, T_MappingDescription>(mappingDesc) {}
-
-                // required by ISimulationData
-                std::string getUniqueId() override
-                {
-                    return "LocalTimeRemainingField";
-                }
-            };
-        } // namespace atomicPhysics2
-    } // namespace particles
-} // namespace picongpu
+        // required by ISimulationData
+        std::string getUniqueId() override
+        {
+            return "LocalTimeRemainingField";
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2::localHelperFields

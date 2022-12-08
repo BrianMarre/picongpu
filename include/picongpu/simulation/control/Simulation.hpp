@@ -35,10 +35,10 @@
 #include "picongpu/initialization/ParserGridDistribution.hpp"
 #include "picongpu/param/atomicPhysics2.param"
 #include "picongpu/particles/Manipulate.hpp"
-#include "picongpu/particles/atomicPhysics2/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics2/LocalTimeStepField.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeStepField.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.stage"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
@@ -616,6 +616,7 @@ namespace picongpu
             resetFields(currentStep);
             meta::ForEach<VectorAllSpecies, particles::CallReset<bmpl::_1>> resetParticles;
             resetParticles(currentStep);
+            /// @todo need to add atomicPhysics super cell fields?, Brian Marre, 2022
         }
 
         void slide(uint32_t currentStep)
@@ -816,14 +817,14 @@ namespace picongpu
 
             // local time Remaining
             auto localSuperCellTimeRemaining = std::make_unique<
-                particles::atomicPhysics2::LocalTimeRemainingField<picongpu::MappingDesc>
-                >(*cellDescription);
+                particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
+                *cellDescription);
             dataConnector.consume(std::move(localSuperCellTimeRemaining));
 
             // local time step
             auto localSuperCellTimeStep = std::make_unique<
-                particles::atomicPhysics2::LocalTimeStepField<picongpu::MappingDesc>
-                >(*cellDescription);
+                particles::atomicPhysics2::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
+                *cellDescription);
             dataConnector.consume(std::move(localSuperCellTimeStep));
         }
 
