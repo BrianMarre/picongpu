@@ -146,7 +146,7 @@ namespace picongpu
      */
     alias(effectiveNuclearCharge);
 
-    //! atomic state storage of ions, see also atomicPhysics.param
+    //! alias for particle property, atomic state storage of ions, see also atomicPhysics2.param
     alias(atomicConfigNumber);
 
     //! alias for particle flag, specifies atomicData type to use for this species
@@ -160,7 +160,7 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsChargeStatesFileName);
+    alias(chargeStatesFileName);
 
     /** path to file containing atomic state input data for atomicPhysics,,
      *
@@ -170,7 +170,10 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsAtomicStatesFileName);
+    alias(atomicStatesFileName);
+
+    //! alias for particle flag, number of atomic states in the atomic state input data, see atomicPhysicsAtomicStatesFileName
+    alias(numberAtomicStates);
 
     /** path to file containing bound-bound transitions input data for atomicPhysics,
      *
@@ -180,7 +183,7 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsBoundBoundTransitionsFileName);
+    alias(boundBoundTransitionsFileName);
 
     /** path to file containing bound-free transitions input data for atomicPhysics,
      *
@@ -190,7 +193,7 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsBoundFreeTransitionsFileName);
+    alias(boundFreeTransitionsFileName);
 
     /** path to file containing autonomous transitions input data for atomicPhysics,
      *
@@ -200,7 +203,7 @@ namespace picongpu
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
-    alias(atomicPhysicsAutonomousTransitionsFileName);
+    alias(autonomousTransitionsFileName);
 
     //! alias for particle flag describing atomicPhysics solver, @todo remove
     alias(atomicPhysicsSolver);

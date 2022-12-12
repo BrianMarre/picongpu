@@ -42,6 +42,10 @@
 #include <pmacc/particles/Identifier.hpp>
 #include <pmacc/particles/traits/FilterByFlag.hpp>
 
+#include "picongpu/particles/atomicPhysics2/Number.hpp"
+
+#include <cstdint>
+
 // argon + thermal electrons
 namespace picongpu
 {
@@ -107,11 +111,13 @@ namespace picongpu
         atomicDataType<atomicPhysics2::AtomicData_Ar>,
 
         /// currently all are required, @todo change?, Brian Marre
-        atomicPhysicsChargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
-        atomicPhysicsAtomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
-        atomicPhysicsBoundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,
-        atomicPhysicsBoundFreeTransitionsFileName< PMACC_CSTRING("../BoundFreeTransitions_Ar.txt" )>,
-        atomicPhysicsAutonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
+        chargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
+        atomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
+        /// @todo replace with runtime hostDeviceBuffer of DataBoxes
+        numberAtomicStates<particles::atomicPhysics2::Number<470u>>,
+        boundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,
+        boundFreeTransitionsFileName< PMACC_CSTRING("../BoundFreeTransitions_Ar.txt" )>,
+        autonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
 
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
         atomicPhysicsSolver2<BulkElectrons>>;
