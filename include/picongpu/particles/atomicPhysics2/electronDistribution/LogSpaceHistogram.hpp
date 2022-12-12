@@ -111,7 +111,6 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
                 }
             }
 
-
             if(energy >= 1._X)
             {
                 // standard bin
@@ -136,10 +135,10 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         // query state-methods
         /** get the central Energy for a given binIndex
          *
-         * BEWARE: does no range check outside a debug compile, check range externally!
+         * @attention no range check outside a debug compile, check range externally!
          *
          * @param binIndex ... bin index , unitless
-         * @return central energy of bin[eV]
+         * @return central energy of bin, [eV]
          */
         HDINLINE float_X getBinEnergy(uint32_t const binIndex) const final
         {
@@ -163,8 +162,9 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
 
         /** get bin width
          *
-         * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
+         * @attention no range checks outside a debug compile, check range externally!
          *
+         * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
          * @return binWidth, [eV]
          */
         DINLINE float_X getBinWidth(uint32_t const binIndex) const final
@@ -176,9 +176,12 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
                 - math::pow(computeBase(), static_cast<float_X>(binIndex - 1u))); // [eV]
         }
 
-        /** get w0 entry for given binIndex
+        /** get weight0 entry for given binIndex
          *
-         * @attention no range checks outside a debug compile
+         * @attention no range checks outside a debug compile, check range externally!
+         *
+         * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
+         * @return weight of binned macro-electrons, unmodified, unitless
          */
         DINLINE float_X getBinWeight0(uint32_t const binIndex) const final
         {
@@ -189,9 +192,12 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
             return this->binWeights0[binIndex];
         }
 
-        /** get DeltaW entry for given binIndex
+        /** get DeltaWeight entry for given binIndex
          *
-         * @attention no range checks outside a debug compile
+         * @attention no range checks outside a debug compile, check range externally!
+         *
+         * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
+         * @return weight of bin used by accepted transitions, unitless
          */
         HDINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const final
         {
@@ -204,7 +210,10 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
 
         /** get DeltaE entry for given binIndex
          *
-         * @attention no range checks outside a debug compile
+         * @attention no range checks outside a debug compile, check range externally!
+         *
+         * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
+         * @return change of energy in this bin due to accepted transitions, [eV]
          */
         HDINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const final
         {
@@ -217,7 +226,10 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
 
         /** is the bin marked as oversubscribed ?
          *
-         * @attention no range checks outside a debug compile
+         * @attention no range checks outside a debug compile, check range externally!
+         *
+         * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
+         * @return whether the last check marked the bin as oversubscribed, e.g. DeltaWeight > Weight0
          */
         HDINLINE bool isBinOverSubscribed(uint32_t const binIndex) const final
         {
