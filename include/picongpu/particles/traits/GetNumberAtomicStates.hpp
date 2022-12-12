@@ -27,10 +27,14 @@
 #include <pmacc/traits/Resolve.hpp>
 
 #include <cstdint>
-#include 
 
 namespace picongpu::traits
 {
+    /** @class compile time functor for accessing data in numberAtomicStates flag of species
+     *
+     * @tparam T_IonSpecies resolved typename of species with flag
+     * @returns return value contained in ::value
+     */
     template<typename T_IonSpecies>
     struct GetNumberAtomicStates
     {

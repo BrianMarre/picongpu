@@ -33,6 +33,37 @@
 #pragma once
 
 #include "picongpu/particles/atomicPhysics2/SuperCellField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/RateCache.hpp"
 
 #include <cstdint>
 #include <string>
+
+namespace picongpu::particles::atomicPhysics2::localHelperFields
+{
+    /**@class superCell field of the no-change-transition rateCache
+     *
+     * @tparam T_MappingDescription description of local mapping from device to grid
+     * @tparam T_IonSpecies resolved type of ion species
+     */
+    template<typename T_MappingDescription, typename T_IonSpecies>
+    struct LocalRateCacheField
+        : public SuperCellField<
+              RateCache<picongpu::particles::traits::GetNumberAtomicStates<T_IonSpecies>::value>,
+              T_MappingDescription>
+    {
+        using FrameType = typename T_IonSpecies::FrameType;
+
+        LocalRateCacheField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<
+                RateCache<picongpu::particles::traits::GetNumberAtomicStates<T_IonSpecies>::value>,
+                T_MappingDescription>(mappingDesc)
+        {
+        }
+
+        // required by ISimulationData
+        std::string getUniqueId() override
+        {
+            return FrameType::getName() + "_LocalRateCacheField";
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2::localHelperFields

@@ -28,42 +28,33 @@
 #include <cstdint>
 #include <string>
 
-namespace picongpu
+namespace picongpu::particles::atomicPhysics2::electronDistribution
 {
-    namespace particles
+    /**@class holds a gridBuffer of the per-superCell localHistograms for atomicPhysics
+     *
+     * @attention histograms are uninitialized upon creation of the field,
+     *  use .getDeviceBuffer().setValue() to init
+     */
+    template<typename T_Histogram, typename T_MappingDescription>
+    struct LocalHistogramField : SuperCellField<T_Histogram, T_MappingDescription>
     {
-        namespace atomicPhysics2
+    private:
+        /// @todo should these be private?
+        //! type of physical particle represented in histogram, usually "Electron" or "Photon"
+        std::string histogramType;
+
+    public:
+        LocalHistogramField(T_MappingDescription const& mappingDesc, std::string const histogramType)
+            : SuperCellField<T_Histogram, T_MappingDescription>(mappingDesc)
+            , histogramType(histogramType)
         {
-            namespace electronDistribution
-            {
-                /**@class holds a gridBuffer of the per-superCell localHistograms for atomicPhysics
-                 *
-                 * @attention histograms are uninitialized upon creation of the field,
-                 *  use .getDeviceBuffer().setValue() to init
-                 */
-                template<typename T_Histogram, typename T_MappingDescription>
-                struct LocalHistogramField : SuperCellField<T_Histogram, T_MappingDescription>
-                {
-                private:
-                    /// @todo should these be private?
-                    //! type of physical particle represented in histogram, usually "Electron" or "Photon"
-                    std::string histogramType;
+        }
 
-                public:
-                    LocalHistogramField(T_MappingDescription const& mappingDesc, std::string const histogramType)
-                        : SuperCellField<T_Histogram, T_MappingDescription>(mappingDesc)
-                        , histogramType(histogramType)
-                    {
-                    }
+        //! required by ISimulationData
+        std::string getUniqueId() override
+        {
+            return histogramType + "_localHistogramField";
+        }
+    };
 
-                    //! required by ISimulationData
-                    std::string getUniqueId() override
-                    {
-                        return histogramType + "_localHistogramField";
-                    }
-
-                };
-            } // namespace electronHistogram
-        } // namespace atomicPhysics2
-    } // namespace particles
-} // namespace picongpu
+} // namespace picongpu::particles::atomicPhysics2::electronDistribution

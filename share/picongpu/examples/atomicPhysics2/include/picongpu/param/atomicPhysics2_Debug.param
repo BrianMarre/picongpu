@@ -48,4 +48,9 @@ namespace picongpu::atomicPhysics2
      *  if disabled, uncaught error will lead to invalid memory access
      */
     constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG = true;
+    //! print histogram content to console, only useful if building serial and cpu-only
+    constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG_PRINT = false;
+
+    //! activate range checks in rate cache, @attention performance relevant
+    constexpr bool ATOMIC_PHYSICS_RATE_RATE_CACHE_DEBUG = true;
 } // namespace picongpu::atomicPhysics2

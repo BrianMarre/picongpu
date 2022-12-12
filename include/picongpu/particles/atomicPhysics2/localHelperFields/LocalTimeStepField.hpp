@@ -33,6 +33,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
 {
     /**@class superCell field of the current timeStep:float_X for one atomicPhysics iteration
      *
+     * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
     struct LocalTimeStepField : public SuperCellField<float_X, T_MappingDescription>
