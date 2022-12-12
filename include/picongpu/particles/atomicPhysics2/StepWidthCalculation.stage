@@ -27,6 +27,7 @@
 
 #include "picongpu/particles/atomicPhysics2/StepWidthCalculation.kernel"
 
+#incldue string
 
 namespace picongpu::particles::atomicPhysics2
 {
@@ -49,18 +50,24 @@ namespace picongpu::particles::atomicPhysics2
 
             pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg(MappingDesc::SuperCellSize{});
 
-            // init pointer to localElectronHistogramField, AtomicData dataBase object and cacheDiagonalRates
-            //      pointers to memory, we will only work on device, no sync required
+
+            // pointers to memory, we will only work on device, no sync required
+            //      pointer to localElectronHistogramField
             auto& localElectronHistogramField
                 = *dc.get<electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
                     "Electron_localHistogramField",
                     true);
-            AtomicDataType& atomicData = *dc.get<AtomicDataType>""
-            auto&
+
+            //      pointer to AtomicData for species
+            AtomicDataType& atomicData = *dc.get<AtomicDataType>>(FrameType::getName()+"_atomicData", true)
+
+            //      pointer to cacheNoChangeRates field
+            // get CacheDiagonalRates
+
 
             // macro for call of kernel, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(BinElectrons(), workerCfg)
+            PMACC_LOCKSTEP_KERNEL( <kernel>, workerCfg)
             (mapper.getGridDim())(
                 mapper,
                 electrons.getDeviceParticlesBox(),
