@@ -28,11 +28,6 @@
 #include <stdexcept>
 
 /** @file implements the storage of autonomous transitions property data
- *
- * @attention ConfigNumber specifies the number of a state as defined by the configNumber
- *      class, while index always refers to a collection index.
- *      The configNumber of a given state is always the same, its collection index depends
- *      on input file,it should therefore only be used internally!
  */
 
 namespace picongpu
@@ -50,8 +45,8 @@ namespace picongpu
                  * @tparam T_DataBoxType dataBox type used for storage
                  * @tparam T_Number dataType used for number storage, typically uint32_t
                  * @tparam T_Value dataType used for value storage, typically float_X
-                 * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
-                 *      typically uint64_t
+                 * @tparam T_CollectionIndex dataType used for collection index,
+                 *      typically uint32_t
                  * @tparam T_TransitionIndexDataType dataType used for transition index,
                  *      typically uint32_t
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
@@ -64,20 +59,20 @@ namespace picongpu
                 template<
                     typename T_Number,
                     typename T_Value,
-                    typename T_ConfigNumberDataType,
+                    typename T_CollectionIndex,
                     uint8_t T_atomicNumber>
                 class AutonomousTransitionDataBox :
                     public TransitionDataBox<
                         T_Number,
                         T_Value,
-                        T_ConfigNumberDataType,
+                        T_CollectionIndex,
                         T_atomicNumber>
                 {
                 public:
                     using S_TransitionDataBox = TransitionDataBox<
                         T_Number,
                         T_Value,
-                        T_ConfigNumberDataType,
+                        T_CollectionIndex,
                         T_atomicNumber>;
                     using S_AutonomousTransitionTuple = AutonomousTransitionTuple<typename S_TransitionDataBox::S_DataBox::TypeValue, typename S_TransitionDataBox::Idx>;
 
@@ -92,23 +87,23 @@ namespace picongpu
                      *  atomic state and secondary ascending by upper/lower atomic state.
                      *
                      * @param boxTransitionRate rate over deexcitation [1/s]
-                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
-                     * transition
-                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
-                     * transition
+                     * @param boxLowerStateCollectionIndex collection index of the lower
+                     *    (lower excitation energy) state of the transition in an atomic state dataBox
+                     * @param boxUpperStateCollectionIndex collection index of the upper
+                     *    (higher excitation energy) state of the transition in an atomic state dataBox
                      * @param numberTransitions number of atomic autonomous transitions stored
                      */
                     AutonomousTransitionDataBox(
                         typename S_TransitionDataBox::S_DataBox::BoxValue boxTransitionRate,
-                        typename S_TransitionDataBox::BoxConfigNumber boxLowerConfigNumber,
-                        typename S_TransitionDataBox::BoxConfigNumber boxUpperConfigNumber,
+                        typename S_TransitionDataBox::BoxConfigNumber boxLowerStateCollectionIndex,
+                        typename S_TransitionDataBox::BoxConfigNumber boxUpperStateCollectionIndex,
                         uint32_t numberTransitions)
                         : m_boxTransitionRate(boxTransitionRate)
                         , TransitionDataBox<
                             T_Number,
                             T_Value,
-                            T_ConfigNumberDataType,
-                            T_atomicNumber>(boxLowerConfigNumber, boxUpperConfigNumber, numberTransitions)
+                            T_CollectionIndex,
+                            T_atomicNumber>(boxLowerStateCollectionIndex, boxUpperStateCollectionIndex, numberTransitions)
                     {
                     }
 
@@ -161,18 +156,18 @@ namespace picongpu
                  *
                  * @tparam T_Number dataType used for number storage, typically uint32_t
                  * @tparam T_Value dataType used for value storage, typically float_X
-                 * @tparam T_ConfigNumberDataType data type used for configNumber storage
+                 * @tparam T_CollectionIndex data type used for configNumber storage
                  * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
                  */
                 template<
                     typename T_Number,
                     typename T_Value,
-                    typename T_ConfigNumberDataType,
+                    typename T_CollectionIndex,
                     uint8_t T_atomicNumber>
-                class AutonomousTransitionDataBuffer : public TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>
+                class AutonomousTransitionDataBuffer : public TransitionDataBuffer< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>
                 {
                 public:
-                    using S_TransitionDataBuffer = TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>;
+                    using S_TransitionDataBuffer = TransitionDataBuffer< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>;
                 private:
                     std::unique_ptr< typename S_TransitionDataBuffer::BufferValue > bufferTransitionRate;
 
@@ -182,7 +177,7 @@ namespace picongpu
                      * @param numberAtomicStates number of atomic states, and number of buffer entries
                      */
                     HINLINE AutonomousTransitionDataBuffer(uint32_t numberAutonomousTransitions)
-                        : TransitionDataBuffer< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(numberAutonomousTransitions)
+                        : TransitionDataBuffer< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>(numberAutonomousTransitions)
                     {
 
                         auto const guardSize = pmacc::DataSpace<1>::create(0);
@@ -191,18 +186,18 @@ namespace picongpu
                         bufferTransitionRate.reset( new typename S_TransitionDataBuffer::BufferValue(layoutAutonomousTransitions, false));
                     }
 
-                    HINLINE AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
+                    HINLINE AutonomousTransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber> getHostDataBox()
                     {
-                        return AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return AutonomousTransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>(
                             bufferTransitionRate->getHostBuffer().getDataBox(),
                             this->bufferLowerConfigNumber->getHostBuffer().getDataBox(),
                             this->bufferUpperConfigNumber->getHostBuffer().getDataBox(),
                             this->m_numberTransitions);
                     }
 
-                    HINLINE AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
+                    HINLINE AutonomousTransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber> getDeviceDataBox()
                     {
-                        return AutonomousTransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
+                        return AutonomousTransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>(
                             bufferTransitionRate->getDeviceBuffer().getDataBox(),
                             this->bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
                             this->bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),

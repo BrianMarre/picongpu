@@ -33,227 +33,219 @@
  *      on input file,it should therefore only be used internally!
  */
 
-namespace picongpu
+namespace picongpu::particles::atomicPhysics2::atomicData
 {
-    namespace particles
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        uint8_t T_atomicNumber>
+    class TransitionDataBox : public DataBox< T_Number, T_Value, T_atomicNumber>
     {
-        namespace atomicPhysics2
+    public:
+        using Idx = T_CollectionIndex;
+        using BoxCollectionIndex = pmacc::DataBox<pmacc::PitchedBox<T_CollectionIndex, 1u>>;
+        using S_DataBox = DataBox< T_Number, T_Value, T_atomicNumber>;
+
+    protected:
+        //! configNumber of the lower(lower excitation energy) state of the transition
+        BoxCollectionIndex m_boxLowerStateCollectionIndex;
+        //! configNumber of the upper(higher excitation energy) state of the transition
+        BoxCollectionIndex m_boxUpperStateCollectionIndex;
+
+        uint32_t m_numberTransitions;
+        // not constexpr, since only known at load input files, not const since needs to be trivially copyable
+
+    public:
+        /** constructor
+         *
+         * @attention transition data must be sorted block-wise ascending by lower/upper
+         *  atomic state and secondary ascending by upper/lower atomic state.
+         * @param boxLowerStateCollectionIndex collection index of the lower(lower excitation energy)
+         *      state of the transition in a atomicState dataBox
+         * @param boxUpperStateCollectionIndex collection index of the upper(higher excitation energy)
+         *      state of the transition in a atomicState dataBox
+         * @param numberTransitions number of transitions total in this box
+         */
+        TransitionDataBox(
+            BoxCollectionIndex boxLowerStateCollectionIndex,
+            BoxCollectionIndex boxUpperStateCollectionIndex,
+            uint32_t numberTransitions)
+            : m_boxLowerStateCollectionIndex(boxLowerStateCollectionIndex)
+            , m_boxUpperStateCollectionIndex(boxUpperStateCollectionIndex)
+            , m_numberTransitions(numberTransitions)
         {
-            namespace atomicData
+        }
+
+    protected:
+        /** store transition in data box
+         *
+         * @attention do not forget to call syncToDevice() on the
+         *  corresponding buffer, or the state is only added on the host side.
+         * @attention needs to fulfill all ordering and content assumptions of constructor!
+         * @attention no range check outside debug, collectionIndex >= numberTransitions will lead to invalid memory access!
+         *
+         * @param collectionIndex index of data box entry to rewrite
+         * @param lowerStateCollectionIndex collection index of lower state of transition in a atomic state dataBox
+         * @param upperStateCollectionIndex collection index of upper state of transition in a atomic state dataBox
+         */
+        HINLINE void storeTransition(
+            uint32_t const transitionCollectionIndex,
+            Idx lowerStateCollectionIndex,
+            Idx upperStateCollectionIndex)
+        {
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
+                if (transitionCollectionIndex >= m_numberTransitions)
+                {
+                    throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition() call");
+                    return;
+                }
+
+            m_boxLowerStateCollectionIndex[transitionCollectionIndex] = lowerStateCollectionIndex;
+            m_boxUpperStateCollectionIndex[transitionCollectionIndex] = upperStateCollectionIndex;
+        }
+
+
+    public:
+        /** returns collection index of transition in databox
+         *
+         * @param lowerStateCollectionIndex collection index of lower state in a atomic state dataBox
+         * @param upperStateCollectionIndex collection index of upper state in a atomic state dataBox
+         * @param startIndexBlock start collection of search
+         * @param numberOfTransitionsInBlock number of transitions to search
+         *
+         * @attention this search is slow, performant access should use collectionIndices directly
+         *
+         * @return returns numberTransitionsTotal if transition not found
+         *
+         * @todo : replace linear search with binary, Brian Marre, 2022
+         */
+        HDINLINE uint32_t findTransitionCollectionIndex(
+            Idx const lowerStateCollectionIndex,
+            Idx const upperStateCollectionIndex,
+            uint32_t const numberOfTransitionsInBlock,
+            uint32_t const startIndexBlock=0u) const
+        {
+            // search in corresponding block in transitions box
+            for(uint32_t i = 0u; i < numberOfTransitionsInBlock; i++)
             {
-                template<
-                    typename T_Number,
-                    typename T_Value,
-                    typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber>
-                class TransitionDataBox : public DataBox< T_Number, T_Value, T_atomicNumber>
+                if( (m_boxLowerStateCollectionIndex(i + startIndexBlock) == lowerStateCollectionIndex)
+                        and (m_boxUpperStateCollectionIndex(i + startIndexBlock) == upperStateCollectionIndex) )
+                    return i + startIndexBlock;
+            }
+
+            return m_numberTransitions;
+        }
+
+       /** returns upper states configNumber of the transition
+        *
+        * @param collectionIndex ... collection index of transition
+        *
+        * @attention no range checks
+        */
+        HDINLINE Idx upperConfigNumberTransition(uint32_t const collectionIndex) const
+        {
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+                if(collectionIndex >= m_numberTransitions)
                 {
-                public:
-                    using Idx = T_ConfigNumberDataType;
-                    using BoxConfigNumber = pmacc::DataBox<pmacc::PitchedBox<T_ConfigNumberDataType, 1u>>;
-                    using S_DataBox = DataBox< T_Number, T_Value, T_atomicNumber>;
+                    printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition() call");
+                    return static_cast<Idx>(0u);
+                }
 
-                protected:
-                    //! configNumber of the lower(lower excitation energy) state of the transition
-                    BoxConfigNumber m_boxLowerConfigNumber;
-                    //! configNumber of the upper(higher excitation energy) state of the transition
-                    BoxConfigNumber m_boxUpperConfigNumber;
+            return m_boxUpperStateCollectionIndex(collectionIndex);
+        }
 
-                    uint32_t m_numberTransitions;
-
-                public:
-                    /** constructor
-                     *
-                     * @attention transition data must be sorted block-wise ascending by lower/upper
-                     *  atomic state and secondary ascending by upper/lower atomic state.
-                     * @param boxLowerConfigNumber configNumber of the lower(lower excitation energy) state of the
-                     * transition
-                     * @param boxUpperConfigNumber configNumber of the upper(higher excitation energy) state of the
-                     * transition
-                     */
-                    TransitionDataBox(
-                        BoxConfigNumber boxLowerConfigNumber,
-                        BoxConfigNumber boxUpperConfigNumber,
-                        uint32_t numberTransitions)
-                        : m_boxLowerConfigNumber(boxLowerConfigNumber)
-                        , m_boxUpperConfigNumber(boxUpperConfigNumber)
-                        , m_numberTransitions(numberTransitions)
-                    {
-                    }
-
-                protected:
-                    /** store transition in data box
-                     *
-                     * @attention do not forget to call syncToDevice() on the
-                     *  corresponding buffer, or the state is only added on the host side.
-                     * @attention needs to fulfill all ordering and content assumptions of constructor!
-                     * @attention no range check outside debug, collectionIndex >= numberTransitions will lead to invalid memory access!
-                     *
-                     * @param collectionIndex index of data box entry to rewrite
-                     * @param lowerStateConfigNumber configNumber of lower state of transition
-                     * @param upperStateConfigNumber configNumber of upper state of transition
-                     */
-                    HINLINE void storeTransition(
-                        uint32_t const collectionIndex,
-                        Idx lowerStateConfigNumber,
-                        Idx upperStateConfigNumber)
-                    {
-                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
-                            if (collectionIndex >= m_numberTransitions)
-                            {
-                                throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition() call");
-                                return;
-                            }
-
-                        m_boxLowerConfigNumber[collectionIndex] = lowerStateConfigNumber;
-                        m_boxUpperConfigNumber[collectionIndex] = upperStateConfigNumber;
-                    }
-
-
-                public:
-                    /** returns collection index of transition in databox
-                     *
-                     * @param lowerConfigNumber configNumber of lower state
-                     * @param upperConfigNumber configNumber of upper state
-                     * @param startIndexBlock start collection of search
-                     * @param numberOfTransitionsInBlock number of transitions to search
-                     *
-                     * @attention this search is slow, performant access should use collectionIndices directly
-                     *
-                     * @return returns numberTransitionsTotal if transition not found
-                     *
-                     * @todo : replace linear search with binary, Brian Marre, 2022
-                     */
-                    HDINLINE uint32_t findTransitionCollectionIndex(
-                        Idx const lowerConfigNumber,
-                        Idx const upperConfigNumber,
-                        uint32_t const numberOfTransitionsInBlock,
-                        uint32_t const startIndexBlock=0u) const
-                    {
-                        // search in corresponding block in transitions box
-                        for(uint32_t i = 0u; i < numberOfTransitionsInBlock; i++)
-                        {
-                            if( (m_boxLowerConfigNumber(i + startIndexBlock) == lowerConfigNumber)
-                                    and (m_boxUpperConfigNumber(i + startIndexBlock) == upperConfigNumber) )
-                                return i + startIndexBlock;
-                        }
-
-                        return m_numberTransitions;
-                    }
-
-                   /** returns upper states configNumber of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
-                    HDINLINE Idx upperConfigNumberTransition(uint32_t const collectionIndex) const
-                    {
-                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
-                            if(collectionIndex >= m_numberTransitions)
-                            {
-                                printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition() call");
-                                return static_cast<Idx>(0u);
-                            }
-
-                        return m_boxUpperConfigNumber(collectionIndex);
-                    }
-
-                   /** returns lower states configNumber of the transition
-                    *
-                    * @param collectionIndex ... collection index of transition
-                    *
-                    * @attention no range checks
-                    */
-                    HDINLINE Idx lowerConfigNumberTransition(uint32_t const collectionIndex) const
-                    {
-                        // debug only
-                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
-                            if(collectionIndex >= m_numberTransitions)
-                            {
-                                printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition() call");
-                                return static_cast<Idx>(0u);
-                            }
-
-                        return m_boxLowerConfigNumber(collectionIndex);
-                    }
-
-                    HDINLINE uint32_t getNumberOfTransitionsTotal() const
-                    {
-                        return m_numberTransitions;
-                    }
-
-                };
-
-                /** complementing buffer class
-                 *
-                 * @tparam T_Number dataType used for number storage, typically uint32_t
-                 * @tparam T_Value dataType used for value storage, typically float_X
-                 * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
-                 */
-                template<
-                    typename T_Number,
-                    typename T_Value,
-                    typename T_ConfigNumberDataType,
-                    uint8_t T_atomicNumber>
-                class TransitionDataBuffer : public DataBuffer<T_Number, T_Value, T_atomicNumber>
+       /** returns lower states configNumber of the transition
+        *
+        * @param collectionIndex ... collection index of transition
+        *
+        * @attention no range checks
+        */
+        HDINLINE Idx lowerConfigNumberTransition(uint32_t const collectionIndex) const
+        {
+            // debug only
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+                if(collectionIndex >= m_numberTransitions)
                 {
-                public:
-                    using Idx = T_ConfigNumberDataType;
-                    using BufferConfigNumber = pmacc::HostDeviceBuffer<T_ConfigNumberDataType, 1u>;
+                    printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition() call");
+                    return static_cast<Idx>(0u);
+                }
 
-                protected:
-                    std::unique_ptr< BufferConfigNumber > bufferLowerConfigNumber;
-                    std::unique_ptr< BufferConfigNumber > bufferUpperConfigNumber;
+            return m_boxLowerStateCollectionIndex(collectionIndex);
+        }
 
-                    uint32_t m_numberTransitions;
+        HDINLINE uint32_t getNumberOfTransitionsTotal() const
+        {
+            return m_numberTransitions;
+        }
 
-                public:
-                    /** buffer corresponding to the above dataBox object
-                     *
-                     * @param numberAtomicStates number of atomic states, and number of buffer entries
-                     */
-                    HINLINE TransitionDataBuffer(uint32_t numberTransitions)
-                    {
-                        auto const guardSize = pmacc::DataSpace<1>::create(0);
-                        auto const layoutTransitions = pmacc::GridLayout<1>(numberTransitions, guardSize).getDataSpaceWithoutGuarding();
+    };
 
-                        bufferLowerConfigNumber.reset( new BufferConfigNumber(layoutTransitions, false));
-                        bufferUpperConfigNumber.reset( new BufferConfigNumber(layoutTransitions, false));
+    /** complementing buffer class
+     *
+     * @tparam T_Number dataType used for number storage, typically uint32_t
+     * @tparam T_Value dataType used for value storage, typically float_X
+     * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
+     */
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        uint8_t T_atomicNumber>
+    class TransitionDataBuffer : public DataBuffer<T_Number, T_Value, T_atomicNumber>
+    {
+    public:
+        using Idx = T_CollectionIndex;
+        using BufferCollectionIndex = pmacc::HostDeviceBuffer<T_CollectionIndex, 1u>;
 
-                        m_numberTransitions = numberTransitions;
-                    }
+    protected:
+        std::unique_ptr< BufferCollectionIndex > bufferLowerStateCollectionIndex;
+        std::unique_ptr< BufferCollectionIndex > bufferUpperStateCollectionIndex;
 
-                    HINLINE TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getHostDataBox()
-                    {
-                        return TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
-                            bufferLowerConfigNumber->getHostBuffer().getDataBox(),
-                            bufferUpperConfigNumber->getHostBuffer().getDataBox(),
-                            m_numberTransitions);
-                    }
+        uint32_t m_numberTransitions;
 
-                    HINLINE TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber> getDeviceDataBox()
-                    {
-                        return TransitionDataBox< T_Number, T_Value, T_ConfigNumberDataType, T_atomicNumber>(
-                            bufferLowerConfigNumber->getDeviceBuffer().getDataBox(),
-                            bufferUpperConfigNumber->getDeviceBuffer().getDataBox(),
-                            m_numberTransitions);
-                    }
+    public:
+        /** buffer corresponding to the above dataBox object
+         *
+         * @param numberAtomicStates number of atomic states, and number of buffer entries
+         */
+        HINLINE TransitionDataBuffer(uint32_t numberTransitions)
+        {
+            auto const guardSize = pmacc::DataSpace<1>::create(0);
+            auto const layoutTransitions = pmacc::GridLayout<1>(numberTransitions, guardSize).getDataSpaceWithoutGuarding();
 
-                    HDINLINE void hostToDevice_BaseClass()
-                    {
-                        bufferLowerConfigNumber->hostToDevice();
-                        bufferUpperConfigNumber->hostToDevice();
-                    }
+            bufferLowerConfigNumber.reset( new BufferConfigNumber(layoutTransitions, false));
+            bufferUpperConfigNumber.reset( new BufferConfigNumber(layoutTransitions, false));
 
-                    HDINLINE void deviceToHost_BaseClass()
-                    {
-                        bufferLowerConfigNumber->deviceToHost();
-                        bufferUpperConfigNumber->deviceToHost();
-                    }
-                };
+            m_numberTransitions = numberTransitions;
+        }
 
-            } // namespace atomicData
-        } // namespace atomicPhysics2
-    } // namespace particles
-} // namespace picongpu
+        HINLINE TransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber> getHostDataBox()
+        {
+            return TransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>(
+                bufferLowerStateCollectionIndex->getHostBuffer().getDataBox(),
+                bufferUpperStateCollectionIndex->getHostBuffer().getDataBox(),
+                m_numberTransitions);
+        }
+
+        HINLINE TransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber> getDeviceDataBox()
+        {
+            return TransitionDataBox< T_Number, T_Value, T_CollectionIndex, T_atomicNumber>(
+                bufferLowerStateCollectionIndex->getDeviceBuffer().getDataBox(),
+                bufferUpperStateCollectionIndex->getDeviceBuffer().getDataBox(),
+                m_numberTransitions);
+        }
+
+        HDINLINE void hostToDevice_BaseClass()
+        {
+            bufferLowerStateCollectionIndex->hostToDevice();
+            bufferUpperStateCollectionIndex->hostToDevice();
+        }
+
+        HDINLINE void deviceToHost_BaseClass()
+        {
+            bufferLowerStateCollectionIndex->deviceToHost();
+            bufferUpperStateCollectionIndex->deviceToHost();
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2::atomicData

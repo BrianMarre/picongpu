@@ -91,15 +91,16 @@
  *      [AtomicStateStartIndexBlockDataBox_Down, AtomicStateStartIndexBlockDataBox_UpDown]
  *       * start index of block in transition collection index for atomic state,
  *          by type of transition(bound-bound/bound-free/autonomous)
- * - transition property data[BoundBoundTransitionDataBuffer, BoundFreeTransitionDataBuffer,
- * AutonomousTransitionDataBuffer]
+ * - transition property data[BoundBoundTransitionDataBox, BoundFreeTransitionDataBox,
+ *      AutonomousTransitionDataBox]
  *      * parameters for cross section calculation for each modeled transition
  *
  * (orga data describes the structure of the property data for faster lookups, lookups are
  *  are always possible without it, but are possibly non performant)
  *
- * For each of data subsets exists a dataBox class, container class holding the actual data in pmacc::dataBox'es,
- *  and a dataBuffer class, a container class holding pmacc::buffers in turn holding the pmacc::dataBox'es.
+ * For each of data subsets exists a dataBox class, a container class giving holding
+ *      pmacc::dataBox'es, and a dataBuffer class, a container class holding
+ *      pmacc::buffers in turn allowing access to  the pmacc::dataBox'es.
  *
  * Each data Buffer will create on demand a host or device side dataBox class object which
  *  in turn gives access to the data.
@@ -112,10 +113,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_DataBoxType dataBox type used for storage
      * @tparam T_Number dataType used for number storage, typically uint32_t
      * @tparam T_Value dataType used for value storage, typically float_X
-     * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
-     *      typically uint64_t
+     * @tparam T_CollectionIndex dataType used for collection index, typically uint32_t
+     *
      * @tparam T_atomicNumber atomic number of element this data corresponds to, eg. Cu -> 29
      * @tparam T_n_max maximum principal quantum number contained in data
+     *
      * @tparam electronicExcitation is channel active?
      * @tparam electronicDeexcitation is channel active?
      * @tparam spontaneousDeexcitation is channel active?
@@ -126,7 +128,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     template<
         typename T_Number,
         typename T_Value,
-        typename T_ConfigNumberDataType,
+        typename T_CollectionIndex,
         uint32_t T_atomicNumber,
         uint8_t T_n_max,
         bool T_electronicExcitation,
@@ -140,7 +142,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     public:
         using TypeNumber = T_Number;
         using TypeValue = T_Value;
-        using Idx = T_ConfigNumberDataType;
+        using Idx = T_CollectionIndex;
 
         static constexpr uint8_t atomicNumber = T_atomicNumber;
         static constexpr uint8_t n_max = T_n_max;
@@ -157,7 +159,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_ChargeStateOrgaDataBuffer = ChargeStateOrgaDataBuffer<TypeNumber, TypeValue, T_atomicNumber>;
 
         using S_AtomicStateDataBuffer
-            = AtomicStateDataBuffer<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = AtomicStateDataBuffer<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
         using S_AtomicStateStartIndexBlockDataBuffer_UpDown
             = AtomicStateStartIndexBlockDataBuffer_UpDown<TypeNumber, TypeValue, T_atomicNumber>;
         using S_AtomicStateStartIndexBlockDataBuffer_Down
@@ -168,11 +170,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             = AtomicStateNumberOfTransitionsDataBuffer_Down<TypeNumber, TypeValue, T_atomicNumber>;
 
         using S_BoundBoundTransitionDataBuffer
-            = BoundBoundTransitionDataBuffer<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = BoundBoundTransitionDataBuffer<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
         using S_BoundFreeTransitionDataBuffer
-            = BoundFreeTransitionDataBuffer<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = BoundFreeTransitionDataBuffer<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
         using S_AutonomousTransitionDataBuffer
-            = AutonomousTransitionDataBuffer<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = AutonomousTransitionDataBuffer<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
 
         using S_TransitionSelectionDataBuffer = TransitionSelectionDataBuffer<TypeNumber, TypeValue, T_atomicNumber>;
 
@@ -180,7 +182,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_ChargeStateDataBox = ChargeStateDataBox<TypeNumber, TypeValue, T_atomicNumber>;
         using S_ChargeStateOrgaDataBox = ChargeStateOrgaDataBox<TypeNumber, TypeValue, T_atomicNumber>;
 
-        using S_AtomicStateDataBox = AtomicStateDataBox<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+        using S_AtomicStateDataBox = AtomicStateDataBox<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
         using S_AtomicStateStartIndexBlockDataBox_UpDown
             = AtomicStateStartIndexBlockDataBox_UpDown<TypeNumber, TypeValue, T_atomicNumber>;
         using S_AtomicStateStartIndexBlockDataBox_Down
@@ -191,11 +193,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             = AtomicStateNumberOfTransitionsDataBox_Down<TypeNumber, TypeValue, T_atomicNumber>;
 
         using S_BoundBoundTransitionDataBox
-            = BoundBoundTransitionDataBox<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = BoundBoundTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
         using S_BoundFreeTransitionDataBox
-            = BoundFreeTransitionDataBox<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = BoundFreeTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
         using S_AutonomousTransitionDataBox
-            = AutonomousTransitionDataBox<TypeNumber, TypeValue, T_ConfigNumberDataType, T_atomicNumber>;
+            = AutonomousTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, T_atomicNumber>;
 
         using S_TransitionSelectionDataBox = TransitionSelectionDataBox<TypeNumber, TypeValue, T_atomicNumber>;
 
@@ -376,6 +378,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                               << std::endl;
                     continue;
                 }
+
+                // 
 
                 S_BoundBoundTransitionTuple item = std::make_tuple(
                     collisionalOscillatorStrength,
