@@ -53,4 +53,6 @@ namespace picongpu::atomicPhysics2
 
     //! activate range checks in rate cache, @attention performance relevant
     constexpr bool ATOMIC_PHYSICS_RATE_RATE_CACHE_DEBUG = true;
+    //! range checks in rate calculation, @attention performance relevant
+    constexpr bool ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG = true;
 } // namespace picongpu::atomicPhysics2

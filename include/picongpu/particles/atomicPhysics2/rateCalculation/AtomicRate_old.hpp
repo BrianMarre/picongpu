@@ -115,7 +115,7 @@ namespace picongpu
 
                     float_64 result = 1u;
 
-                    // @TODO: chnage power function call to explicit multipication, BrianMarre 2020
+                    /// @todo change power function call to explicit multipication, BrianMarre 2020
                     for(uint8_t i = 0u; i < T_numLevels; i++)
                     {
                         result *= binomialCoefficients(
