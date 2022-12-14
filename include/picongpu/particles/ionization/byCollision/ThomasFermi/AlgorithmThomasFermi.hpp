@@ -35,6 +35,8 @@
 
 #include <pmacc/algorithms/math/floatMath/floatingPoint.tpp>
 
+#include <cstdint>
+
 namespace picongpu
 {
     namespace particles
@@ -100,7 +102,7 @@ namespace picongpu
 
                     float_64 const B = -math::exp(
                         thomasFermi::TFB0 + thomasFermi::TFB1 * T_F
-                        + thomasFermi::TFB2 * math::pow(T_F, float_64(7.)));
+                        + thomasFermi::TFB2 * math::pow<float_64, uint8_t>(T_F, static_cast<uint8_t>(7u)));
 
                     float_64 const C = thomasFermi::TFC1 * T_F + thomasFermi::TFC2;
 

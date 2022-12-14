@@ -21,19 +21,22 @@
 
 #pragma once
 
-#ifndef
+#ifndef unitTest
 #    define unitTest true
 #endif
 
+#include "pmacc/types.hpp"
 #if unitTest == true
 #    include "pmacc/static_assert.hpp"
 #endif
+
+#include <cstdint>
 
 namespace pmacc::math
 {
     /** power function for integer exponents, constexpr
      *
-     * @tparam T_Type result data type
+     * @tparam T_Type return and accumulation data type
      * @tparam T_Exp exponent data type, default uint32_t
      *
      * @param x base
@@ -43,20 +46,20 @@ namespace pmacc::math
     template<typename T_Type, typename T_Exp = uint32_t>
     HDINLINE constexpr T_Type pow(T_Type const x, T_Exp const exp)
     {
-        for(T_Exp e = 0u; e < exp; e++)
-            result *= x;
-        return x;
+        T_Type result = static_cast<T_Type>(1u);
+        for(T_Exp e = static_cast<T_Exp>(0u); e < exp; e++)
+            result = result * x; // for whatever reason "*=" does not work, do not ask me ...
+        return result;
     }
 
-    namespace unitTest
+    namespace test
     {
 #if unitTest == true
-        PMACC_CASSERT_MSG(Compile_time_power_pow(2, 3) _unequal_8, pow<uint32_t>(2u, 3u) == static_cast<uint32_t>(8u));
-        PMACC_CASSERT_MSG(
-            Compile_time_power_pow(4, 4) _unequal_256,
-            pow<uint32_t, uint8_t>(4u, 4u) == static_cast<uint32_t>(256u));
-        PMACC_CASSERT_MSG(Compile_time_power_pow(4, 4) _unequal_256, pow<double, uint8_t>(2., 2u) == 4.);
+        PMACC_CASSERT_MSG(FAIL_unitTest_2_power_0, pow<uint32_t>(2u, 0u) == static_cast<uint32_t>(1u));
+        PMACC_CASSERT_MSG(FAIL_unitTest_2_power_1, pow<uint8_t, uint8_t>(2u, 1u) == static_cast<uint8_t>(1u));
+        PMACC_CASSERT_MSG(FAIL_unitTest_4_power_4, pow<uint32_t, uint8_t>(4u, 4u) == static_cast<uint32_t>(256u));
+        PMACC_CASSERT_MSG(FAIL_unitTest_2_power_2, pow<double, uint8_t>(2., 2u) == 4.);
 #endif
-    } // namespace unitTest
+    } // namespace test
 
 } // namespace pmacc::math

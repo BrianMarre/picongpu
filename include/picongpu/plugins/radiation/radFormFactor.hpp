@@ -22,6 +22,7 @@
 
 #include "picongpu/plugins/radiation/utilities.hpp"
 
+#include <cstdint>
 
 namespace picongpu
 {
@@ -112,7 +113,7 @@ namespace picongpu
                         for(uint32_t d = 0; d < DIM3; ++d)
                             sincValue *= pmacc::math::sinc(
                                 observerUnitVec[d] * cellSize[d] / (SPEED_OF_LIGHT * 2.0_X) * omega);
-                        return util::pow(sincValue, 2 * T_shapeOrder);
+                        return util::pow<float_X>(sincValue, 2u * T_shapeOrder);
                     }
                 };
             } // namespace radFormFactor_baseShape_3D
