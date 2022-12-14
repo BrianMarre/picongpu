@@ -41,7 +41,6 @@ namespace pmacc::math
      *
      * @param x base
      * @param exp exponent
-     * @param result base multiplication
      */
     template<typename T_Type, typename T_Exp = uint32_t>
     HDINLINE constexpr T_Type pow(T_Type const x, T_Exp const exp)
