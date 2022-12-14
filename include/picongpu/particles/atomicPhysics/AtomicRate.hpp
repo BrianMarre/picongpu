@@ -121,7 +121,8 @@ namespace picongpu
                     for(uint8_t i = 0u; i < T_numLevels; i++)
                     {
                         result *= binomialCoefficients(
-                            static_cast<uint8_t>(2u) * math::pow<uint8_t, uint8_t>(i + 1u, static_cast<uint8_t>(2u)),
+                            static_cast<uint8_t>(2u)
+                                * pmacc::math::pow<uint8_t, uint8_t>(i + 1u, static_cast<uint8_t>(2u)),
                             levelVector[i]); // unitless
                     }
 
