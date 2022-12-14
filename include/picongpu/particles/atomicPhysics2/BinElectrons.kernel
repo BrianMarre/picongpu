@@ -21,13 +21,12 @@
 
 #pragma once
 
-#include <cstdint>
+#include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
 
 #include "picongpu/particles/atomicPhysics2/GetPhysicalEnergy.hpp"
-#include "picongpu/param/atomicPhysics2_Debug.param"
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
 
-// debug only
-//#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+#include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2
 {

@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "picongpu/param/atomicPhysics2_debug.param"
+#include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
 
 namespace picongpu::particles::atomicPhysics2::rateCalculation
 {

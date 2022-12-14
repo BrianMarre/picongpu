@@ -19,7 +19,8 @@
 
 #pragma once
 
-#include "picongpu/param/atomicPhysics2_Debug.param"
+#include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
+
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BinomialCoeffcient.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/PowerFunctions.hpp"
 

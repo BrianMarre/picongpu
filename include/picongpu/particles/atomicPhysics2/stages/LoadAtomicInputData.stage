@@ -19,6 +19,11 @@
 
 #pragma once
 
+#include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
+
+#include "picongpu/particles/traits/GetNumberAtomicStates.hpp"
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+
 #include <pmacc/particles/memory/frames/Frame.hpp>
 #include <pmacc/static_assert.hpp>
 #include <pmacc/traits/GetFlagType.hpp>
@@ -27,11 +32,6 @@
 #include <string>
 #include <memory>
 #include <stdexcept>
-
-#include "picongpu/particles/traits/GetNumberAtomicStates.hpp"
-#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
-
-#include "picongpu/param/atomicPhysics2_Debug.param"
 
 namespace picongpu::particles::atomicPhysics2::stage
 {

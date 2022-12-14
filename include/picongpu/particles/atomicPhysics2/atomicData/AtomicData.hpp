@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include "picongpu/param/atomicPhysics2_Debug.param"
+#include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
 
 #include <pmacc/dataManagement/ISimulationData.hpp>
 
@@ -59,9 +59,6 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
-
-// debug only
-#include <iostream>
 
 /** @file gathers atomic data storage implementations and implements filling them on runtime
  *

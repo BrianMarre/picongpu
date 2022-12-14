@@ -19,7 +19,9 @@
 
 #pragma once
 
-#include "picongpu/param/atomicPhysics2_Debug.param"
+
+#include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
+
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
