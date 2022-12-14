@@ -56,7 +56,7 @@ namespace pmacc::math
     {
 #if unitTest == true
         PMACC_CASSERT_MSG(FAIL_unitTest_2_power_0, pow<uint32_t>(2u, 0u) == static_cast<uint32_t>(1u));
-        PMACC_CASSERT_MSG(FAIL_unitTest_2_power_1, pow<uint8_t, uint8_t>(2u, 1u) == static_cast<uint8_t>(1u));
+        PMACC_CASSERT_MSG(FAIL_unitTest_2_power_1, pow<uint8_t, uint8_t>(2u, 1u) == static_cast<uint8_t>(2u));
         PMACC_CASSERT_MSG(FAIL_unitTest_4_power_4, pow<uint32_t, uint8_t>(4u, 4u) == static_cast<uint32_t>(256u));
         PMACC_CASSERT_MSG(FAIL_unitTest_2_power_2, pow<double, uint8_t>(2., 2u) == 4.);
 #endif
