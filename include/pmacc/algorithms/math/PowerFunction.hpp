@@ -21,23 +21,21 @@
 
 #pragma once
 
-#ifndef unitTest
-#    define unitTest true
-#endif
 
 #include "pmacc/types.hpp"
-#if unitTest == true
+#ifndef NDEBUG
 #    include "pmacc/static_assert.hpp"
 #endif
 
 #include <cstdint>
+#include <type_traits>
 
 namespace pmacc::math
 {
     /** power function for integer exponents, constexpr
      *
      * @tparam T_Type return and accumulation data type
-     * @tparam T_Exp exponent data type, default uint32_t
+     * @tparam T_Exp exponent data type, must be an integral type, default uint32_t
      *
      * @param x base
      * @param exp exponent
@@ -45,15 +43,20 @@ namespace pmacc::math
     template<typename T_Type, typename T_Exp = uint32_t>
     HDINLINE constexpr T_Type pow(T_Type const x, T_Exp const exp)
     {
+        static_assert(
+            std::is_integral_v<T_Exp>,
+            "This pow() implementation supports only integral types for the exponent.");
+
         T_Type result = static_cast<T_Type>(1u);
         for(T_Exp e = static_cast<T_Exp>(0u); e < exp; e++)
-            result = result * x; // for whatever reason "*=" does not work, do not ask me ...
+            // for whatever reason "*=" causes the function to return wrong results, do not ask me ...
+            result = result * x;
         return result;
     }
 
     namespace test
     {
-#if unitTest == true
+#ifndef NDEBUG
         PMACC_CASSERT_MSG(FAIL_unitTest_2_power_0, pow<uint32_t>(2u, 0u) == static_cast<uint32_t>(1u));
         PMACC_CASSERT_MSG(FAIL_unitTest_2_power_1, pow<uint8_t, uint8_t>(2u, 1u) == static_cast<uint8_t>(2u));
         PMACC_CASSERT_MSG(FAIL_unitTest_4_power_4, pow<uint32_t, uint8_t>(4u, 4u) == static_cast<uint32_t>(256u));
