@@ -23,16 +23,14 @@ class GaussianLaser(RenderedObject):
 
     class PolarizationType(Enum):
         """represents a polarization of a laser (for PIConGPU)"""
-        LINEAR_X = 1
-        LINEAR_Z = 2
-        CIRCULAR = 3
+        LINEAR = 1
+        CIRCULAR = 2
 
         def get_cpp_str(self) -> str:
             """retrieve name as used in c++ param files"""
             cpp_by_ptype = {
-                GaussianLaser.PolarizationType.LINEAR_X: "LINEAR_X",
-                GaussianLaser.PolarizationType.LINEAR_Z: "LINEAR_Z",
-                GaussianLaser.PolarizationType.CIRCULAR: "CIRCULAR",
+                GaussianLaser.PolarizationType.LINEAR: "Linear",
+                GaussianLaser.PolarizationType.CIRCULAR: "Circular",
             }
             return cpp_by_ptype[self]
 
@@ -41,7 +39,7 @@ class GaussianLaser(RenderedObject):
     waist = util.build_typesafe_property(float)
     """beam waist in m"""
     duration = util.build_typesafe_property(float)
-    """length in seconds (1 sigma)"""
+    """length in s (1 sigma)"""
     focus_pos = util.build_typesafe_property(float)
     """y coordinate of focus in m"""
     phase = util.build_typesafe_property(float)

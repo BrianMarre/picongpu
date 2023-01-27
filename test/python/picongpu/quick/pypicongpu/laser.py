@@ -21,10 +21,12 @@ class TestGaussianLaser(unittest.TestCase):
         self.laser.phase = 2.9
         self.laser.E0 = 9.0
         self.laser.pulse_init = 1.3
-        self.laser.init_plane_y = 1
-        self.laser.polarization_type = GaussianLaser.PolarizationType.LINEAR_X
+        self.laser.propagation_direction = [0.,1.,0.]
+        self.laser.polarization_type = GaussianLaser.PolarizationType.LINEAR
+        self.laser.polarization_direction = [0.,1.,0.]
         self.laser.laguerre_modes = [1.0]
         self.laser.laguerre_phases = [0.0]
+        self.laser.hygens_surface_position = [[8, -8],[8, -8],[8, -8]]
 
     def test_types(self):
         """invalid types are rejected"""
@@ -45,10 +47,6 @@ class TestGaussianLaser(unittest.TestCase):
             with self.assertRaises(TypeError):
                 laser.pulse_init = not_float
 
-        for not_int in [None, [], {}, "1", 1.3]:
-            with self.assertRaises(TypeError):
-                laser.init_plane_y = not_int
-
         for not_polarization_type in [1, 1.3, None, "", []]:
             with self.assertRaises(TypeError):
                 laser.polarization_type = not_polarization_type
@@ -58,23 +56,30 @@ class TestGaussianLaser(unittest.TestCase):
                 laser.laguerre_modes = invalid_list
             with self.assertRaises(TypeError):
                 laser.laguerre_phases = invalid_list
+            with self.assertRaises(TypeError):
+                laser.polarization_direction = invalid_list
+            with self.assertRaises(TypeError):
+                laser.propagation_direction = invalid_list
+            with self.assertRaises(TypeError):
+                laser.hygens_surface_position = invalid_list
+
 
     def test_polarization_type(self):
         """polarization type enum sanity checks"""
-        lin_x = GaussianLaser.PolarizationType.LINEAR_X
-        lin_z = GaussianLaser.PolarizationType.LINEAR_Z
+        lin = GaussianLaser.PolarizationType.LINEAR
         circular = GaussianLaser.PolarizationType.CIRCULAR
 
-        self.assertNotEqual(lin_x, lin_z)
-        self.assertNotEqual(lin_z, circular)
-        self.assertNotEqual(circular, lin_x)
+        self.assertNotEqual(lin, circular)
 
-        self.assertNotEqual(lin_x.get_cpp_str(), lin_z.get_cpp_str())
-        self.assertNotEqual(lin_z.get_cpp_str(), circular.get_cpp_str())
-        self.assertNotEqual(circular.get_cpp_str(), lin_x.get_cpp_str())
+        self.assertNotEqual(lin.get_cpp_str(), circular.get_cpp_str())
 
-        for polarization_type in [lin_x, lin_z, circular]:
+        for polarization_type in [lin, circular]:
             self.assertEqual(str, type(polarization_type.get_cpp_str()))
+
+    def test_direction_vector_normalized(self):
+        """direction vectors must be normalized"""
+        for invalid_direction_vector in [[1.,1.,1.], [1.,2.,3.], [1.,-1.,0.]]:
+            # @todo
 
     def test_invalid_laguerre_modes_empty(self):
         """laguerre modes must be set non-empty"""
@@ -119,6 +124,8 @@ class TestGaussianLaser(unittest.TestCase):
             logging.warning("TESTWARN")
         self.assertEqual(1, len(other_caught_logs.output))
         self.assertTrue("TESTWARN" in other_caught_logs.output[0])
+
+    def test_
 
     def test_translation(self):
         """is translated to context object"""
