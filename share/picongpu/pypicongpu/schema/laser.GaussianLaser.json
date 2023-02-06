@@ -5,7 +5,7 @@
     "properties": {
         "wave_length_si": {
             "type": "number",
-            "description": "wavelength of laser [m]"
+            "description": "wavelength of laser [m]",
             "exclusiveMinimum": 0
         },
         "waist_si": {
@@ -15,11 +15,11 @@
         },
         "pulse_length_si": {
             "type": "number",
-            "description": "sigma of std. gauss for intensity (E^2) [s]"
+            "description": "sigma of std. gauss for intensity (E^2) [s]",
             "exclusiveMinimum": 0
         },
         "focus_pos_si": {
-            "description": "position of focus in total coordinate system, [m]"
+            "description": "position of focus in total coordinate system, [m]",
             "type": "array",
             "minItems": 3,
             "maxItems": 3,
@@ -44,7 +44,7 @@
             "exclusiveMinimum": 0
         },
         "pulse_init": {
-            "description": " The laser pulse will be initialized pulse_init times of the pulse_length_si"
+            "description": " The laser pulse will be initialized pulse_init times of the pulse_length_si",
             "type": "number",
             "exclusiveMinimum": 0
         },
@@ -64,12 +64,12 @@
             }
         },
         "polarization_type": {
-            "description": "type of polarization, not direction!"
+            "description": "type of polarization, not direction!",
             "type": "string",
             "pattern": "^(Linear|Circular)$"
         },
         "polarization_direction":{
-            "description": "Unit E polarization direction"
+            "description": "Unit E polarization direction",
             "type": "array",
             "minItems": 3,
             "maxItems": 3,
@@ -117,7 +117,7 @@
             "minimum": 0
         },
         "hygens_surface_positions":{
-            "description": "position of the hygens surface relative from domain boundaries"
+            "description": "position of the hygens surface relative from domain boundaries",
             "type": "object",
             "required": ["row_x", "row_y", "row_z"],
             "unevaluatedProperties": false,
@@ -151,9 +151,9 @@
         "phase",
         "E0_si",
         "pulse_init",
-        "propagation_direction"
+        "propagation_direction",
         "polarization_type",
-        "polarization_direction"
+        "polarization_direction",
         "laguerre_modes",
         "laguerre_phases",
         "modenumber",
