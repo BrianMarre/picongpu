@@ -116,8 +116,8 @@
             "type": "integer",
             "minimum": 0
         },
-        "hygens_surface_positions":{
-            "description": "position of the hygens surface relative from domain boundaries",
+        "huygens_surface_positions":{
+            "description": "position of the huygens surface relative from domain boundaries",
             "type": "object",
             "required": ["row_x", "row_y", "row_z"],
             "unevaluatedProperties": false,
@@ -157,7 +157,7 @@
         "laguerre_modes",
         "laguerre_phases",
         "modenumber",
-        "hygens_surface_positions"
+        "huygens_surface_positions"
     ],
     "unevaluatedProperties": false
 }

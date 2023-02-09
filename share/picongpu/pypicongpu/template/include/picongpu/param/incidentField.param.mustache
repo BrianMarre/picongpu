@@ -73,9 +73,9 @@ namespace picongpu::fields::incidentField
     struct PyPIConGPULaserBaseParam
     {
         static constexpr float_64 WAVE_LENGTH_SI = {{{wave_length_si}}}; // m
-        static constexpr float_64 AMPLITUDE_SI = {{{E0_si}}};
+        static constexpr float_64 AMPLITUDE_SI = {{{E0_si}}}; // V/m
         static constexpr float_64 PULSE_LENGTH_SI = {{{pulse_length_si}}}; // s (1 sigma)
-        static constexpr float_X LASER_PHASE = {{{phase}}};
+        static constexpr float_X LASER_PHASE = {{{phase}}}; // unitless
 
         PMACC_CONST_VECTOR(float_64, 3u, propagation_direction, 
                 {{#propagation_direction}}
@@ -186,7 +186,7 @@ namespace picongpu::fields::incidentField
      * source matching such a case.
      */
     constexpr int32_t POSITION[3][2] = {
-        {{#hygens_surface_positions}}
+        {{#huygens_surface_positions}}
         {{#row_x}}
             { {{{negative}}}, {{{positive}}} },
         {{/row_x}}

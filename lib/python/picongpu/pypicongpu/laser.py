@@ -1,6 +1,6 @@
 """
 This file is part of the PIConGPU.
-Copyright 2021-2022 PIConGPU contributors
+Copyright 2021-2023 PIConGPU contributors
 Authors: Hannes Troepgen, Brian Edward Marre, Alexander Debus
 License: GPLv3+
 """
@@ -48,14 +48,18 @@ class GaussianLaser(RenderedObject):
     """E0 in V/m"""
     pulse_init = util.build_typesafe_property(float)
     """laser will be initialized pulse_init times of duration (unitless)"""
-    init_plane_y = util.build_typesafe_property(int)
-    """absorber cells in neg. y direction, 0 to disable (number of cells)"""
+    propagation_direction = util.build_typesafe_property(typing.List[float])
+    """propagation direction(normalized vector)"""
     polarization_type = util.build_typesafe_property(PolarizationType)
     """laser polarization"""
+    polarization_direction = util.build_typesafe_property(typing.List[float])
+    """direction of polarization(normalized vector)"""
     laguerre_modes = util.build_typesafe_property(typing.List[float])
     """array containing the magnitudes of radial Laguerre-modes"""
     laguerre_phases = util.build_typesafe_property(typing.List[float])
     """array containing the phases of radial Laguerre-modes"""
+    huygens_surface_positions = util.build_typesafe_property(typing.List[typing.List[int]])
+    """Position in cells of the Huygens surface relative to start/edge(negative numbers) of the total domain"""
 
     def _get_serialized(self) -> dict:
         if [] == self.laguerre_modes:
@@ -83,4 +87,12 @@ class GaussianLaser(RenderedObject):
             "laguerre_phases": list(map(lambda x: {"single_laguerre_phase": x},
                                         self.laguerre_phases)),
             "modenumber": len(self.laguerre_modes)-1,
+            "huygens_surface_positions": {
+                "row_x": {"negative": self.huygens_surface_positions[0][0],
+                          "positive": self.huygens_surface_positions[0][1]},
+                "row_y": {"negative": self.huygens_surface_positions[1][0],
+                          "positive": self.huygens_surface_positions[1][1]},
+                "row_z": {"negative": self.huygens_surface_positions[2][0],
+                          "positive": self.huygens_surface_positions[2][1]}
+            }
         }
