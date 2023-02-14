@@ -65,6 +65,11 @@ accessed with their class name, and optional method name:
 
 .. note:
 
+    All compile test runs create setup directories at /tmp/<userName>. Please make sure that
+    they are removed afterwards, thank you.
+
+.. note:
+
     The path to each generated compile test picongpu output is printed to console.
     If you encounter a failing compiling test, go to that directory and run a pic-build by
     hand to get a standard picongpu compile output for debugging.
