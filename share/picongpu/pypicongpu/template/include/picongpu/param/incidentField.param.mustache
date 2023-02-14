@@ -151,21 +151,6 @@ namespace picongpu::fields::incidentField
         /** @} */
     };
 
-    /**@{*/
-    //! Incident field profile types along each boundary, these 6 types (or aliases) are required.
-    using YMin = profiles::GaussianBeam<PyPIConGPUGaussianBeamParam>;
-    {{/laser}}
-    {{^laser}}
-    using YMin = profiles::None; // no laser defined case
-    {{/laser}}
-
-    using XMin = profiles::None;
-    using XMax = profiles::None;
-    using YMax = profiles::None;
-    using ZMin = profiles::None;
-    using ZMax = profiles::None;
-    /**@}*/
-
     /** Position in cells of the Huygens surface relative to start of the total domain
      *
      * The position is set as an offset, in cells, counted from the start of the total domain.
@@ -196,5 +181,27 @@ namespace picongpu::fields::incidentField
         {{#row_z}}
             { {{{negative}}}, {{{positive}}} }
         {{/row_z}}
+        {{/huygens_surface_positions}}
     };
+
+    /**@{*/
+    //! Incident field profile types along each boundary, these 6 types (or aliases) are required.
+    using YMin = profiles::GaussianBeam<PyPIConGPUGaussianBeamParam>;
+    {{/laser}}
+    {{^laser}}
+    // no laser defined case
+    constexpr int32_t POSITION[3][2] = {
+                {16, -16}, // x direction [negative, positive]
+                {16, -16}, // y direction [negative, positive]
+                {16, -16} // z direction [negative, positive]
+    };
+
+    using YMin = profiles::None;
+    {{/laser}}
+    using XMin = profiles::None;
+    using XMax = profiles::None;
+    using YMax = profiles::None;
+    using ZMin = profiles::None;
+    using ZMax = profiles::None;
+    /**@}*/
 } // namespace picongpu::fields::incidentField

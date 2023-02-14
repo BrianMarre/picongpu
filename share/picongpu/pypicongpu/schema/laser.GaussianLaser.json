@@ -140,7 +140,7 @@
                 },
                 "row_z":{ "$ref":"#row_hygens_surface"
                 }
-            },
+            }
         }
     },
     "required": [

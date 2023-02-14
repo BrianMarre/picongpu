@@ -26,8 +26,8 @@ class TestPicmiGaussianLaser(unittest.TestCase):
             E0=5,
             picongpu_laguerre_modes=[2.0, 3.0],
             picongpu_laguerre_phases=[4.0, 5.0],
-            piconpgu_phase=15,
-            picongpu_hygens_surface_positions=[[1, -1], [1, -1], [1, -1]])
+            picongpu_phase=-2,
+            picongpu_huygens_surface_positions=[[1, -1], [1, -1], [1, -1]])
 
         pypic_laser = picmi_laser.get_as_pypicongpu()
         # translated
@@ -44,21 +44,21 @@ class TestPicmiGaussianLaser(unittest.TestCase):
             pypic_laser.polarization_type)
         self.assertEqual([2.0, 3.0], pypic_laser.laguerre_modes)
         self.assertEqual([4.0, 5.0], pypic_laser.laguerre_phases)
-        self.assertEqual(15, pypic_laser.phase)
-        self.assertEqual([[1, -1], [1, -1], [1, -1]], pypic_laser.hygens_surface_positions)
+        self.assertEqual(-2, pypic_laser.phase)
+        self.assertEqual([[1, -1], [1, -1], [1, -1]], pypic_laser.huygens_surface_positions)
 
         # computed values
         self.assertEqual(15, pypic_laser.pulse_init)
 
     def test_scalar_values_negative(self):
         """waist, duration and wavelelngth must be > 0"""
-
-        self.assertRaises(Exception, picmi.GaussianLaser(-1, -2, -3,
-                                          focal_position=[0, 0, 0],
-                                          centroid_position=[0, -1, 0],
-                                          propagation_direction=[0, 1, 0],
-                                          polarization_direction=[1, 0, 0],
-                                          E0=1))
+        with self.assertRaises(ValueError):
+            picmi.GaussianLaser(-1, -2, -3,
+                                focal_position=[0, 0, 0],
+                                centroid_position=[0, -1, 0],
+                                propagation_direction=[0, 1, 0],
+                                polarization_direction=[1, 0, 0],
+                                E0=1)
 
     def test_values_focal_pos(self):
         """only y of focal pos can be varied"""
@@ -67,7 +67,7 @@ class TestPicmiGaussianLaser(unittest.TestCase):
         # all ok (difference in x)
         picmi_laser = picmi.GaussianLaser(
             1, 2, 3,
-            focal_position=[1, 2, 3],
+            focal_position=[1, 2, -5],
             centroid_position=[.5, 0, .5],
             propagation_direction=[0, 1, 0],
             polarization_direction=[1, 0, 0],
@@ -108,8 +108,8 @@ class TestPicmiGaussianLaser(unittest.TestCase):
             polarization_direction=[1, 0, 0],
             E0=1)
 
-    def test_values_polarization(self):
-        """only polarization x & z permitted"""
+    def test_values_polarization_direction(self):
+        """polarization_vector must be normalized"""
         invalid_polarizations = [
             [0, 0, 0],
             [1, 1, 1],
@@ -142,7 +142,7 @@ class TestPicmiGaussianLaser(unittest.TestCase):
             pypic_laser = picmi_laser.get_as_pypicongpu()
             self.assertEqual(
                 valid_polarization_vector,
-                pypic_laser.polarization_type)
+                pypic_laser.polarization_direction)
 
     def test_minimal(self):
         """mimimal possible initialization"""
@@ -238,6 +238,7 @@ class TestPicmiGaussianLaser(unittest.TestCase):
                 duration=3,
                 focal_position=[0, 0, 0],
                 centroid_position=[0, 0, 0],
+                polarization_direction=[1, 0, 0],
                 E0=5,
                 propagation_direction=[0, 1, 0],
                 picongpu_laguerre_modes=[1.0, 2.0],
@@ -250,6 +251,7 @@ class TestPicmiGaussianLaser(unittest.TestCase):
                 duration=3,
                 focal_position=[0, 0, 0],
                 centroid_position=[0, 0, 0],
+                polarization_direction=[1, 0, 0],
                 E0=5,
                 propagation_direction=[0, 1, 0],
                 picongpu_laguerre_phases=[1.0, 2.0])

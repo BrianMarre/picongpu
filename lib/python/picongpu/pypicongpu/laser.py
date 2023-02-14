@@ -40,8 +40,8 @@ class GaussianLaser(RenderedObject):
     """beam waist in m"""
     duration = util.build_typesafe_property(float)
     """length in s (1 sigma)"""
-    focus_pos = util.build_typesafe_property(float)
-    """y coordinate of focus in m"""
+    focus_pos = util.build_typesafe_property(typing.List[float])
+    """focus position vector in m"""
     phase = util.build_typesafe_property(float)
     """phase in rad, periodic in 2*pi"""
     E0 = util.build_typesafe_property(float)
@@ -76,12 +76,13 @@ class GaussianLaser(RenderedObject):
             "wave_length_si": self.wavelength,
             "waist_si": self.waist,
             "pulse_length_si": self.duration,
-            "focus_pos_si": self.focus_pos,
+            "focus_pos_si": list(map(lambda x:{"component": x}, self.focus_pos)),
             "phase": self.phase,
             "E0_si": self.E0,
             "pulse_init": self.pulse_init,
-            "init_plane_y": self.init_plane_y,
+            "propagation_direction" : list(map(lambda x:{"component": x}, self.propagation_direction)),
             "polarization_type": self.polarization_type.get_cpp_str(),
+            "polarization_direction": list(map(lambda x:{"component": x}, self.polarization_direction)),
             "laguerre_modes": list(map(lambda x: {"single_laguerre_mode": x},
                                        self.laguerre_modes)),
             "laguerre_phases": list(map(lambda x: {"single_laguerre_phase": x},
@@ -93,6 +94,5 @@ class GaussianLaser(RenderedObject):
                 "row_y": {"negative": self.huygens_surface_positions[1][0],
                           "positive": self.huygens_surface_positions[1][1]},
                 "row_z": {"negative": self.huygens_surface_positions[2][0],
-                          "positive": self.huygens_surface_positions[2][1]}
+                          "positive": self.huygens_surface_positions[2][1]}}
             }
-        }
