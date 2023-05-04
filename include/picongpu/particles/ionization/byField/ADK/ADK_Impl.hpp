@@ -210,7 +210,7 @@ namespace picongpu
                     return retValue.newMacroElectrons;
                 }
 
-                /* Functor implementation
+                /** Functor implementation
                  *
                  * Ionization model specific particle creation
                  *
