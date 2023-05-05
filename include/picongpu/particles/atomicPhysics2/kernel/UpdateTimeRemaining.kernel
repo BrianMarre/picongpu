@@ -70,20 +70,20 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &superCellFieldIdx]()
                 {
                     // debug only
-                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_TIME_REMAINING_DEBUG_PRINT)
-                    {
-                        std::cout << "SuperCellFieldIdx: " << superCellFieldIdx
-                                  << " timeRemaining_(i-1): " << timeRemaining << " timeStep: " << timeStep;
-                    }
+                    //if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_TIME_REMAINING_DEBUG_PRINT)
+                    //{
+                    //    std::cout << "SuperCellFieldIdx: " << superCellFieldIdx
+                    //              << " timeRemaining_(i-1): " << timeRemaining << " timeStep: " << timeStep;
+                    //}
 
                     timeRemaining = timeRemaining - timeStep;
 
                     // debug only
-                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_TIME_REMAINING_DEBUG_PRINT)
-                    {
-                        std::cout << " timeRemaining_i: " << timeRemaining
-                                  << " ==0?: " << ((timeRemaining == 0._X) ? "true" : "false") << std::endl;
-                    }
+                    //if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_TIME_REMAINING_DEBUG_PRINT)
+                    //{
+                    //    std::cout << " timeRemaining_i: " << timeRemaining
+                    //              << " ==0?: " << ((timeRemaining == 0._X) ? "true" : "false") << std::endl;
+                    //}
                 });
             worker.sync();
         }

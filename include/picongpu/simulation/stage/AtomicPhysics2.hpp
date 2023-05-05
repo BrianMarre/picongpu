@@ -256,10 +256,10 @@ namespace picongpu::simulation::stage
                             localElectronHistogramOverSubscribedField.getDeviceDataBox(),
                             fieldGridLayoutOverSubscription);
 
-                        if(!deviceLocalReduce(
+                        if(!static_cast<bool>(deviceLocalReduce(
                                pmacc::math::operation::Or(),
                                linearizedOverSubscribedBox,
-                               fieldGridLayoutOverSubscription.productOfComponents()))
+                               fieldGridLayoutOverSubscription.productOfComponents())))
                             /* no superCell electron histogram marked as over subscribed in
                              *  localElectronHistogramOverSubscribedField */
                             break;
@@ -277,10 +277,10 @@ namespace picongpu::simulation::stage
                         fieldGridLayoutAllIonsAccepted);
 
                     // all Ions accepted?
-                    if(deviceLocalReduce(
+                    if(static_cast<bool>(deviceLocalReduce(
                            pmacc::math::operation::And(),
                            linearizedAllAcceptedBox,
-                           fieldGridLayoutAllIonsAccepted.productOfComponents()))
+                           fieldGridLayoutAllIonsAccepted.productOfComponents())))
                         // all ions have accepted a transition
                         break;
                 } // end chooseTransition loop

@@ -229,13 +229,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 m_numberTransitions);
         }
 
-        HDINLINE void hostToDevice_BaseClass()
+        HINLINE void hostToDevice_BaseClass()
         {
             bufferLowerStateCollectionIndex->hostToDevice();
             bufferUpperStateCollectionIndex->hostToDevice();
         }
 
-        HDINLINE void deviceToHost_BaseClass()
+        HINLINE void deviceToHost_BaseClass()
         {
             bufferLowerStateCollectionIndex->deviceToHost();
             bufferUpperStateCollectionIndex->deviceToHost();

@@ -128,12 +128,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 bufferNumberPhysicalTransitionsTotal->getDeviceBuffer().getDataBox());
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferNumberPhysicalTransitionsTotal->hostToDevice();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferNumberPhysicalTransitionsTotal->deviceToHost();
         }

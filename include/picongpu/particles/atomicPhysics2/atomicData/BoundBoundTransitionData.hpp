@@ -384,7 +384,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 this->m_numberTransitions);
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferCollisionalOscillatorStrength->hostToDevice();
             bufferAbsorptionOscillatorStrength->hostToDevice();
@@ -396,7 +396,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             this->hostToDevice_BaseClass();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferCollisionalOscillatorStrength->deviceToHost();
             bufferAbsorptionOscillatorStrength->deviceToHost();

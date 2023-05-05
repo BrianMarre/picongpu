@@ -75,13 +75,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexDown)
+        ALPAKA_FN_HOST void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexDown)
         {
             m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexUp)
+        ALPAKA_FN_HOST void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexUp)
         {
             m_boxStartIndexBlockTransitionsUp[collectionIndex] = startIndexUp;
         }
@@ -93,7 +93,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        typename S_DataBox::TypeNumber startIndexBlockTransitionsDown(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsDown(uint32_t const collectionIndex) const
         {
             return m_boxStartIndexBlockTransitionsDown(collectionIndex);
         }
@@ -105,7 +105,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        typename S_DataBox::TypeNumber startIndexBlockTransitionsUp(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsUp(uint32_t const collectionIndex) const
         {
             return m_boxStartIndexBlockTransitionsUp(collectionIndex);
         }
@@ -153,13 +153,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 bufferStartIndexBlockTransitionsUp->getDeviceBuffer().getDataBox());
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferStartIndexBlockTransitionsDown->hostToDevice();
             bufferStartIndexBlockTransitionsUp->hostToDevice();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferStartIndexBlockTransitionsDown->deviceToHost();
             bufferStartIndexBlockTransitionsUp->deviceToHost();

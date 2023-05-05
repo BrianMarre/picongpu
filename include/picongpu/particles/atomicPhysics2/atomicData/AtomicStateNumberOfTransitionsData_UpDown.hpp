@@ -80,19 +80,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberDown)
+        ALPAKA_FN_HOST void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberDown)
         {
             m_boxNumberOfTransitionsDown[collectionIndex] = numberDown;
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberUp)
+        ALPAKA_FN_HOST void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberUp)
         {
             m_boxNumberOfTransitionsUp[collectionIndex] = numberUp;
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        void storeOffset(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const offset)
+        ALPAKA_FN_HOST void storeOffset(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const offset)
         {
             m_boxOffset[collectionIndex] = offset;
         }
@@ -104,7 +104,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        typename S_DataBox::TypeNumber numberOfTransitionsUp(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber numberOfTransitionsUp(uint32_t const collectionIndex) const
         {
             return m_boxNumberOfTransitionsUp(collectionIndex);
         }
@@ -116,7 +116,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        typename S_DataBox::TypeNumber numberOfTransitionsDown(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber numberOfTransitionsDown(uint32_t const collectionIndex) const
         {
             return m_boxNumberOfTransitionsDown(collectionIndex);
         }
@@ -128,7 +128,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        typename S_DataBox::TypeNumber offset(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber offset(uint32_t const collectionIndex) const
         {
             return m_boxOffset(collectionIndex);
         }
@@ -179,14 +179,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 bufferOffset->getDeviceBuffer().getDataBox());
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferNumberOfTransitionsDown->hostToDevice();
             bufferNumberOfTransitionsUp->hostToDevice();
             bufferOffset->hostToDevice();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferNumberOfTransitionsDown->deviceToHost();
             bufferNumberOfTransitionsUp->deviceToHost();

@@ -27,15 +27,15 @@ namespace pmacc::math::operation
 {
     struct Or
     {
-        HDINLINE void operator()(bool& destination, bool const& source) const
+        HDINLINE void operator()(uint32_t& destination, uint32_t const& source) const
         {
             destination = destination || source;
         }
 
         template<typename T_Worker>
-        HDINLINE void operator()(T_Worker const&, bool& destination, bool const& source) const
+        HDINLINE void operator()(T_Worker const&, uint32_t& destination, uint32_t const& source) const
         {
-            destination = destination || source;
+            destination = static_cast<uint32_t>(static_cast<bool>(destination) || static_cast<bool>(source));
         }
     };
 } // namespace pmacc::math::operation

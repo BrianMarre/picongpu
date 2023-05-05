@@ -65,7 +65,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
-            bool& allIonsAccepted = localAllIonsAcceptedBox(superCellFieldIdx);
+            uint32_t& allIonsAccepted = localAllIonsAcceptedBox(superCellFieldIdx);
 
             // end kernel if no particles
             if(!forEachLocalIonBoxEntry.hasParticles())
@@ -78,7 +78,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if(!particle[accepted_])
                     {
                         // at least on macro ion not accepted
-                        cupla::atomicExch(worker.getAcc(), &allIonsAccepted, false);
+                        cupla::atomicExch(worker.getAcc(), &allIonsAccepted, static_cast<uint32_t>(false));
                     }
                 });
             worker.sync();

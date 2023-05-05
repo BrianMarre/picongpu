@@ -411,7 +411,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 this->m_numberTransitions);
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferCxin1->hostToDevice();
             bufferCxin2->hostToDevice();
@@ -424,7 +424,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             this->hostToDevice_BaseClass();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferCxin1->deviceToHost();
             bufferCxin2->deviceToHost();
