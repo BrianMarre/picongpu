@@ -101,7 +101,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @param tuple tuple containing data of transition
          */
         template<typename T_StateHostBox>
-        HINLINE void store(
+        ALPAKA_FN_HOST void store(
             uint32_t const collectionIndex,
             S_AutonomousTransitionTuple& tuple,
             T_StateHostBox const stateHostBox)
@@ -199,13 +199,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 this->m_numberTransitions);
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferTransitionRate->hostToDevice();
             this->hostToDevice_BaseClass();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferTransitionRate->deviceToHost();
             this->deviceToHost_BaseClass();

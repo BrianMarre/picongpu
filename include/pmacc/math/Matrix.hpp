@@ -83,12 +83,12 @@ namespace pmacc::math
 
     public:
         //! constructor, @attention leaves elements uninitialized!
-        Matrix()
+        HDINLINE Matrix()
         {
             PMACC_CASSERT_MSG(not_a_matrix, T_Extent::dim == 2u);
         }
 
-        Matrix(pmacc::math::Vector<T_Type, T_Extent::template at<0u>::type::value> const& vector)
+        HDINLINE Matrix(pmacc::math::Vector<T_Type, T_Extent::template at<0u>::type::value> const& vector)
         {
             PMACC_CASSERT(T_Extent::template at<1u>::type::value == 1u);
 

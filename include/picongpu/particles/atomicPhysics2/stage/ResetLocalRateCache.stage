@@ -48,7 +48,7 @@ namespace picongpu::particles::atomicPhysics2::stage
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
         //! call of kernel for every superCell
-        HDINLINE void operator()() const
+        HINLINE void operator()() const
         {
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 

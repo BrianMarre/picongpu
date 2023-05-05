@@ -292,13 +292,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             return m_numberAtomicStates;
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferConfigNumber->hostToDevice();
             bufferStateEnergy->hostToDevice();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferConfigNumber->deviceToHost();
             bufferStateEnergy->deviceToHost();

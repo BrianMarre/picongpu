@@ -180,13 +180,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 bufferStartIndexBlockAtomicStates->getDeviceBuffer().getDataBox());
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferNumberAtomicStates->hostToDevice();
             bufferStartIndexBlockAtomicStates->hostToDevice();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferNumberAtomicStates->deviceToHost();
             bufferStartIndexBlockAtomicStates->deviceToHost();

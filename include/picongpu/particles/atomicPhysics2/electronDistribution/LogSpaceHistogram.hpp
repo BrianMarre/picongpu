@@ -65,11 +65,6 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         //! debug only bin Index range checks
         HDINLINE static bool debugCheckBinIndexInRange(uint32_t const binIndex)
         {
-            if(binIndex < 0)
-            {
-                printf("atomicPhysics ERROR: binIndex < 0\n");
-                return false;
-            }
             if(binIndex >= T_numberBins)
             {
                 printf("atomicPhysics ERROR: binIndex >= T_numberBins\n");
@@ -80,7 +75,8 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
 
         HDINLINE static float_X computeBase()
         {
-            return math::pow(maxEnergy, 1._X / static_cast<float_X>(T_numberBins - 1u));
+            auto const tmp = maxEnergy;
+            return math::pow(tmp, 1._X / static_cast<float_X>(T_numberBins - 1u));
         }
 
     public:

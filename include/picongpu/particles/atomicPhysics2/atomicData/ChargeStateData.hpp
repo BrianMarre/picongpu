@@ -196,13 +196,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 bufferScreenedCharge->getDeviceBuffer().getDataBox());
         }
 
-        HDINLINE void hostToDevice()
+        HINLINE void hostToDevice()
         {
             bufferIonizationEnergy->hostToDevice();
             bufferScreenedCharge->hostToDevice();
         }
 
-        HDINLINE void deviceToHost()
+        HINLINE void deviceToHost()
         {
             bufferIonizationEnergy->deviceToHost();
             bufferScreenedCharge->deviceToHost();

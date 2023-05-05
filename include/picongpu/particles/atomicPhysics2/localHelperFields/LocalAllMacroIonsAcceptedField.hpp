@@ -33,10 +33,10 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalAllMacroIonsAcceptedField : public SuperCellField<bool, T_MappingDescription, false /*no guards*/>
+    struct LocalAllMacroIonsAcceptedField : public SuperCellField<uint32_t, T_MappingDescription, false /*no guards*/>
     {
         LocalAllMacroIonsAcceptedField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<bool, T_MappingDescription, false /*no guards*/>(mappingDesc)
+            : SuperCellField<uint32_t, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
 

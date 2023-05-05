@@ -78,14 +78,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             T_Histogram& histogram = localHistogramBox(superCellFieldIdx);
 
-            bool& histogramOverSubscribed = localElectronHistogramOverSubscribedBox(superCellFieldIdx);
+            uint32_t& histogramOverSubscribed = localElectronHistogramOverSubscribedBox(superCellFieldIdx);
 
             picongpu::particles::atomicPhysics2::localHelperFields ::RejectionProbabilityCache<
                 T_Histogram::numberBins>& rejectionProbabilityCache
                 = localRejectionProbabilityCacheBox(superCellFieldIdx);
 
             // reset to initial value
-            onlyMaster([&histogramOverSubscribed]() { histogramOverSubscribed = false; });
+            onlyMaster([&histogramOverSubscribed]() { histogramOverSubscribed = static_cast<uint32_t>(false); });
             worker.sync();
 
             /* check all bins for overSubscription
@@ -107,7 +107,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         rejectionProbability = (deltaWeight - weight0) / deltaWeight;
 
                         // set flag that histogram has over subscribed bin
-                        cupla::atomicExch(worker.getAcc(), &histogramOverSubscribed, true);
+                        cupla::atomicExch(worker.getAcc(), &histogramOverSubscribed, static_cast<uint32_t>(true));
                     }
                     else
                         rejectionProbability = -1._X;

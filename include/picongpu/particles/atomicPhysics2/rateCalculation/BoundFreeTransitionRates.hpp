@@ -141,17 +141,13 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 lowerStateLevelVector,
                 lowerStateLevelVector - upperStateLevelVector);
 
+            // eV
             float_X const energyDifference = picongpu::particles::atomicPhysics2 ::DeltaEnergyTransition::
                 get<true, T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
                     transitionCollectionIndex,
                     atomicStateDataBox,
                     boundFreeTransitionDataBox,
                     chargeStateDataBox);
-            // eV
-
-            // debug only
-            if constexpr(T_debug)
-                std::cout << "EnergyDifference: " << energyDifference << std::endl;
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
                 if(energyDifference < 0._X)
