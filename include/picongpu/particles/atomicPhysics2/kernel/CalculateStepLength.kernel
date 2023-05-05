@@ -109,7 +109,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         speciesStateLimitTimeStep * picongpu::atomicPhysics2::timeStepAlpha);
                     // UNIT_TIME
                 });
-            worker.sync();
         }
     };
 

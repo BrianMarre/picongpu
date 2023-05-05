@@ -171,7 +171,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // debug check
                     if constexpr(picongpu::atomicPhysics2 ::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                     {
-#pragma unroll
                         for(uint8_t i = static_cast<uint8_t>(0u); i < factorDown; i++)
                         {
                             if(processID == tableDown.table[i])
@@ -179,8 +178,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         }
                     }
 
-// set particle attributes
-#pragma unroll
+                    // set particle attributes
                     for(uint8_t i = static_cast<uint8_t>(0u); i < factorDown; i++)
                     {
                         if(processID == tableDown.table[i])
@@ -189,7 +187,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     particle[transitionIndex_] = startIndexBox.startIndexBlockTransitions(atomicStateCollectionIndex)
                         + (particle[transitionIndex_] - offset) / factorDown;
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

@@ -136,72 +136,57 @@ namespace picongpu::simulation::stage
             localElectronHistogramField.getDeviceBuffer().setValue(picongpu::atomicPhysics2::ElectronHistogram());
         }
 
-        // definition only
-        //! reset macro particle attribute accepted to false for each ion species
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ResetAcceptedStatus<boost::mpl::_1>>
-                ForEachIonSpeciesResetAcceptedStatus;
-        //! bin electrons sub stage call for each electron species
-        pmacc::meta::
-            ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::stage::BinElectrons<boost::mpl::_1>>
-                ForEachElectronSpeciesBinElectrons;
-        //! reset localRateCacheField sub stage for each ion species
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ResetLocalRateCache<boost::mpl::_1>>
-                ForEachIonSpeciesResetLocalRateCache;
-        //! fill rate cache with diagonal elements of rate matrix
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::FillLocalRateCache<boost::mpl::_1>>
-                ForEachIonSpeciesFillLocalRateCache;
-        //! calculate local atomicPhysics time step length
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CalculateStepLength<boost::mpl::_1>>
-                ForEachIonSpeciesCalculateStepLength;
-        //! chooseTransition for every macro-ion
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ChooseTransition<boost::mpl::_1>>
-                ForEachIonSpeciesChooseTransition;
-        //! extract transitionCollectionIndex
-        pmacc::meta::ForEach<
-            SpeciesRepresentingIons,
-            particles::atomicPhysics2::stage::ExtractTransitionCollectionIndex<boost::mpl::_1>>
-            ForEachIonSpeciesExtractTransitionCollectionIndex;
-        //! try to accept transitions
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::AcceptTransitionTest<boost::mpl::_1>>
-                ForEachIonSpeciesDoAcceptTransitionTest;
-        //! record suggested changes
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordSuggestedChanges<boost::mpl::_1>>
-                ForEachIonSpeciesRecordSuggestedChanges;
-        //! roll for rejection of transitions due to over subscription
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RollForOverSubscription<boost::mpl::_1>>
-                ForEachIonSpeciesRollForOverSubscription;
-        //! check for acceptance of a transition by all ions
-        pmacc::meta::
-            ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CheckForAcceptance<boost::mpl::_1>>
-                ForEachIonSpeciesCheckForAcceptance;
-        //! record delta energy for all transitions
-        pmacc::meta::ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordChanges<boost::mpl::_1>>
-            ForEachIonSpeciesRecordChanges;
-        //! decelerate all electrons according to their bin delta energy
-        pmacc::meta::ForEach<
-            SpeciesRepresentingElectrons,
-            particles::atomicPhysics2::stage::DecelerateElectrons<boost::mpl::_1>>
-            ForEachElectronSpeciesDecelerateElectrons;
-        //! spawn ionization created macro electrons due to atomicPhysics processes
-        pmacc::meta::ForEach<
-            SpeciesRepresentingIons,
-            particles::atomicPhysics2::stage::SpawnIonizationElectrons<boost::mpl::_1>>
-            ForEachIonSpeciesSpawnIonizationElectrons;
-
     public:
         AtomicPhysics2() = default;
 
         //! atomic physics stage sub-stage calls
         void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
+            //! reset macro particle attribute accepted to false for each ion species
+            using ForEachIonSpeciesResetAcceptedStatus = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ResetAcceptedStatus<boost::mpl::_1>>;
+            //! bin electrons sub stage call for each electron species
+            using ForEachElectronSpeciesBinElectrons = pmacc::meta::
+                ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::stage::BinElectrons<boost::mpl::_1>>;
+            //! reset localRateCacheField sub stage for each ion species
+            using ForEachIonSpeciesResetLocalRateCache = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ResetLocalRateCache<boost::mpl::_1>>;
+            //! fill rate cache with diagonal elements of rate matrix
+            using ForEachIonSpeciesFillLocalRateCache = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::FillLocalRateCache<boost::mpl::_1>>;
+            //! calculate local atomicPhysics time step length
+            using ForEachIonSpeciesCalculateStepLength = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CalculateStepLength<boost::mpl::_1>>;
+            //! chooseTransition for every macro-ion
+            using ForEachIonSpeciesChooseTransition = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ChooseTransition<boost::mpl::_1>>;
+            //! extract transitionCollectionIndex
+            using ForEachIonSpeciesExtractTransitionCollectionIndex = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::ExtractTransitionCollectionIndex<boost::mpl::_1>>;
+            //! try to accept transitions
+            using ForEachIonSpeciesDoAcceptTransitionTest = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::AcceptTransitionTest<boost::mpl::_1>>;
+            //! record suggested changes
+            using ForEachIonSpeciesRecordSuggestedChanges = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordSuggestedChanges<boost::mpl::_1>>;
+            //! roll for rejection of transitions due to over subscription
+            using ForEachIonSpeciesRollForOverSubscription = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RollForOverSubscription<boost::mpl::_1>>;
+            //! check for acceptance of a transition by all ions
+            using ForEachIonSpeciesCheckForAcceptance = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CheckForAcceptance<boost::mpl::_1>>;
+            //! record delta energy for all transitions
+            using ForEachIonSpeciesRecordChanges = pmacc::meta::ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordChanges<boost::mpl::_1>>;
+            //! decelerate all electrons according to their bin delta energy
+            using ForEachElectronSpeciesDecelerateElectrons = pmacc::meta::ForEach<
+                SpeciesRepresentingElectrons,
+                particles::atomicPhysics2::stage::DecelerateElectrons<boost::mpl::_1>>;
+            //! spawn ionization created macro electrons due to atomicPhysics processes
+            using ForEachIonSpeciesSpawnIonizationElectrons = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::SpawnIonizationElectrons<boost::mpl::_1>>;
+
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             // TimeRemainingSuperCellField
@@ -221,30 +206,81 @@ namespace picongpu::simulation::stage
                 = localElectronHistogramOverSubscribedField.getGridLayout().getDataSpaceWithoutGuarding();
 
             /// @todo find better way than hard code old value, Brian Marre, 2023
-            pmacc::device::Reduce deviceLocalReduce = pmacc::device::Reduce(static_cast<uint32_t>(1024u));
+            pmacc::device::Reduce deviceLocalReduce = pmacc::device::Reduce(static_cast<uint32_t>(1200u));
 
             setTimeRemaining(); // = (Delta t)_PIC
+
+            // debug only
+            uint32_t subSteppingCounter = 0u;
 
             // atomicPhysics sub-stepping loop
             while(true)
             {
-                ForEachIonSpeciesResetAcceptedStatus(mappingDesc); // accepted_ = false, in each macro ion
+                // debug only
+                std::cout << "atomicPhysicsSubStep: " << subSteppingCounter << std::endl;
+
+                // particle[accepted_] = false, in each macro ion
+                ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
+
+                // debug only
+                std::cout << "done resetAcceptedStatus" << std::endl;
+
                 resetHistograms();
-                ForEachElectronSpeciesBinElectrons(mappingDesc);
+
+                // debug only
+                std::cout << "done resetHistogram" << std::endl;
+
+                ForEachElectronSpeciesBinElectrons{}(mappingDesc);
+
+                // debug only
+                std::cout << "done binElectrons" << std::endl;
+
+                // timeStep = localTimeRemaining
                 picongpu::particles::atomicPhysics2::stage::ResetLocalTimeStepField()(mappingDesc);
-                // = localTimeRemaining
-                ForEachIonSpeciesResetLocalRateCache();
-                ForEachIonSpeciesFillLocalRateCache(mappingDesc); // with sum of -rates of all transitions
-                ForEachIonSpeciesCalculateStepLength(mappingDesc); // min(1/(-R_ii)) * alpha
+
+                // debug only
+                std::cout << "done resetLocalTimeStep" << std::endl;
+
+                ForEachIonSpeciesResetLocalRateCache{}();
+
+                // debug only
+                std::cout << "done resetRateCache" << std::endl;
+
+                // R_ii = -(sum of rates of all transitions from state i)
+                ForEachIonSpeciesFillLocalRateCache{}(mappingDesc);
+
+                // debug only
+                std::cout << "done fillLocalRateCache" << std::endl;
+
+                // min(1/(-R_ii)) * alpha
+                ForEachIonSpeciesCalculateStepLength{}(mappingDesc);
+
+                // debug only
+                std::cout << "done calcaulteStepLength" << std::endl;
 
                 // chooseTransition loop
                 while(true)
                 {
                     // randomly roll transition for each not yet accepted macro ion
-                    ForEachIonSpeciesChooseTransition(mappingDesc, currentStep);
-                    ForEachIonSpeciesExtractTransitionCollectionIndex(mappingDesc, currentStep);
-                    ForEachIonSpeciesDoAcceptTransitionTest(mappingDesc, currentStep);
-                    ForEachIonSpeciesRecordSuggestedChanges(mappingDesc);
+                    ForEachIonSpeciesChooseTransition{}(mappingDesc, currentStep);
+
+                    // debug only
+                    std::cout << "\t done chooseTransition " << std::endl;
+
+                    ForEachIonSpeciesExtractTransitionCollectionIndex{}(mappingDesc, currentStep);
+
+                    // debug only
+                    std::cout << "\t done extractTransitionCollectionIndex" << std::endl;
+
+                    ForEachIonSpeciesDoAcceptTransitionTest{}(mappingDesc, currentStep);
+
+                    // debug only
+                    std::cout << "\t done doAcceptanceTest" << std::endl;
+
+                    ForEachIonSpeciesRecordSuggestedChanges{}(mappingDesc);
+
+                    // debug only
+                    std::cout << "\t done recordSuggestedChanges" << std::endl;
 
                     // reject overSubscription loop
                     while(true)
@@ -252,49 +288,99 @@ namespace picongpu::simulation::stage
                         // check bins for over subscription --> localElectronHistogramOverSubscribedField
                         picongpu::particles::atomicPhysics2::stage::CheckForOverSubscription()(mappingDesc);
 
-                        S_LinearizedBox<S_OverSubscribedField> linearizedOverSubscribedBox(
+                        // debug only
+                        std::cout << "\t\t done checkForOverSubcription" << std::endl;
+
+                        auto linearizedOverSubscribedBox = S_LinearizedBox<S_OverSubscribedField>(
                             localElectronHistogramOverSubscribedField.getDeviceDataBox(),
                             fieldGridLayoutOverSubscription);
+
+                        // debug only
+                        std::cout << "\t\t done getLinearized overSubscribedBox" << std::endl;
 
                         if(!static_cast<bool>(deviceLocalReduce(
                                pmacc::math::operation::Or(),
                                linearizedOverSubscribedBox,
                                fieldGridLayoutOverSubscription.productOfComponents())))
+                        {
+                            // debug only
+                            std::cout << "\t\t end overSubscription loop" << std::endl;
+
                             /* no superCell electron histogram marked as over subscribed in
                              *  localElectronHistogramOverSubscribedField */
                             break;
+                        }
+
+                        // debug only
+                        std::cout << "\t\t done escape check" << std::endl;
 
                         // at least one superCell electron histogram over subscribed
-                        ForEachIonSpeciesRollForOverSubscription(mappingDesc, currentStep);
+                        ForEachIonSpeciesRollForOverSubscription{}(mappingDesc, currentStep);
+
+                        // debug only
+                        std::cout << "\t\t done rollForOverSubscription" << std::endl;
                     } // end reject overSubscription loop
 
                     // check all macro-ions accepted --> localAllIonsAcceptedField
                     resetAllMacroIonsAcceptedField(); // local field, NOT macro ion particle attribute
-                    ForEachIonSpeciesCheckForAcceptance(mappingDesc);
 
-                    S_LinearizedBox<S_AllIonsAcceptedField> linearizedAllAcceptedBox(
+                    // debug only
+                    std::cout << "\t done resetAllAcceptedField" << std::endl;
+
+                    ForEachIonSpeciesCheckForAcceptance{}(mappingDesc);
+
+                    // debug only
+                    std::cout << "\t done checkForAcceptance" << std::endl;
+
+                    auto linearizedAllAcceptedBox = S_LinearizedBox<S_AllIonsAcceptedField>(
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
+
+                    // debug only
+                    std::cout << "\t done getLinearized allAcceptedBox" << std::endl;
 
                     // all Ions accepted?
                     if(static_cast<bool>(deviceLocalReduce(
                            pmacc::math::operation::And(),
                            linearizedAllAcceptedBox,
                            fieldGridLayoutAllIonsAccepted.productOfComponents())))
+                    {
+                        // debug only
+                        std::cout << "\t end chooseTransitionLoop" << std::endl;
                         // all ions have accepted a transition
                         break;
+                    }
                 } // end chooseTransition loop
 
                 // record changes electron spectrum
-                ForEachIonSpeciesRecordChanges(mappingDesc);
-                ForEachElectronSpeciesDecelerateElectrons(mappingDesc);
-                ForEachIonSpeciesSpawnIonizationElectrons(mappingDesc, currentStep);
-                picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);
-                // timeRemaining -= timeStep
+                ForEachIonSpeciesRecordChanges{}(mappingDesc);
 
-                S_LinearizedBox<S_TimeRemainingField> linearizedTimeRemainingBox(
+                // debug only
+                std::cout << "done recordChanges" << std::endl;
+
+                ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
+
+                // debug only
+                std::cout << "done decelerateElectrons" << std::endl;
+
+                ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
+
+                // debug only
+                std::cout << "done spawnElectrons" << std::endl;
+
+                // timeRemaining -= timeStep
+                picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);
+
+                // debug only
+                std::cout << "done updateTimeRemaining" << std::endl;
+
+                auto linearizedTimeRemainingBox = S_LinearizedBox<S_TimeRemainingField>(
                     localTimeRemainingField.getDeviceDataBox(),
                     fieldGridLayoutTimeRemaining);
+
+                // debug only
+                std::cout << "done getLinearized timeRemainingBox" << std::endl;
+                subSteppingCounter++;
 
                 // timeRemaining <= 0? in all local superCells?
                 if(deviceLocalReduce(
@@ -303,8 +389,13 @@ namespace picongpu::simulation::stage
                        fieldGridLayoutTimeRemaining.productOfComponents())
                    <= 0._X)
                 {
+                    // debug only
+                    std::cout << "end atomicPhysics loop" << std::endl;
                     break;
                 }
+
+                // debug only
+                std::cout << "next iteration atomicPhysics loop" << std::endl;
             } // end atomicPhysics sub-stepping loop
         }
     };

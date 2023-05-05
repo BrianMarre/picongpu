@@ -98,9 +98,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         energy, // unit: eV
                         particle[weighting_]); // unitless
                 });
-
-            worker.sync();
-
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG_PRINT)
                 debug::printHistogramToConsole(histogram);
         }

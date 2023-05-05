@@ -81,7 +81,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         cupla::atomicExch(worker.getAcc(), &allIonsAccepted, static_cast<uint32_t>(false));
                     }
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

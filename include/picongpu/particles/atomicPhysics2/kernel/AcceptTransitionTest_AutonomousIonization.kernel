@@ -110,7 +110,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if(probability >= rngGenerator())
                         particle[accepted_] = true;
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

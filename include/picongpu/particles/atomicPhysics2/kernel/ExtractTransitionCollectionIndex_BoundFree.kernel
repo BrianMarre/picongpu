@@ -151,7 +151,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &startIndexBox](T_Worker const& worker, auto& particle)
                 {
                     if(particle[accepted_])
-                        return; // already accepted particle
+                        // already accepted particle
+                        return;
 
                     typename T_ConfigNumber::DataType const atomicStateConfigNumber
                         = particle[atomicConfigNumber_].getConfigNumber();
@@ -173,7 +174,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     if((particle[transitionIndex_] < offset)
                        || (particle[transitionIndex_] >= offset + numberPhysicalTransitionsUp))
-                        return; // not a bound-free transition
+                        // not a bound-free transition
+                        return;
 
                     auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
@@ -184,18 +186,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     uint32_t const processID = (particle[transitionIndex_] - offset) % factorUp;
 
                     // debug check
-                    if constexpr(picongpu::atomicPhysics2 ::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                     {
-#pragma unroll
                         for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
                         {
                             if(processID == tableUp.table[i])
+                                // debug check not invalid processID
                                 checkProcessClass<true>(tableUp.table[i]);
                         }
                     }
 
-// set particle attributes
-#pragma unroll
+                    // set particle attributes
                     for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
                     {
                         if(processID == tableUp.table[i])
@@ -209,7 +210,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 // down-ward bound-free transition
                 /// @todo implement recombination, Brian Marre, 2023
             );
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

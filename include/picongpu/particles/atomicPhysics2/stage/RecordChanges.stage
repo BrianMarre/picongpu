@@ -27,6 +27,8 @@
 
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
 
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
+
 #include <cstdint>
 #include <string>
 
@@ -64,37 +66,14 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-            using RecordChanges_boundBound_collisonal = picongpu::particles::atomicPhysics2::kernel
-                ::RecordChangesKernel<
-                    true,
-                    picongpu::atomicPhysics2::ElectronHistogram,
-                    procClass::ProcessClassGroup::boundBoundBased>;
-            using RecordChanges_boundBound_noncollisonal = picongpu::particles::atomicPhysics2::kernel
-                ::RecordChangesKernel<
-                    false,
-                    picongpu::atomicPhysics2::ElectronHistogram,
-                    procClass::ProcessClassGroup::boundBoundBased>;
-
-            using RecordChanges_boundFree_collisonal = picongpu::particles::atomicPhysics2::kernel
-                ::RecordChangesKernel<
-                    true,
-                    picongpu::atomicPhysics2::ElectronHistogram,
-                    procClass::ProcessClassGroup::boundFreeBased>;
-            // currently no bound-free based non collisional processes exist
-
-            using RecordChanges_autonomous = picongpu::particles::atomicPhysics2::kernel
-                ::RecordChangesKernel<
-                    false,
-                    picongpu::atomicPhysics2::ElectronHistogram,
-                    procClass::ProcessClassGroup::autonomousBased>;
-
-            // a electronic collisional bound-bound transition channel active
-            if constexpr(
-                AtomicDataType::switchElectronicExcitation
-                || AtomicDataType::switchElectronicDeexcitation)
+            if constexpr(AtomicDataType::switchElectronicExcitation)
             {
+                using RecordChanges_electronicExcitation = picongpu::particles::atomicPhysics2
+                    ::kernel::RecordChangesKernel<
+                        procClass::ProcessClass::electronicExcitation,
+                        picongpu::atomicPhysics2::ElectronHistogram>;
                 PMACC_LOCKSTEP_KERNEL(
-                    RecordChanges_boundBound_collisonal(),
+                    RecordChanges_electronicExcitation(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -102,25 +81,52 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundBoundTransitionDataBox<false>());
+            }
+
+            if constexpr(AtomicDataType::switchElectronicDeexcitation)
+            {
+                using RecordChanges_electronicDeexcitation = picongpu::particles::atomicPhysics2
+                    ::kernel::RecordChangesKernel<
+                        procClass::ProcessClass::electronicDeexcitation,
+                        picongpu::atomicPhysics2::ElectronHistogram>;
+                PMACC_LOCKSTEP_KERNEL(
+                    RecordChanges_electronicDeexcitation(),
+                    workerCfg)
+                (mapper.getGridDim())(
+                    mapper,
+                    ions.getDeviceParticlesBox(),
+                    localElectronHistogramField.getDeviceDataBox(),
+                    atomicData.template getAtomicStateDataDataBox<false>(),
+                    atomicData.template getInverseBoundBoundTransitionDataBox<false>());
             }
 
             if constexpr(AtomicDataType::switchSpontaneousDeexcitation)
             {
+                using RecordChanges_spontaneousDeexcitation = picongpu::particles::atomicPhysics2::kernel
+                    ::RecordChangesKernel<
+                        procClass::ProcessClass::spontaneousDeexcitation,
+                        picongpu::atomicPhysics2::ElectronHistogram>;
+
                 PMACC_LOCKSTEP_KERNEL(
-                    RecordChanges_boundBound_noncollisonal(),
+                    RecordChanges_spontaneousDeexcitation(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
                     ions.getDeviceParticlesBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false>());
+                    atomicData.template getInverseBoundBoundTransitionDataBox<false>());
             }
 
             if constexpr(AtomicDataType::switchElectronicIonization)
             {
+                using RecordChanges_electronicIonization = picongpu::particles::atomicPhysics2::kernel
+                    ::RecordChangesKernel<
+                        procClass::ProcessClass::electronicIonization,
+                        picongpu::atomicPhysics2::ElectronHistogram>;
+
                 PMACC_LOCKSTEP_KERNEL(
-                    RecordChanges_boundFree_collisonal(),
+                    RecordChanges_electronicIonization(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -131,17 +137,25 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getChargeStateDataDataBox<false>());
             }
 
+            // currently no bound-free based non collisional processes exist
+            /// @todo implement field ionization, Brian Marre, 2023
+
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
+                using RecordChanges_autonomousIonization = picongpu::particles::atomicPhysics2::kernel
+                    ::RecordChangesKernel<
+                        procClass::ProcessClass::autonomousIonization,
+                        picongpu::atomicPhysics2::ElectronHistogram>;
+
                 PMACC_LOCKSTEP_KERNEL(
-                    RecordChanges_autonomous(),
+                    RecordChanges_autonomousIonization(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
                     ions.getDeviceParticlesBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getAutonomousTransitionDataBox<false>());
+                    atomicData.template getInverseAutonomousTransitionDataBox<false>());
             }
         }
     };
