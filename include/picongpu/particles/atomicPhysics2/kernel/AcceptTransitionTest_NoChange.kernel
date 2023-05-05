@@ -91,14 +91,16 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& particle)
                 {
-                    if((particle[accepted_])
-                       // already accepted transition
-                       || (particle[processClass_]
-                           != static_cast<uint8_t>(
-                               picongpu::particles::atomicPhysics2::processClass::ProcessClass ::noChange))
-                       // not a noChange transition
-                    )
+                    if(
+                        // already accepted transition
+                        (particle[accepted_])
+                       ||
+                       // not a no-change transition
+                       (particle[processClass_] != static_cast<uint8_t>(
+                               picongpu::particles::atomicPhysics2::processClass::ProcessClass::noChange)))
+                    {
                         return;
+                    }
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
@@ -118,9 +120,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // try to accept
                     if(probability >= rngGenerator())
+                    {
                         particle[accepted_] = true;
-                });
-            worker.sync();
+                    }
+                }
+            );
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

@@ -129,22 +129,29 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsUp; i++)
                     {
                         if constexpr(T_electronicIonization)
+                        {
                             rateCache.add(
                                 worker,
                                 atomicStateCollectionIndex,
-                                -picongpu::particles::atomicPhysics2::rateCalculation:: // rate
-                                BoundFreeTransitionRates<T_numberLevels>::template rateCollisionalIonizationTransition<
-                                    T_ChargeStateDataDataBox,
-                                    T_AtomicStateDataDataBox,
-                                    T_BoundFreeTransitionDataBox>(
-                                    histogram.getBinEnergy(binIndex),
-                                    histogram.getBinWidth(binIndex),
-                                    histogram.getBinWeight0(binIndex) / volumeScalingFactor
-                                        / histogram.getBinWidth(binIndex), // 1/(UNIT_LENGTH^3*eV)
-                                    offset + i, // transitionCollectionIndex
-                                    chargeStateDataDataBox,
-                                    atomicStateDataDataBox,
-                                    boundFreeTransitionDataBox));
+                                - picongpu::particles::atomicPhysics2::rateCalculation
+                                    ::BoundFreeTransitionRates<T_numberLevels>
+                                    ::template rateCollisionalIonizationTransition<
+                                        T_ChargeStateDataDataBox,
+                                        T_AtomicStateDataDataBox,
+                                        T_BoundFreeTransitionDataBox
+                                    >(
+                                        histogram.getBinEnergy(binIndex),
+                                        histogram.getBinWidth(binIndex),
+                                        // 1/(UNIT_LENGTH^3*eV)
+                                        histogram.getBinWeight0(binIndex) / volumeScalingFactor
+                                            / histogram.getBinWidth(binIndex),
+                                        // transitionCollectionIndex
+                                        offset + i,
+                                        chargeStateDataDataBox,
+                                        atomicStateDataDataBox,
+                                        boundFreeTransitionDataBox)
+                            );
+                        }
                     }
                 });
             worker.sync();
