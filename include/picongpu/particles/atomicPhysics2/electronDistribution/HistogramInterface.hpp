@@ -33,25 +33,25 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
     class HistogramInterface
     {
         //! check whether the given energy, [eV] is in the histogram energy range
-        virtual bool inRange(float_X const energy) const = 0;
+        HDINLINE virtual bool inRange(float_X const energy) const = 0;
 
         //! get binIndex for a given energy [eV]
-        virtual uint32_t getBinIndex(float_X const energy) const = 0;
+        HDINLINE virtual uint32_t getBinIndex(float_X const energy) const = 0;
 
         //! get the central Energy for a given binIndex, @return unit: eV
-        virtual float_X getBinEnergy(uint32_t const binIndex) const = 0;
+        HDINLINE virtual float_X getBinEnergy(uint32_t const binIndex) const = 0;
 
         //! get energy width of bin, @return unit: eV
-        virtual float_X getBinWidth(uint32_t const binIndex) const = 0;
+        HDINLINE virtual float_X getBinWidth(uint32_t const binIndex) const = 0;
 
         //! get weight of initially binned particles
-        virtual float_X getBinWeight0(uint32_t const binIndex) const = 0;
+        HDINLINE virtual float_X getBinWeight0(uint32_t const binIndex) const = 0;
 
         //! get reserved/already used weight of bin
-        virtual float_X getBinDeltaWeight(uint32_t const binIndex) const = 0;
+        HDINLINE virtual float_X getBinDeltaWeight(uint32_t const binIndex) const = 0;
 
         //! get deltaEnergy of Bin, @return unit: eV
-        virtual float_X getBinDeltaEnergy(uint32_t const binIndex) const = 0;
+        HDINLINE virtual float_X getBinDeltaEnergy(uint32_t const binIndex) const = 0;
 
         /** bin the particle, add weight to w0 of the corresponding bin
          *

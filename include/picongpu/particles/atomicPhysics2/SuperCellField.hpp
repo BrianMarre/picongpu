@@ -88,13 +88,13 @@ namespace picongpu::particles::atomicPhysics2
 
         // required by ISimulationData
         //! == deviceToHost
-        HDINLINE void synchronize() override
+        HINLINE void synchronize() override
         {
             superCellField->deviceToHost();
         }
 
         // required by SimulationFieldHelper
-        HDINLINE void reset(uint32_t currentStep) override
+        HINLINE void reset(uint32_t currentStep) override
         {
             /// @todo figure out why exactly this way
             superCellField->getHostBuffer().reset(true);
@@ -103,7 +103,7 @@ namespace picongpu::particles::atomicPhysics2
 
         // required by SimulationHelperField
         //! ==hostToDevice
-        HDINLINE void syncToDevice() override
+        HINLINE void syncToDevice() override
         {
             superCellField->hostToDevice();
         }
@@ -112,17 +112,17 @@ namespace picongpu::particles::atomicPhysics2
          *
          * Note: dataBoxes are just "pointers"
          */
-        HDINLINE DataBoxType getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
             return this->superCellField->getDeviceBuffer().getDataBox();
         }
 
-        HDINLINE DeviceBufferType& getDeviceBuffer()
+        HINLINE DeviceBufferType& getDeviceBuffer()
         {
             return this->superCellField->getDeviceBuffer();
         }
 
-        HDINLINE GridLayout<picongpu::simDim> getGridLayout()
+        HINLINE GridLayout<picongpu::simDim> getGridLayout()
         {
             return superCellField->getGridLayout();
         }

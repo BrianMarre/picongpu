@@ -87,8 +87,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
 
             forEachAtomicState(
-                [&worker, &rateCache, &startIndexDataBox, &numberTransitionsDataBox, &autonomousTransitionDataBox](
-                    uint32_t const atomicStateCollectionIndex)
+                [
+                    &worker,
+                    &rateCache,
+                    &startIndexDataBox,
+                    &numberTransitionsDataBox,
+                    &autonomousTransitionDataBox
+                ](uint32_t const atomicStateCollectionIndex)
                 {
                     uint32_t const numberTransitionsDown
                         = numberTransitionsDataBox.numberOfTransitions(atomicStateCollectionIndex);
@@ -97,15 +102,21 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsDown; i++)
                     {
+                        // no check for if processClass channel is active, since currently
+                        //  only one exist at all
+
                         rateCache.add(
                             atomicStateCollectionIndex,
-                            -picongpu::particles::atomicPhysics2::rateCalculation::AutonomousTransitionRates::
-                                template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
-                                    offset + i, // transitionCollectionIndex
-                                    autonomousTransitionDataBox)); // 1/UNIT_TIME
+                            // 1/UNIT_TIME
+                            - picongpu::particles::atomicPhysics2::rateCalculation::AutonomousTransitionRates
+                                ::template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
+                                    // transitionCollectionIndex
+                                    offset + i,
+                                    autonomousTransitionDataBox)
+                        );
                     }
-                });
-            worker.sync();
+                }
+            );
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel
