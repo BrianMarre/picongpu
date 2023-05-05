@@ -538,6 +538,7 @@ namespace picongpu
             CurrentReset{}(currentStep);
             Collision{deviceHeap}(currentStep);
             ParticleIonization{*cellDescription}(currentStep);
+            AtomicPhysics2{}(*cellDescription, currentStep);
             EventTask commEvent;
             ParticlePush{}(currentStep, commEvent);
             fieldBackground.subtract(currentStep);
@@ -545,7 +546,6 @@ namespace picongpu
             eventSystem::setTransactionEvent(commEvent);
             /// @todo remove
             atomicPhysics->runSolver(currentStep);
-            AtomicPhysics2{}(*cellDescription, currentStep);
             CurrentBackground{*cellDescription}(currentStep);
             CurrentDeposition{}(currentStep);
             currentInterpolationAndAdditionToEMF(currentStep, *myFieldSolver);

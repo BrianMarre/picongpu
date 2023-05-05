@@ -84,8 +84,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     //    std::cout << " timeRemaining_i: " << timeRemaining
                     //              << " ==0?: " << ((timeRemaining == 0._X) ? "true" : "false") << std::endl;
                     //}
-                });
-            worker.sync();
+                }
+            );
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

@@ -100,7 +100,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     particle[transitionIndex_]
                         = rngGenerator() % transitionSelectionDataBox.numberTransitions(atomicStateCollectionIndex);
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

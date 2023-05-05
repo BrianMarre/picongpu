@@ -163,7 +163,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     /* internal units, weighted*/
                     // internal units, weighted
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

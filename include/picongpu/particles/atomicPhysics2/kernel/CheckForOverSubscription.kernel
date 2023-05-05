@@ -114,7 +114,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     rejectionProbabilityCache.set(binIndex, rejectionProbability);
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

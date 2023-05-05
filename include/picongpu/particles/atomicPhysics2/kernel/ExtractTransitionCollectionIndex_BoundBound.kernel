@@ -189,14 +189,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     uint32_t const offset = numberTransitionsBox.offset(atomicStateCollectionIndex);
 
-                    if((particle[transitionIndex_] < offset)
-                       || (particle[transitionIndex_]
-                           >= (offset + numberPhysicalTransitionsUp + numberPhysicalTransitionsDown)))
-                        return; // not a bound-bound transition
+                    bool const belowOffset = (particle[transitionIndex_] < offset);
+                    bool const aboveRange = (particle[transitionIndex_]
+                            >= (offset + numberPhysicalTransitionsUp + numberPhysicalTransitionsDown));
+
+                    if( belowOffset || aboveRange)
+                        // not a bound-bound transition
+                        return;
 
                     auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
-                    if(particle[transitionIndex_] < offset + numberPhysicalTransitionsUp)
+                    if(particle[transitionIndex_] < (offset + numberPhysicalTransitionsUp))
                     {
                         // up-ward bound-bound transition
                         constexpr auto tableUp
@@ -207,7 +210,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // debug check
                         if constexpr(picongpu::atomicPhysics2 ::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                         {
-#pragma unroll
+                            #pragma unroll
                             for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
                             {
                                 if(processID == tableUp.table[i])
@@ -215,13 +218,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             }
                         }
 
-// set particle attributes
-#pragma unroll
+                        // set particle attributes
+                        #pragma unroll
                         for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
                         {
                             if(processID == tableUp.table[i])
                                 particle[processClass_] = tableUp.table[i];
                         }
+
                         particle[transitionIndex_]
                             = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex)
                             + (particle[transitionIndex_] - offset) / factorUp;
@@ -238,7 +242,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // debug check
                         if constexpr(picongpu::atomicPhysics2 ::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                         {
-#pragma unroll
                             for(uint8_t i = static_cast<uint8_t>(0u); i < factorDown; i++)
                             {
                                 if(processID == tableDown.table[i])
@@ -246,13 +249,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             }
                         }
 
-// set particle attributes
-#pragma unroll
+                        // set particle attributes
                         for(uint8_t i = static_cast<uint8_t>(0u); i < factorDown; i++)
                         {
                             if(processID == tableDown.table[i])
                                 particle[processClass_] = tableDown.table[i];
                         }
+
                         particle[transitionIndex_]
                             = startIndexBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex)
                             + (particle[transitionIndex_] - offset) / factorDown;

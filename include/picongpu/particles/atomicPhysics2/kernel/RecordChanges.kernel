@@ -21,9 +21,11 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
-#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
+
+#include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
@@ -31,18 +33,15 @@
 
 namespace picongpu::particles::atomicPhysics2::kernel
 {
-    /** record delta energy for each bin of the electron histogram for each ion collisional
-     *   transition
+    /** update atomic state and if T_electronicCollisional==true add delta energy of transition
+     *   to used electron histogram bin
      *
-     * @tparam T_electronicCollisional true =^= do process electronicCollisional interactions,
-     *  false =^= do NOT process electronicCollisional interactions
+     * @tparam T_ProcessClass processClass for which to execute this kernel
      * @tparam T_Histogram type of the histogram
-     * @tparam T_ProcessClassGroup processClassGroup for which to execute this kernel
      */
     template<
-        bool T_electronicCollisional,
-        typename T_Histogram,
-        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup T_ProcessClassGroup>
+        picongpu::particles::atomicPhysics2::processClass::ProcessClass T_ProcessClass,
+        typename T_Histogram>
     struct RecordChangesKernel
     {
         /** call operator
@@ -104,60 +103,50 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
-                    int8_t const processClass = ion[processClass_];
+                    uint8_t const processClass = ion[processClass_];
 
-                    // not a T_ProcessClassGroup interaction
-                    if(!procClass::IsProcess<T_ProcessClassGroup>::check(processClass))
+                    // not a T_ProcessClass transition
+                    if(!processClass == static_cast<uint8_t>(T_ProcessClass))
                         return;
-
-                    if constexpr(T_electronicCollisional)
-                        // not an electronicCollisional interaction
-                        if(!procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
-                               processClass))
-                            return;
-                        else
-                            // is an electronicCollisional interaction
-                            if(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
-                                   processClass))
-
-                            using ConfigNumber = typename T_AtomicStateDataBox::ConfigNumber;
-                    using ConfigNumberIdx = typename T_AtomicStateDataBox::Idx;
 
                     uint32_t const transitionIndex = ion[transitionIndex_];
 
-                    ConfigNumberIdx const lowerStateConfigNumber
-                        = atomicStateBox.configNumber(transitionBox.lowerStateCollectionIndex(transitionIndex));
-                    ConfigNumberIdx const upperStateConfigNumber
-                        = atomicStateBox.configNumber(transitionBox.upperStateCollectionIndex(transitionIndex));
-
-                    ConfigNumberIdx const currentConfigNumber = (ion[atomicConfigNumber_]).getConfigNumber();
-
                     float_X deltaEnergy = 0._X;
-                    if constexpr(T_electronicCollisional)
+                    if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
+                        static_cast<uint8_t>(T_ProcessClass)))
                     {
-                        deltaEnergy = picongpu::particles::atomicPhysics2 ::DeltaEnergyTransition::get<
-                            (T_ProcessClassGroup == procClass::ProcessClassGroup::boundFreeBased),
+                        deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get<
+                            procClass::IsProcess<procClass::ProcessClassGroup::ionizing>::check(
+                                static_cast<uint8_t>(T_ProcessClass)),
                             T_AtomicStateDataBox,
                             T_TransitionDataBox,
                             T_ChargeStateBox...>(transitionIndex, atomicStateBox, transitionBox, chargeStateBox...);
                     }
 
-                    if(lowerStateConfigNumber == currentConfigNumber)
+                    if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::upward>::check(
+                        static_cast<uint8_t>(T_ProcessClass)))
                     {
-                        // upward transition
-                        if constexpr(T_electronicCollisional)
-                            deltaEnergy = -deltaEnergy;
+                        if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
+                            static_cast<uint8_t>(T_ProcessClass)))
+                                deltaEnergy = -deltaEnergy;
 
-                        ion[atomicConfigNumber_] = upperStateConfigNumber;
+                        ion[atomicConfigNumber_] = atomicStateBox.configNumber(
+                            transitionBox.upperStateCollectionIndex(transitionIndex));;
                     }
                     else
                         // downward transition
-                        ion[atomicConfigNumber_] = lowerStateConfigNumber;
+                        ion[atomicConfigNumber_] = atomicStateBox.configNumber(
+                            transitionBox.lowerStateCollectionIndex(transitionIndex));
 
-                    if constexpr(T_electronicCollisional)
+                    if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
+                            static_cast<uint8_t>(T_ProcessClass)))
                         electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);
                 });
-            worker.sync();
         }
     };
+
+    template<
+        typename T_Histogram>
+    struct RecordChangesKernel<
+        picongpu::particles::atomicPhysics2::processClass::ProcessClass::noChange, T_Histogram>;
 } // namespace picongpu::particles::atomicPhysics2::kernel

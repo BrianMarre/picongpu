@@ -1426,7 +1426,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         }
 
         // transition data, normal
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! upward transition access, @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
         S_BoundBoundTransitionDataBox getBoundBoundTransitionDataBox()
         {
@@ -1436,7 +1436,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return boundBoundTransitionDataBuffer->getDeviceDataBox();
         }
 
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! upward transition access, upward transition access,@tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
         S_BoundFreeTransitionDataBox getBoundFreeTransitionDataBox()
         {
@@ -1446,7 +1446,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return boundFreeTransitionDataBuffer->getDeviceDataBox();
         }
 
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! upward transition access, @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
         S_AutonomousTransitionDataBox getAutonomousTransitionDataBox()
         {
@@ -1457,7 +1457,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         }
 
         // transition data, inverted
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! downward transition access,@tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
         S_BoundBoundTransitionDataBox getInverseBoundBoundTransitionDataBox()
         {
@@ -1467,7 +1467,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return inverseBoundBoundTransitionDataBuffer->getDeviceDataBox();
         }
 
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! downward transition access, @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
         S_BoundFreeTransitionDataBox getInverseBoundFreeTransitionDataBox()
         {
@@ -1477,7 +1477,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return inverseBoundFreeTransitionDataBuffer->getDeviceDataBox();
         }
 
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! downward transition access @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
         S_AutonomousTransitionDataBox getInverseAutonomousTransitionDataBox()
         {
