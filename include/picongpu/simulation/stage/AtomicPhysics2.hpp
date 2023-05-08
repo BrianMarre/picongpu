@@ -213,7 +213,7 @@ namespace picongpu::simulation::stage
             // debug only
             uint32_t subSteppingCounter = 0u;
 
-            // atomicPhysics sub-stepping loop
+            // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
             {
                 // debug only
@@ -258,7 +258,7 @@ namespace picongpu::simulation::stage
                 // debug only
                 std::cout << "done calcaulteStepLength" << std::endl;
 
-                // chooseTransition loop
+                // chooseTransition loop, ends when all ion[accepted_] = true
                 while(true)
                 {
                     // randomly roll transition for each not yet accepted macro ion
@@ -282,7 +282,7 @@ namespace picongpu::simulation::stage
                     // debug only
                     std::cout << "\t done recordSuggestedChanges" << std::endl;
 
-                    // reject overSubscription loop
+                    // reject overSubscription loop, ends when no histogram bin oversubscribed
                     while(true)
                     {
                         // check bins for over subscription --> localElectronHistogramOverSubscribedField

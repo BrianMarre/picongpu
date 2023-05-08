@@ -164,7 +164,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberTransitions)
                 {
-                    printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition() call\n");
+                    printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition(%u) call\n", collectionIndex);
                     return static_cast<Idx>(0u);
                 }
 
