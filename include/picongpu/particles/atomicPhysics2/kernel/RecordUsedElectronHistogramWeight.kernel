@@ -93,7 +93,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     electronHistogram.addDeltaWeight(worker, particle[binIndex_], particle[weighting_]);
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

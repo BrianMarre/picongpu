@@ -140,7 +140,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         histogram.addDeltaWeight(worker, binIndex, -particle[weighting_]);
                     }
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

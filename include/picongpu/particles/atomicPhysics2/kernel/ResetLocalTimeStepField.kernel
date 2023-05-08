@@ -62,7 +62,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto onlyMaster = lockstep::makeMaster(worker);
 
             onlyMaster([&timeStep, &timeRemaining]() { timeStep = timeRemaining; });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel
