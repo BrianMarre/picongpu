@@ -174,8 +174,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             numberIonizationElectrons = static_cast<uint8_t>(0u);
                             return;
                         }
-
                         uint32_t const transitionCollectionIndex = ion[transitionIndex_];
+
+                        // debug only
+                        std::cout << "transition: " << transitionCollectionIndex << std::endl;
 
                         uint32_t const upperStateClctIdx
                             = transitionBox.upperStateCollectionIndex(transitionCollectionIndex);
@@ -186,9 +188,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         auto const lowerStateConfigNumber = atomicStateBox.configNumber(lowerStateClctIdx);
 
                         uint8_t const lowerChargeState
-                            = T_AtomicStateDataBox ::ConfigNumber::getIonizationState(lowerStateConfigNumber);
+                            = T_AtomicStateDataBox::ConfigNumber::getIonizationState(lowerStateConfigNumber);
                         uint8_t const upperChargeState
-                            = T_AtomicStateDataBox ::ConfigNumber::getIonizationState(upperStateConfigNumber);
+                            = T_AtomicStateDataBox::ConfigNumber::getIonizationState(upperStateConfigNumber);
 
                         // set context array value
                         numberIonizationElectrons = upperChargeState - lowerChargeState;
