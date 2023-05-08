@@ -262,7 +262,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         particle[binIndex_] = rngGenerator() % T_numberBins;
                     }
                 });
-            worker.sync();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel
