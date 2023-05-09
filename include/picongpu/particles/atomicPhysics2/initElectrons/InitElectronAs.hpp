@@ -127,6 +127,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
              * Reference:
              * - Def.: Ion-system ... frame of reference co-moving with original ion speed
              * - Def.: Lab-system ... frame of reference PIC-simulation
+             * - *Star* after inelastic collision, otherwise before
              */
 
             // special case dE <= 0
@@ -143,50 +144,53 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             //      get electron/ion, momentum/Lorentz factor in IonSystem after ionization
             // always have equal weight, since copied from ion to electron
+
+            // UNIT_MASS, not scaled
             constexpr float_X massElectron
                 = picongpu::traits::frame::getMass<typename T_ElectronParticle::FrameType>();
-            // internal units
+            // UNIT_MASS, not scaled
             constexpr float_X massIon = picongpu::traits::frame::getMass<typename T_IonParticle::FrameType>();
-            // internal units
 
+            // unitless
             constexpr float_64 mI_mE = static_cast<float_64>(massIon / massElectron);
+            // unitless
             constexpr float_64 mE_mI = static_cast<float_64>(massElectron / massIon);
 
-            // kg * m^2/s^2 * keV/J * 1e3 = J/J eV
+            // kg * m^2/s^2 * keV/J * 1e3 = J/J * eV = eV
             constexpr float_64 restEnergyElectron = picongpu::SI::ELECTRON_MASS_SI
                 * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV
-                * 1.e3; // eV
+                * 1.e3;
+            // eV
             constexpr float_64 restEnergyIon = static_cast<float_X>(massIon) * UNIT_MASS
                 * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV
-                * 1.e3; // eV
+                * 1.e3;
 
-            // unitless + kg/kg * eV/eV
+            // unitless + kg/kg * eV/eV = unitless
             float_64 const A_e = 0.25 + 1. + mI_mE * deltaEnergyTransition / restEnergyElectron;
             // unitless
             float_64 const A_i = 0.25 + 1. + mE_mI * deltaEnergyTransition / restEnergyIon;
-            // unitless
 
             // Lorentz factor after inelastic collision in Ion-System
             // unitless + sqrt(unitless + kg/kg * eV) = unitless
             float_64 const gammaStarElectron_IonSystem = -0.5 + math::sqrt(A_e);
             // unitless
             float_64 const gammaStarIon_IonSystem = -0.5 + math::sqrt(A_i);
-            // unitless
 
+            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, not weighted
             constexpr float_64 mcElectron = picongpu::SI::ELECTRON_MASS_SI * picongpu::SI::SPEED_OF_LIGHT_SI
                 / (UNIT_MASS * UNIT_LENGTH / UNIT_TIME);
-            // internal units, but not weighted
+            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, not weighted
             constexpr float_64 mcIon = massIon * picongpu::SI::SPEED_OF_LIGHT_SI / (UNIT_LENGTH / UNIT_TIME);
-            // internal units, but not weighted
+
+            // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             constexpr float_64 mSquaredCSquaredIon
                 = pmacc::math::cPow(massIon * picongpu::SI::SPEED_OF_LIGHT_SI / (UNIT_LENGTH / UNIT_TIME), 2u);
-            // internal units, but not weighted
 
             // norm of electron momentum after inelastic collision in Ion-System
-            // weight * (unitless^2 - unitless) * (internal units)
+            // weight * (unitless^2 - unitless) * (UNIT_MASS * UNIT_LENGTH/UNIT_TIME)
+            // = UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             float_64 const normMomentumStarElectron_IonSystem = static_cast<float_64>(electron[weighting_])
                 * math::sqrt((pmacc::math::cPow(gammaStarElectron_IonSystem, 2u) - 1._X)) * mcElectron;
-            // internal units, weighted
 
             //      choose direction
             float_X const u = rngGenerator();
@@ -198,29 +202,30 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             float3_64 const directionVector
                 = float3_64(sinTheta * math::cos(phi), sinTheta * math::sin(phi), cosTheta);
+            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             auto momentumStarElectron_IonSystem = MatrixVector(normMomentumStarElectron_IonSystem * directionVector);
-            // internal units, weighted
 
             //      Lorentz transformation from IonSystem to LabSystem
             // square of original momentum of the ion in Lab-System
+            // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             float_64 const momentumSquaredIon_LabSystem
                 = static_cast<float_64>(pmacc::math::l2norm2(ion[momentum_]) / ion[weighting_]);
-            // internal units, not weighted
 
             // square of original beta of the ion in Lab-System
-            // beta = sqrt(1/(1 + (m^2*c^2)/p^2))
+            // beta^2 = 1/(1 + (m^2*c^2)/p^2)
             //  unitless + (UNIT_MASS^2 * UNIT_SPEED^2)(not weighted)
-            //  /( UNIT_MASS^2 * UNIT_SPEED^2)(not weighted) = untiless
+            //  /( UNIT_MASS^2 * UNIT_SPEED^2)(not weighted) = unitless
             float_64 const normSquaredBetaIon_LabSystem
                 = 1._X / (1 + mSquaredCSquaredIon / momentumSquaredIon_LabSystem);
-            // internal units
 
+            // unitless
             float3_64 const betaIonSystem =
                 // magnitude
                 math::sqrt(normSquaredBetaIon_LabSystem)
                 // direction
                 * static_cast<float3_64>(ion[momentum_] / pmacc::math::l2norm(ion[momentum_]));
 
+            // unitless
             auto beta = MatrixVector(betaIonSystem);
 
             float_64 const gammaIonSystem
@@ -238,20 +243,21 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             lorentzMatrix.mMul(momentumStarElectron_IonSystem, momentumStarElectron_LabSystem);
 
             //      calculate ion momentum after ionization
-            // internal units, weighted
+            // UNIT_MASS * UNIT_LENGTH/UNIT_TIME, weighted
             momentumStarIon_LabSystem = (momentumStarElectron_LabSystem.sMul(-1.))
                 + (beta.sMul(gammaIonSystem * gammaStarIon_IonSystem * mcIon));
-// set to particle
+
+            // set to particle
 #pragma unroll
             for(uint32_t i = static_cast<uint32_t>(0u); i < static_cast<uint32_t>(3u); i++)
                 electron[momentum_][i]
                     = static_cast<float_X>(momentumStarIon_LabSystem.element(i, static_cast<uint32_t>(0u)));
 
             //      calculate ionization electron momentum after ionization
-            // internal units, weighted
+            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             momentumStarElectron_LabSystem = momentumStarElectron_LabSystem
                 + (beta.sMul(gammaIonSystem * gammaStarElectron_IonSystem * mcElectron));
-// set to particle
+            // set to particle
 #pragma unroll
             for(uint32_t i = static_cast<uint32_t>(0u); i < static_cast<uint32_t>(3u); i++)
                 electron[momentum_][i]

@@ -58,7 +58,7 @@ namespace picongpu
     /*########################### define species #################################*/
 
     /*--------------------------- electrons --------------------------------------*/
-    /* thermal bulk electrons: 10, 100, 1000 eV */
+    /* thermal bulk electrons: */
 
     /* ratio relative to BASE_CHARGE and BASE_MASS */
     value_identifier_constexpr(float_X, MassRatioElectrons, 1.0);
@@ -76,7 +76,7 @@ namespace picongpu
         current<UsedParticleCurrentSolver>,
         massRatio<MassRatioElectrons>,
         chargeRatio<ChargeRatioElectrons>,
-        isElectron<>>;
+        isAtomicPhysicsElectron<>>;
 
     /* thermal bulk electrons */
     using BulkElectrons = Particles<
@@ -113,7 +113,7 @@ namespace picongpu
         chargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
         atomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
         /// @todo replace with runtime hostDeviceBuffer of DataBoxes
-        numberAtomicStates<particles::atomicPhysics2::Number<static_cast<uint32_t>(470u)>>,
+        numberAtomicStates<particles::atomicPhysics2::Number<470u>>,
         boundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,
         boundFreeTransitionsFileName<PMACC_CSTRING("../BoundFreeTransitions_Ar.txt")>,
         autonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
@@ -121,7 +121,7 @@ namespace picongpu
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
         ionizationElectronSpecies<BulkElectrons>,
         isAtomicPhysicsIon<>>; // which species to spawn as electrons upon ionization
-    //! @attention only channels activated in both data and solver are actually possible
+    //! @attention data and solver channels must be consistent, otherwise illegal memory access
 
     using ArgonAttributes = MakeSeq_t<
         DefaultParticleAttributes,
@@ -134,8 +134,6 @@ namespace picongpu
         transitionIndex,
         binIndex,
         accepted,
-        // legacy ionization support
-
         /// @todo remove?, Brian Marre, 2022
         boundElectrons>;
 

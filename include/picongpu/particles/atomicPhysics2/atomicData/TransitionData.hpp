@@ -94,7 +94,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(transitionCollectionIndex >= m_numberTransitions)
                 {
-                    throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition() call");
+                    throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition(%u) call\n", transitionCollectionIndex);
                     return;
                 }
 
@@ -145,7 +145,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberTransitions)
                 {
-                    printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition() call\n");
+                    printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition(%u) call\n", collectionIndex);
                     return static_cast<Idx>(0u);
                 }
 

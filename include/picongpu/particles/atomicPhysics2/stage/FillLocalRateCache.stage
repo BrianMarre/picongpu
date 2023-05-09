@@ -90,16 +90,17 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             // filling local rate cache
             //    upward bound-bound transition rates
-            using FillLocalRateCacheUpWardBoundBound = kernel::FillLocalRateCacheKernel_BoundBound<
-                n_max,
-                numberAtomicStatesOfSpecies,
-                numberBins,
-                true,
-                AtomicDataType::switchElectronicExcitation,
-                AtomicDataType::switchElectronicDeexcitation,
-                AtomicDataType::switchSpontaneousDeexcitation>;
             if constexpr(AtomicDataType::switchElectronicExcitation)
             {
+                using FillLocalRateCacheUpWardBoundBound = kernel::FillLocalRateCacheKernel_BoundBound<
+                    n_max,
+                    numberAtomicStatesOfSpecies,
+                    numberBins,
+                    true,
+                    AtomicDataType::switchElectronicExcitation,
+                    AtomicDataType::switchElectronicDeexcitation,
+                    AtomicDataType::switchSpontaneousDeexcitation>;
+
                 PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheUpWardBoundBound(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -113,18 +114,19 @@ namespace picongpu::particles::atomicPhysics2::stage
             }
 
             //    downward bound-bound transition rates
-            using FillLocalRateCacheDownWardBoundBound = kernel::FillLocalRateCacheKernel_BoundBound<
-                n_max,
-                numberAtomicStatesOfSpecies,
-                numberBins,
-                false,
-                AtomicDataType::switchElectronicExcitation,
-                AtomicDataType::switchElectronicDeexcitation,
-                AtomicDataType::switchSpontaneousDeexcitation>;
             if constexpr(
                 AtomicDataType::switchElectronicDeexcitation
                 || AtomicDataType::switchSpontaneousDeexcitation)
             {
+                using FillLocalRateCacheDownWardBoundBound = kernel::FillLocalRateCacheKernel_BoundBound<
+                    n_max,
+                    numberAtomicStatesOfSpecies,
+                    numberBins,
+                    false,
+                    AtomicDataType::switchElectronicExcitation,
+                    AtomicDataType::switchElectronicDeexcitation,
+                    AtomicDataType::switchSpontaneousDeexcitation>;
+
                 PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheDownWardBoundBound(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -138,13 +140,14 @@ namespace picongpu::particles::atomicPhysics2::stage
             }
 
             //    upward bound-free transition rates
-            using FillLocalRateCacheUpWardBoundFree = kernel::FillLocalRateCacheKernel_BoundFree<
-                n_max,
-                numberAtomicStatesOfSpecies,
-                numberBins,
-                AtomicDataType::switchElectronicIonization>;
             if constexpr(AtomicDataType::switchElectronicIonization)
             {
+                using FillLocalRateCacheUpWardBoundFree = kernel::FillLocalRateCacheKernel_BoundFree<
+                    n_max,
+                    numberAtomicStatesOfSpecies,
+                    numberBins,
+                    AtomicDataType::switchElectronicIonization>;
+
                 PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheUpWardBoundFree(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -159,10 +162,11 @@ namespace picongpu::particles::atomicPhysics2::stage
             }
 
             //    downward autonomous transition rates
-            using FillLocalRateCacheAutonomous = kernel::FillLocalRateCacheKernel_Autonomous<
-                numberAtomicStatesOfSpecies>;
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
+                using FillLocalRateCacheAutonomous = kernel::FillLocalRateCacheKernel_Autonomous<
+                    numberAtomicStatesOfSpecies>;
+
                 PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheAutonomous(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,

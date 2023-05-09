@@ -68,11 +68,6 @@ namespace picongpu::atomicPhysics2
 
     //! range check for calculated time step, @attention performance relevant
     constexpr bool ATOMIC_PHYSICS_CALCULATE_TIME_STEP_HOT_DEBUG = true;
-    /** print to console calculated local atomicPhysics sub-step timeStep limit,
-     *
-     * @attention only available if building for cpu!
-     */
-    constexpr bool ATOMIC_PHYSICS_CALCULATE_TIME_STEP_DEBUG_PRINT = true;
 
     //! check for invalid processID in ExtractTransitionCollectionIndex_*.kernel calls
     constexpr bool ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG = true;
@@ -82,7 +77,4 @@ namespace picongpu::atomicPhysics2
 
     //! check for match between inital ionizing transition state of ion and ion transition
     constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG = true;
-
-    //! print local timeRemaining to console, @attention only useful if building serial and cpu-only
-    constexpr bool ATOMIC_PHYSICS_TIME_REMAINING_DEBUG_PRINT = false;
 } // namespace picongpu::atomicPhysics2

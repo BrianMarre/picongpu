@@ -42,9 +42,9 @@ namespace picongpu::particles::atomicPhysics2::processClass
     {
         HDINLINE static constexpr bool check(uint8_t processClass)
         {
-            if((processClass == static_cast<uint8_t>(ProcessClass::electronicExcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::electronicDeexcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::spontaneousDeexcitation)))
+            if((processClass == u8(ProcessClass::electronicExcitation))
+               || (processClass == u8(ProcessClass::electronicDeexcitation))
+               || (processClass == u8(ProcessClass::spontaneousDeexcitation)))
                 return true;
             return false;
         }
@@ -58,8 +58,8 @@ namespace picongpu::particles::atomicPhysics2::processClass
         HDINLINE static constexpr bool check(uint8_t processClass)
         {
             ///@todo implement recombination, Brian Marre, 2023
-            if((processClass == static_cast<uint8_t>(ProcessClass::electronicIonization))
-               || (processClass == static_cast<uint8_t>(ProcessClass::fieldIonization)))
+            if((processClass == u8(ProcessClass::electronicIonization))
+               || (processClass == u8(ProcessClass::fieldIonization)))
                 return true;
             return false;
         }
@@ -72,7 +72,7 @@ namespace picongpu::particles::atomicPhysics2::processClass
     {
         HDINLINE static constexpr bool check(uint8_t processClass)
         {
-            if(processClass == static_cast<uint8_t>(ProcessClass::autonomousIonization))
+            if(processClass == u8(ProcessClass::autonomousIonization))
                 return true;
             return false;
         }
@@ -98,9 +98,9 @@ namespace picongpu::particles::atomicPhysics2::processClass
     {
         HDINLINE static constexpr bool check(uint8_t processClass)
         {
-            if((processClass == static_cast<uint8_t>(ProcessClass::electronicExcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::electronicDeexcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::electronicIonization)))
+            if((processClass == u8(ProcessClass::electronicExcitation))
+               || (processClass == u8(ProcessClass::electronicDeexcitation))
+               || (processClass == u8(ProcessClass::electronicIonization)))
                 return true;
             return false;
         }
@@ -112,9 +112,9 @@ namespace picongpu::particles::atomicPhysics2::processClass
     {
         HDINLINE static constexpr bool check(uint8_t processClass)
         {
-            if((processClass == static_cast<uint8_t>(ProcessClass::electronicExcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::electronicIonization))
-               || (processClass == static_cast<uint8_t>(ProcessClass::fieldIonization)))
+            if((processClass == u8(ProcessClass::electronicExcitation))
+               || (processClass == u8(ProcessClass::electronicIonization))
+               || (processClass == u8(ProcessClass::fieldIonization)))
                 return true;
             return false;
         }
@@ -126,9 +126,9 @@ namespace picongpu::particles::atomicPhysics2::processClass
     {
         HDINLINE static constexpr bool check(uint8_t processClass)
         {
-            if((processClass == static_cast<uint8_t>(ProcessClass::electronicDeexcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::spontaneousDeexcitation))
-               || (processClass == static_cast<uint8_t>(ProcessClass::autonomousIonization)))
+            if((processClass == u8(ProcessClass::electronicDeexcitation))
+               || (processClass == u8(ProcessClass::spontaneousDeexcitation))
+               || (processClass == u8(ProcessClass::autonomousIonization)))
                 return true;
             return false;
         }

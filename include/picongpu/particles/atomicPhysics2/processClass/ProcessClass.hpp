@@ -39,4 +39,11 @@ namespace picongpu::particles::atomicPhysics2::processClass
         autonomousIonization = 5u,
         fieldIonization = 6u
     };
+
+    //! short conversion to uint8t equivalent
+    constexpr uint8_t u8(ProcessClass const processClass)
+    {
+        return static_cast<uint8_t>(processClass);
+    }
+
 } // namespace picongpu::particles::atomicPhysics2::processClass

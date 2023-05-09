@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include "pciongpu/particles/atomicPhysics2/ExponentialApproximationProbability.hpp"
-#include "pciongpu/particles/atomicPhysics2/LinearApproximationProbability.hpp"
+#include "picongpu/particles/atomicPhysics2/ExponentialApproximationProbability.hpp"
+#include "picongpu/particles/atomicPhysics2/LinearApproximationProbability.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LogSpaceHistogram.hpp"
 #include "picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp"
@@ -71,7 +71,7 @@ namespace picongpu::atomicPhysics2
      *  since all "," are interpreted as separating macro arguments
      */
     using ConfigNumber_Argon = particles::atomicPhysics2::stateRepresentation::
-        ConfigNumber<configNumberStorageDataType_Ar, numLevels, protonNumber>;
+        ConfigNumber<configNumberStorageDataType_Ar, numLevels_Ar, protonNumber_Ar>;
 
     // datatype to be used for configNumber storage
     value_identifier(ConfigNumber_Argon, ConfigNumber_Ar, ConfigNumber_Argon(1u));

@@ -150,18 +150,16 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X previousMomentumVectorLength2 = pmacc::math::l2norm2(electron[momentum_]);
                     // internal units, scaled
 
-                    // case: not moving electron
+                    // case: not moving electron, --> no need to resize vector
                     if(previousMomentumVectorLength2 == 0._X)
-                        // no need to resize 0-vector
                         previousMomentumVectorLength2 = 1._X;
 
                     // if previous momentum == 0, discards electron
+                    // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
                     electron[momentum_] *= newElectronMomentum
                         * electron[weighting_]
-                        /*internal_units, weighted*/
                         * 1._X / previousMomentumVectorLength2;
-                    /* internal units, weighted*/
-                    // internal units, weighted
+
                 });
         }
     };

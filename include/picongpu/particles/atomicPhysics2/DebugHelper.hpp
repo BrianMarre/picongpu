@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2::debug
 {
@@ -261,6 +262,52 @@ namespace picongpu::particles::atomicPhysics2::debug
         {
             std::cout << "\t" << i << ":[" << rateCache.rate(i) << "]" << std::endl;
         }
+    }
+
+    //! print vector to console, simDim version
+    std::string toString(floatD_X const & vector)
+    {
+        std::string result = "";
+        result += "( " + vector[0];
+        for(uint8_t i=1u;i < piconpgu::simDim; i++)
+        {
+            result += ", " + vector[i];
+        }
+        result += " )";
+
+        return result;
+    }
+
+    //! print vector to console, 3 dim-version, for momentum
+    std::string toString(float3_X const & vector)
+    {
+        std::string result = "";
+        result += "( " + vector[0];
+        for(uint8_t i=1u;i < 3u; i++)
+        {
+            result += ", " + vector[i];
+        }
+        result += " )";
+
+        return result;
+    }
+
+
+    //! debug only, write atomicPhysics attributes to console, @attention serial and cpu build only
+    template<typename T_Ion, bool >
+    void printAtomicPhysicsIonToConsole(T_Ion const& ion)
+    {
+        std::cout << "ID: " << ion[particleId_] << std::endl;
+        std::cout << "\t - weighting: " << ion[weighting_] << std::endl;
+
+        std::cout << "\t - momentum: " << toString(ion[momentum_]) << std::endl;
+        std::cout << "\t - position: " << toString(ion[position_]) << std::endl;
+        std::cout << "\t - atomicPhysicsData:" << std:.endl;
+        std::cout << "\t\t - processClass: " << ion[processClass_] << std::endl;
+        std::cout << "\t\t - transitionIndex: " << ion[transitionIndex_] << std::endl;
+        std::cout << "\t\t - binIndex: " << ion[binIndex_] << std::endl;
+        std::cout << "\t\t - accepted: " << ion[accepted_] << std::endl;
+        std::cout << "\t\t - boundElectrons: " << ion[boundElectrons_] << std::endl;
     }
 
 } // namespace picongpu::particles::atomicPhysics2::debug
