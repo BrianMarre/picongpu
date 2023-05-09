@@ -115,6 +115,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
                         static_cast<uint8_t>(T_ProcessClass)))
                     {
+                        // electronic collisional process
                         deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get<
                             procClass::IsProcess<procClass::ProcessClassGroup::ionizing>::check(
                                 static_cast<uint8_t>(T_ProcessClass)),
@@ -126,18 +127,24 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::upward>::check(
                         static_cast<uint8_t>(T_ProcessClass)))
                     {
+                        //upward process
                         if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
                             static_cast<uint8_t>(T_ProcessClass)))
                                 deltaEnergy = -deltaEnergy;
 
-                        ion[atomicConfigNumber_] = atomicStateBox.configNumber(
-                            transitionBox.upperStateCollectionIndex(transitionIndex));;
+                        auto newConfigNumber = atomicStateBox.configNumber(
+                            transitionBox.upperStateCollectionIndex(transitionIndex));
                     }
                     else
-                        // downward transition
-                        ion[atomicConfigNumber_] = atomicStateBox.configNumber(
+                    {
+                        auto newConfigNumber = atomicStateBox.configNumber(
                             transitionBox.lowerStateCollectionIndex(transitionIndex));
+                    }
 
+                    ion[atomicConfigNumber_] = newConfigNumber;
+                    ion[boundElectrons] = atomicStateBox::ConfigNumber::getBoundElectrons(newConfigNumber);
+
+                    // record used weight
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
                             static_cast<uint8_t>(T_ProcessClass)))
                         electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);

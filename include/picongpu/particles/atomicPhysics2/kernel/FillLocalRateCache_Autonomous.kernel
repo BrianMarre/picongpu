@@ -105,9 +105,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // no check for if processClass channel is active, since currently
                         //  only one exist at all
 
+                        // 1/UNIT_TIME
                         rateCache.add(
                             atomicStateCollectionIndex,
-                            // 1/UNIT_TIME
                             - picongpu::particles::atomicPhysics2::rateCalculation::AutonomousTransitionRates
                                 ::template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
                                     // transitionCollectionIndex

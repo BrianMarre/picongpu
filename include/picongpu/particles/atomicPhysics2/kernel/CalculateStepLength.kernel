@@ -67,11 +67,16 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X const rateCacheEntry = -rateCache.rate(atomicStateCollectionIndex);
 
                     float_X lossRateState; // UNIT_TIME
+
                     if(rateCacheEntry == 0._X)
-                        // no loss state, for example completely ionized state, set to 0 element
+                    {
+                        // no loss state, for example completely ionized state, set to neutral element
                         lossRateState = picongpu::atomicPhysics2::timeStepAlpha * 1._X / DELTA_T;
+                    }
                     else
+                    {
                         lossRateState = rateCacheEntry;
+                    }
 
                     if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_CALCULATE_TIME_STEP_HOT_DEBUG)
                         if(lossRateState < 0._X)
@@ -84,24 +89,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     float_X const speciesStateLimitTimeStep = 1._X / (lossRateState);
                     // 1/(1/UNIT_TIME) = UNIT_TIME
-
-                    // debug only
-                    //if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_CALCULATE_TIME_STEP_DEBUG_PRINT)
-                    //{
-                    //    std::cout << "\t atomicStateCollectionIndex: " << atomicStateCollectionIndex << std::endl;
-                    //    std::cout << "\t\t rateCacheEntry: " << rateCache.rate(atomicStateCollectionIndex)
-                    //              << " ,[==0?] " << ((rateCacheEntry == 0._X) ? "true" : "false") << std::endl;
-                    //    std::cout << "\t\t speciesStateLimitTimeStep(predicted): "
-                    //              << -1._X / rateCache.rate(atomicStateCollectionIndex) << std::endl;
-                    //    std::cout << "\t\t timeStep(predicted): "
-                    //              << (-1._X / rateCache.rate(atomicStateCollectionIndex)
-                    //                  * picongpu::atomicPhysics2::timeStepAlpha)
-                    //              << std::endl;
-                    //    std::cout << "\t\t speciesStateLimitTimeStep(actual): " << speciesStateLimitTimeStep
-                    //              << std::endl;
-                    //    std::cout << "\t\t\t timeStep(actual): "
-                    //              << speciesStateLimitTimeStep * picongpu::atomicPhysics2::timeStepAlpha << std::endl;
-                    //}
 
                     cupla::atomicMin(
                         worker.getAcc(),

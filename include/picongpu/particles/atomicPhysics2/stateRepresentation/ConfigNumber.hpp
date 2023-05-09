@@ -305,13 +305,13 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
             return result;
         }
 
-        /** get charge state from configNumber
+        /** get number bound electrons from configNumber
          *
          * @param configNumber configNumber, uint like, not an object
          *
-         * @returns charge of ion
+         * @returns number of bound electrons
          */
-        HDINLINE static constexpr uint8_t getIonizationState(T_DataType configNumber)
+        HDINLINE static constexpr uint8_t getBoundElectrons(T_DataType configNumber)
         {
             uint8_t numberElectrons = 0u;
 
@@ -331,7 +331,18 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
                 numberElectrons += shellNumberElectrons;
             }
 
-            return T_atomicNumber - numberElectrons;
+            return numberElectrons;
+        }
+
+        /** get charge state from configNumber
+         *
+         * @param configNumber configNumber, uint like, not an object
+         *
+         * @returns charge of ion
+         */
+        HDINLINE static constexpr uint8_t getIonizationState(T_DataType configNumber)
+        {
+            return T_atomicNumber - getBoundElectrons(configNumber);
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stateRepresentation

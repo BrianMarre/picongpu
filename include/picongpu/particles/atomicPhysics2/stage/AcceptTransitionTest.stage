@@ -93,7 +93,7 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
-            // no change
+            // transition no-change
             PMACC_LOCKSTEP_KERNEL(
                 picongpu::particles::atomicPhysics2::kernel::AcceptTransitionTestKernel_NoChange<
                     SpeciesConfigNumberType,

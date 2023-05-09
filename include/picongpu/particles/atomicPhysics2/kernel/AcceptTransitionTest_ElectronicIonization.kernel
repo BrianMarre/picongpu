@@ -105,27 +105,29 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &atomicStateDataDataBox,
                  &boundFreeTransitionDataBox](T_Worker const& worker, auto& particle)
                 {
-                    if(particle[accepted_])
-                        return;
-                    // already accepted transition
+                    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-                    if(particle[processClass_]
-                       != static_cast<uint8_t>(
-                           picongpu::particles::atomicPhysics2::processClass::ProcessClass ::electronicIonization))
+                    if(particle[accepted_]
+                        || (particle[processClass_] != u8(procClass::ProcessClass::electronicIonization))
+                    )
                         return;
-                    // not a electronicIonization
 
+                    // UNIT_LENGTH^3
                     constexpr float_X volumeScalingFactor
-                        = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME; // UNIT_LENGTH^3
+                        = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
 
                     uint32_t const binIndex = particle[binIndex_];
-                    float_X const energy = electronHistogram.getBinEnergy(binIndex); // eV
-                    float_X const binWidth = electronHistogram.getBinWidth(binIndex); // eV
+                    // eV
+                    float_X const energy = electronHistogram.getBinEnergy(binIndex);
+                    // eV
+                    float_X const binWidth = electronHistogram.getBinWidth(binIndex);
+                    // 1/(UNIT_LENGTH^3 * eV)
                     float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor
-                        / binWidth; // 1/(UNIT_LENGTH^3 * eV)
+                        / binWidth;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
+                    // 1/UNIT_TIME
                     float_X const rate = picongpu::particles::atomicPhysics2::rateCalculation ::
                         BoundFreeTransitionRates<T_n_max>::template rateCollisionalIonizationTransition<
                             T_ChargeStateDataDataBox,
@@ -139,6 +141,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             atomicStateDataDataBox,
                             boundFreeTransitionDataBox);
 
+                    // unitless
                     float_X const probability = T_AcceptanceFunctor::probabilityChange(rate, timeStep);
 
                     // try to accept

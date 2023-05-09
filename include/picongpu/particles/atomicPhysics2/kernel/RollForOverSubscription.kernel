@@ -21,6 +21,10 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
+
 #include "picongpu/particles/atomicPhysics2/localHelperFields/RejectionProbabilityCache.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
@@ -110,22 +114,18 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     uint32_t const binIndex = particle[binIndex_];
                     uint8_t const processClass = particle[processClass_];
 
-                    if((!particle[accepted_])
-                       // not an accepted transition -> does not use histogram weight
-                       || !(
-                           (processClass
-                            == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClass ::
-                                                        electronicIonization))
-                           || (processClass
-                               == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::
-                                                           ProcessClass ::electronicExcitation))
-                           || (processClass
-                               == static_cast<uint8_t>(
-                                   picongpu::particles::atomicPhysics2::processClass::ProcessClass ::
-                                       electronicDeexcitation))) // not a collisional process, does not use histogram
-                                                                 // weight
-                       || (rejectionProbabilityCache.rejectionProbability(binIndex) <= 0._X)
-                       // not an overSubscribed bin
+                    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+
+                    bool const processUsesElectronHistogramWeight = procClass::IsProcess<
+                        procClass::ProcessClassGroup::electronicCollisional>::check(processClass);
+
+                    bool const usesNotOverSubcribedBin = (rejectionProbabilityCache.rejectionProbability(
+                        binIndex) <= 0._X);
+
+                    if(
+                        (!particle[accepted_])
+                        ||(!processUsesElectronHistogramWeight) 
+                        || usesNotOverSubcribedBin
                     )
                         return;
 
