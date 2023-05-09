@@ -2,7 +2,7 @@
  *
  * This file is part of PIConGPU.
  *
- * PIConGPU is free software you can redistribute it andor modify
+ * PIConGPU is free software you can redistribute it and or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -352,13 +352,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 }
 
                 // get next ion frame
-                onlyMaster(
-                    [&ionFrame, &ionBox]()
-                    {
-                        ionFrame = ionBox.getPreviousFrame(ionFrame);
-                        // no need to set "totalNumberMacroElectronsToSpawn = 0",
-                        //  already guaranteed by break condition
-                    });
+                ionFrame = ionBox.getPreviousFrame(ionFrame);
+
+                //  no need to set "totalNumberMacroElectronsToSpawn = 0",
+                //   already guaranteed by break condition
+
                 worker.sync();
             }
         }
