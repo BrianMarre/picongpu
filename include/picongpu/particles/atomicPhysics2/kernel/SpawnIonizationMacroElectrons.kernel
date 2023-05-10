@@ -250,7 +250,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                          &transitionBox,
                          &addStuff...](uint32_t const frameSlotIdx, uint8_t& numberIonizationElectrons)
                         {
-                            IonParticle ion = ionFrame[frameSlotIdx];
+                            auto ion = ionFrame[frameSlotIdx];
 
                             // not occupied or does not want to spawn an electron
                             if((!static_cast<bool>(ion[multiMask_]))

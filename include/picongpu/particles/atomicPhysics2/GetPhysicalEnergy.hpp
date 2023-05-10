@@ -65,11 +65,11 @@ namespace picongpu::particles::atomicPhysics2
 
             // float_X should be sufficient,
             // m^2 + p^2 = (<=80 * ~2000)^2 + (<2000[10^9eV])^2 ~ 2.5*10^10
-            {
+            //{
                 // UNIT_LENGTH^2 / (UNIT_TIME^2*c_SI) = 1
                 // UNIT_MASS * c_SI^2
-                float_X energy = (math::sqrt(m * m + momentumSquared * conversionFactor) - m);
-            }
+                float_X const energy = (math::sqrt(m * m + momentumSquared * conversionFactor) - m);
+            //}
 
             // eV
             return energy * eV;

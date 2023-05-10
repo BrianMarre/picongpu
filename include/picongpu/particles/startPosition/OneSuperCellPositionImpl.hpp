@@ -61,11 +61,11 @@ namespace picongpu::particles::startPosition::acc
          */
         template<typename T_Particle>
         HDINLINE uint32_t
-        numberOfMacroParticles(float_X const realParticlesPerCell, DataSpace<simDim> const cellIdx) const
+        numberOfMacroParticles(float_X const realParticlesPerCell, DataSpace<simDim> const cellIdx)
         {
             PMACC_CASSERT_MSG(
                 spawnCellIdx_dim_and_simDim_are_inconsistent,
-                T_ParamClass::spawnCellIdx::dim != picongpu::simDim);
+                T_ParamClass::spawnCellIdx::dim == picongpu::simDim);
 
             auto spawnCellIdx = T_ParamClass::spawnCellIdx::toRT();
             auto superCellSize = picongpu::SuperCellSize::toRT();
@@ -91,7 +91,7 @@ namespace picongpu::particles::startPosition::acc
                 return static_cast<uint32_t>(0u);
 
             /// @attention m_weighting member might stay uninitialized!
-            uint32_t result = T_ParamClass::numParticlesPerSuperCell;
+            uint32_t result(T_ParamClass::numParticlesPerSuperCell);
 
             constexpr bool hasWeighting
                 = pmacc::traits::HasIdentifier<typename T_Particle::FrameType, weighting>::type::value;

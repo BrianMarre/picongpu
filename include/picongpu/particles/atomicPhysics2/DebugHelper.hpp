@@ -19,10 +19,6 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
-#include "picongpu/particles/atomicPhysics2/electronDistribution/LogSpaceHistogram.hpp"
-#include "picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp"
-
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -57,8 +53,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             std::cout << " [w0, Dw, DE, o?]: [";
             std::cout << histogram.getBinWeight0(i) << ", ";
             std::cout << histogram.getBinDeltaWeight(i) << ", ";
-            std::cout << histogram.getBinDeltaEnergy(i) << ", ";
-            std::cout << histogram.isBinOverSubscribed(i) << "]";
+            std::cout << histogram.getBinDeltaEnergy(i) << "]";
             std::cout << std::endl;
         }
         std::cout << "\t overFlow: w0=" << histogram.getOverflowWeight() << std::endl;
@@ -96,8 +91,8 @@ namespace picongpu::particles::atomicPhysics2::debug
                   << "na"
                   << ", "
                   << "na"
-                  << " ) [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::T_ConfigNumber::atomicNumber)
-                  << ", " << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::T_ConfigNumber::atomicNumber)
+                  << " ) [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
+                  << ", " << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
                   << " ]" << std::endl;
 
 
@@ -265,33 +260,20 @@ namespace picongpu::particles::atomicPhysics2::debug
     }
 
     //! print vector to console, simDim version
-    std::string toString(floatD_X const & vector)
+    template<typename T_Vector>
+    std::string linearize(T_Vector const& vector)
     {
         std::string result = "";
-        result += "( " + vector[0];
-        for(uint8_t i=1u;i < piconpgu::simDim; i++)
+        result += "( " + std::to_string(vector[0u]);
+
+        for(uint8_t i=1u;i < T_Vector::dim; i++)
         {
-            result += ", " + vector[i];
+            result += ", " + std::to_string(vector[i]);
         }
         result += " )";
 
         return result;
     }
-
-    //! print vector to console, 3 dim-version, for momentum
-    std::string toString(float3_X const & vector)
-    {
-        std::string result = "";
-        result += "( " + vector[0];
-        for(uint8_t i=1u;i < 3u; i++)
-        {
-            result += ", " + vector[i];
-        }
-        result += " )";
-
-        return result;
-    }
-
 
     //! debug only, write atomicPhysics attributes to console, @attention serial and cpu build only
     template<typename T_Ion, bool >
@@ -302,7 +284,7 @@ namespace picongpu::particles::atomicPhysics2::debug
 
         std::cout << "\t - momentum: " << toString(ion[momentum_]) << std::endl;
         std::cout << "\t - position: " << toString(ion[position_]) << std::endl;
-        std::cout << "\t - atomicPhysicsData:" << std:.endl;
+        std::cout << "\t - atomicPhysicsData:" << std::endl;
         std::cout << "\t\t - processClass: " << ion[processClass_] << std::endl;
         std::cout << "\t\t - transitionIndex: " << ion[transitionIndex_] << std::endl;
         std::cout << "\t\t - binIndex: " << ion[binIndex_] << std::endl;
