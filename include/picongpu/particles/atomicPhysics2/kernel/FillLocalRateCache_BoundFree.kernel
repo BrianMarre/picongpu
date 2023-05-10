@@ -124,7 +124,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         = numberTransitionsDataBox.numberOfTransitionsUp(atomicStateCollectionIndex);
 
                     uint32_t offset = startIndexDataBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
-                    constexpr float_X volumeScalingFactor = 1._X / pmacc::math::cPow(picongpu::UNIT_LENGTH, 3u);
+
+                    // UNIT_LENGTH^3
+                    constexpr float_X volumeScalingFactor =
+                        pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
 
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsUp; i++)
                     {
