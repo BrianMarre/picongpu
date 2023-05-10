@@ -200,7 +200,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          *
          * @param energyElectron kinetic energy of interacting electron(/electron bin), [eV]
          * @param energyElectronBinWidth energy width of electron bin, [eV]
-         * @param densityElectrons [1/(m^3 * eV)]
+         * @param densityElectrons [1/(m^3 * eV)], local superCell number density of electrons in this bin
          * @param transitionCollectionIndex index of transition in boundBoundTransitionDataBox
          * @param atomicStateDataBox access to atomic state property data
          * @param boundBoundTransitionDataBox access to bound-bound transition data
