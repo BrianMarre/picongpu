@@ -25,6 +25,8 @@
 #include <cstdint>
 #include <memory>
 
+#include <string>
+
 /** @file implements base class of transitions property data
  *
  * @attention ConfigNumber specifies the number of a state as defined by the configNumber
@@ -94,7 +96,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(transitionCollectionIndex >= m_numberTransitions)
                 {
-                    throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition(%u) call\n", transitionCollectionIndex);
+                    throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition("
+                        + std::to_string(transitionCollectionIndex) + ") call");
                     return;
                 }
 

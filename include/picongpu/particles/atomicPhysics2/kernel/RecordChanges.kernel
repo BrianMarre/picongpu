@@ -124,6 +124,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             T_ChargeStateBox...>(transitionIndex, atomicStateBox, transitionBox, chargeStateBox...);
                     }
 
+                    typename T_AtomicStateDataBox::Idx newConfigNumber;
+
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::upward>::check(
                         static_cast<uint8_t>(T_ProcessClass)))
                     {
@@ -132,17 +134,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             static_cast<uint8_t>(T_ProcessClass)))
                                 deltaEnergy = -deltaEnergy;
 
-                        auto newConfigNumber = atomicStateBox.configNumber(
+                        newConfigNumber = atomicStateBox.configNumber(
                             transitionBox.upperStateCollectionIndex(transitionIndex));
                     }
                     else
                     {
-                        auto newConfigNumber = atomicStateBox.configNumber(
+                        newConfigNumber = atomicStateBox.configNumber(
                             transitionBox.lowerStateCollectionIndex(transitionIndex));
                     }
 
                     ion[atomicConfigNumber_] = newConfigNumber;
-                    ion[boundElectrons] = atomicStateBox::ConfigNumber::getBoundElectrons(newConfigNumber);
+                    ion[boundElectrons_] = T_AtomicStateDataBox::ConfigNumber::getBoundElectrons(newConfigNumber);
 
                     // record used weight
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
