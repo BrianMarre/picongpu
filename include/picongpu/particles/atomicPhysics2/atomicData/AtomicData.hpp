@@ -864,6 +864,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @attention assumes that transitionList is sorted by lower state block wise
          * @attention changes have to synced to device separately
+         *
+         * @details implemented as a block accumulator iteration with two support points.
+         *  The transition list is assumed to consist of strict-totally ordered(by lower state)
+         *  blocks of transitions with each block of transitions sharing the same lower state.
+         *
+         *  The first support points stores the current open transition blocks lower state,
+         *  while the second support point advances element-wise over the transition list
+         *  until it finds a transition with lower state that is not equal to the current
+         *  transition. This signifies the end of the open transition block.
+         *  We then note down the accumulated values for the open block, close it, and
+         *  open a new block, by setting the first support point to the second support point
+         *  and continue as before until we reach the end of the transition list.
          */
         template<typename T_Tuple>
         ALPAKA_FN_HOST void fill_UpTransition_OrgaData(
@@ -873,23 +885,46 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         {
             typename std::list<T_Tuple>::iterator iter = transitionList.begin();
 
-            // quick lockup data
+            // lookup data
             S_AtomicStateDataBox atomicStateDataHostBox = atomicStateDataBuffer->getHostDataBox();
             S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox = chargeStateOrgaDataBuffer->getHostDataBox();
 
             uint8_t lastChargeState;
+            uint8_t currentChargeState;
             uint32_t lastAtomicStateCollectionIndex;
-            Idx currentLower; // transitions up from a state have the state as lower state
+            uint32_t currentAtomicStateCollectionIndex;
+            // transitions up from a state have the state as lower state
+            Idx currentLower;
 
-            // empty transition list
+            // check for empty transition list
             if(iter == transitionList.end())
+            {
+                // init for empty list
+                for (uint32_t j = 0u; j < m_numberAtomicStates; j++)
+                {
+                    startIndexHostBox.storeUp(j, 0u);
+                    numberHostBox.storeUp(j, 0u);
+                }
                 return;
+            }
 
-            // read first entry
+            // read first entry, always legal since
             Idx lastLower = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
             TypeNumber numberInBlock = 1u;
             TypeNumber lastStartIndex = 0u;
             iter++;
+
+            // init states before start of first block
+            lastChargeState = ConfigNumber::getIonizationState(lastLower);
+            lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
+                lastLower,
+                chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+            for(uint32_t j = 0u; j < lastAtomicStateCollectionIndex; j++)
+            {
+                startIndexHostBox.storeUp(j, 0u);
+                numberHostBox.storeUp(j, 0u);
+            }
 
             // iterate over rest of the list
             TypeNumber i = 1u;
@@ -899,30 +934,44 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
                 if(currentLower != lastLower)
                 {
-                    // new block
-                    lastChargeState = ConfigNumber::getIonizationState(lastLower);
-                    // will always be < T_ConfigNumber::atomicNumber, since
-                    // q=T_ConfigNumber::atomicNumber can never be a lower state
+                    // new lower/upper state transition block
+                    {
+                        lastChargeState = ConfigNumber::getIonizationState(lastLower);
+                        currentChargeState = ConfigNumber::getIonizationState(currentLower);
 
-                    lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
-                        lastLower,
-                        // completely ionized state can never be lower state of an transition
-                        chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
-                        chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+                        lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
+                            lastLower,
+                            chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                            chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+                        currentAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
+                            currentLower,
+                            chargeStateOrgaDataHostBox.numberAtomicStates(currentChargeState),
+                            chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(currentChargeState));
 
-                    if(lastAtomicStateCollectionIndex >= atomicStateDataHostBox.numberAtomicStatesTotal())
-                        throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
+                        // check for state in transition but not defined in atomic state list
+                        if(lastAtomicStateCollectionIndex >= atomicStateDataHostBox.numberAtomicStatesTotal())
+                            throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
+                        if(currentAtomicStateCollectionIndex >= atomicStateDataHostBox.numberAtomicStatesTotal())
+                            throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
 
-                    startIndexHostBox.storeUp(lastAtomicStateCollectionIndex, lastStartIndex);
-                    numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
+                        startIndexHostBox.storeUp(lastAtomicStateCollectionIndex, lastStartIndex);
+                        numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
 
-                    numberInBlock = 1u;
-                    lastStartIndex = i;
-                    lastLower = currentLower;
+                        // init possibly skipped atomic states
+                        for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < currentAtomicStateCollectionIndex; j++)
+                        {
+                            startIndexHostBox.storeUp(j, lastStartIndex);
+                            numberHostBox.storeUp(j, 0u);
+                        }
+
+                        numberInBlock = 1u;
+                        lastStartIndex = i;
+                        lastLower = currentLower;
+                    }
                 }
                 else
                 {
-                    // same block
+                    // same lower/upper state transition block
                     numberInBlock += 1u;
                 }
 
@@ -940,6 +989,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             startIndexHostBox.storeUp(lastAtomicStateCollectionIndex, lastStartIndex);
             numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
+            lastStartIndex = i;
+
+            // init possibly remaining atomic states without transitions of this kind in the up direction
+            for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < m_numberAtomicStates; j++)
+            {
+                startIndexHostBox.storeUp(j, lastStartIndex);
+                numberHostBox.storeUp(j, 0u);
+            }
         }
 
         /** fill the downward atomic state orga buffers for a transition groups
@@ -948,6 +1005,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *  for a transition group(bound-bound, bound-free, autonomous)
          *
          * @attention assumes that transitionList is sorted by upper state block wise
+         * @attention changes have to synced to device separately
+         *
+         * @details see fill_UpTransition_OrgaData but instead of ordering blocks by lower
+         *  state we order by upper state
          */
         template<typename T_Tuple, typename T_NumberHostBox, typename T_StartIndexHostBox>
         ALPAKA_FN_HOST void fill_DownTransition_OrgaData(
@@ -962,7 +1023,21 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             // empty transition list
             if(iter == transitionList.end())
+            {
+                // init for empty list
+                for (uint32_t j = 0u; j < m_numberAtomicStates; j++)
+                {
+                    startIndexHostBox.storeDown(j, 0u);
+                    numberHostBox.storeDown(j, 0u);
+                }
                 return;
+            }
+
+            uint8_t lastChargeState;
+            uint8_t currentChargeState;
+            uint32_t lastAtomicStateCollectionIndex;
+            uint32_t currentAtomicStateCollectionIndex;
+            Idx currentUpper;
 
             // read first entry
             Idx lastUpper = getUpperStateConfigNumber<Idx, TypeValue>(
@@ -971,9 +1046,17 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             TypeNumber lastStartIndex = 0u;
             iter++;
 
-            uint8_t lastChargeState;
-            uint32_t lastAtomicStateCollectionIndex;
-            Idx currentUpper;
+            // init states before start of first block
+            lastChargeState = ConfigNumber::getIonizationState(lastUpper);
+            lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
+                lastUpper,
+                chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
+                chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+            for(uint32_t j = 0u; j < lastAtomicStateCollectionIndex; j++)
+            {
+                startIndexHostBox.storeDown(j, 0u);
+                numberHostBox.storeDown(j, 0u);
+            }
 
             // iterate over rest of the list
             TypeNumber i = 1u;
@@ -985,18 +1068,32 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 {
                     // new block
                     lastChargeState = ConfigNumber::getIonizationState(lastUpper);
+                    currentChargeState = ConfigNumber::getIonizationState(currentUpper);
 
                     lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                         lastUpper,
-                        // completely ionized state can never be lower state of an transition
                         chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
                         chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(lastChargeState));
+                    currentAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
+                        currentUpper,
+                        chargeStateOrgaDataHostBox.numberAtomicStates(currentChargeState),
+                        chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(currentChargeState));
 
+                    // check for state in transition but not defined in atomic state list
                     if(lastAtomicStateCollectionIndex >= atomicStateDataHostBox.numberAtomicStatesTotal())
+                        throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
+                    if(currentAtomicStateCollectionIndex >= atomicStateDataHostBox.numberAtomicStatesTotal())
                         throw std::runtime_error("atomicPhysics ERROR: atomic state not found");
 
                     startIndexHostBox.storeDown(lastAtomicStateCollectionIndex, lastStartIndex);
                     numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
+
+                    // init possibly skipped atomic states
+                    for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < currentAtomicStateCollectionIndex; j++)
+                    {
+                        startIndexHostBox.storeDown(j, lastStartIndex);
+                        numberHostBox.storeDown(j, 0u);
+                    }
 
                     numberInBlock = 1u;
                     lastStartIndex = i;
@@ -1022,6 +1119,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             startIndexHostBox.storeDown(lastAtomicStateCollectionIndex, lastStartIndex);
             numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
+            lastStartIndex = i;
+
+            // init possibly remaining atomic states without transitions of this kind in the up direction
+            for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < m_numberAtomicStates; j++)
+            {
+                startIndexHostBox.storeDown(j, lastStartIndex);
+                numberHostBox.storeDown(j, 0u);
+            }
         }
 
         /** fill the transition selectionBuffer
@@ -1053,7 +1158,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 = atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();
 
             using S_NumberPhysicalTransitions
-                = picongpu::particles::atomicPhysics2 ::processClass::NumberPhysicalTransitions<
+                = picongpu::particles::atomicPhysics2::processClass::NumberPhysicalTransitions<
                     electronicExcitation,
                     electronicDeexcitation,
                     spontaneousDeexcitation,

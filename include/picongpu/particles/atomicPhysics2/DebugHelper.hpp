@@ -63,12 +63,25 @@ namespace picongpu::particles::atomicPhysics2::debug
     template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
     std::unique_ptr<T_AtomicData> printAtomicDataToConsole(std::unique_ptr<T_AtomicData> atomicData)
     {
+        
+        std::cout << std::endl << "**AtomicData DEBUG Output**" << std::endl;
+
+        // process configuration
+        std::cout << "process configuration:" << std::endl;
+        std::cout << "\t Electronic Excitation:    " << ((T_AtomicData::switchElectronicExcitation   )? "true" : "false") << std::endl;
+        std::cout << "\t Electronic DeExcitation:  " << ((T_AtomicData::switchElectronicDeexcitation )? "true" : "false") << std::endl;
+        std::cout << "\t Spontaneous DeExcitation: " << ((T_AtomicData::switchSpontaneousDeexcitation)? "true" : "false") << std::endl;
+        std::cout << "\t Electronic Ionization:    " << ((T_AtomicData::switchElectronicIonization   )? "true" : "false") << std::endl;
+        std::cout << "\t Autonomous ionization:    " << ((T_AtomicData::switchAutonomousIonization   )? "true" : "false") << std::endl;
+        std::cout << "\t Field Ionization:         " << ((T_AtomicData::switchFieldIonization        )? "true" : "false") << std::endl;
+
         uint32_t numberAtomicStates = atomicData->getNumberAtomicStates();
         uint32_t numberBoundBoundTransitions = atomicData->getNumberBoundBoundTransitions();
         uint32_t numberBoundFreeTransitions = atomicData->getNumberBoundFreeTransitions();
         uint32_t numberAutonomousTransitions = atomicData->getNumberAutonomousTransitions();
 
         // basic numbers
+        std::cout << "Basic Statics Numbers:" << std::endl;
         std::cout << "AtomicNumber: " << static_cast<uint16_t>(T_AtomicData::ConfigNumber::atomicNumber) << "(#s "
                   << numberAtomicStates << ", #b " << numberBoundBoundTransitions << ", #f "
                   << numberBoundFreeTransitions << ", #a " << numberAutonomousTransitions << ")" << std::endl;
@@ -77,9 +90,8 @@ namespace picongpu::particles::atomicPhysics2::debug
         auto chargeStateDataBox = atomicData->template getChargeStateDataDataBox<true>(); // true: get hostDataBox
         auto chargeStateOrgaBox = atomicData->template getChargeStateOrgaDataBox<true>();
 
-        std::cout << "ChargeState Data index : (E_ionization[eV], Z_screened[e]) [#AtomicStates, "
-                     "startIndexBlock]"
-                  << std::endl;
+        std::cout << "ChargeState Data" << std::endl;
+        std::cout << "index : (E_ionization[eV], Z_screened[e]) [#AtomicStates, startIndexBlock]" << std::endl;
         for(uint8_t i = 0u; i < T_AtomicData::ConfigNumber::atomicNumber; i++)
         {
             std::cout << "\t" << static_cast<uint16_t>(i) << ":( " << chargeStateDataBox.ionizationEnergy(i) << ", "
@@ -112,10 +124,12 @@ namespace picongpu::particles::atomicPhysics2::debug
         using S_ConfigNumber = stateRepresentation::
             ConfigNumber<uint64_t, T_AtomicData::ConfigNumber::numberLevels, T_AtomicData::ConfigNumber::atomicNumber>;
 
-        std::cout << "AtomicState Data -- index : [ConfigNumber, chargeState, levelVector]: E_overGround" << std::endl;
+        // state data
+        std::cout << "AtomicState Data" << std::endl;
+        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround" << std::endl;
         std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown (offset)"
                   << std::endl;
-        std::cout << "\t transitionSelectionData: #pyhsical transitions" << std::endl;
+        std::cout << "\t transitionSelectionData: #physical transitions" << std::endl;
         for(uint32_t i = 0u; i < numberAtomicStates; i++)
         {
             uint64_t stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(i));
@@ -124,13 +138,13 @@ namespace picongpu::particles::atomicPhysics2::debug
                       << static_cast<uint16_t>(S_ConfigNumber::getIonizationState(stateConfigNumber)) << ", ";
 
             auto levelVector = S_ConfigNumber::getLevelVector(stateConfigNumber);
-            std::cout << "( ";
-            for(uint8_t j = 0u; j < T_AtomicData::ConfigNumber::numberLevels; j++)
+            std::cout << "(" << static_cast<uint16_t>(levelVector[0u]);
+            for(uint8_t j = 1u; j < T_AtomicData::ConfigNumber::numberLevels; j++)
             {
-                std::cout << static_cast<uint16_t>(levelVector[j]) << ", ";
+                std::cout << ", " << static_cast<uint16_t>(levelVector[j]);
             }
-
             std::cout << ")";
+
             std::cout << "]: " << atomicStateDataBox.energy(i) << std::endl;
             std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
                       << boundBoundNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
@@ -144,7 +158,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                       << boundFreeNumberTransitionsBox.offset(i) << ")" << std::endl;
             std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitions(i) << ", "
                       << autonomousStartIndexBox.startIndexBlockTransitions(i) << " ("
-                      << boundBoundNumberTransitionsBox.offset(i) << ")" << std::endl;
+                      << autonomousNumberTransitionsBox.offset(i) << ")" << std::endl;
             std::cout << "\t\t physical transitions: " << transitionSelectionBox.numberTransitions(i) << std::endl;
         }
 
@@ -208,7 +222,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                 std::cout << i << "(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundBoundTransitionDataBox.upperStateCollectionIndex(i) << ")"
                           << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
-                          << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i) << "\"Gaunt\"("
+                          << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i) << " \"Gaunt\"("
                           << boundBoundTransitionDataBox.cxin1(i) << ", " << boundBoundTransitionDataBox.cxin2(i)
                           << ", " << boundBoundTransitionDataBox.cxin3(i) << ", "
                           << boundBoundTransitionDataBox.cxin4(i) << ", " << boundBoundTransitionDataBox.cxin5(i)
@@ -276,14 +290,14 @@ namespace picongpu::particles::atomicPhysics2::debug
     }
 
     //! debug only, write atomicPhysics attributes to console, @attention serial and cpu build only
-    template<typename T_Ion, bool >
+    template<typename T_Ion>
     void printAtomicPhysicsIonToConsole(T_Ion const& ion)
     {
         std::cout << "ID: " << ion[particleId_] << std::endl;
         std::cout << "\t - weighting: " << ion[weighting_] << std::endl;
 
-        std::cout << "\t - momentum: " << toString(ion[momentum_]) << std::endl;
-        std::cout << "\t - position: " << toString(ion[position_]) << std::endl;
+        std::cout << "\t - momentum: " << linearize(ion[momentum_]) << std::endl;
+        std::cout << "\t - position: " << linearize(ion[position_]) << std::endl;
         std::cout << "\t - atomicPhysicsData:" << std::endl;
         std::cout << "\t\t - processClass: " << ion[processClass_] << std::endl;
         std::cout << "\t\t - transitionIndex: " << ion[transitionIndex_] << std::endl;
