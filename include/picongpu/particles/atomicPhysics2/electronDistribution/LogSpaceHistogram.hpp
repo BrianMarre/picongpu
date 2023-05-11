@@ -88,7 +88,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          * @param energy energy, >= 0, < maxEnergy, [eV]
          * @return corresponding binIndex, unitless
          */
-        HDINLINE uint32_t getBinIndex(float_X const energy) const final
+        HDINLINE uint32_t getBinIndex(float_X const energy) const
         {
             // negative energies are always wrong
             /// @todo remove, doubling up?, Brian Marre, 2022
@@ -121,7 +121,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          *
          * @param energy [eV]
          */
-        HDINLINE bool inRange(float_X const energy) const final
+        HDINLINE bool inRange(float_X const energy) const
         {
             if(energy >= maxEnergy)
             {
@@ -139,7 +139,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          * @param binIndex ... bin index , unitless
          * @return central energy of bin, [eV]
          */
-        HDINLINE float_X getBinEnergy(uint32_t const binIndex) const final
+        HDINLINE float_X getBinEnergy(uint32_t const binIndex) const
         {
             // check binIndex Boundaries
             /// @todo remove, since already covered?, Brian Marre, 2022
@@ -164,7 +164,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
          * @return binWidth, [eV]
          */
-        HDINLINE float_X getBinWidth(uint32_t const binIndex) const final
+        HDINLINE float_X getBinWidth(uint32_t const binIndex) const
         {
             if(binIndex == 0u)
                 return 1._X; //[eV]
@@ -180,7 +180,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
          * @return weight of binned macro-electrons, unmodified, unitless
          */
-        HDINLINE float_X getBinWeight0(uint32_t const binIndex) const final
+        HDINLINE float_X getBinWeight0(uint32_t const binIndex) const
         {
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(!debugCheckBinIndexInRange(binIndex))
@@ -196,7 +196,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
          * @return weight of bin used by accepted transitions, unitless
          */
-        HDINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const final
+        HDINLINE float_X getBinDeltaWeight(uint32_t const binIndex) const
         {
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(!debugCheckBinIndexInRange(binIndex))
@@ -212,7 +212,7 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
          * @param binIndex ... index of bin, >= 0, < T_numberBins, unitless
          * @return change of energy in this bin due to accepted transitions, [eV]
          */
-        HDINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const final
+        HDINLINE float_X getBinDeltaEnergy(uint32_t const binIndex) const
         {
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(!debugCheckBinIndexInRange(binIndex))

@@ -173,9 +173,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         }
                         uint32_t const transitionCollectionIndex = ion[transitionIndex_];
 
-                        // debug only
-                        std::cout << "transition: " << transitionCollectionIndex << std::endl;
-
                         uint32_t const upperStateClctIdx
                             = transitionBox.upperStateCollectionIndex(transitionCollectionIndex);
                         uint32_t const lowerStateClctIdx
