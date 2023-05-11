@@ -98,9 +98,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 {
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-                    if((particle[accepted_])
-                       ||(particle[processClass_] != u8(procClass::ProcessClass::noChange))
-                    )
+                    if((particle[accepted_]) || (particle[processClass_] != u8(procClass::ProcessClass::noChange)))
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
@@ -126,8 +124,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     {
                         particle[accepted_] = true;
                     }
-                }
-            );
+                });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

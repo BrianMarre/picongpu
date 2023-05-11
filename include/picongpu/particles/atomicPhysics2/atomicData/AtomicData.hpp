@@ -900,7 +900,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if(iter == transitionList.end())
             {
                 // init for empty list
-                for (uint32_t j = 0u; j < m_numberAtomicStates; j++)
+                for(uint32_t j = 0u; j < m_numberAtomicStates; j++)
                 {
                     startIndexHostBox.storeUp(j, 0u);
                     numberHostBox.storeUp(j, 0u);
@@ -958,7 +958,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                         numberHostBox.storeUp(lastAtomicStateCollectionIndex, numberInBlock);
 
                         // init possibly skipped atomic states
-                        for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < currentAtomicStateCollectionIndex; j++)
+                        for(uint32_t j = lastAtomicStateCollectionIndex + 1u; j < currentAtomicStateCollectionIndex;
+                            j++)
                         {
                             startIndexHostBox.storeUp(j, lastStartIndex);
                             numberHostBox.storeUp(j, 0u);
@@ -992,7 +993,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             lastStartIndex = i;
 
             // init possibly remaining atomic states without transitions of this kind in the up direction
-            for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < m_numberAtomicStates; j++)
+            for(uint32_t j = lastAtomicStateCollectionIndex + 1u; j < m_numberAtomicStates; j++)
             {
                 startIndexHostBox.storeUp(j, lastStartIndex);
                 numberHostBox.storeUp(j, 0u);
@@ -1025,7 +1026,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if(iter == transitionList.end())
             {
                 // init for empty list
-                for (uint32_t j = 0u; j < m_numberAtomicStates; j++)
+                for(uint32_t j = 0u; j < m_numberAtomicStates; j++)
                 {
                     startIndexHostBox.storeDown(j, 0u);
                     numberHostBox.storeDown(j, 0u);
@@ -1089,7 +1090,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
 
                     // init possibly skipped atomic states
-                    for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < currentAtomicStateCollectionIndex; j++)
+                    for(uint32_t j = lastAtomicStateCollectionIndex + 1u; j < currentAtomicStateCollectionIndex; j++)
                     {
                         startIndexHostBox.storeDown(j, lastStartIndex);
                         numberHostBox.storeDown(j, 0u);
@@ -1122,7 +1123,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             lastStartIndex = i;
 
             // init possibly remaining atomic states without transitions of this kind in the up direction
-            for (uint32_t j = lastAtomicStateCollectionIndex + 1u; j < m_numberAtomicStates; j++)
+            for(uint32_t j = lastAtomicStateCollectionIndex + 1u; j < m_numberAtomicStates; j++)
             {
                 startIndexHostBox.storeDown(j, lastStartIndex);
                 numberHostBox.storeDown(j, 0u);
@@ -1541,7 +1542,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return boundBoundTransitionDataBuffer->getDeviceDataBox();
         }
 
-        //! upward transition access, upward transition access,@tparam hostData true: get hostDataBox, false: get DeviceDataBox
+        //! upward transition access, upward transition access,@tparam hostData true: get hostDataBox, false: get
+        //! DeviceDataBox
         template<bool hostData>
         S_BoundFreeTransitionDataBox getBoundFreeTransitionDataBox()
         {

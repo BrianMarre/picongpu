@@ -59,8 +59,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 {
                     if(
                         // already accepted particle
-                        (particle[accepted_])
-                        ||
+                        (particle[accepted_]) ||
                         // not a no-change transition
                         !(particle[transitionIndex_] == static_cast<uint32_t>(0u)))
                     {
@@ -72,8 +71,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // transitionIndex and binIndex are not relevant for no-change transitions
                     // => no need to set them
-                }
-            );
+                });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

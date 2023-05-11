@@ -140,20 +140,23 @@ namespace picongpu::simulation::stage
         void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
             //! reset macro particle attribute accepted to false for each ion species
-            using ForEachIonSpeciesResetAcceptedStatus = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ResetAcceptedStatus<boost::mpl::_1>>;
+            using ForEachIonSpeciesResetAcceptedStatus = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::ResetAcceptedStatus<boost::mpl::_1>>;
             //! bin electrons sub stage call for each electron species
             using ForEachElectronSpeciesBinElectrons = pmacc::meta::
                 ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::stage::BinElectrons<boost::mpl::_1>>;
             //! reset localRateCacheField sub stage for each ion species
-            using ForEachIonSpeciesResetLocalRateCache = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ResetLocalRateCache<boost::mpl::_1>>;
+            using ForEachIonSpeciesResetLocalRateCache = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::ResetLocalRateCache<boost::mpl::_1>>;
             //! fill rate cache with diagonal elements of rate matrix
             using ForEachIonSpeciesFillLocalRateCache = pmacc::meta::
                 ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::FillLocalRateCache<boost::mpl::_1>>;
             //! calculate local atomicPhysics time step length
-            using ForEachIonSpeciesCalculateStepLength = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CalculateStepLength<boost::mpl::_1>>;
+            using ForEachIonSpeciesCalculateStepLength = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::CalculateStepLength<boost::mpl::_1>>;
             //! chooseTransition for every macro-ion
             using ForEachIonSpeciesChooseTransition = pmacc::meta::
                 ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ChooseTransition<boost::mpl::_1>>;
@@ -162,19 +165,23 @@ namespace picongpu::simulation::stage
                 SpeciesRepresentingIons,
                 particles::atomicPhysics2::stage::ExtractTransitionCollectionIndex<boost::mpl::_1>>;
             //! try to accept transitions
-            using ForEachIonSpeciesDoAcceptTransitionTest = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::AcceptTransitionTest<boost::mpl::_1>>;
+            using ForEachIonSpeciesDoAcceptTransitionTest = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::AcceptTransitionTest<boost::mpl::_1>>;
             //! record suggested changes
-            using ForEachIonSpeciesRecordSuggestedChanges = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordSuggestedChanges<boost::mpl::_1>>;
+            using ForEachIonSpeciesRecordSuggestedChanges = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::RecordSuggestedChanges<boost::mpl::_1>>;
             //! roll for rejection of transitions due to over subscription
-            using ForEachIonSpeciesRollForOverSubscription = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RollForOverSubscription<boost::mpl::_1>>;
+            using ForEachIonSpeciesRollForOverSubscription = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::RollForOverSubscription<boost::mpl::_1>>;
             //! check for acceptance of a transition by all ions
             using ForEachIonSpeciesCheckForAcceptance = pmacc::meta::
                 ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CheckForAcceptance<boost::mpl::_1>>;
             //! record delta energy for all transitions
-            using ForEachIonSpeciesRecordChanges = pmacc::meta::ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordChanges<boost::mpl::_1>>;
+            using ForEachIonSpeciesRecordChanges = pmacc::meta::
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordChanges<boost::mpl::_1>>;
             //! decelerate all electrons according to their bin delta energy
             using ForEachElectronSpeciesDecelerateElectrons = pmacc::meta::ForEach<
                 SpeciesRepresentingElectrons,

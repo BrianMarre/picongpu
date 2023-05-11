@@ -126,8 +126,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     uint32_t offset = startIndexDataBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
 
                     // UNIT_LENGTH^3
-                    constexpr float_X volumeScalingFactor =
-                        pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
+                    constexpr float_X volumeScalingFactor
+                        = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
 
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsUp; i++)
                     {
@@ -136,13 +136,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             rateCache.add(
                                 worker,
                                 atomicStateCollectionIndex,
-                                - picongpu::particles::atomicPhysics2::rateCalculation
-                                    ::BoundFreeTransitionRates<T_numberLevels>
-                                    ::template rateCollisionalIonizationTransition<
+                                -picongpu::particles::atomicPhysics2::rateCalculation ::BoundFreeTransitionRates<
+                                    T_numberLevels>::
+                                    template rateCollisionalIonizationTransition<
                                         T_ChargeStateDataDataBox,
                                         T_AtomicStateDataDataBox,
-                                        T_BoundFreeTransitionDataBox
-                                    >(
+                                        T_BoundFreeTransitionDataBox>(
                                         histogram.getBinEnergy(binIndex),
                                         histogram.getBinWidth(binIndex),
                                         // 1/(UNIT_LENGTH^3*eV)
@@ -152,8 +151,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                         offset + i,
                                         chargeStateDataDataBox,
                                         atomicStateDataDataBox,
-                                        boundFreeTransitionDataBox)
-                            );
+                                        boundFreeTransitionDataBox));
                         }
                     }
                 });

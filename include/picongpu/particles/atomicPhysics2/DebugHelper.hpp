@@ -63,17 +63,22 @@ namespace picongpu::particles::atomicPhysics2::debug
     template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
     std::unique_ptr<T_AtomicData> printAtomicDataToConsole(std::unique_ptr<T_AtomicData> atomicData)
     {
-        
         std::cout << std::endl << "**AtomicData DEBUG Output**" << std::endl;
 
         // process configuration
         std::cout << "process configuration:" << std::endl;
-        std::cout << "\t Electronic Excitation:    " << ((T_AtomicData::switchElectronicExcitation   )? "true" : "false") << std::endl;
-        std::cout << "\t Electronic DeExcitation:  " << ((T_AtomicData::switchElectronicDeexcitation )? "true" : "false") << std::endl;
-        std::cout << "\t Spontaneous DeExcitation: " << ((T_AtomicData::switchSpontaneousDeexcitation)? "true" : "false") << std::endl;
-        std::cout << "\t Electronic Ionization:    " << ((T_AtomicData::switchElectronicIonization   )? "true" : "false") << std::endl;
-        std::cout << "\t Autonomous ionization:    " << ((T_AtomicData::switchAutonomousIonization   )? "true" : "false") << std::endl;
-        std::cout << "\t Field Ionization:         " << ((T_AtomicData::switchFieldIonization        )? "true" : "false") << std::endl;
+        std::cout << "\t Electronic Excitation:    " << ((T_AtomicData::switchElectronicExcitation) ? "true" : "false")
+                  << std::endl;
+        std::cout << "\t Electronic DeExcitation:  "
+                  << ((T_AtomicData::switchElectronicDeexcitation) ? "true" : "false") << std::endl;
+        std::cout << "\t Spontaneous DeExcitation: "
+                  << ((T_AtomicData::switchSpontaneousDeexcitation) ? "true" : "false") << std::endl;
+        std::cout << "\t Electronic Ionization:    " << ((T_AtomicData::switchElectronicIonization) ? "true" : "false")
+                  << std::endl;
+        std::cout << "\t Autonomous ionization:    " << ((T_AtomicData::switchAutonomousIonization) ? "true" : "false")
+                  << std::endl;
+        std::cout << "\t Field Ionization:         " << ((T_AtomicData::switchFieldIonization) ? "true" : "false")
+                  << std::endl;
 
         uint32_t numberAtomicStates = atomicData->getNumberAtomicStates();
         uint32_t numberBoundBoundTransitions = atomicData->getNumberBoundBoundTransitions();
@@ -103,9 +108,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                   << "na"
                   << ", "
                   << "na"
-                  << " ) [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
-                  << ", " << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
-                  << " ]" << std::endl;
+                  << " ) [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber) << ", "
+                  << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::ConfigNumber::atomicNumber) << " ]"
+                  << std::endl;
 
 
         // AtomicState data
@@ -280,7 +285,7 @@ namespace picongpu::particles::atomicPhysics2::debug
         std::string result = "";
         result += "( " + std::to_string(vector[0u]);
 
-        for(uint8_t i=1u;i < T_Vector::dim; i++)
+        for(uint8_t i = 1u; i < T_Vector::dim; i++)
         {
             result += ", " + std::to_string(vector[i]);
         }

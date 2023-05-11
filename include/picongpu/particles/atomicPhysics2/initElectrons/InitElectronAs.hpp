@@ -158,12 +158,10 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             // kg * m^2/s^2 * keV/J * 1e3 = J/J * eV = eV
             constexpr float_64 restEnergyElectron = picongpu::SI::ELECTRON_MASS_SI
-                * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV
-                * 1.e3;
+                * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV * 1.e3;
             // eV
             constexpr float_64 restEnergyIon = static_cast<float_X>(massIon) * UNIT_MASS
-                * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV
-                * 1.e3;
+                * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV * 1.e3;
 
             // unitless + kg/kg * eV/eV = unitless
             float_64 const A_e = 0.25 + 1. + mI_mE * deltaEnergyTransition / restEnergyElectron;

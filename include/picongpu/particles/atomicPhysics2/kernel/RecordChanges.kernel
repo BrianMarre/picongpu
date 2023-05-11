@@ -22,7 +22,6 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
-
 #include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
@@ -42,9 +41,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
      * @tparam T_ProcessClass processClass for which to execute this kernel
      * @tparam T_Histogram type of the histogram
      */
-    template<
-        picongpu::particles::atomicPhysics2::processClass::ProcessClass T_ProcessClass,
-        typename T_Histogram>
+    template<picongpu::particles::atomicPhysics2::processClass::ProcessClass T_ProcessClass, typename T_Histogram>
     struct RecordChangesKernel
     {
         /** call operator
@@ -115,7 +112,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     float_X deltaEnergy = 0._X;
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
-                        static_cast<uint8_t>(T_ProcessClass)))
+                                     static_cast<uint8_t>(T_ProcessClass)))
                     {
                         // electronic collisional process
                         deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get<
@@ -129,20 +126,20 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     typename T_AtomicStateDataBox::Idx newConfigNumber;
 
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::upward>::check(
-                        static_cast<uint8_t>(T_ProcessClass)))
+                                     static_cast<uint8_t>(T_ProcessClass)))
                     {
-                        //upward process
+                        // upward process
                         if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
-                            static_cast<uint8_t>(T_ProcessClass)))
-                                deltaEnergy = -deltaEnergy;
+                                         static_cast<uint8_t>(T_ProcessClass)))
+                            deltaEnergy = -deltaEnergy;
 
-                        newConfigNumber = atomicStateBox.configNumber(
-                            transitionBox.upperStateCollectionIndex(transitionIndex));
+                        newConfigNumber
+                            = atomicStateBox.configNumber(transitionBox.upperStateCollectionIndex(transitionIndex));
                     }
                     else
                     {
-                        newConfigNumber = atomicStateBox.configNumber(
-                            transitionBox.lowerStateCollectionIndex(transitionIndex));
+                        newConfigNumber
+                            = atomicStateBox.configNumber(transitionBox.lowerStateCollectionIndex(transitionIndex));
                     }
 
                     ion[atomicConfigNumber_] = newConfigNumber;
@@ -150,14 +147,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // record used weight
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
-                            static_cast<uint8_t>(T_ProcessClass)))
+                                     static_cast<uint8_t>(T_ProcessClass)))
                         electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);
                 });
         }
     };
 
-    template<
-        typename T_Histogram>
-    struct RecordChangesKernel<
-        picongpu::particles::atomicPhysics2::processClass::ProcessClass::noChange, T_Histogram>;
+    template<typename T_Histogram>
+    struct RecordChangesKernel<picongpu::particles::atomicPhysics2::processClass::ProcessClass::noChange, T_Histogram>;
 } // namespace picongpu::particles::atomicPhysics2::kernel

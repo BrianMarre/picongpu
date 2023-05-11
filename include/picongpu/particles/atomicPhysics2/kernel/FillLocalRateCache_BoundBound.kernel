@@ -147,8 +147,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // collisional bound-bound de- or excitation
                         if constexpr(
                             // upward and electronic excitation channel is active
-                            (T_upward && T_electronicExcitation)
-                            ||
+                            (T_upward && T_electronicExcitation) ||
                             // downward and electronic deexcitation channel is active
                             ((!T_upward) && T_electronicDeexcitation))
                         {
@@ -160,8 +159,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                     template rateCollisionalBoundBoundTransition<
                                         T_AtomicStateDataDataBox,
                                         T_BoundBoundTransitionDataBox,
-                                        T_upward
-                                    >(
+                                        T_upward>(
                                         histogram.getBinEnergy(binIndex),
                                         histogram.getBinWidth(binIndex),
                                         // 1/(UNIT_LENGTH^3*eV)
@@ -170,12 +168,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                         // transitionCollectionIndex
                                         offset + i,
                                         atomicStateDataDataBox,
-                                        boundBoundTransitionDataBox)
-                            );
+                                        boundBoundTransitionDataBox));
                         }
                     }
-                }
-            );
+                });
 
             // spontaneous radiative deexcitation
             if constexpr((!T_upward) and T_spontaneousDeexcitation)
@@ -197,19 +193,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         {
                             rateCache.add(
                                 atomicStateCollectionIndex,
-                                - picongpu::particles::atomicPhysics2::rateCalculation
-                                    ::BoundBoundTransitionRates<T_numberLevels>
-                                    ::template rateSpontaneousRadiativeDeexcitation<
+                                -picongpu::particles::atomicPhysics2::rateCalculation ::BoundBoundTransitionRates<
+                                    T_numberLevels>::
+                                    template rateSpontaneousRadiativeDeexcitation<
                                         T_AtomicStateDataDataBox,
-                                        T_BoundBoundTransitionDataBox
-                                    >(
+                                        T_BoundBoundTransitionDataBox>(
                                         // transitionCollectionIndex
                                         offset + i,
                                         atomicStateDataDataBox,
                                         boundBoundTransitionDataBox));
                         }
-                    }
-                );
+                    });
             }
         }
     };
