@@ -21,7 +21,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
+#include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
 
 #include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
@@ -31,10 +31,13 @@
 
 #include <cstdint>
 
+// debug only
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+
 namespace picongpu::particles::atomicPhysics2::kernel
 {
-    /** update atomic state and if T_electronicCollisional==true add delta energy of transition
-     *   to used electron histogram bin
+    /** update atomic state and for collisional processes add delta energy of transition
+     *  to used electron histogram bin
      *
      * @tparam T_ProcessClass processClass for which to execute this kernel
      * @tparam T_Histogram type of the histogram
@@ -46,10 +49,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
     {
         /** call operator
          *
-         * called by RecordHistogramDeltaEnergy atomic physics sub-stage
+         * called by RecordChanges atomicPhysics sub-stage
          *
-         * @param worker object containing the device and block
-         *  information, passed by PMACC_KERNEL call
+         * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
          * @param ionBox deviceDataBox giving access to the particle frames of all local superCells
          * @param localElectronHistogramDataBox deviceDataBox giving access to the local
@@ -59,7 +61,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param chargeStateBox optional deviceDataBox giving access to charge state property data
          *  required for T_ProcessClassGroup = boundFreeBased
          *
-         * @attention transitionBox must be consistent with T_ProcessClassGroup,
+         * @attention transitionBox must be consistent with T_ProcessClass,
          *      otherwise you will create unphysical behaviour and/or illegal memory accesses
          */
         template<
@@ -103,6 +105,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
+                    picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion);
+
                     uint8_t const processClass = ion[processClass_];
 
                     // not a T_ProcessClass transition
