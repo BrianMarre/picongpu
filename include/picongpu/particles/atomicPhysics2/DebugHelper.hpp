@@ -299,7 +299,8 @@ namespace picongpu::particles::atomicPhysics2::debug
         std::cout << "\t - momentum: " << linearize(ion[momentum_]) << std::endl;
         std::cout << "\t - position: " << linearize(ion[position_]) << std::endl;
         std::cout << "\t - atomicPhysicsData:" << std::endl;
-        std::cout << "\t\t - processClass: " << ion[processClass_] << std::endl;
+        std::cout << "\t\t - atomicConfigNumber: " << ion[atomicConfigNumber_].getConfigNumber() << std::endl;
+        std::cout << "\t\t - processClass: " << static_cast<uint16_t>(ion[processClass_]) << std::endl;
         std::cout << "\t\t - transitionIndex: " << ion[transitionIndex_] << std::endl;
         std::cout << "\t\t - binIndex: " << ion[binIndex_] << std::endl;
         std::cout << "\t\t - accepted: " << ion[accepted_] << std::endl;

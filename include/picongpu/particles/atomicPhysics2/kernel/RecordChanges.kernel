@@ -105,12 +105,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
-                    picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion);
-
                     uint8_t const processClass = ion[processClass_];
 
                     // not a T_ProcessClass transition
-                    if(!processClass == static_cast<uint8_t>(T_ProcessClass))
+                    if((processClass) != static_cast<uint8_t>(T_ProcessClass))
                         return;
 
                     uint32_t const transitionIndex = ion[transitionIndex_];
