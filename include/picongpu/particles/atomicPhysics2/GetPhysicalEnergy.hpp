@@ -60,15 +60,15 @@ namespace picongpu::particles::atomicPhysics2
             float3_X vectorMomentum_Scaled = particle[momentum_];
 
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not scaled
-            float_X momentumSquared = pmacc::math::l2norm2(vectorMomentum_Scaled)
-                / (particle[weighting_] * particle[weighting_]);
+            float_X momentumSquared
+                = pmacc::math::l2norm2(vectorMomentum_Scaled) / (particle[weighting_] * particle[weighting_]);
 
             // float_X should be sufficient,
             // m^2 + p^2 = (<=80 * ~2000)^2 + (<2000[10^9eV])^2 ~ 2.5*10^10
             //{
-                // UNIT_LENGTH^2 / (UNIT_TIME^2*c_SI) = 1
-                // UNIT_MASS * c_SI^2
-                float_X const energy = (math::sqrt(m * m + momentumSquared * conversionFactor) - m);
+            // UNIT_LENGTH^2 / (UNIT_TIME^2*c_SI) = 1
+            // UNIT_MASS * c_SI^2
+            float_X const energy = (math::sqrt(m * m + momentumSquared * conversionFactor) - m);
             //}
 
             // eV

@@ -159,8 +159,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             auto const guardSize = pmacc::DataSpace<1>::create(0);
             // +1 for completely ionized charge state
             auto const layoutChargeStates
-                = pmacc::GridLayout<1>(T_atomicNumber + 1u, guardSize)
-                      .getDataSpaceWithoutGuarding();
+                = pmacc::GridLayout<1>(T_atomicNumber + 1u, guardSize).getDataSpaceWithoutGuarding();
 
             bufferNumberAtomicStates.reset(new typename S_DataBuffer::BufferNumber(layoutChargeStates, false));
             bufferStartIndexBlockAtomicStates.reset(new

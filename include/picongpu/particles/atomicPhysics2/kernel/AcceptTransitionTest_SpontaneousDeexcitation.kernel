@@ -93,8 +93,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
                     if((particle[accepted_])
-                       || (particle[processClass_] != u8(procClass::ProcessClass::spontaneousDeexcitation))
-                    )
+                       || (particle[processClass_] != u8(procClass::ProcessClass::spontaneousDeexcitation)))
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);

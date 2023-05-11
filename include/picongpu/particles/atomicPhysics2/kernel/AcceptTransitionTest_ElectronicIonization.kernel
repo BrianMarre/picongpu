@@ -108,8 +108,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
                     if(particle[accepted_]
-                        || (particle[processClass_] != u8(procClass::ProcessClass::electronicIonization))
-                    )
+                       || (particle[processClass_] != u8(procClass::ProcessClass::electronicIonization)))
                         return;
 
                     // UNIT_LENGTH^3
@@ -122,8 +121,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // eV
                     float_X const binWidth = electronHistogram.getBinWidth(binIndex);
                     // 1/(UNIT_LENGTH^3 * eV)
-                    float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor
-                        / binWidth;
+                    float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor / binWidth;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 

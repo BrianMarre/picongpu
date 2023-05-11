@@ -110,15 +110,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if constexpr(T_excitation)
                     {
                         if((particle[accepted_])
-                           || (particle[processClass_] != u8(procClass::ProcessClass::electronicExcitation))
-                        )
+                           || (particle[processClass_] != u8(procClass::ProcessClass::electronicExcitation)))
                             return;
                     }
                     if constexpr(!T_excitation)
                     {
                         if((particle[accepted_])
-                           || (particle[processClass_] != u8(procClass::ProcessClass::electronicDeexcitation))
-                        )
+                           || (particle[processClass_] != u8(procClass::ProcessClass::electronicDeexcitation)))
                             return;
                     }
 
@@ -132,8 +130,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // eV
                     float_X const binWidth = electronHistogram.getBinWidth(binIndex);
                     // 1/(UNIT_LENGTH^3 * eV)
-                    float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor
-                        / binWidth;
+                    float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor / binWidth;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 

@@ -190,10 +190,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     uint32_t const offset = numberTransitionsBox.offset(atomicStateCollectionIndex);
 
                     bool const belowOffset = (particle[transitionIndex_] < offset);
-                    bool const aboveRange = (particle[transitionIndex_]
-                            >= (offset + numberPhysicalTransitionsUp + numberPhysicalTransitionsDown));
+                    bool const aboveRange
+                        = (particle[transitionIndex_]
+                           >= (offset + numberPhysicalTransitionsUp + numberPhysicalTransitionsDown));
 
-                    if( belowOffset || aboveRange)
+                    if(belowOffset || aboveRange)
                         // not a bound-bound transition
                         return;
 
@@ -210,7 +211,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // debug check
                         if constexpr(picongpu::atomicPhysics2 ::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                         {
-                            #pragma unroll
+#pragma unroll
                             for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
                             {
                                 if(processID == tableUp.table[i])
@@ -218,8 +219,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             }
                         }
 
-                        // set particle attributes
-                        #pragma unroll
+// set particle attributes
+#pragma unroll
                         for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
                         {
                             if(processID == tableUp.table[i])

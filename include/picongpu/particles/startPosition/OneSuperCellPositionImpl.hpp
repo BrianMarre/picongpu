@@ -60,8 +60,7 @@ namespace picongpu::particles::startPosition::acc
          * @attention expects realParticlesPerCell to be per superCell
          */
         template<typename T_Particle>
-        HDINLINE uint32_t
-        numberOfMacroParticles(float_X const realParticlesPerCell, DataSpace<simDim> const cellIdx)
+        HDINLINE uint32_t numberOfMacroParticles(float_X const realParticlesPerCell, DataSpace<simDim> const cellIdx)
         {
             PMACC_CASSERT_MSG(
                 spawnCellIdx_dim_and_simDim_are_inconsistent,

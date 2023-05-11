@@ -21,11 +21,10 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/localHelperFields/RejectionProbabilityCache.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
-#include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
-
-#include "picongpu/particles/atomicPhysics2/localHelperFields/RejectionProbabilityCache.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
@@ -116,17 +115,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-                    bool const processUsesElectronHistogramWeight = procClass::IsProcess<
-                        procClass::ProcessClassGroup::electronicCollisional>::check(processClass);
+                    bool const processUsesElectronHistogramWeight
+                        = procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
+                            processClass);
 
-                    bool const usesNotOverSubcribedBin = (rejectionProbabilityCache.rejectionProbability(
-                        binIndex) <= 0._X);
+                    bool const usesNotOverSubcribedBin
+                        = (rejectionProbabilityCache.rejectionProbability(binIndex) <= 0._X);
 
-                    if(
-                        (!particle[accepted_])
-                        ||(!processUsesElectronHistogramWeight) 
-                        || usesNotOverSubcribedBin
-                    )
+                    if((!particle[accepted_]) || (!processUsesElectronHistogramWeight) || usesNotOverSubcribedBin)
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellLocalOffset);

@@ -156,10 +156,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // if previous momentum == 0, discards electron
                     // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
-                    electron[momentum_] *= newElectronMomentum
-                        * electron[weighting_]
-                        * 1._X / previousMomentumVectorLength2;
-
+                    electron[momentum_]
+                        *= newElectronMomentum * electron[weighting_] * 1._X / previousMomentumVectorLength2;
                 });
         }
     };

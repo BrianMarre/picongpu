@@ -88,12 +88,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& particle)
                 {
-
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
                     if((particle[accepted_])
-                       || (particle[processClass_] != u8(procClass::ProcessClass::autonomousIonization))
-                    )
+                       || (particle[processClass_] != u8(procClass::ProcessClass::autonomousIonization)))
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);

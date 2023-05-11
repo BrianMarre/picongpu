@@ -24,7 +24,6 @@
 
 #include <cstdint>
 #include <memory>
-
 #include <string>
 
 /** @file implements base class of transitions property data
@@ -96,7 +95,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(transitionCollectionIndex >= m_numberTransitions)
                 {
-                    throw std::runtime_error("atomicPhysics ERROR: out of range storeTransition("
+                    throw std::runtime_error(
+                        "atomicPhysics ERROR: out of range storeTransition("
                         + std::to_string(transitionCollectionIndex) + ") call");
                     return;
                 }
@@ -148,7 +148,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberTransitions)
                 {
-                    printf("atomicPhysics ERROR: out of range getUpperConfigNumberTransition(%u) call\n", collectionIndex);
+                    printf(
+                        "atomicPhysics ERROR: out of range getUpperConfigNumberTransition(%u) call\n",
+                        collectionIndex);
                     return static_cast<Idx>(0u);
                 }
 
@@ -167,7 +169,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberTransitions)
                 {
-                    printf("atomicPhysics ERROR: out of range getLowerConfigNumberTransition(%u) call\n", collectionIndex);
+                    printf(
+                        "atomicPhysics ERROR: out of range getLowerConfigNumberTransition(%u) call\n",
+                        collectionIndex);
                     return static_cast<Idx>(0u);
                 }
 
