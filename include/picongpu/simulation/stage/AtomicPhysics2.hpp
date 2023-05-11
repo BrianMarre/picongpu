@@ -53,9 +53,6 @@
 #include <cstdint>
 #include <string>
 
-// debug only
-#include <iostream>
-
 /** @file implements the Atomic Physics stage of the PIC-loop.
  *
  * One instance of this class AtomicPhysics is stored as a protected member of the
@@ -210,77 +207,29 @@ namespace picongpu::simulation::stage
 
             setTimeRemaining(); // = (Delta t)_PIC
 
-            // debug only
-            uint32_t subSteppingCounter = 0u;
-
             // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
             {
-                // debug only
-                std::cout << "atomicPhysicsSubStep: " << subSteppingCounter << std::endl;
-
                 // particle[accepted_] = false, in each macro ion
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
-
-                // debug only
-                std::cout << "done resetAcceptedStatus" << std::endl;
-
                 resetHistograms();
-
-                // debug only
-                std::cout << "done resetHistogram" << std::endl;
-
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
-
-                // debug only
-                std::cout << "done binElectrons" << std::endl;
-
                 // timeStep = localTimeRemaining
                 picongpu::particles::atomicPhysics2::stage::ResetLocalTimeStepField()(mappingDesc);
-
-                // debug only
-                std::cout << "done resetLocalTimeStep" << std::endl;
-
                 ForEachIonSpeciesResetLocalRateCache{}();
-
-                // debug only
-                std::cout << "done resetRateCache" << std::endl;
-
                 // R_ii = -(sum of rates of all transitions from state i)
                 ForEachIonSpeciesFillLocalRateCache{}(mappingDesc);
-
-                // debug only
-                std::cout << "done fillLocalRateCache" << std::endl;
-
                 // min(1/(-R_ii)) * alpha
                 ForEachIonSpeciesCalculateStepLength{}(mappingDesc);
-
-                // debug only
-                std::cout << "done calcaulteStepLength" << std::endl;
 
                 // chooseTransition loop, ends when all ion[accepted_] = true
                 while(true)
                 {
                     // randomly roll transition for each not yet accepted macro ion
                     ForEachIonSpeciesChooseTransition{}(mappingDesc, currentStep);
-
-                    // debug only
-                    std::cout << "\t done chooseTransition " << std::endl;
-
                     ForEachIonSpeciesExtractTransitionCollectionIndex{}(mappingDesc, currentStep);
-
-                    // debug only
-                    std::cout << "\t done extractTransitionCollectionIndex" << std::endl;
-
                     ForEachIonSpeciesDoAcceptTransitionTest{}(mappingDesc, currentStep);
-
-                    // debug only
-                    std::cout << "\t done doAcceptanceTest" << std::endl;
-
                     ForEachIonSpeciesRecordSuggestedChanges{}(mappingDesc);
-
-                    // debug only
-                    std::cout << "\t done recordSuggestedChanges" << std::endl;
 
                     // reject overSubscription loop, ends when no histogram bin oversubscribed
                     while(true)
@@ -288,56 +237,30 @@ namespace picongpu::simulation::stage
                         // check bins for over subscription --> localElectronHistogramOverSubscribedField
                         picongpu::particles::atomicPhysics2::stage::CheckForOverSubscription()(mappingDesc);
 
-                        // debug only
-                        std::cout << "\t\t done checkForOverSubcription" << std::endl;
-
                         auto linearizedOverSubscribedBox = S_LinearizedBox<S_OverSubscribedField>(
                             localElectronHistogramOverSubscribedField.getDeviceDataBox(),
                             fieldGridLayoutOverSubscription);
-
-                        // debug only
-                        std::cout << "\t\t done getLinearized overSubscribedBox" << std::endl;
 
                         if(!static_cast<bool>(deviceLocalReduce(
                                pmacc::math::operation::Or(),
                                linearizedOverSubscribedBox,
                                fieldGridLayoutOverSubscription.productOfComponents())))
                         {
-                            // debug only
-                            std::cout << "\t\t end overSubscription loop" << std::endl;
-
                             /* no superCell electron histogram marked as over subscribed in
                              *  localElectronHistogramOverSubscribedField */
                             break;
                         }
-
-                        // debug only
-                        std::cout << "\t\t done escape check" << std::endl;
-
                         // at least one superCell electron histogram over subscribed
                         ForEachIonSpeciesRollForOverSubscription{}(mappingDesc, currentStep);
-
-                        // debug only
-                        std::cout << "\t\t done rollForOverSubscription" << std::endl;
                     } // end reject overSubscription loop
 
                     // check all macro-ions accepted --> localAllIonsAcceptedField
                     resetAllMacroIonsAcceptedField(); // local field, NOT macro ion particle attribute
-
-                    // debug only
-                    std::cout << "\t done resetAllAcceptedField" << std::endl;
-
                     ForEachIonSpeciesCheckForAcceptance{}(mappingDesc);
-
-                    // debug only
-                    std::cout << "\t done checkForAcceptance" << std::endl;
 
                     auto linearizedAllAcceptedBox = S_LinearizedBox<S_AllIonsAcceptedField>(
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
-
-                    // debug only
-                    std::cout << "\t done getLinearized allAcceptedBox" << std::endl;
 
                     // all Ions accepted?
                     if(static_cast<bool>(deviceLocalReduce(
@@ -345,42 +268,21 @@ namespace picongpu::simulation::stage
                            linearizedAllAcceptedBox,
                            fieldGridLayoutAllIonsAccepted.productOfComponents())))
                     {
-                        // debug only
-                        std::cout << "\t end chooseTransitionLoop" << std::endl;
-                        // all ions have accepted a transition
                         break;
                     }
                 } // end chooseTransition loop
 
                 // record changes electron spectrum
                 ForEachIonSpeciesRecordChanges{}(mappingDesc);
-
-                // debug only
-                std::cout << "done recordChanges" << std::endl;
-
                 ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
-
-                // debug only
-                std::cout << "done decelerateElectrons" << std::endl;
-
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
-
-                // debug only
-                std::cout << "done spawnElectrons" << std::endl;
 
                 // timeRemaining -= timeStep
                 picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);
 
-                // debug only
-                std::cout << "done updateTimeRemaining" << std::endl;
-
                 auto linearizedTimeRemainingBox = S_LinearizedBox<S_TimeRemainingField>(
                     localTimeRemainingField.getDeviceDataBox(),
                     fieldGridLayoutTimeRemaining);
-
-                // debug only
-                std::cout << "done getLinearized timeRemainingBox" << std::endl;
-                subSteppingCounter++;
 
                 // timeRemaining <= 0? in all local superCells?
                 if(deviceLocalReduce(
@@ -389,13 +291,8 @@ namespace picongpu::simulation::stage
                        fieldGridLayoutTimeRemaining.productOfComponents())
                    <= 0._X)
                 {
-                    // debug only
-                    std::cout << "end atomicPhysics loop" << std::endl;
                     break;
                 }
-
-                // debug only
-                std::cout << "next iteration atomicPhysics loop" << std::endl;
             } // end atomicPhysics sub-stepping loop
         }
     };
