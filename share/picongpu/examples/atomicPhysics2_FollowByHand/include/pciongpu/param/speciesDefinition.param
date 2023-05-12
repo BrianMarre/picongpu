@@ -43,9 +43,9 @@
 #include <pmacc/particles/Identifier.hpp>
 #include <pmacc/particles/traits/FilterByFlag.hpp>
 
+
 #include <cstdint>
 
-// argon + thermal electrons
 namespace picongpu
 {
     /*########################### define default attributes ######################*/
@@ -58,16 +58,16 @@ namespace picongpu
     /*########################### define species #################################*/
 
     /*--------------------------- electrons --------------------------------------*/
-    /* thermal bulk electrons: */
+    /* thermal bulk electrons: 10, 100, 1000 eV */
 
     /* ratio relative to BASE_CHARGE and BASE_MASS */
     value_identifier_constexpr(float_X, MassRatioElectrons, 1.0);
     value_identifier(float_X, ChargeRatioElectrons, 1.0);
 
     /* ratio relative to BASE_DENSITY
-     * thermal "bulk": 1x ionized n_Cu
+     * thermal "bulk": not ionized
      */
-    value_identifier(float_X, DensityRatioBulkElectrons, 16);
+    value_identifier(float_X, DensityRatioBulkElectrons, 1u);
 
     using ParticleFlagsElectrons = MakeSeq_t<
         particlePusher<UsedParticlePusher>,
@@ -76,69 +76,72 @@ namespace picongpu
         current<UsedParticleCurrentSolver>,
         massRatio<MassRatioElectrons>,
         chargeRatio<ChargeRatioElectrons>,
+        densityRatio<DensityRatioBulkElectrons>,
         isAtomicPhysicsElectron<>>;
 
     /* thermal bulk electrons */
     using BulkElectrons = Particles<
         PMACC_CSTRING("eth"),
-        MakeSeq_t<ParticleFlagsElectrons, densityRatio<DensityRatioBulkElectrons>>,
+        ParticleFlagsElectrons,
         DefaultParticleAttributes>;
 
     /*--------------------------- ions Argon ------------------------------------*/
 
     /* ratio relative to BASE_CHARGE and BASE_MASS */
-    value_identifier_constexpr(float_X, MassRatioArgon, 40 * 1836.152672);
-    value_identifier(float_X, ChargeRatioArgon, -18.0);
+    value_identifier_constexpr(float_X, MassRatioHydrogen, 1 * 1836.152672);
+    value_identifier(float_X, ChargeRatioHydrogen, -1.0);
 
     /* ratio relative to BASE_DENSITY */
-    value_identifier(float_X, DensityRatioArgon, 1.0);
+    value_identifier(float_X, DensityRatioHydrogen, 1.0);
 
 #ifndef PARAM_IONIZATIONCURRENT
 #    define PARAM_IONIZATIONCURRENT None
 #endif
 
-    using ParticleFlagsArgon = MakeSeq_t<
+    using ParticleFlagsHydrogen = MakeSeq_t<
         particlePusher<UsedParticlePusher>,
         shape<UsedParticleShape>,
         interpolation<UsedField2Particle>,
         current<UsedParticleCurrentSolver>,
-        massRatio<MassRatioArgon>,
-        chargeRatio<ChargeRatioArgon>,
-        densityRatio<DensityRatioArgon>,
+        massRatio<MassRatioHydrogen>,
+        chargeRatio<ChargeRatioHydrogen>,
+        densityRatio<DensityRatioHydrogen>,
 
-        // core flag for loading atomic input data, rest is unused if not set
-        atomicDataType<atomicPhysics2::AtomicData_Ar>,
+        // core flag for loading atomic input data, no atomicPhysics outside ionizers if not set
+        atomicDataType<atomicPhysics2::AtomicData_H>,
 
         /// currently all are required, @todo change?, Brian Marre
-        chargeStatesFileName<PMACC_CSTRING("../ChargeStates_Ar.txt")>,
-        atomicStatesFileName<PMACC_CSTRING("../AtomicStates_Ar.txt")>,
-        /// @todo replace with runtime hostDeviceBuffer of DataBoxes
-        numberAtomicStates<particles::atomicPhysics2::Number<470u>>,
-        boundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_Ar.txt")>,
-        boundFreeTransitionsFileName<PMACC_CSTRING("../BoundFreeTransitions_Ar.txt")>,
-        autonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_Ar.txt")>,
+        chargeStatesFileName<PMACC_CSTRING("../ChargeStates_H.txt")>,
+        atomicStatesFileName<PMACC_CSTRING("../AtomicStates_H.txt")>,
+        /// @todo replace with runtime hostDeviceBuffer of DataBoxes, Brian Marre, 2022
+        numberAtomicStates<particles::atomicPhysics2::Number<11u>>,
+        boundBoundTransitionsFileName<PMACC_CSTRING("../BoundBoundTransitions_H.txt")>,
+        boundFreeTransitionsFileName<PMACC_CSTRING("../BoundFreeTransitions_H.txt")>,
+        autonomousTransitionsFileName<PMACC_CSTRING("../AutonomousTransitions_H.txt")>,
 
-        atomicNumbers<ionization::atomicNumbers::Argon_t>,
-        ionizationElectronSpecies<BulkElectrons>,
-        isAtomicPhysicsIon<>>; // which species to spawn as electrons upon ionization
-    //! @attention data and solver channels must be consistent, otherwise illegal memory access
+        atomicNumbers<ionization::atomicNumbers::Hydrogen_t>,
+        ionizationElectronSpecies<BulkElectrons>, // which species to spawn as electrons upon ionization
+        isAtomicPhysicsIon<>>;
+        //! @attention only channels activated in both data and solver are actually possible
 
-    using ArgonAttributes = MakeSeq_t<
+    using HydrogenAttributes = MakeSeq_t<
         DefaultParticleAttributes,
 
         // atomic physics attributes
         //      storage of atomic state, defined separately in atomicPhysics.param
-        atomicConfigNumber<atomicPhysics2::ConfigNumber_Ar>,
+        atomicConfigNumber<picongpu::atomicPhysics2::ConfigNumber_H>,
         //      solver support
         processClass,
         transitionIndex,
         binIndex,
         accepted,
+        // legacy ionization support
+
         /// @todo remove?, Brian Marre, 2022
         boundElectrons>;
 
     /* define species ions */
-    using ArgonIons = Particles<PMACC_CSTRING("Ar"), ParticleFlagsArgon, ArgonAttributes>;
+    using HydrogenIons = Particles<PMACC_CSTRING("H"), ParticleFlagsHydrogen, HydrogenAttributes>;
 
     /*########################### end species ####################################*/
 
@@ -147,6 +150,6 @@ namespace picongpu
      * List all defined particle species from above in this list
      * to make them available to the PIC algorithm.
      */
-    using VectorAllSpecies = MakeSeq_t<BulkElectrons, ArgonIons>;
+    using VectorAllSpecies = MakeSeq_t<BulkElectrons, HydrogenIons>;
 
 } // namespace picongpu

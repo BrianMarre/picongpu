@@ -1,0 +1,80 @@
+/* Copyright 2022-2023 Brian Marre
+ *
+ * This file is part of PIConGPU.
+ *
+ * PIConGPU is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * PIConGPU is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PIConGPU.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** @file
+ * configuration file for debug settings of atomicPhysics
+ *
+ * needs to be a separate file to avoid circular imports in
+ *  picongpu/particles/atomicPhysics2/atomicData/*
+ */
+
+#pragma once
+
+namespace picongpu::atomicPhysics2
+{
+    // debug compile settings
+    //! activate more performance relevant debug checks
+    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG = true;
+    //! activate less performance relevant debug checks
+    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG = true;
+    //! activate debug print of atomic data to console
+    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT = false;
+
+    /** activate debug sync of all atomic data members
+     *
+     * @attention will not catch members missing from hostToDevice() method
+     */
+    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST = false;
+
+    /** activate debug fill_all gaps for SpawnIonizationElectrons.stage
+     *
+     * if assumptions of particleBoyes are broken by the SpawnIonizationElectrons.kernel
+     *  this will fix that
+     */
+    constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_DEBUG_FILL_GAPS = false;
+
+    /** activate bin index/energy range checks in histogram methods,
+     *
+     * @attention setting is performance relevant,
+     *  if disabled, uncaught error will lead to invalid memory access
+     */
+    constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG = true;
+    //! print histogram content to console, @attention only useful if building serial and cpu-only
+    constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG_PRINT = false;
+
+    //! range checks in rate calculation, @attention performance relevant
+    constexpr bool ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG = true;
+    //! debug unit tests for rate calculation
+    constexpr bool ATOMIC_PHYSICS_RATE_CALCULATION_UNIT_TESTS = false;
+
+    //! range checks in rate cache, @attention performance relevant
+    constexpr bool ATOMIC_PHYSICS_RATE_CACHE_HOT_DEBUG = true;
+
+    //! range check for calculated time step, @attention performance relevant
+    constexpr bool ATOMIC_PHYSICS_CALCULATE_TIME_STEP_HOT_DEBUG = true;
+
+    //! check for invalid processID in ExtractTransitionCollectionIndex_*.kernel calls
+    constexpr bool ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG = true;
+
+    //! range checks in rejection probability cache, @attention performance relevant
+    constexpr bool ATOMIC_PHYSICS_REJECTION_PROBABILITY_CACHE_HOT_DEBUG = true;
+
+    //! check for match between inital ionizing transition state of ion and ion transition
+    constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG = true;
+} // namespace picongpu::atomicPhysics2

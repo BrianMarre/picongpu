@@ -1,0 +1,112 @@
+/* Copyright 2013-2020 Axel Huebl, Rene Widera, Marco Garten, Benjamin Worpitz,
+ *                     Richard Pausch
+ *
+ * This file is part of PIConGPU.
+ *
+ * PIConGPU is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * PIConGPU is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PIConGPU.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+#include "picongpu/particles/atomicPhysics2/SetToAtomicGroundStateForChargeState.hpp"
+#include "picongpu/particles/manipulators/manipulators.def"
+#include "picongpu/particles/startPosition/functors.def"
+
+#include <pmacc/math/Vector.hpp>
+#include <pmacc/math/operation.hpp>
+
+
+// particles randomly distributed, 10 macro particle per cell, 200keV initial drift
+namespace picongpu
+{
+    namespace particles
+    {
+        /** a particle with a weighting below MIN_WEIGHTING will not
+         *      be created / will be deleted
+         *  unit: none
+         */
+        constexpr float_X MIN_WEIGHTING = 0.1_X;
+
+        namespace startPosition
+        {
+            struct RandomParameter
+            {
+                /** Count of particles per cell at initial state
+                 *  unit: none
+                 */
+                static constexpr uint32_t numParticlesPerCell = 18u;
+            };
+            using Random = RandomImpl<RandomParameter>;
+
+        } // namespace startPosition
+
+        /** During unit normalization, we assume this is a typical
+         *  number of particles per cell for normalization of weighted
+         *  particle attributes.
+         */
+        constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter::numParticlesPerCell;
+
+        namespace startChargeState
+        {
+            struct ChargeStateParam
+            {
+                static constexpr float_X targetChargeState = 16._X;
+            }
+        }
+
+        namespace manipulators
+        {
+            template<typename T_ChargeStateParam>
+            struct ChargeState
+            {
+                /** set ions to targetChargeState times ionized and atomic ground state for
+                 *  that charge state.
+                 */
+                template<typename T_Particle>
+                DINLINE void operator()(T_Particle& particle)
+                {
+                    constexpr float_X numberBoundElectronsNeutralAtom
+                        = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
+
+                    // check if target charge state is physical
+                    PMACC_ASSERT_MSG(
+                        numberBoundElectronsNeutralAtom >= T_ChargeStateParam::targetChargeState,
+                        "too few protons for target charge state");
+
+                    constexpr float_X targetNumberBoundElectrons
+                        = numberBoundElectronsNeutralAtom - T_ChargeStateParam::targetChargeState;
+
+                    picongpu::particles::atomicPhysics2::SetToAtomicGroundStateForChargeState{}(
+                        particle,
+                        targetNumberBoundElectrons);
+                }
+            };
+
+            struct TemperatureParam
+            {
+                /** Initial temperature
+                 *  unit: keV
+                 */
+                static constexpr float_64 temperature = 1.;
+            };
+            using AddTemperature = unary::Temperature<TemperatureParam>;
+
+
+            // definition of set initial ionization
+            using SetIonization = generic::Free<ChargeState<ChargeStateParam>>;
+
+        } // namespace manipulators
+    } // namespace particles
+} // namespace picongpu
