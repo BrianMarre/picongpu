@@ -36,19 +36,6 @@ namespace picongpu::atomicPhysics2
     //! activate debug print of atomic data to console
     constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT = false;
 
-    /** activate debug sync of all atomic data members
-     *
-     * @attention will not catch members missing from hostToDevice() method
-     */
-    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST = true;
-
-    /** activate debug fill_all gaps for SpawnIonizationElectrons.stage
-     *
-     * if assumptions of particleBoyes are broken by the SpawnIonizationElectrons.kernel
-     *  this will fix that
-     */
-    constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_DEBUG_FILL_GAPS = true;
-
     /** activate bin index/energy range checks in histogram methods,
      *
      * @attention setting is performance relevant,
@@ -68,8 +55,6 @@ namespace picongpu::atomicPhysics2
 
     //! range check for calculated time step, @attention performance relevant
     constexpr bool ATOMIC_PHYSICS_CALCULATE_TIME_STEP_HOT_DEBUG = true;
-    //! print to console debug data of calculate time step sub-step, @attention cpu only!
-    constexpr bool ATOMIC_PHYSICS_CALCULATE_TIME_STEP_DEBUG_PRINT = false;
 
     //! check for invalid processID in ExtractTransitionCollectionIndex_*.kernel calls
     constexpr bool ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG = true;
@@ -80,6 +65,23 @@ namespace picongpu::atomicPhysics2
     //! check for match between inital ionizing transition state of ion and ion transition
     constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG = true;
 
-    //! print local timeRemaining to console, @attention only useful if building serial and cpu-only
-    constexpr bool ATOMIC_PHYSICS_TIME_REMAINING_DEBUG_PRINT = false;
+    /** fix electron temperature for atomicPhysics
+     *
+     *  @attention resamples electron momentum every atomicPhysics steps
+     *  creating unphysical currents, do not use outside debug!
+     */
+    constexpr bool ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE = false;
+
+    /** activate debug sync of all atomic data members
+     *
+     * @attention will not catch members missing from hostToDevice() method
+     */
+    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST = false;
+
+    /** activate debug fill_all gaps for SpawnIonizationElectrons.stage
+     *
+     * if assumptions of particleBoyes are broken by the SpawnIonizationElectrons.kernel
+     *  this will fix that
+     */
+    constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_DEBUG_FILL_GAPS = false;
 } // namespace picongpu::atomicPhysics2

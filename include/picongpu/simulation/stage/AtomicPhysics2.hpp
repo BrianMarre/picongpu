@@ -21,6 +21,9 @@
 
 #include "picongpu/simulation_defines.hpp"
 // need picongpu::simDim from picongpu/param/dimension.param
+//  and picongpu/param/atomicPhysics2_debug.param
+
+#include "picongpu/particles/InitFunctors.hpp"
 
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
@@ -42,6 +45,8 @@
 #include "picongpu/particles/atomicPhysics2/stage/SpawnIonizationElectrons.stage"
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.stage"
 
+#include "picongpu/particles/atomicPhysics2/stage/SetMomentumToZero.stage"
+
 #include <pmacc/device/Reduce.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
 #include <pmacc/math/operation.hpp>
@@ -53,13 +58,8 @@
 #include <cstdint>
 #include <string>
 
-/** @file implements the Atomic Physics stage of the PIC-loop.
- *
- * One instance of this class AtomicPhysics is stored as a protected member of the
- * MySimulation class.
- *
- * partially based upon a previous version built by Sergei Bastrakov and Brian Marre
- */
+// debug only
+#include <iostream>
 
 namespace picongpu::simulation::stage
 {
@@ -191,6 +191,12 @@ namespace picongpu::simulation::stage
                 SpeciesRepresentingIons,
                 particles::atomicPhysics2::stage::SpawnIonizationElectrons<boost::mpl::_1>>;
 
+            // debug only
+            //! set momentum of all macro electrons to zero
+            using ForEachElectronSpeciesSetMomentumToZero = pmacc::meta::ForEach<
+                SpeciesRepresentingElectrons,
+                particles::atomicPhysics2::stage::SetMomentumToZero<boost::mpl::_1>>;
+
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             // TimeRemainingSuperCellField
@@ -220,6 +226,16 @@ namespace picongpu::simulation::stage
                 // particle[accepted_] = false, in each macro ion
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
                 resetHistograms();
+
+                // setting the electron temperature to hard values
+                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)
+                {
+                    ForEachElectronSpeciesSetMomentumToZero{}(mappingDesc);
+                    picongpu::particles::Manipulate<
+                        picongpu::particles::manipulators::AddTemperature,
+                        BulkElectrons>{}(currentStep);
+                }
+
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
                 // timeStep = localTimeRemaining
                 picongpu::particles::atomicPhysics2::stage::ResetLocalTimeStepField()(mappingDesc);
@@ -280,9 +296,12 @@ namespace picongpu::simulation::stage
                 } // end chooseTransition loop
 
                 // record changes electron spectrum
-                ForEachIonSpeciesRecordChanges{}(mappingDesc);
-                ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
+                if constexpr(!picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)
+                {
+                    ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
+                }
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
+                ForEachIonSpeciesRecordChanges{}(mappingDesc);
 
                 // timeRemaining -= timeStep
                 picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);

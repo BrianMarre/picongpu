@@ -78,7 +78,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             //      bound-free based transitions
             if constexpr(
                 AtomicDataType::switchElectronicIonization
-                &&
+                ||
                 AtomicDataType::switchFieldIonization)
             {
                 using SpawnElectrons_BoundFree = picongpu::particles::atomicPhysics2::kernel
