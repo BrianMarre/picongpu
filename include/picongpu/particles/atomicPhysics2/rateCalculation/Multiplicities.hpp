@@ -68,21 +68,6 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
     template<typename T_LevelVector>
     HDINLINE float_64 multiplicityBoundFreeTransition(T_LevelVector lowerState, T_LevelVector removedElectrons)
     {
-        // debug only
-        std::cout << "DEBUG lowerStateLevelVector: (" << static_cast<uint16_t>(lowerState[0]);
-        for(uint8_t i = 1u; i < T_LevelVector::dim; i++)
-        {
-            std::cout << ", " << static_cast<uint16_t>(lowerState[i]);
-        }
-        std::cout << ")" << std::endl;
-        std::cout << "DEBUG removedElectronsVector: (" << static_cast<uint16_t>(removedElectrons[0]);
-        for(uint8_t i = 1u; i < T_LevelVector::dim; i++)
-        {
-            std::cout << ", " << static_cast<uint16_t>(removedElectrons[i]);
-        }
-        std::cout << ")" << std::endl;
-
-
         float_64 combinatorialFactor = 1.;
         for(uint8_t i = 0u; i < T_LevelVector::dim; i++)
         {

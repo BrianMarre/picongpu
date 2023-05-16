@@ -109,7 +109,14 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             float_X const a = boundBoundTransitionDataBox.cxin5(collectionIndexTransition);
 
             // calculate gaunt Factor
-            float_X const g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
+            float_X g;
+
+            if ((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
+                // use mewe approximation if all gaunt coefficients are zero
+                g = 0.15 + 0.28 * math::log(U);
+            else
+                // chuung approximation
+                g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
 
             if(U > 1.0_X)
                 return g; // unitless
@@ -195,7 +202,9 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             {
                 // transition physical impossible, insufficient electron energy
                 if(energyDifference > energyElectron)
+                {
                     return 0._X;
+                }
             }
 
             // unitless * unitless = unitless
@@ -333,8 +342,6 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             constexpr float_64 mue0_SI = picongpu::SI::MUE0_SI; // unit: C/(Vm), SI
             constexpr float_64 pi = picongpu::PI; // unit: unitless
             constexpr float_64 hbar_SI = picongpu::SI::HBAR_SI; // unit: Js, SI
-
-            // constexpr float_64 au_SI = picongpu::SI::ATOMIC_UNIT_ENERGY; // unit: J, SI
 
             uint32_t const upperStateClctIdx
                 = boundBoundTransitionDataBox.upperStateCollectionIndex(transitionCollectionIndex);

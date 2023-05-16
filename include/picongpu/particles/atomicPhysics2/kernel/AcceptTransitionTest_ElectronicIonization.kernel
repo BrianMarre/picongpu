@@ -128,10 +128,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
-                    // debug only
-                    std::cout << "DEBUG initial" << std::endl;
-                    debug::printAtomicPhysicsIonToConsole(ion);
-
                     // 1/UNIT_TIME
                     float_X const rate = picongpu::particles::atomicPhysics2::rateCalculation ::
                         BoundFreeTransitionRates<T_n_max>::template rateCollisionalIonizationTransition<
@@ -152,10 +148,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // try to accept
                     if(probability >= rngGenerator())
                         ion[accepted_] = true;
-
-                    // debug only
-                    std::cout << "DEBUG final" << std::endl;
-                    debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };

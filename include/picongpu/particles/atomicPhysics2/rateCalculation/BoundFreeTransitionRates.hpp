@@ -247,7 +247,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          * @attention only valid for single electron ionization
          *
          * @return 1/UNIT_TIME
-         * @todo
+         * @todo Brian Marre, 2023
          */
         // template<
         //    typename T_ETypeValue,

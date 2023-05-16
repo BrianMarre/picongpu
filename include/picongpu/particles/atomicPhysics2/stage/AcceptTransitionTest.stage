@@ -118,8 +118,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                             picongpu::atomicPhysics2::ElectronHistogram,
                             AtomicDataType::ConfigNumber::numberLevels,
                             picongpu::atomicPhysics2::ProbabilityApproximationFunctor,
-                            // excitation
-                            true>(),
+                            /* excitation */ true>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -140,8 +139,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                         picongpu::atomicPhysics2::ElectronHistogram,
                         AtomicDataType::ConfigNumber::numberLevels,
                         picongpu::atomicPhysics2::ProbabilityApproximationFunctor,
-                        // deexcitation
-                        false>(),
+                        /* deexcitation */ false>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -187,7 +185,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getChargeStateDataDataBox<false>(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false>());
+                    atomicData.template getBoundFreeTransitionDataBox<false>());
             }
             //      fieldIonization
             /// @todo implement field ionization, Brian Marre, 2023

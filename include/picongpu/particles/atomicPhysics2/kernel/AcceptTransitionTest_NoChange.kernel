@@ -113,10 +113,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         chargeStateOrgaBox.numberAtomicStates(chargeState),
                         chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState));
 
-                    // debug only
-                    std::cout << "DEBUG initial" << std::endl;
-                    debug::printAtomicPhysicsIonToConsole(ion);
-
                     // 1/UNIT_TIME
                     float_X const rate = rateCache.rate(atomicStateCollectionIndex);
 
@@ -128,10 +124,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     {
                         ion[accepted_] = true;
                     }
-
-                    // debug only
-                    std::cout << "DEBUG final" << std::endl;
-                    debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };
