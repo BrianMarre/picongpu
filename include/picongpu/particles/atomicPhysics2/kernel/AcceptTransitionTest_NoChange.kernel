@@ -94,17 +94,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachLocalIonBoxEntry(
                 [&superCellFieldIdx, &rngFactory, &timeStep, &rateCache, &chargeStateOrgaBox, &atomicStateDataDataBox](
                     T_Worker const& worker,
-                    auto& particle)
+                    auto& ion)
                 {
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-                    if((particle[accepted_]) || (particle[processClass_] != u8(procClass::ProcessClass::noChange)))
+                    if((ion[accepted_]) || (ion[processClass_] != u8(procClass::ProcessClass::noChange)))
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
                     typename T_ConfigNumber::DataType const atomicStateConfigNumber
-                        = particle[atomicConfigNumber_].getConfigNumber();
+                        = ion[atomicConfigNumber_].getConfigNumber();
 
                     uint8_t const chargeState = T_ConfigNumber::getIonizationState(atomicStateConfigNumber);
 
@@ -112,6 +112,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         atomicStateConfigNumber,
                         chargeStateOrgaBox.numberAtomicStates(chargeState),
                         chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState));
+
+                    // debug only
+                    std::cout << "DEBUG initial" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
 
                     // 1/UNIT_TIME
                     float_X const rate = rateCache.rate(atomicStateCollectionIndex);
@@ -122,8 +126,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // try to accept
                     if(probability >= rngGenerator())
                     {
-                        particle[accepted_] = true;
+                        ion[accepted_] = true;
                     }
+
+                    // debug only
+                    std::cout << "DEBUG final" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };

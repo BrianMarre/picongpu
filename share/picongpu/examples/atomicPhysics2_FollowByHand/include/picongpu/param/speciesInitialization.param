@@ -43,6 +43,8 @@ namespace picongpu
         using InitPipeline = boost::mp11::mp_list<
             // debug one particle per super cell only
             CreateDensity<densityProfiles::Homogenous, startPosition::OneSuperCellPosition, HydrogenIons>,
+            // add additional electrons, @attention setup is not charge neutral
+            ManipulateDerive<manipulators::binary::DensityWeighting, HydrogenIons, BulkElectrons>,
             // set ions to atomic ground state
             Manipulate<manipulators::SetIonization, HydrogenIons>,
             // assign drift

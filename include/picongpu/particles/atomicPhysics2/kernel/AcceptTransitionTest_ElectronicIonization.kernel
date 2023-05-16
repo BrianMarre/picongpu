@@ -103,19 +103,22 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &electronHistogram,
                  &chargeStateDataDataBox,
                  &atomicStateDataDataBox,
-                 &boundFreeTransitionDataBox](T_Worker const& worker, auto& particle)
+                 &boundFreeTransitionDataBox](T_Worker const& worker, auto& ion)
                 {
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-                    if(particle[accepted_]
-                       || (particle[processClass_] != u8(procClass::ProcessClass::electronicIonization)))
+                    bool const notElectronicIonization
+                        = (ion[processClass_] != u8(procClass::ProcessClass::electronicIonization));
+
+                    if(ion[accepted_] || notElectronicIonization)
                         return;
 
                     // UNIT_LENGTH^3
                     constexpr float_X volumeScalingFactor
                         = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
 
-                    uint32_t const binIndex = particle[binIndex_];
+                    uint32_t const binIndex = ion[binIndex_];
+
                     // eV
                     float_X const energy = electronHistogram.getBinEnergy(binIndex);
                     // eV
@@ -124,6 +127,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor / binWidth;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
+
+                    // debug only
+                    std::cout << "DEBUG initial" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
 
                     // 1/UNIT_TIME
                     float_X const rate = picongpu::particles::atomicPhysics2::rateCalculation ::
@@ -134,7 +141,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             energy,
                             binWidth,
                             density,
-                            particle[transitionIndex_],
+                            ion[transitionIndex_],
                             chargeStateDataDataBox,
                             atomicStateDataDataBox,
                             boundFreeTransitionDataBox);
@@ -144,7 +151,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // try to accept
                     if(probability >= rngGenerator())
-                        particle[accepted_] = true;
+                        ion[accepted_] = true;
+
+                    // debug only
+                    std::cout << "DEBUG final" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };

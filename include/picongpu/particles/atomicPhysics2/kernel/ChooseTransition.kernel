@@ -37,7 +37,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param rngFactory factory for uniformly distributed random number generator
-         * @param ionBox deviceDataBox containing the particle frames of all local superCells
+         * @param ionBox deviceDataBox containing the ion frames of all local superCells
          * @param chargeStateOrgaBox deviceDataBox giving access to charge state orga data
          * @param atomicStateDataDataBox deviceDataBox giving access to atomic state property data
          * @param transitionSelectionDataBox deviceDataBox giving access to the number of
@@ -68,7 +68,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // Offset without guards for random numbers
             auto const superCellLocalOffset = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            // end kernel if no particles
+            // end kernel if no ions
             if(!forEachLocalIonBoxEntry.hasParticles())
                 return;
 
@@ -80,15 +80,15 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &rngFactory,
                  &atomicStateDataDataBox,
                  &chargeStateOrgaBox,
-                 &transitionSelectionDataBox](T_Worker const& worker, auto& particle)
+                 &transitionSelectionDataBox](T_Worker const& worker, auto& ion)
                 {
-                    if(particle[accepted_])
+                    if(ion[accepted_])
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
                     typename T_ConfigNumber::DataType const atomicStateConfigNumber
-                        = particle[atomicConfigNumber_].getConfigNumber();
+                        = ion[atomicConfigNumber_].getConfigNumber();
 
                     uint8_t const chargeState = T_ConfigNumber::getIonizationState(atomicStateConfigNumber);
 
@@ -97,9 +97,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         chargeStateOrgaBox.numberAtomicStates(chargeState),
                         chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState));
 
-                    particle[transitionIndex_]
+                    ion[transitionIndex_]
                         = rngGenerator() % transitionSelectionDataBox.numberTransitions(atomicStateCollectionIndex);
                 });
         }
     };
-} // namespace picongpu::particles::atomicPhysics2::kernel
+} // namespace picongpu::ions::atomicPhysics2::kernel

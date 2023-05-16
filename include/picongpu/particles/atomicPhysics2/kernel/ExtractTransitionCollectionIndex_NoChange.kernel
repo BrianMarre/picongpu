@@ -55,18 +55,18 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             // check whether no-change transition and if yes set processClass 0
             forEachLocalIonBoxEntry(
-                [](T_Worker const& worker, auto& particle)
+                [](T_Worker const& worker, auto& ion)
                 {
                     if(
-                        // already accepted particle
-                        (particle[accepted_]) ||
+                        // already accepted ion
+                        (ion[accepted_]) ||
                         // not a no-change transition
-                        !(particle[transitionIndex_] == static_cast<uint32_t>(0u)))
+                        !(ion[transitionIndex_] == static_cast<uint32_t>(0u)))
                     {
                         return;
                     }
 
-                    particle[processClass_] = static_cast<uint8_t>(
+                    ion[processClass_] = static_cast<uint8_t>(
                         picongpu::particles::atomicPhysics2::processClass::ProcessClass::noChange);
 
                     // transitionIndex and binIndex are not relevant for no-change transitions

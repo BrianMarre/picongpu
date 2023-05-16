@@ -22,7 +22,7 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
-#include "picongpu/particles/atomicPhysics2/processClass/ProcessIDConversionTable.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessIDConversion.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
@@ -56,7 +56,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
         bool T_fieldIonization>
     struct ExtractTransitionCollectionIndexKernel_BoundFree
     {
-        using S_NumberPhysical = picongpu::particles::atomicPhysics2::processClass ::NumberPhysicalTransitions<
+        using S_NumberPhysical = picongpu::particles::atomicPhysics2::processClass::NumberPhysicalTransitions<
             T_electronicExcitation,
             T_electronicDeexcitation,
             T_spontaneousDeexcitation,
@@ -64,14 +64,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_autonomousIonization,
             T_fieldIonization>;
 
-        using S_TransitionDataClass = picongpu::particles::atomicPhysics2::processClass ::TransitionDataClass;
-
         // specialization for active paths, namespaces relative to current namespace
-        template<uint8_t T_numEntries, S_TransitionDataClass T_transitionDataClass>
-        using S_ProcessIDConversionTable
-            = picongpu::particles::atomicPhysics2 ::processClass::ProcessIDConversionTable<
-                T_numEntries,
-                T_transitionDataClass,
+        using S_ProcessIDConversion
+            = picongpu::particles::atomicPhysics2::processClass::ProcessIDConversion<
                 T_electronicExcitation,
                 T_electronicDeexcitation,
                 T_spontaneousDeexcitation,
@@ -100,7 +95,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param ionBox deviceDataBox giving access to the particle frames of all local superCells
+         * @param ionBox deviceDataBox giving access to the ion frames of all local superCells
          * @param chargeStateOrgaBox deviceDataBox giving access to charge state orga data
          * @param atomicStateDataDataBox deviceDataBox giving access to atomic state
          *  property data
@@ -148,14 +143,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &chargeStateOrgaBox,
                  &atomicStateDataDataBox,
                  &numberTransitionsBox,
-                 &startIndexBox](T_Worker const& worker, auto& particle)
+                 &startIndexBox](T_Worker const& worker, auto& ion)
                 {
-                    if(particle[accepted_])
-                        // already accepted particle
+                    if(ion[accepted_])
+                        // already accepted ion
                         return;
 
                     typename T_ConfigNumber::DataType const atomicStateConfigNumber
-                        = particle[atomicConfigNumber_].getConfigNumber();
+                        = ion[atomicConfigNumber_].getConfigNumber();
 
                     uint8_t const chargeState = T_ConfigNumber::getIonizationState(atomicStateConfigNumber);
 
@@ -172,44 +167,32 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     uint32_t const offset = numberTransitionsBox.offset(atomicStateCollectionIndex);
 
-                    if((particle[transitionIndex_] < offset)
-                       || (particle[transitionIndex_] >= offset + numberPhysicalTransitionsUp))
+                    bool const belowOffset = (ion[transitionIndex_] < offset);
+                    // recombination not yet implemented, Brian Marre, 2023
+                    bool const aboveRange = (ion[transitionIndex_] >= offset + numberPhysicalTransitionsUp);
+                    if( belowOffset || aboveRange)
                         // not a bound-free transition
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
                     // up-ward bound-free transition
-                    constexpr auto tableUp
-                        = S_ProcessIDConversionTable<factorUp, S_TransitionDataClass::boundFree_Up>();
+                    uint32_t const processID = (ion[transitionIndex_] - offset) % factorUp;
 
-                    uint32_t const processID = (particle[transitionIndex_] - offset) % factorUp;
-
-                    // debug check
+                    // check for unknown/wrong processID
                     if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                     {
-                        for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
-                        {
-                            if(processID == tableUp.table[i])
-                                // debug check not invalid processID
-                                checkProcessClass<true>(tableUp.table[i]);
-                        }
+                        checkProcessClass<true>(S_ProcessIDConversion::getProcessClassBoundFree_Up(processID));
                     }
 
-                    // set particle attributes
-                    for(uint8_t i = static_cast<uint8_t>(0u); i < factorUp; i++)
-                    {
-                        if(processID == tableUp.table[i])
-                            particle[processClass_] = tableUp.table[i];
-                    }
-                    particle[transitionIndex_] = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex)
-                        + (particle[transitionIndex_] - offset) / factorUp;
-                    particle[binIndex_] = rngGenerator() % T_numberBins;
-                }
+                    ion[processClass_] = S_ProcessIDConversion::getProcessClassBoundFree_Up(processID);
+                    ion[transitionIndex_] = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex)
+                        + (ion[transitionIndex_] - offset) / factorUp;
+                    ion[binIndex_] = rngGenerator() % T_numberBins;
 
-                // down-ward bound-free transition
-                /// @todo implement recombination, Brian Marre, 2023
-            );
+                    // down-ward bound-free transition
+                    /// @todo implement recombination, Brian Marre, 2023
+                });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

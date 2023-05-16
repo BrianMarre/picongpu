@@ -103,20 +103,24 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &timeStep,
                  &electronHistogram,
                  &atomicStateDataDataBox,
-                 &boundBoundTransitionDataBox](T_Worker const& worker, auto& particle)
+                 &boundBoundTransitionDataBox](T_Worker const& worker, auto& ion)
                 {
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
                     if constexpr(T_excitation)
                     {
-                        if((particle[accepted_])
-                           || (particle[processClass_] != u8(procClass::ProcessClass::electronicExcitation)))
+                        bool const notElectronicExcitation
+                            = (ion[processClass_] != u8(procClass::ProcessClass::electronicExcitation));
+
+                        if((ion[accepted_]) || notElectronicExcitation)
                             return;
                     }
-                    if constexpr(!T_excitation)
+                    else
                     {
-                        if((particle[accepted_])
-                           || (particle[processClass_] != u8(procClass::ProcessClass::electronicDeexcitation)))
+                        bool const notElectronicDeexcitation
+                            = (ion[processClass_] != u8(procClass::ProcessClass::electronicDeexcitation));
+
+                        if((ion[accepted_]) || notElectronicDeexcitation)
                             return;
                     }
 
@@ -124,7 +128,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     constexpr float_X volumeScalingFactor
                         = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
 
-                    uint32_t const binIndex = particle[binIndex_];
+                    uint32_t const binIndex = ion[binIndex_];
+
                     // eV
                     float_X const energy = electronHistogram.getBinEnergy(binIndex);
                     // eV
@@ -133,6 +138,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X const density = electronHistogram.getBinWeight0(binIndex) / volumeScalingFactor / binWidth;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
+
+                    // debug only
+                    std::cout << "DEBUG initial" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
 
                     // 1/UNIT_TIME
                     float_X const rate = picongpu::particles::atomicPhysics2::rateCalculation ::
@@ -143,7 +152,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             energy,
                             binWidth,
                             density,
-                            particle[transitionIndex_],
+                            ion[transitionIndex_],
                             atomicStateDataDataBox,
                             boundBoundTransitionDataBox);
 
@@ -152,7 +161,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // try to accept
                     if(probability >= rngGenerator())
-                        particle[accepted_] = true;
+                        ion[accepted_] = true;
+                    // debug only
+                    std::cout << "DEBUG final" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };

@@ -86,26 +86,36 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachLocalIonBoxEntry(
                 [&superCellFieldIdx, &rngFactory, &timeStep, &autonomousTransitionDataBox](
                     T_Worker const& worker,
-                    auto& particle)
+                    auto& ion)
                 {
                     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-                    if((particle[accepted_])
-                       || (particle[processClass_] != u8(procClass::ProcessClass::autonomousIonization)))
+                    bool const notAutonomousIonization
+                        = (ion[processClass_] != u8(procClass::ProcessClass::autonomousIonization));
+
+                    if(ion[accepted_] || notAutonomousIonization)
                         return;
 
                     auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
+                    // debug only
+                    std::cout << "DEBUG initial" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
+
                     float_X const rate = picongpu::particles::atomicPhysics2::rateCalculation ::
                         AutonomousTransitionRates ::template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
-                            particle[transitionIndex_],
+                            ion[transitionIndex_],
                             autonomousTransitionDataBox);
 
                     float_X const probability = T_AcceptanceFunctor::probabilityChange(rate, timeStep);
 
                     // try to accept
                     if(probability >= rngGenerator())
-                        particle[accepted_] = true;
+                        ion[accepted_] = true;
+
+                    // debug only
+                    std::cout << "DEBUG final" << std::endl;
+                    debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };
