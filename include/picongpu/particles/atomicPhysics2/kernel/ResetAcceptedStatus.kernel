@@ -62,7 +62,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 return;
 
             // set accepted attribute to false
-            forEachLocalIonBoxEntry([](T_Worker const& worker, auto& particle) { particle[accepted_] = false; });
+            forEachLocalIonBoxEntry([](T_Worker const& worker, auto& particle)
+            {
+                particle[accepted_] = false;
+            });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

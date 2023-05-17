@@ -46,7 +46,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
     {
         /** call operator
          *
-         * called by RecordChanges atomicPhysics sub-stage
+         * called by RecordChanges atomicPhysics sub-stage for each active processClass
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
@@ -102,9 +102,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
-                    // debug only
-                    debug::printAtomicPhysicsIonToConsole(ion);
-
                     uint8_t const processClass = ion[processClass_];
 
                     // not a T_ProcessClass transition
@@ -148,7 +145,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     ion[atomicConfigNumber_] = newConfigNumber;
                     ion[boundElectrons_] = T_AtomicStateDataBox::ConfigNumber::getBoundElectrons(newConfigNumber);
 
-                    // record used weight
+                    // record used energy
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
                                      static_cast<uint8_t>(T_ProcessClass)))
                         electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);

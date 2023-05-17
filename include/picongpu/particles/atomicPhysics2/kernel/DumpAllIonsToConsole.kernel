@@ -19,12 +19,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file set momentum of all particles of the species to zero
+//! @file dump all macro particles information to console
 
 #pragma once
 
 
 #include "picongpu/simulation_defines.hpp"
+
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
@@ -34,10 +36,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
 {
     /** debug kernel
      *
-     * configurable called by SetMomentumZero sub-stage, bins all macro particles of the species
+     * @attention assumes that the histogram has been reset previously
+     *
+     * called by binElectrons sub-stage, bins all macro particles of the species
      * T_ElectronSpecies in the given superCell into the given histogram
      */
-    struct SetMomentumToZeroKernel
+    struct DumpAllIonsToConsoleKernel
     {
         /** call operator
          *
@@ -46,33 +50,33 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param electronBox deviceDataBox giving access to the particle species particle frames
+         * @param particleBox deviceDataBox giving access to the ion species particle frames
          *   of all local superCells
          */
         template<
             typename T_Worker,
             typename T_AreaMapping,
-            typename T_ElectronBox>
+            typename T_IonBox>
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_ElectronBox electronBox) const
+            T_IonBox ionBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
 
-            auto forEachLocalElectronBoxEntry
-                = pmacc::particles::algorithm::acc::makeForEach(worker, electronBox, superCellIdx);
+            auto forEachLocalIonBoxEntry
+                = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
             // end kernel if no particles
-            if(!forEachLocalElectronBoxEntry.hasParticles())
+            if(!forEachLocalIonBoxEntry.hasParticles())
                 return;
 
             // bin electrons
-            forEachLocalElectronBoxEntry(
-                [](T_Worker const& worker, auto& electron)
+            forEachLocalIonBoxEntry(
+                [](T_Worker const& worker, auto& ion)
                 {
-                    electron[momentum_] = float3_X::create(0.);
+                    picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion);
                 });
         }
     };

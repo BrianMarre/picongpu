@@ -46,6 +46,7 @@
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.stage"
 
 #include "picongpu/particles/atomicPhysics2/stage/SetMomentumToZero.stage"
+#include "picongpu/particles/atomicPhysics2/stage/DumpAllIonsToConsole.stage"
 
 #include <pmacc/device/Reduce.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
@@ -196,6 +197,9 @@ namespace picongpu::simulation::stage
             using ForEachElectronSpeciesSetMomentumToZero = pmacc::meta::ForEach<
                 SpeciesRepresentingElectrons,
                 particles::atomicPhysics2::stage::SetMomentumToZero<boost::mpl::_1>>;
+            using ForEachIonSpeciesDumpToConsole = pmacc::meta::ForEach<
+                SpeciesRepresentingIons,
+                particles::atomicPhysics2::stage::DumpAllIonsToConsole<boost::mpl::_1>>;
 
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
@@ -300,18 +304,16 @@ namespace picongpu::simulation::stage
                     }
                 } // end chooseTransition loop
 
+                // debug only
+                ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+
                 // record changes electron spectrum
                 if constexpr(!picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 }
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
-
-                // debug only
-                std::cout << "start record changes" << std::endl;
                 ForEachIonSpeciesRecordChanges{}(mappingDesc);
-                // debug only
-                std::cout << "end record changes" << std::endl;
 
                 // timeRemaining -= timeStep
                 picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);

@@ -191,7 +191,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         numberIonizationElectrons = upperChargeState - lowerChargeState;
 
                         // debug only
-                        //std::cout << "electrons" << numberIonizationElectrons << std::endl;
+                        std::cout << "electrons" << numberIonizationElectrons << std::endl;
 
                         if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
                             if(upperChargeState < lowerChargeState)
