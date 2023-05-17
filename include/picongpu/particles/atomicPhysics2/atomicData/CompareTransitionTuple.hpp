@@ -37,7 +37,7 @@ namespace picongpu
                  *
                  * @tparam T_Number data type used for numbers
                  * @tparam T_idx data type used for condigNumbers
-                 * @tparam orderByLowerState true: order by by lower , false: upper state
+                 * @tparam orderByLowerState true=^=order by by lower , false=^=upper state
                  */
                 template<typename T_Value, typename T_Idx, bool orderByLowerState>
                 class CompareTransitionTupel

@@ -86,19 +86,33 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
 
+            std::cout << "autonomous" << std::endl;
+
             forEachAtomicState(
                 [&worker, &rateCache, &startIndexDataBox, &numberTransitionsDataBox, &autonomousTransitionDataBox](
                     uint32_t const atomicStateCollectionIndex)
                 {
                     uint32_t const numberTransitionsDown
-                        = numberTransitionsDataBox.numberOfTransitions(atomicStateCollectionIndex);
+                        = numberTransitionsDataBox.numberOfTransitionsDown(atomicStateCollectionIndex);
 
-                    uint32_t offset = startIndexDataBox.startIndexBlockTransitions(atomicStateCollectionIndex);
+                    uint32_t offset = startIndexDataBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex);
 
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsDown; i++)
                     {
                         // no check for if processClass channel is active, since currently
                         //  only one exist at all
+
+                        // debug only
+                        if(atomicStateCollectionIndex == 28u)
+                        {
+                            std::cout << "transitionIndex " << offset + i << " rate: ";
+                                printf("%.8e\n", picongpu::particles::atomicPhysics2
+                                    ::rateCalculation::AutonomousTransitionRates::
+                                    template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
+                                        // transitionCollectionIndex
+                                        offset + i,
+                                        autonomousTransitionDataBox));
+                        }
 
                         // 1/UNIT_TIME
                         rateCache.add(

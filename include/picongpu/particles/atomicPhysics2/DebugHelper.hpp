@@ -161,8 +161,8 @@ namespace picongpu::particles::atomicPhysics2::debug
                       << boundFreeStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
                       << boundFreeStartIndexBox.startIndexBlockTransitionsDown(i) << " ("
                       << boundFreeNumberTransitionsBox.offset(i) << ")" << std::endl;
-            std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitions(i) << ", "
-                      << autonomousStartIndexBox.startIndexBlockTransitions(i) << " ("
+            std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
+                      << autonomousStartIndexBox.startIndexBlockTransitionsDown(i) << " ("
                       << autonomousNumberTransitionsBox.offset(i) << ")" << std::endl;
             std::cout << "\t\t physical transitions: " << transitionSelectionBox.numberTransitions(i) << std::endl;
         }

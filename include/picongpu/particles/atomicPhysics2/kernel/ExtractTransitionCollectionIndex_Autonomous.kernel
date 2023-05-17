@@ -147,7 +147,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     constexpr uint32_t factorDown = S_NumberPhysical::getFactorAutonomous();
 
                     uint32_t const numberPhysicalTransitionsDown
-                        = factorDown * numberTransitionsBox.numberOfTransitions(atomicStateCollectionIndex);
+                        = factorDown * numberTransitionsBox.numberOfTransitionsDown(atomicStateCollectionIndex);
 
                     uint32_t const offset = numberTransitionsBox.offset(atomicStateCollectionIndex);
 
@@ -163,14 +163,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     uint32_t const processID = (ion[transitionIndex_] - offset) % factorDown;
 
                     // debug check
-                    if constexpr(picongpu::atomicPhysics2 ::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
                     {
                         checkProcessClass(S_ProcessIDConversion::getProcessClassAutonomous_Down(processID));
                     }
 
                     // set ion attributes
                     ion[processClass_] = S_ProcessIDConversion::getProcessClassAutonomous_Down(processID);
-                    ion[transitionIndex_] = startIndexBox.startIndexBlockTransitions(atomicStateCollectionIndex)
+                    ion[transitionIndex_] = startIndexBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex)
                         + (ion[transitionIndex_] - offset) / factorDown;
                 });
         }

@@ -1,4 +1,4 @@
-/* Copyright 2022-2023 Sergei Bastrakov, Brian Marre
+/* Copyright 2022-2023 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -95,9 +95,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @param boxCxin5 cross section fit parameter 7
          * @param boxCxin5 cross section fit parameter 8
          * @param boxLowerStateCollectionIndex configNumber of the lower(lower excitation energy) state of the
-         * transition
+         *  transition
          * @param boxUpperStateCollectionIndex configNumber of the upper(higher excitation energy) state of the
-         * transition
+         *  transition
          * @param T_numberTransitions number of atomic bound-free transitions stored
          */
         BoundFreeTransitionDataBox(

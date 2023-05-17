@@ -1,4 +1,4 @@
-/* Copyright 2022-2023 Sergei Bastrakov, Brian Marre
+/* Copyright 2022-2023 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -123,7 +123,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *  corresponding buffer, or the state is only added on the host side.
          * @attention needs to fulfill all ordering and content assumptions of constructor!
          * @attention no range checks outside debug compile, invalid memory access if collectionIndex >=
-         * numberTransitions
+         *  numberTransitions
          *
          * @tparam T_StateHostBox type of atomic state data box
          *

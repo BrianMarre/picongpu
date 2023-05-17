@@ -83,7 +83,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitions(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsDown(uint32_t const collectionIndex) const
         {
             return m_boxStartIndexBlockTransitions(collectionIndex);
         }

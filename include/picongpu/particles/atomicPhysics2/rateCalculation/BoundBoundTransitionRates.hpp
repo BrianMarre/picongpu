@@ -118,6 +118,9 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 // chuung approximation
                 g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
 
+            // debug only
+            if 
+
             if(U > 1.0_X)
                 return g; // unitless
             else
@@ -308,11 +311,22 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 atomicStateDataBox,
                 boundBoundTransitionDataBox); // [1e6*b]
 
-            return picongpu::particles2::atomicPhysics2::rateCalculation::collisionalRate(
+            if (transitionCollectionIndex == 123u)
+            {
+                std::cout << "Debug: " << sigma << std::endl;
+            }
+
+            float_X const result = picongpu::particles2::atomicPhysics2::rateCalculation::collisionalRate(
                 energyElectron,
                 energyElectronBinWidth,
                 densityElectrons,
                 sigma);
+
+            if (result < 0._X)
+                printf("atomicPhysics ERROR: negative bound-bound collisional rate");
+
+            return result;
+
         }
 
         /** rate of spontaneous photon emission for a given bound-bound transition

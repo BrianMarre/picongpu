@@ -113,6 +113,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 = pmacc::lockstep::makeForEach<T_numberAtomicStates * T_numberBins, T_Worker>(worker);
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
 
+            std::cout << "bound-bound" << std::endl;
+
             forEachAtomicStateAndBin(
                 [&worker,
                  &rateCache,
@@ -144,6 +146,28 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitions; i++)
                     {
+
+                        // debug only
+                        if(atomicStateCollectionIndex == 28u)
+                        {
+                            std::cout << "transitionIndex " << offset + i << " excitation rate: ";
+                            printf("%.8e\n", picongpu::particles::atomicPhysics2::rateCalculation:: // rate
+                                BoundBoundTransitionRates<T_numberLevels>::
+                                    template rateCollisionalBoundBoundTransition<
+                                        T_AtomicStateDataDataBox,
+                                        T_BoundBoundTransitionDataBox,
+                                        T_upward>(
+                                        histogram.getBinEnergy(binIndex),
+                                        histogram.getBinWidth(binIndex),
+                                        // 1/(UNIT_LENGTH^3*eV)
+                                        histogram.getBinWeight0(binIndex) / volumeScalingFactor
+                                            / histogram.getBinWidth(binIndex),
+                                        // transitionCollectionIndex
+                                        offset + i,
+                                        atomicStateDataDataBox,
+                                        boundBoundTransitionDataBox));
+                        }
+
                         // collisional bound-bound de- or excitation
                         if constexpr(
                             // upward and electronic excitation channel is active
@@ -191,6 +215,22 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                         for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitions; i++)
                         {
+
+                        // debug only
+                        if(atomicStateCollectionIndex == 28u)
+                        {
+                            std::cout << "transitionIndex " << offset + i << " spont. rate: ";
+                            printf("%.8e\n", picongpu::particles::atomicPhysics2::rateCalculation
+                                ::BoundBoundTransitionRates<T_numberLevels>::
+                                    template rateSpontaneousRadiativeDeexcitation<
+                                        T_AtomicStateDataDataBox,
+                                        T_BoundBoundTransitionDataBox>(
+                                        // transitionCollectionIndex
+                                        offset + i,
+                                        atomicStateDataDataBox,
+                                        boundBoundTransitionDataBox));
+                        }
+
                             rateCache.add(
                                 atomicStateCollectionIndex,
                                 -picongpu::particles::atomicPhysics2::rateCalculation ::BoundBoundTransitionRates<

@@ -66,6 +66,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // we need the abs(rate)
                     float_X const rateCacheEntry = -rateCache.rate(atomicStateCollectionIndex);
 
+                    // debug only
+                    std::cout << "(" << atomicStateCollectionIndex << ") rateCache: ";
+                    printf("%.8e\n", rateCacheEntry);
+
                     float_X lossRateState; // UNIT_TIME
 
                     if(rateCacheEntry == 0._X)
