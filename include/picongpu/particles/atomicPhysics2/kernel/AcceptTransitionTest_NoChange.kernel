@@ -119,6 +119,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // unitless
                     float_X const probability = T_AcceptanceFunctor::probabilityNoChange(rate, timeStep);
 
+                    // debug only
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ACCEPTANCE_PROBABILITY_DEBUG_PRINT)
+                        printf("no-change %.8e\n", probability);
+
                     // try to accept
                     if(probability >= rngGenerator())
                     {

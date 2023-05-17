@@ -305,7 +305,8 @@ namespace picongpu::simulation::stage
                 } // end chooseTransition loop
 
                 // debug only
-                ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
+                    ForEachIonSpeciesDumpToConsole{}(mappingDesc);
 
                 // record changes electron spectrum
                 if constexpr(!picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)

@@ -112,6 +112,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // unitless
                     float_X const probability = T_AcceptanceFunctor::probabilityChange(rate, timeStep);
 
+                    // debug only
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ACCEPTANCE_PROBABILITY_DEBUG_PRINT)
+                        printf("spontaneous deexcitation %.8e\n ", probability);
+
                     // try to accept
                     if(probability >= rngGenerator())
                         ion[accepted_] = true;
