@@ -220,9 +220,14 @@ namespace picongpu::simulation::stage
 
             setTimeRemaining(); // = (Delta t)_PIC
 
+            uint16_t counterSubStep = 0u;
+
             // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
             {
+                // debug only
+                std::cout << "atomicPhysics Sub-Step: " << counterSubStep << std::endl;
+
                 // particle[accepted_] = false, in each macro ion
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
                 resetHistograms();
@@ -301,7 +306,12 @@ namespace picongpu::simulation::stage
                     ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 }
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
+
+                // debug only
+                std::cout << "start record changes" << std::endl;
                 ForEachIonSpeciesRecordChanges{}(mappingDesc);
+                // debug only
+                std::cout << "end record changes" << std::endl;
 
                 // timeRemaining -= timeStep
                 picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);
@@ -319,6 +329,7 @@ namespace picongpu::simulation::stage
                 {
                     break;
                 }
+                counterSubStep++;
             } // end atomicPhysics sub-stepping loop
         }
     };

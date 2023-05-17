@@ -73,9 +73,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             // check for acceptance
             forEachLocalIonBoxEntry(
-                [&allIonsAccepted](T_Worker const& worker, auto& particle)
+                [&allIonsAccepted](T_Worker const& worker, auto& ion)
                 {
-                    if(!particle[accepted_])
+                    if(!ion[accepted_])
                     {
                         // at least on macro ion not accepted
                         cupla::atomicExch(worker.getAcc(), &allIonsAccepted, static_cast<uint32_t>(false));

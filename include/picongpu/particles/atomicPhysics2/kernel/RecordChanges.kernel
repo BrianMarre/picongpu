@@ -102,6 +102,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
+                    // debug only
+                    debug::printAtomicPhysicsIonToConsole(ion);
+
                     uint8_t const processClass = ion[processClass_];
 
                     // not a T_ProcessClass transition
