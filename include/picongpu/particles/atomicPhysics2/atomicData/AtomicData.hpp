@@ -47,8 +47,12 @@
 // helper stuff for transition tuples
 #include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTuple.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
+
 // number of physical transitions for each transition data entry
 #include "picongpu/particles/atomicPhysics2/processClass/NumberPhysicalTransitions.hpp"
+
+// enum of groups of processClass's
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
 #include <cstdint>
 #include <fstream>
@@ -104,6 +108,9 @@
 
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
+    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+    using ProcClassGroup = picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup;
+
     /** gathering of all atomicPhyiscs input data
      *
      * @tparam T_DataBoxType dataBox type used for storage
@@ -159,14 +166,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             = ChargeStateOrgaDataBuffer<TypeNumber, TypeValue, T_ConfigNumber::atomicNumber>;
 
         using S_AtomicStateDataBuffer = AtomicStateDataBuffer<TypeNumber, TypeValue, T_ConfigNumber>;
+
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateStartIndexBlockDataBuffer_UpDown
-            = AtomicStateStartIndexBlockDataBuffer_UpDown<TypeCollectionIndex, TypeValue>;
+            = AtomicStateStartIndexBlockDataBuffer_UpDown<TypeCollectionIndex, TypeValue, T_ProcessClassGroup>;
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateStartIndexBlockDataBuffer_Down
-            = AtomicStateStartIndexBlockDataBuffer_Down<TypeCollectionIndex, TypeValue>;
+            = AtomicStateStartIndexBlockDataBuffer_Down<TypeCollectionIndex, TypeValue, T_ProcessClassGroup>;
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateNumberOfTransitionsDataBuffer_UpDown
-            = AtomicStateNumberOfTransitionsDataBuffer_UpDown<TypeNumber, TypeValue>;
+            = AtomicStateNumberOfTransitionsDataBuffer_UpDown<TypeNumber, TypeValue, T_ProcessClassGroup>;
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateNumberOfTransitionsDataBuffer_Down
-            = AtomicStateNumberOfTransitionsDataBuffer_Down<TypeNumber, TypeValue>;
+            = AtomicStateNumberOfTransitionsDataBuffer_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
         using S_BoundBoundTransitionDataBuffer = BoundBoundTransitionDataBuffer<
             TypeNumber,
@@ -191,13 +203,22 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_ChargeStateOrgaDataBox = ChargeStateOrgaDataBox<TypeNumber, TypeValue, T_ConfigNumber::atomicNumber>;
 
         using S_AtomicStateDataBox = AtomicStateDataBox<TypeNumber, TypeValue, T_ConfigNumber>;
+
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateStartIndexBlockDataBox_UpDown
-            = AtomicStateStartIndexBlockDataBox_UpDown<TypeNumber, TypeValue>;
-        using S_AtomicStateStartIndexBlockDataBox_Down = AtomicStateStartIndexBlockDataBox_Down<TypeNumber, TypeValue>;
+            = AtomicStateStartIndexBlockDataBox_UpDown<TypeNumber, TypeValue, T_ProcessClassGroup>;
+
+        template<ProcClassGroup T_ProcessClassGroup>
+        using S_AtomicStateStartIndexBlockDataBox_Down = AtomicStateStartIndexBlockDataBox_Down<TypeNumber, TypeValue,
+            T_ProcessClassGroup>;
+
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateNumberOfTransitionsDataBox_UpDown
-            = AtomicStateNumberOfTransitionsDataBox_UpDown<TypeNumber, TypeValue>;
+            = AtomicStateNumberOfTransitionsDataBox_UpDown<TypeNumber, TypeValue, T_ProcessClassGroup>;
+
+        template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateNumberOfTransitionsDataBox_Down
-            = AtomicStateNumberOfTransitionsDataBox_Down<TypeNumber, TypeValue>;
+            = AtomicStateNumberOfTransitionsDataBox_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
         using S_BoundBoundTransitionDataBox
             = BoundBoundTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, typename T_ConfigNumber::DataType>;
@@ -217,14 +238,17 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         // atomic property data
         std::unique_ptr<S_AtomicStateDataBuffer> atomicStateDataBuffer;
         // atomic orga data
-        std::unique_ptr<S_AtomicStateStartIndexBlockDataBuffer_UpDown> atomicStateStartIndexBlockDataBuffer_BoundBound;
-        std::unique_ptr<S_AtomicStateStartIndexBlockDataBuffer_UpDown> atomicStateStartIndexBlockDataBuffer_BoundFree;
-        std::unique_ptr<S_AtomicStateStartIndexBlockDataBuffer_Down> atomicStateStartIndexBlockDataBuffer_Autonomous;
-        std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_UpDown>
+        std::unique_ptr<S_AtomicStateStartIndexBlockDataBuffer_UpDown<ProcClassGroup::boundBoundBased>>
+            atomicStateStartIndexBlockDataBuffer_BoundBound;
+        std::unique_ptr<S_AtomicStateStartIndexBlockDataBuffer_UpDown<ProcClassGroup::boundFreeBased>>
+            atomicStateStartIndexBlockDataBuffer_BoundFree;
+        std::unique_ptr<S_AtomicStateStartIndexBlockDataBuffer_Down<ProcClassGroup::autonomousBased>>
+            atomicStateStartIndexBlockDataBuffer_Autonomous;
+        std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_UpDown<ProcClassGroup::boundBoundBased>>
             atomicStateNumberOfTransitionsDataBuffer_BoundBound;
-        std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_UpDown>
+        std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_UpDown<ProcClassGroup::boundFreeBased>>
             atomicStateNumberOfTransitionsDataBuffer_BoundFree;
-        std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_Down>
+        std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_Down<ProcClassGroup::autonomousBased>>
             atomicStateNumberOfTransitionsDataBuffer_Autonomous;
 
         // transition data, normal, sorted by lower state
@@ -727,17 +751,17 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateDataBuffer.reset(new S_AtomicStateDataBuffer(m_numberAtomicStates));
             // atomic orga data
             atomicStateStartIndexBlockDataBuffer_BoundBound.reset(
-                new S_AtomicStateStartIndexBlockDataBuffer_UpDown(m_numberAtomicStates));
+                new S_AtomicStateStartIndexBlockDataBuffer_UpDown<ProcClassGroup::boundBoundBased>(m_numberAtomicStates));
             atomicStateStartIndexBlockDataBuffer_BoundFree.reset(
-                new S_AtomicStateStartIndexBlockDataBuffer_UpDown(m_numberAtomicStates));
+                new S_AtomicStateStartIndexBlockDataBuffer_UpDown<ProcClassGroup::boundFreeBased>(m_numberAtomicStates));
             atomicStateStartIndexBlockDataBuffer_Autonomous.reset(
-                new S_AtomicStateStartIndexBlockDataBuffer_Down(m_numberAtomicStates));
+                new S_AtomicStateStartIndexBlockDataBuffer_Down<ProcClassGroup::autonomousBased>(m_numberAtomicStates));
             atomicStateNumberOfTransitionsDataBuffer_BoundBound.reset(
-                new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown(m_numberAtomicStates));
+                new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown<ProcClassGroup::boundBoundBased>(m_numberAtomicStates));
             atomicStateNumberOfTransitionsDataBuffer_BoundFree.reset(
-                new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown(m_numberAtomicStates));
+                new S_AtomicStateNumberOfTransitionsDataBuffer_UpDown<ProcClassGroup::boundFreeBased>(m_numberAtomicStates));
             atomicStateNumberOfTransitionsDataBuffer_Autonomous.reset(
-                new S_AtomicStateNumberOfTransitionsDataBuffer_Down(m_numberAtomicStates));
+                new S_AtomicStateNumberOfTransitionsDataBuffer_Down<ProcClassGroup::autonomousBased>(m_numberAtomicStates));
 
             // transition data
             boundBoundTransitionDataBuffer.reset(new S_BoundBoundTransitionDataBuffer(m_numberBoundBoundTransitions));
@@ -860,7 +884,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         /** fill the upward atomic state orga buffers for a transition groups
          *
          * i.e. number of transitions and start index, up( and down) for each atomic state
-         *  for a transition group(bound-bound, bound-free)
+         *  for a transition group(either bound-bound or bound-free)
+         *
+         * @tparam T_Tuple transition tuple type
+         * @tparam T_NumberHostBox host data box of number of transitions buffer to fill transitions into
+         * @tparam T_StartIndexHostBox host data box of start index block of transitions buffer to fill transitions into
          *
          * @attention assumes that transitionList is sorted by lower state block wise
          * @attention changes have to synced to device separately
@@ -879,11 +907,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *  open a new block, by setting the first support point to the second support point
          *  and continue as before until we reach the end of the transition list.
          */
-        template<typename T_Tuple>
+        template<typename T_Tuple, ProcClassGroup T_ProcessClassGroup>
         ALPAKA_FN_HOST void fill_UpTransition_OrgaData(
             std::list<T_Tuple> transitionList,
-            S_AtomicStateNumberOfTransitionsDataBox_UpDown numberHostBox,
-            S_AtomicStateStartIndexBlockDataBox_UpDown startIndexHostBox)
+            S_AtomicStateNumberOfTransitionsDataBox_UpDown<T_ProcessClassGroup> numberHostBox,
+            S_AtomicStateStartIndexBlockDataBox_UpDown<T_ProcessClassGroup> startIndexHostBox)
         {
             typename std::list<T_Tuple>::iterator iter = transitionList.begin();
 
@@ -977,22 +1005,30 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         /** fill the downward atomic state orga buffers for a transition groups
          *
          * i.e. number of transitions and start index, up( and down) of each atomic state
-         *  for a transition group(bound-bound, bound-free, autonomous)
+         *  for a transition group(either bound-bound, bound-free or autonomous)
          *
-         * @attention assumes that transitionList is sorted by upper state block wise
-         * @attention changes have to synced to device separately
+         * @tparam T_Tuple transition tuple type
+         * @tparam T_NumberHostBox host data box of number of transitions buffer to fill transitions into
+         * @tparam T_StartIndexHostBox host data box of start index block of transitions buffer to fill transitions into
+         *
+         * @attention assumes that transitionList is sorted by primarily upper state block wise and secondary by lower state
+         * @attention changes have to be synced to device separately
          * @attention startIndexBlock of a state is initialized to 0 if no transition in the
          *  down direction exist in the transition list
          *
          * @details see fill_UpTransition_OrgaData but instead of ordering blocks by lower
          *  state we order by upper state
          */
-        template<typename T_Tuple, typename T_NumberHostBox, typename T_StartIndexHostBox>
+        template<typename T_Tuple, typename T_NumberHostBox, typename T_StartIndexHostBox, ProcClassGroup T_ProcessClassGroup>
         ALPAKA_FN_HOST void fill_DownTransition_OrgaData(
             std::list<T_Tuple> transitionList,
             T_NumberHostBox numberHostBox,
             T_StartIndexHostBox startIndexHostBox)
         {
+            // check consistency of intended processClass group and given boxes
+            PMACC_CASSERT(static_cast<uint8_t>(T_NumberHostBox::processClassGroup) == static_cast<uint8_t>(T_ProcessClassGroup));
+            PMACC_CASSERT(static_cast<uint8_t>(T_StartIndexHostBox::processClassGroup) == static_cast<uint8_t>(T_ProcessClassGroup));
+
             typename std::list<T_Tuple>::iterator iter = transitionList.begin();
 
             S_AtomicStateDataBox atomicStateDataHostBox = atomicStateDataBuffer->getHostDataBox();
@@ -1102,11 +1138,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             S_TransitionSelectionDataBox transitionSelectionDataHostBox
                 = transitionSelectionDataBuffer->getHostDataBox();
 
-            S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundBound
+            S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundBoundBased> hostBoxNumberBoundBound
                 = atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
-            S_AtomicStateNumberOfTransitionsDataBox_UpDown hostBoxNumberBoundFree
+            S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundFreeBased> hostBoxNumberBoundFree
                 = atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox();
-            S_AtomicStateNumberOfTransitionsDataBox_Down hostBoxNumberAutonomous
+            S_AtomicStateNumberOfTransitionsDataBox_Down<ProcClassGroup::autonomousBased> hostBoxNumberAutonomous
                 = atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();
 
             using S_NumberPhysicalTransitions
@@ -1240,19 +1276,21 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             fillChargeStateOrgaData(atomicStates);
 
             //          atomic states, up direction
-            fill_UpTransition_OrgaData<S_BoundBoundTransitionTuple>(
+            fill_UpTransition_OrgaData<S_BoundBoundTransitionTuple, ProcClassGroup::boundBoundBased>(
                 boundBoundTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox());
-            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice(),
-                atomicStateStartIndexBlockDataBuffer_BoundBound->hostToDevice();
+            //              sync to device
+            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_BoundBound->hostToDevice();
 
-            fill_UpTransition_OrgaData<S_BoundFreeTransitionTuple>(
+            fill_UpTransition_OrgaData<S_BoundFreeTransitionTuple, ProcClassGroup::boundFreeBased>(
                 boundFreeTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
-            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice(),
-                atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
+            //              sync to device
+            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
+            atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
 
             // autonomous transitions are always only downward
 
@@ -1282,36 +1320,42 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             // fill orga data buffers 2.)
             //      atomic states, down direction
+            //      bound-bound
             fill_DownTransition_OrgaData<
-                S_BoundBoundTransitionTuple,
-                S_AtomicStateNumberOfTransitionsDataBox_UpDown,
-                S_AtomicStateStartIndexBlockDataBox_UpDown>(
+                    S_BoundBoundTransitionTuple,
+                    S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundBoundBased>,
+                    S_AtomicStateStartIndexBlockDataBox_UpDown<ProcClassGroup::boundBoundBased>,
+                    ProcClassGroup::boundBoundBased>(
                 boundBoundTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox());
-
+            //          sync to device
             atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
             atomicStateStartIndexBlockDataBuffer_BoundBound->hostToDevice();
 
+            //      bound-free
             fill_DownTransition_OrgaData<
-                S_BoundFreeTransitionTuple,
-                S_AtomicStateNumberOfTransitionsDataBox_UpDown,
-                S_AtomicStateStartIndexBlockDataBox_UpDown>(
+                    S_BoundFreeTransitionTuple,
+                    S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundFreeBased>,
+                    S_AtomicStateStartIndexBlockDataBox_UpDown<ProcClassGroup::boundFreeBased>,
+                    ProcClassGroup::boundFreeBased>(
                 boundFreeTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
-
+            //          sync to device
             atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
             atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
 
+            //      autonomous
             fill_DownTransition_OrgaData<
-                S_AutonomousTransitionTuple,
-                S_AtomicStateNumberOfTransitionsDataBox_Down,
-                S_AtomicStateStartIndexBlockDataBox_Down>(
+                    S_AutonomousTransitionTuple,
+                    S_AtomicStateNumberOfTransitionsDataBox_Down<ProcClassGroup::autonomousBased>,
+                    S_AtomicStateStartIndexBlockDataBox_Down<ProcClassGroup::autonomousBased>,
+                    ProcClassGroup::autonomousBased>(
                 autonomousTransitions,
                 atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox(),
                 atomicStateStartIndexBlockDataBuffer_Autonomous->getHostDataBox());
-
+            //          sync to device
             atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
             atomicStateStartIndexBlockDataBuffer_Autonomous->hostToDevice();
 
@@ -1324,7 +1368,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 T_autonomousIonization,
                 T_fieldIonization>();
 
-            // just to be sure
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST)
                 this->hostToDevice();
         }
@@ -1423,7 +1466,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         //      start index orga data
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_AtomicStateStartIndexBlockDataBox_UpDown getBoundBoundStartIndexBlockDataBox()
+        S_AtomicStateStartIndexBlockDataBox_UpDown<ProcClassGroup::boundBoundBased> getBoundBoundStartIndexBlockDataBox()
         {
             if constexpr(hostData)
                 return atomicStateStartIndexBlockDataBuffer_BoundBound->getHostDataBox();
@@ -1433,7 +1476,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_AtomicStateStartIndexBlockDataBox_UpDown getBoundFreeStartIndexBlockDataBox()
+        S_AtomicStateStartIndexBlockDataBox_UpDown<ProcClassGroup::boundFreeBased> getBoundFreeStartIndexBlockDataBox()
         {
             if constexpr(hostData)
                 return atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox();
@@ -1443,7 +1486,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_AtomicStateStartIndexBlockDataBox_Down getAutonomousStartIndexBlockDataBox()
+        S_AtomicStateStartIndexBlockDataBox_Down<ProcClassGroup::autonomousBased> getAutonomousStartIndexBlockDataBox()
         {
             if constexpr(hostData)
                 return atomicStateStartIndexBlockDataBuffer_Autonomous->getHostDataBox();
@@ -1454,7 +1497,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         //      number transitions orga data
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundBoundNumberTransitionsDataBox()
+        S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundBoundBased> getBoundBoundNumberTransitionsDataBox()
         {
             if constexpr(hostData)
                 return atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
@@ -1464,7 +1507,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_AtomicStateNumberOfTransitionsDataBox_UpDown getBoundFreeNumberTransitionsDataBox()
+        S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundFreeBased> getBoundFreeNumberTransitionsDataBox()
         {
             if constexpr(hostData)
                 return atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox();
@@ -1474,7 +1517,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_AtomicStateNumberOfTransitionsDataBox_Down getAutonomousNumberTransitionsDataBox()
+        S_AtomicStateNumberOfTransitionsDataBox_Down<ProcClassGroup::autonomousBased> getAutonomousNumberTransitionsDataBox()
         {
             if constexpr(hostData)
                 return atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();

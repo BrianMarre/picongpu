@@ -25,6 +25,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -53,12 +55,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      The configNumber of a given state is always the same, its collection index depends
      *      on input file,it should therefore only be used internally!
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType>
     class AutonomousTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBox = TransitionDataBox<T_Number, T_Value, T_CollectionIndex>;
         using S_AutonomousTransitionTuple = AutonomousTransitionTuple<T_ConfigNumberDataType>;
+        static constexpr auto processClassGroup
+            = particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased;
 
     private:
         typename S_TransitionDataBox::S_DataBox::BoxValue m_boxTransitionRate; // unit: 1/UNIT_TIME
@@ -153,12 +161,20 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_Value dataType used for value storage, typically float_X
      * @tparam T_CollectionIndex data type used for configNumber storage, typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage, typically uint64_t
+     * @tparam T_ProcessClassGroup processClassGroup current data corresponds to
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType>
     class AutonomousTransitionDataBuffer : public TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBuffer = TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>;
+        using DataBoxType = AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>;
+        static constexpr auto processClassGroup
+            = particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferTransitionRate;
@@ -179,20 +195,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 new typename S_TransitionDataBuffer::BufferValue(layoutAutonomousTransitions, false));
         }
 
-        HINLINE AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>
-        getHostDataBox()
+        HINLINE DataBoxType getHostDataBox()
         {
-            return AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>(
+            return DataBoxType(
                 bufferTransitionRate->getHostBuffer().getDataBox(),
                 this->bufferLowerStateCollectionIndex->getHostBuffer().getDataBox(),
                 this->bufferUpperStateCollectionIndex->getHostBuffer().getDataBox(),
                 this->m_numberTransitions);
         }
 
-        HINLINE AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>
-        getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
-            return AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>(
+            return DataBoxType(
                 bufferTransitionRate->getDeviceBuffer().getDataBox(),
                 this->bufferLowerStateCollectionIndex->getDeviceBuffer().getDataBox(),
                 this->bufferUpperStateCollectionIndex->getDeviceBuffer().getDataBox(),

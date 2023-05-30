@@ -24,6 +24,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -43,19 +45,25 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
      *      typically uint64_t
-     *
+     * 
      * @attention ConfigNumber specifies the number of a state as defined by the configNumber
      *      class, while index always refers to a collection index.
      *      The configNumber of a given state is always the same, its collection index depends
      *      on input file,it should therefore only be used internally!
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType>
     class BoundBoundTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBox = TransitionDataBox<T_Number, T_Value, T_CollectionIndex>;
         using S_BoundBoundTransitionTuple
             = BoundBoundTransitionTuple<typename S_TransitionDataBox::TypeValue, T_ConfigNumberDataType>;
+        static constexpr auto processClassGroup
+            = particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased;
 
     private:
         //! unitless
@@ -314,11 +322,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_CollectionIndex used for index storage, typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage, typically uint64_t
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType>
     class BoundBoundTransitionDataBuffer : public TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBuffer = TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>;
+        using DataBoxType = BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>;
+        static constexpr auto processClassGroup
+            = particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCollisionalOscillatorStrength;
@@ -352,10 +367,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             bufferCxin5.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundBoundTransitions, false));
         }
 
-        HINLINE BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>
-        getHostDataBox()
+        HINLINE DataBoxType getHostDataBox()
         {
-            return BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>(
+            return DataBoxType(
                 bufferCollisionalOscillatorStrength->getHostBuffer().getDataBox(),
                 bufferAbsorptionOscillatorStrength->getHostBuffer().getDataBox(),
                 bufferCxin1->getHostBuffer().getDataBox(),
@@ -368,10 +382,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 this->m_numberTransitions);
         }
 
-        HINLINE BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>
-        getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
-            return BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>(
+            return DataBoxType(
                 bufferCollisionalOscillatorStrength->getDeviceBuffer().getDataBox(),
                 bufferAbsorptionOscillatorStrength->getDeviceBuffer().getDataBox(),
                 bufferCxin1->getDeviceBuffer().getDataBox(),

@@ -86,7 +86,7 @@ namespace picongpu::particles::atomicPhysics2::debug
         uint32_t numberAutonomousTransitions = atomicData->getNumberAutonomousTransitions();
 
         // basic numbers
-        std::cout << "Basic Statics Numbers:" << std::endl;
+        std::cout << "Basic Statistics:" << std::endl;
         std::cout << "AtomicNumber: " << static_cast<uint16_t>(T_AtomicData::ConfigNumber::atomicNumber) << "(#s "
                   << numberAtomicStates << ", #b " << numberBoundBoundTransitions << ", #f "
                   << numberBoundFreeTransitions << ", #a " << numberAutonomousTransitions << ")" << std::endl;
@@ -103,6 +103,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                       << chargeStateDataBox.screenedCharge(i) << " ) [ " << chargeStateOrgaBox.numberAtomicStates(i)
                       << ", " << chargeStateOrgaBox.startIndexBlockAtomicStates(i) << " ]" << std::endl;
         }
+
         //      completely ionized state
         std::cout << "\t" << static_cast<uint16_t>(T_AtomicData::ConfigNumber::atomicNumber) << ":( "
                   << "na"
@@ -189,7 +190,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             // bound-free transitions
             auto boundFreeTransitionDataBox = atomicData->template getBoundFreeTransitionDataBox<true>();
             std::cout << "bound-free transition" << std::endl;
-            std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
+            std::cout << "index (low, up), Coeff( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
             {
                 std::cout << i << "(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
@@ -205,7 +206,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             auto autonomousTransitionDataBox = atomicData->template getAutonomousTransitionDataBox<true>();
 
             std::cout << "autonomous transitions" << std::endl;
-            std::cout << "index :(low, up), rate" << std::endl;
+            std::cout << "index :(low, up), rate [1/Dt_PIC]" << std::endl;
 
             for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
             {
@@ -213,6 +214,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                           << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
                           << autonomousTransitionDataBox.rate(i) << std::endl;
             }
+            std::cout << std::endl;
         }
 
         // inverse transitionData
@@ -261,9 +263,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                           << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
                           << autonomousTransitionDataBox.rate(i) << std::endl;
             }
-
-            return atomicData;
+            std::cout << std::endl;
         }
+        return atomicData;
     }
 
     //! debug only, write content of rate cache to console, @attention serial and cpu build only

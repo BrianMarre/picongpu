@@ -24,6 +24,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
@@ -48,19 +50,26 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
      *      typically uint64_t
+     * @tparam T_ProcessClassGroup processClassGroup current data corresponds to
      *
      * @attention ConfigNumber specifies the number of a state as defined by the configNumber
      *      class, while index always refers to a collection index.
      *      The configNumber of a given state is always the same, its collection index depends
      *      on input file,it should therefore only be used internally!
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType>
     class BoundFreeTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBox = TransitionDataBox<T_Number, T_Value, T_CollectionIndex>;
         using S_BoundFreeTransitionTuple
             = BoundFreeTransitionTuple<typename S_TransitionDataBox::TypeValue, T_ConfigNumberDataType>;
+        static constexpr auto processClassGroup
+            = particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased;
 
     private:
         //! cross section fit parameter 1, unitless
@@ -338,12 +347,20 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_Value dataType used for value storage, typically float_X
      * @tparam T_CollectionIndex used for index storage, typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage, typically uint64_t
+     * @tparam T_ProcessClassGroup processClassGroup current data corresponds to
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType>
     class BoundFreeTransitionDataBuffer : public TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBuffer = TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>;
+        using DataBoxType = BoundFreeTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>;
+        static constexpr auto processClassGroup
+            = particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin1;
@@ -377,10 +394,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             bufferCxin8.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
         }
 
-        HINLINE BoundFreeTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>
-        getHostDataBox()
+        HINLINE DataBoxType getHostDataBox()
         {
-            return BoundFreeTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>(
+            return DataBoxType(
                 bufferCxin1->getHostBuffer().getDataBox(),
                 bufferCxin2->getHostBuffer().getDataBox(),
                 bufferCxin3->getHostBuffer().getDataBox(),
@@ -394,10 +410,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 this->m_numberTransitions);
         }
 
-        HINLINE BoundFreeTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>
-        getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
-            return BoundFreeTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>(
+            return DataBoxType(
                 bufferCxin1->getDeviceBuffer().getDataBox(),
                 bufferCxin2->getDeviceBuffer().getDataBox(),
                 bufferCxin3->getDeviceBuffer().getDataBox(),

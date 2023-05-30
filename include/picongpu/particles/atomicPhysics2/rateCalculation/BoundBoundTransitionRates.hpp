@@ -112,15 +112,17 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             float_X g;
 
             if ((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
+            {
                 // use mewe approximation if all gaunt coefficients are zero
                 g = 0.15 + 0.28 * math::log(U);
+            }
             else
+            {
                 // chuung approximation
                 g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
+            }
 
-            // debug only
-            if 
-
+            // check for forbidden transition
             if(U > 1.0_X)
                 return g; // unitless
             else
@@ -244,34 +246,37 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 return 0._X;
             }
 
+            // eV
+            float_X U;
+            // unitless
+            float_X ratio;
+
             if constexpr(T_excitation)
             {
                 // excitation
-                return crossSection_butGaunt
-                    * gauntFactor(
-                           energyElectron / energyDifference,
-                           transitionCollectionIndex,
-                           boundBoundTransitionDataBox); // [1e6b]
+                ratio = 1._X;
+
+                U = energyElectron / energyDifference;
             }
             else
             {
                 // deexcitation
-
                 //      different multiplicityConfigNumber for deexcitation
+                // unitless
                 float_X const ratio = static_cast<float_X>(
                     multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(lowerStateClctIdx))
                     / multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(upperStateClctIdx)));
-                // unitless
 
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
                     debugChecksMultiplicity(ratio, lowerStateClctIdx, upperStateClctIdx, atomicStateDataBox);
 
-                return ratio * crossSection_butGaunt
-                    * gauntFactor(
-                           (energyElectron + energyDifference) / energyDifference,
-                           transitionCollectionIndex,
-                           boundBoundTransitionDataBox); // [1e6b]
+                U = (energyElectron + energyDifference) / energyDifference;
             }
+
+            return crossSection_butGaunt * ratio * gauntFactor(
+                U,
+                transitionCollectionIndex,
+                boundBoundTransitionDataBox); // [1e6b]
         }
 
         /** rate for collisional bound-bound transition of ion with free electron bin
@@ -400,7 +405,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             // unit: 1/UNIT_TIME
         }
 
-        /// @todo radiativeBoundBoundCrossSection
-        /// @todo rateRadiativeBoundBoundTransition
+        /// @todo radiativeBoundBoundCrossSection, Brian Marre, 2022
+        /// @todo rateRadiativeBoundBoundTransition, Brian Marre, 2022
     };
 } // namespace picongpu::particles::atomicPhysics2::rateCalculation

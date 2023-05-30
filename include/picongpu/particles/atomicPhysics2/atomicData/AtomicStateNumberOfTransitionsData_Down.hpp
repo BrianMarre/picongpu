@@ -22,6 +22,8 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
 
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+
 #include <cstdint>
 #include <memory>
 
@@ -36,16 +38,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *
      * for use on device.
      *
-     * @tparam T_DataBoxType dataBox type used for storage
      * @tparam T_Number dataType used for number storage, typically uint32_t
      * @tparam T_Value dataType used for value storage, typically float_X
+     * @tparam T_ProcessClassGroup processClassGroup current data corresponds to
      */
-    template<typename T_Number, typename T_Value>
+    template<
+        typename T_Number,
+        typename T_Value,
+        particles::atomicPhysics2::processClass::ProcessClassGroup T_ProcessClassGroup>
     class AtomicStateNumberOfTransitionsDataBox_Down : public DataBox<T_Number, T_Value>
     {
     public:
-        using dataBoxType = AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value>;
         using S_DataBox = DataBox<T_Number, T_Value>;
+        static constexpr auto processClassGroup = T_ProcessClassGroup;
 
     private:
         /** start collection index of the block of autonomous transitions
@@ -115,12 +120,17 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *
      * @tparam T_Number dataType used for number storage, typically uint32_t
      * @tparam T_Value dataType used for value storage, typically float_X
+     * @tparam T_ProcessClassGroup processClassGroup current data corresponds to
      */
-    template<typename T_Number, typename T_Value>
+    template<
+        typename T_Number,
+        typename T_Value,
+        particles::atomicPhysics2::processClass::ProcessClassGroup T_ProcessClassGroup>
     class AtomicStateNumberOfTransitionsDataBuffer_Down : public DataBuffer<T_Number, T_Value>
     {
     public:
         using S_DataBuffer = DataBuffer<T_Number, T_Value>;
+        using DataBoxType = AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value, T_ProcessClassGroup>;
 
     private:
         std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberOfTransitionsBlockTransitionsDown;
@@ -138,16 +148,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             bufferOffset.reset(new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
         }
 
-        HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value> getHostDataBox()
+        HINLINE DataBoxType getHostDataBox()
         {
-            return AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value>(
+            return DataBoxType(
                 bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox(),
                 bufferOffset->getHostBuffer().getDataBox());
         }
 
-        HINLINE AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value> getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
-            return AtomicStateNumberOfTransitionsDataBox_Down<T_Number, T_Value>(
+            return DataBoxType(
                 bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox(),
                 bufferOffset->getHostBuffer().getDataBox());
         }

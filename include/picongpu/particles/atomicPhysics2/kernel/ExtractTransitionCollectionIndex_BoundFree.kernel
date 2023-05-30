@@ -22,6 +22,7 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessIDConversion.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
@@ -123,6 +124,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_AtomicStateBoundFreeNumberTransitionsDataBox const numberTransitionsBox,
             T_AtomicStateBoundFreeStartIndexBlockDataBox const startIndexBox) const
         {
+            // check that correct databoxes are given
+            PMACC_CASSERT(
+                static_cast<uint8_t>(T_AtomicStateBoundFreeNumberTransitionsDataBox::processClassGroup)
+                == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+            PMACC_CASSERT(
+                static_cast<uint8_t>(T_AtomicStateBoundFreeStartIndexBlockDataBox::processClassGroup)
+                == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
 
