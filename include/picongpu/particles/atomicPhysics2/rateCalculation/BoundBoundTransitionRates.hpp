@@ -316,11 +316,6 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 atomicStateDataBox,
                 boundBoundTransitionDataBox); // [1e6*b]
 
-            if (transitionCollectionIndex == 123u)
-            {
-                std::cout << "Debug: " << sigma << std::endl;
-            }
-
             float_X const result = picongpu::particles2::atomicPhysics2::rateCalculation::collisionalRate(
                 energyElectron,
                 energyElectronBinWidth,
@@ -328,7 +323,15 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 sigma);
 
             if (result < 0._X)
-                printf("atomicPhysics ERROR: negative bound-bound collisional rate");
+            {
+                printf("atomicPhysics ERROR: negative bound-bound collisional rate\n"
+                    "transition: %u\n", transitionCollectionIndex);
+
+                // debug only
+                std::cout << "sigma: " << sigma << " energyElectron: " << energyElectron
+                    << " energyElectronBinWidth: " << energyElectronBinWidth << " densityElectrons: " << densityElectrons
+                    << std::endl;
+            }
 
             return result;
 
@@ -354,55 +357,61 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             using S_ConfigNumber = typename T_AtomicStateDataBox::ConfigNumber;
 
             // short hands for constants in SI
-            constexpr float_64 c_SI = picongpu::SI::SPEED_OF_LIGHT_SI; // unit: m/s, SI
-            constexpr float_64 m_e_SI = picongpu::SI::ELECTRON_MASS_SI; // unit: kg, SI
-            constexpr float_64 e_SI = picongpu::SI::ELECTRON_CHARGE_SI; // unit: C, SI
+            // m/s
+            constexpr float_64 c_SI = picongpu::SI::SPEED_OF_LIGHT_SI;
+            // kg
+            constexpr float_64 m_e_SI = picongpu::SI::ELECTRON_MASS_SI;
+            // C
+            constexpr float_64 e_SI = picongpu::SI::ELECTRON_CHARGE_SI;
 
-            constexpr float_64 mue0_SI = picongpu::SI::MUE0_SI; // unit: C/(Vm), SI
-            constexpr float_64 pi = picongpu::PI; // unit: unitless
-            constexpr float_64 hbar_SI = picongpu::SI::HBAR_SI; // unit: Js, SI
+            // C/(Vm)
+            constexpr float_64 mue0_SI = picongpu::SI::MUE0_SI;
+            // unitless
+            constexpr float_64 pi = picongpu::PI;
+            // Js
+            constexpr float_64 hbar_SI = picongpu::SI::HBAR_SI;
 
             uint32_t const upperStateClctIdx
                 = boundBoundTransitionDataBox.upperStateCollectionIndex(transitionCollectionIndex);
             uint32_t const lowerStateClctIdx
                 = boundBoundTransitionDataBox.lowerStateCollectionIndex(transitionCollectionIndex);
 
+            // eV
             float_X deltaEnergyTransition = static_cast<float_X>(
                 atomicStateDataBox.energy(upperStateClctIdx) - atomicStateDataBox.energy(lowerStateClctIdx));
-            // [eV]
 
+            // J/(eV) / (Js) * s/UNIT_TIME = J/J * s/s * 1/(eV * UNIT_TIME)
             constexpr float_X scalingConstantPhotonFrequency
                 = static_cast<float_X>(picongpu::UNITCONV_eV_to_Joule / (2 * pi * hbar_SI) * picongpu::UNIT_TIME);
-            // J/(eV) / (Js) * s/UNIT_TIME = J/J * s/s * 1/(eV * UNIT_TIME);
 
             /// @attention actual SI frequency, NOT angular frequency
+            // 1/UNIT_TIME
             float_X frequencyPhoton = deltaEnergyTransition * scalingConstantPhotonFrequency;
-            // unit: 1/UNIT_TIME
 
+            // unitless
             float_X ratio = static_cast<float_X>(
                 multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(lowerStateClctIdx))
                 / multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(upperStateClctIdx)));
-            // unit: unitless
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
                 debugChecksMultiplicity(ratio, lowerStateClctIdx, upperStateClctIdx, atomicStateDataBox);
 
             // (2 * pi * e^2)/(eps_0 * m_e * c^3 * s/UNIT_TIME) = (2 * pi * e^2 * mue_0) / (m_e * c * s/UNIT_TIME)
-            constexpr float_X scalingConstantRate
-                = static_cast<float_X>((2. * pi * e_SI * e_SI * mue0_SI) / (m_e_SI * c_SI * picongpu::UNIT_TIME));
             /* (N/A^2 * (As)^2) / (kg * m/s * s/UNIT_TIME) = (A^2/A^2 *s^2 * N * UNIT_TIME) / (kg * m * s/s)
              * = (s^2 * kg*m/(s^2) * UNIT_TIME) / ( kg * m) = s^2/(s^2) (kg*m)/(kg*m) * UNIT_TIME = UNIT_TIME
              */
-            // unit: UNIT_TIME
+            // UNIT_TIME
+            constexpr float_X scalingConstantRate
+                = static_cast<float_X>((2. * pi * e_SI * e_SI * mue0_SI) / (m_e_SI * c_SI * picongpu::UNIT_TIME));
 
             /* [(2 * pi * e^2)/(eps_0 * m_e * c^3)] * nu^2 * g_new/g_old * faax
              * taken from https://en.wikipedia.org/wiki/Einstein_coefficients
              * s * (1/s)^2 = 1/s
              */
+            // UNIT_TIME * 1/(UNIT_TIME^2) * unitless * unitless = 1/UNIT_TIME
+            // 1/UNIT_TIME
             return scalingConstantRate * frequencyPhoton * frequencyPhoton * ratio
                 * boundBoundTransitionDataBox.absorptionOscillatorStrength(transitionCollectionIndex);
-            // UNIT_TIME * 1/(UNIT_TIME^2) * unitless * unitless = 1/UNIT_TIME
-            // unit: 1/UNIT_TIME
         }
 
         /// @todo radiativeBoundBoundCrossSection, Brian Marre, 2022
