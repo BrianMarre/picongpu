@@ -71,9 +71,6 @@
 
 #include <cstdint>
 
-// debug only
-#include <iostream>
-
 namespace picongpu::particles::atomicPhysics2::stateRepresentation
 {
     /** Implements the actual storage of the super configurations by index

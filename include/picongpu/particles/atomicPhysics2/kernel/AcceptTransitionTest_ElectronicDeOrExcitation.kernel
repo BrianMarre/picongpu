@@ -162,7 +162,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // unitless
                     float_X const probability = T_AcceptanceFunctor::probabilityChange(rate, timeStep);
 
-                    // debug only
                     if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ACCEPTANCE_PROBABILITY_DEBUG_PRINT)
                     {
                         if constexpr (T_excitation)

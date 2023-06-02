@@ -298,7 +298,6 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
         template<typename T_Worker>
         HDINLINE void addDeltaEnergy(T_Worker const& worker, uint32_t const binIndex, float_X const deltaEnergy)
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_HISTOGRAM_DEBUG)
                 if(!debugCheckBinIndexInRange(binIndex))
                     return;

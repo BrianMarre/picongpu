@@ -30,9 +30,6 @@
 
 #include <cstdint>
 
-// debug only
-#include <iostream>
-
 /** @file implements calculation of rates for bound-free atomic physics transitions
  *
  * this includes ionization due to:

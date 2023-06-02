@@ -94,7 +94,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HINLINE void store(uint32_t const collectionIndex, T_Number numberAtomicStates, T_Number startIndex)
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(collectionIndex > static_cast<uint32_t>(T_atomicNumber))
                 {
@@ -109,7 +108,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         //! @attention NEVER call with chargeState > T_atomicNumber, otherwise invalid memory access
         HDINLINE T_Number numberAtomicStates(uint8_t chargeState) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(chargeState > static_cast<uint32_t>(T_atomicNumber))
                 {
@@ -123,7 +121,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         //! @attention NEVER call with chargeState == T_atomicNumber, otherwise invalid memory access
         HDINLINE T_Number startIndexBlockAtomicStates(uint8_t chargeState) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(chargeState > static_cast<uint32_t>(T_atomicNumber))
                 {

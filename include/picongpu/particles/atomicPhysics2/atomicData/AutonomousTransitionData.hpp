@@ -114,7 +114,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             S_AutonomousTransitionTuple& tuple,
             T_StateHostBox const stateHostBox)
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                 {
@@ -143,7 +142,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue rate(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                 {

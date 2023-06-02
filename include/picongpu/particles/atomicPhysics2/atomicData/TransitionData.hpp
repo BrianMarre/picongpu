@@ -165,7 +165,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE Idx lowerStateCollectionIndex(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberTransitions)
                 {

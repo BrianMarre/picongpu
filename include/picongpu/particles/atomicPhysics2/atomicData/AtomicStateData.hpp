@@ -107,7 +107,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
@@ -196,7 +195,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE Idx configNumber(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
@@ -219,7 +217,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_DataBox::TypeValue energy(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= m_numberAtomicStates)
                 {

@@ -120,8 +120,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto forEachAtomicStateAndBin
                 = pmacc::lockstep::makeForEach<T_numberAtomicStates * T_numberBins, T_Worker>(worker);
 
-            std::cout << "bound-free" << std::endl;
-
             forEachAtomicStateAndBin(
                 [&worker,
                  &rateCache,
@@ -146,30 +144,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsUp; i++)
                     {
-
-                        // debug only
-                        if(atomicStateCollectionIndex == 28u)
-                        {
-                            std::cout << "28: transitionIndex " << offset + i << " rate: ";
-                            printf( "%.8e\n", picongpu::particles::atomicPhysics2::rateCalculation
-                                ::BoundFreeTransitionRates<
-                                    T_numberLevels>::
-                                    template rateCollisionalIonizationTransition<
-                                        T_ChargeStateDataDataBox,
-                                        T_AtomicStateDataDataBox,
-                                        T_BoundFreeTransitionDataBox>(
-                                        histogram.getBinEnergy(binIndex),
-                                        histogram.getBinWidth(binIndex),
-                                        // 1/(UNIT_LENGTH^3*eV)
-                                        histogram.getBinWeight0(binIndex) / volumeScalingFactor
-                                            / histogram.getBinWidth(binIndex),
-                                        // transitionCollectionIndex
-                                        offset + i,
-                                        chargeStateDataDataBox,
-                                        atomicStateDataDataBox,
-                                        boundFreeTransitionDataBox));
-                        }
-
                         if constexpr(T_electronicIonization)
                         {
                             rateCache.add(

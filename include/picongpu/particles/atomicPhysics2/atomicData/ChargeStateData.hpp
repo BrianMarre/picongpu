@@ -95,7 +95,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         {
             uint8_t chargeState = static_cast<uint8_t>(std::get<0>(tuple));
 
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
             {
                 if(collectionIndex >= static_cast<uint32_t>(T_atomicNumber))

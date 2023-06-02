@@ -86,10 +86,9 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
         /** gaunt factor suppression of cross sections
          *
          * @param U = energyElectron / energyDifference, unitless
-         * @param energyElectron energy of electron, [eV]
-         * @param indexTransition internal index of transition in atomicDataBox
+         * @param collectionIndexTransition internal index of transition in transitionDataBox
          *      use findIndexTransition method of atomicDataBox and screen for not found value
-         * @param boundBoundTransitionDataBox transition data box
+         * @param boundBoundTransitionDataBox data box giving access to bound-bound transition data
          *
          * @attention no range check for indexTransition outside debug compile, invalid memory access otherwise
          *
@@ -122,8 +121,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
             }
 
-            // check for forbidden transition
-            if(U > 1.0_X)
+            // check for forbidden transition or misfit of gaunt
+            if ((U > 1.0_X) && (g >=  0._X))
                 return g; // unitless
             else
                 return 0._X; // unitless
@@ -273,10 +272,12 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 U = (energyElectron + energyDifference) / energyDifference;
             }
 
-            return crossSection_butGaunt * ratio * gauntFactor(
+            float_X result = crossSection_butGaunt * ratio * gauntFactor(
                 U,
                 transitionCollectionIndex,
                 boundBoundTransitionDataBox); // [1e6b]
+
+            return result;
         }
 
         /** rate for collisional bound-bound transition of ion with free electron bin
@@ -324,13 +325,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
 
             if (result < 0._X)
             {
-                printf("atomicPhysics ERROR: negative bound-bound collisional rate\n"
+                printf("atomicPhysics ERROR: negative bound-bound collisional rate, "
                     "transition: %u\n", transitionCollectionIndex);
-
-                // debug only
-                std::cout << "sigma: " << sigma << " energyElectron: " << energyElectron
-                    << " energyElectronBinWidth: " << energyElectronBinWidth << " densityElectrons: " << densityElectrons
-                    << std::endl;
             }
 
             return result;

@@ -64,10 +64,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto onlyMaster = lockstep::makeMaster(worker);
 
             /// @todo use forEachSuperCell instead of letting workers wait, Brian Marre, 2023
-            onlyMaster([&timeStep,
-                        &timeRemaining,
-                        // debug only
-                        &superCellFieldIdx]() { timeRemaining = timeRemaining - timeStep; });
+            onlyMaster([&timeStep, &timeRemaining]() { timeRemaining = timeRemaining - timeStep; });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

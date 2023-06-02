@@ -133,9 +133,10 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             // special case dE <= 0
             if(deltaEnergyTransition <= 0.)
             {
+                /// @todo generalize the error message,  Brian Marre, 2023
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
                     if(deltaEnergyTransition < 0.)
-                        printf("AtomicPhysics ERROR: deltaEnergy autonomous Ionization < 0!\n");
+                        printf("atomicPhysics ERROR: deltaEnergy autonomous Ionization < 0!\n");
 
                 electron[momentum_] = float3_X(0._X, 0._X, 0._X);
                 ion[momentum_] = float3_X(0._X, 0._X, 0._X);

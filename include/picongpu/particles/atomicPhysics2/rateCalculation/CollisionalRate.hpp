@@ -21,9 +21,6 @@
 
 #include <cstdint>
 
-// debug only
-#include <iostream>
-
 namespace picongpu::particles2::atomicPhysics2::rateCalculation
 {
     /** rate for collisional transition of ion with free electron bin

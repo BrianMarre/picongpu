@@ -81,10 +81,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
             if(processClass == static_cast<uint8_t>(255u))
             {
                 if constexpr(T_up)
-                    printf("atomicPhysics ERROR: invalid processId found in up bound-free"
+                    printf("atomicPhysics ERROR: invalid processId found in up bound-free "
                            "ExtractTransitionKernel\n");
                 if constexpr(!T_up)
-                    printf("atomicPhysics ERROR: invalid processId found in down bound-free"
+                    printf("atomicPhysics ERROR: invalid processId found in down bound-free "
                            "ExtractTransitionKernel\n");
             }
         }

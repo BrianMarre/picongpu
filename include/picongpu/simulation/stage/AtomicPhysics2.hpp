@@ -263,6 +263,9 @@ namespace picongpu::simulation::stage
                     ForEachIonSpeciesDoAcceptTransitionTest{}(mappingDesc, currentStep);
                     ForEachIonSpeciesRecordSuggestedChanges{}(mappingDesc);
 
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
+                        ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+
                     // reject overSubscription loop, ends when no histogram bin oversubscribed
                     while(true)
                     {
@@ -304,7 +307,6 @@ namespace picongpu::simulation::stage
                     }
                 } // end chooseTransition loop
 
-                // debug only
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
                     ForEachIonSpeciesDumpToConsole{}(mappingDesc);
 

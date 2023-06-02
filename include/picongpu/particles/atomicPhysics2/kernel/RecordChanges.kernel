@@ -30,9 +30,6 @@
 
 #include <cstdint>
 
-// debug only
-#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
-
 namespace picongpu::particles::atomicPhysics2::kernel
 {
     /** update atomic state and for collisional processes add delta energy of transition

@@ -146,7 +146,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             S_BoundBoundTransitionTuple& tuple,
             T_StateHostBox const stateHostBox)
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -180,7 +179,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue collisionalOscillatorStrength(
             uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -201,7 +199,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue absorptionOscillatorStrength(
             uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -223,7 +220,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue cxin1(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -243,7 +239,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue cxin2(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -263,7 +258,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue cxin3(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -283,7 +277,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue cxin4(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
@@ -303,7 +296,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue cxin5(uint32_t const collectionIndex) const
         {
-            // debug only
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
                 if(collectionIndex >= this->m_numberTransitions)
                 {
