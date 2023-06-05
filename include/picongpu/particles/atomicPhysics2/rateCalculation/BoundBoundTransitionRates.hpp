@@ -39,7 +39,7 @@
 /** @file implements calculation of rates for bound-bound atomic physics transitions
  *
  * this includes:
- *  - electron-interaction based processes
+ *  - electron-interaction base de-/excitation
  *  - spontaneous photon emission
  *  @todo photon interaction based processes, Brian Marre, 2022
  *
@@ -95,7 +95,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          * @return unit: unitless
          */
         template<typename T_BoundBoundTransitionDataBox>
-        HDINLINE static float_X gauntFactor(
+        HDINLINE statc float_X gauntFactor(
             float_X const U, // unitless
             uint32_t const collectionIndexTransition,
             T_BoundBoundTransitionDataBox const boundBoundTransitionDataBox)
@@ -110,22 +110,38 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             // calculate gaunt Factor
             float_X g;
 
+            // no need to check for U <= 0, since
+
+            float_X const logU = math::log(U);
+            bool gauntFitUnPhysical;
+
             if ((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
             {
                 // use mewe approximation if all gaunt coefficients are zero
-                g = 0.15 + 0.28 * math::log(U);
+                g = 0.15 + 0.28 * logU;
             }
             else
             {
+                // detect division  by 0
+                if ((U+a) == 0._X)
+                    gauntFitUnPhysical = true;
+
                 // chuung approximation
-                g = A * math::log(U) + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
+                g = A * logU + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
             }
 
-            // check for forbidden transition or misfit of gaunt
-            if ((U > 1.0_X) && (g >=  0._X))
-                return g; // unitless
-            else
-                return 0._X; // unitless
+            if (g < 0._X)
+                gauntFitUnPhysical = true;
+
+            bool const forbiddenTransition = (U < 1._X);
+            if (gauntFitUnPhysical || forbiddenTransition)
+            {
+                //  untiless
+                g = 0._X;
+            }
+
+            // unitless
+            return g;
         }
 
         //! check for NaNs and casting overflows in Ratio

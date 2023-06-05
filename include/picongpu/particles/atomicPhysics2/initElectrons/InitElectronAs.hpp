@@ -58,28 +58,52 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             partOp::assign(targetElectronClone, partOp::deselect<particleId>(ion));
         }
 
-        //! fill space components of a Lorentz boots matrix
+        /** fill space components of a Lorentz boots matrix
+         *
+         * @attention normBetaSquared, beta and gamma must be consistent!
+         */
         HDINLINE static void fillLorentzMatrix(
             MatrixVector beta,
-            float_64 gammaIonSystem,
+            float_64 gamma,
             float_64 normBetaSquared,
             Matrix_3x3& lorentzMatrix)
         {
-// general contributions
-#pragma unroll
-            for(uint32_t i = 0u; i < 3u; i++)
+            /// @detail not that readable but faster than checking for every component
+            // general contributions
+            if (normBetaSquared == 0.)
             {
+                // special case non moving system
+
 #pragma unroll
-                for(uint32_t j = static_cast<uint32_t>(0u); j < static_cast<uint32_t>(3u); j++)
+                for(uint32_t i = 0u; i < picongpu::simDim; i++)
                 {
-                    lorentzMatrix.element(i, j) = (gammaIonSystem - 1.) * beta.element(i, static_cast<uint32_t>(0u))
-                        * beta.element(j, static_cast<uint32_t>(0u)) / normBetaSquared;
+#pragma unroll
+                    for(uint32_t j = 0u; j < picongpu::simDim; j++)
+                    {
+                        lorentzMatrix.element(i, j) = 0.;
+                    }
+                }
+            }
+            else
+            {
+                // standard case
+
+#pragma unroll
+                for(uint32_t i = 0u; i < picongpu::simDim; i++)
+                {
+#pragma unroll
+                    for(uint32_t j = 0u; j < picongpu::simDim; j++)
+                    {
+                        lorentzMatrix.element(i, j) = (gamma - 1.) * beta.element(i, static_cast<uint32_t>(0u))
+                            * beta.element(j, static_cast<uint32_t>(0u)) / normBetaSquared;
+                    }
                 }
             }
 
-// diagonal only contributions
+            // diagonal only contributions
+
 #pragma unroll
-            for(uint32_t i = static_cast<uint32_t>(0u); i < static_cast<uint32_t>(3u); i++)
+            for(uint32_t i = 0u; i < picongpu::simDim; i++)
                 lorentzMatrix.element(i, i) += 1.;
         }
 
@@ -102,21 +126,21 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
          *
          * @param ion Particle, view of ion frame slot
          * @param electron Particle, view of electron frame slot
-         * @param deltaEnergyTransition  in eV, energy difference between initial and
+         * @param deltaEnergyTransition in eV, energy difference between initial and
          *  final state of transition
          * @param rngFactory factory for uniformly distributed random number generator
          *
-         * @attention may be numerically unstable for highly relativistic ion/electrons
-         * @attention assumes float3_X for momentum
+         * @attention numerically unstable for highly relativistic ion/electrons(MeV+ deltaEnergyTransitions)
          */
         template<typename T_IonParticle, typename T_ElectronParticle, typename T_RngGeneratorFloat>
         HDINLINE static void decayByInelastic2BodyCollision(
             T_IonParticle& ion,
             // cannot be const even though we do not write to the ion
             T_ElectronParticle& electron,
-            float_X const deltaEnergyTransition, // eV
-            T_RngGeneratorFloat& rngGenerator /// const?, @todo Brian Marre, 2023
-        )
+            // eV
+            float_X const deltaEnergyTransition,
+            /// const?, @todo Brian Marre, 2023
+            T_RngGeneratorFloat& rngGenerator)
         {
             cloneAdditionalAttributes<T_IonParticle, T_ElectronParticle>(ion, electron);
 
@@ -124,22 +148,22 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
              *
              * see Brian Marre, notebook 01.06.2022-?, p.78-87 for full derivation
              *
-             * Reference:
+             * Reference naming:
              * - Def.: Ion-system ... frame of reference co-moving with original ion speed
              * - Def.: Lab-system ... frame of reference PIC-simulation
              * - *Star* after inelastic collision, otherwise before
              */
 
             // special case dE <= 0
-            if(deltaEnergyTransition <= 0.)
+            if(deltaEnergyTransition <= 0._X)
             {
                 /// @todo generalize the error message,  Brian Marre, 2023
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
-                    if(deltaEnergyTransition < 0.)
-                        printf("atomicPhysics ERROR: deltaEnergy autonomous Ionization < 0!\n");
+                    if(deltaEnergyTransition < 0._X)
+                        printf("atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0!\n");
 
-                electron[momentum_] = float3_X(0._X, 0._X, 0._X);
-                ion[momentum_] = float3_X(0._X, 0._X, 0._X);
+                electron[momentum_] = floatD_X(0._X);
+                ion[momentum_] = floatD_X(0._X);
                 return;
             }
 
@@ -199,8 +223,12 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             float_X const sinTheta = math::sqrt(v * (2._X - v));
             float_X const phi = 2._X * static_cast<float_X>(picongpu::PI) * u;
 
+            float_X sinPhi;
+            float_X cosPhi;
+            pmacc::math::sincos(phi, sinPhiValue, cosPhiValue);
+
             float3_64 const directionVector
-                = float3_64(sinTheta * math::cos(phi), sinTheta * math::sin(phi), cosTheta);
+                = float3_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             auto momentumStarElectron_IonSystem = MatrixVector(normMomentumStarElectron_IonSystem * directionVector);
 
@@ -208,27 +236,38 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             // square of original momentum of the ion in Lab-System
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             float_64 const momentumSquaredIon_LabSystem
-                = static_cast<float_64>(pmacc::math::l2norm2(ion[momentum_]) / ion[weighting_]);
-
-            // square of original beta of the ion in Lab-System
-            // beta^2 = 1/(1 + (m^2*c^2)/p^2)
-            //  unitless + (UNIT_MASS^2 * UNIT_SPEED^2)(not weighted)
-            //  /( UNIT_MASS^2 * UNIT_SPEED^2)(not weighted) = unitless
-            float_64 const normSquaredBetaIon_LabSystem
-                = 1._X / (1 + mSquaredCSquaredIon / momentumSquaredIon_LabSystem);
+                = static_cast<float_64>(pmacc::math::l2norm2(ion[momentum_]) / (ion[weighting_] * ion[weighting_]));
 
             // unitless
-            float3_64 const betaIonSystem =
-                // magnitude
-                math::sqrt(normSquaredBetaIon_LabSystem)
-                // direction
-                * static_cast<float3_64>(ion[momentum_] / pmacc::math::l2norm(ion[momentum_]));
+            float3_64 betaIonSystem;
+            // unitless
+            float_64 normSquaredBetaIon_LabSystem;
+
+            if (momentumSquaredIon_LabSystem == 0._X)
+            {
+                betaIonSystem = float3_64(0.); // = 0.
+                normBeuaredBetaIon_LabSystem = 0.;
+            }
+            else
+            {
+                // square of original beta of the ion in Lab-System
+                // unitless
+                // beta^2 = 1/(1 + (m^2*c^2)/p^2)
+                //  unitless + (UNIT_MASS^2 * UNIT_SPEED^2)(not weighted)
+                //  /( UNIT_MASS^2 * UNIT_SPEED^2)(not weighted) = unitless
+                normSquaredBetaIon_LabSystem = 1. / (1. + mSquaredCSquaredIon / momentumSquaredIon_LabSystem);
+
+                betaIonSystem =
+                    // magnitude
+                    math::sqrt(normSquaredBetaIon_LabSystem)
+                    // direction
+                    * static_cast<float3_64>(ion[momentum_] / pmacc::math::l2norm(ion[momentum_]));
+            }
 
             // unitless
             auto beta = MatrixVector(betaIonSystem);
 
-            float_64 const gammaIonSystem
-                = math::sqrt(1. / (1. - pmacc::math::cPow(normSquaredBetaIon_LabSystem, 2u)));
+            float_64 const gammaIonSystem = math::sqrt(momentumSquaredIon_LabSystem / mSquaredCSquaredIon + 1.);
 
             // lower 3x3 block of Lorentz transformation matrix for transformation from
             // Ion-System to Lab-System
@@ -241,24 +280,26 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             lorentzMatrix.mMul(momentumStarElectron_IonSystem, momentumStarElectron_LabSystem);
 
-            //      calculate ion momentum after ionization
+            //      calculate momenta after collision
+            //          ion
             // UNIT_MASS * UNIT_LENGTH/UNIT_TIME, weighted
             momentumStarIon_LabSystem = (momentumStarElectron_LabSystem.sMul(-1.))
                 + (beta.sMul(gammaIonSystem * gammaStarIon_IonSystem * mcIon));
 
-            // set to particle
-#pragma unroll
-            for(uint32_t i = static_cast<uint32_t>(0u); i < static_cast<uint32_t>(3u); i++)
-                electron[momentum_][i]
-                    = static_cast<float_X>(momentumStarIon_LabSystem.element(i, static_cast<uint32_t>(0u)));
-
-            //      calculate ionization electron momentum after ionization
+            //          electron
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             momentumStarElectron_LabSystem = momentumStarElectron_LabSystem
                 + (beta.sMul(gammaIonSystem * gammaStarElectron_IonSystem * mcElectron));
+
             // set to particle
 #pragma unroll
-            for(uint32_t i = static_cast<uint32_t>(0u); i < static_cast<uint32_t>(3u); i++)
+            for(uint32_t i = 0u; i < picongpu::simDim; i++)
+                ion[momentum_][i]
+                    = static_cast<float_X>(momentumStarIon_LabSystem.element(i, static_cast<uint32_t>(0u)));
+
+            // set to particle
+#pragma unroll
+            for(uint32_t i = 0u; i < picongpu::simDim; i++)
                 electron[momentum_][i]
                     = static_cast<float_X>(momentumStarElectron_LabSystem.element(i, static_cast<uint32_t>(0u)));
         }
