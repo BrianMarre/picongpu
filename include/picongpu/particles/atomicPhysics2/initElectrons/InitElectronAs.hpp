@@ -33,8 +33,8 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 {
     struct InitElectronAs
     {
-        using Matrix_3x3 = pmacc::math::Matrix<float_64, pmacc::math::CT::UInt32<3u, 3u>>;
-        using MatrixVector = pmacc::math::Matrix<float_64, pmacc::math::CT::UInt32<3u, 1u>>;
+        using Matrix_DxD = pmacc::math::Matrix<float_64, pmacc::math::CT::UInt32<picongpu::simDim, picongpu::simDim>>;
+        using MatrixVector = pmacc::math::Matrix<float_64, pmacc::math::CT::UInt32<picongpu::simDim, 1u>>;
 
     private:
         /** clone all add attributes that exist in both electron and ion species
@@ -66,7 +66,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             MatrixVector beta,
             float_64 gamma,
             float_64 normBetaSquared,
-            Matrix_3x3& lorentzMatrix)
+            Matrix_DxD& lorentzMatrix)
         {
             /// @detail not that readable but faster than checking for every component
             // general contributions
@@ -162,9 +162,12 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                     if(deltaEnergyTransition < 0._X)
                         printf("atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0!\n");
 
-                electron[momentum_] = floatD_X(0._X);
-                ion[momentum_] = floatD_X(0._X);
-                return;
+#pragma unroll
+                for (uint8_t i = 0u; i < picongpu::simDim; i++)
+                {
+                    electron[momentum_][i] = 0._X;
+                    ion[momentum_][i] = 0._X;
+                }
             }
 
             //      get electron/ion, momentum/Lorentz factor in IonSystem after ionization
@@ -225,9 +228,14 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             float_X sinPhi;
             float_X cosPhi;
-            pmacc::math::sincos(phi, sinPhiValue, cosPhiValue);
+            pmacc::math::sincos(phi, sinPhi, cosPhi);
 
-            float3_64 const directionVector = float3_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
+            floatD_64 directionVector;
+            if constexpr (picongpu::simDim == 2u)
+                directionVector = floatD_64(cosPhi, sinTheta);
+            if constexpr (picongpu::simDim == 3u)
+                directionVector = floatD_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
+
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             auto momentumStarElectron_IonSystem = MatrixVector(normMomentumStarElectron_IonSystem * directionVector);
 
@@ -238,14 +246,18 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                 = static_cast<float_64>(pmacc::math::l2norm2(ion[momentum_]) / (ion[weighting_] * ion[weighting_]));
 
             // unitless
-            float3_64 betaIonSystem;
+            floatD_64 betaIonSystem;
             // unitless
             float_64 normSquaredBetaIon_LabSystem;
 
             if(momentumSquaredIon_LabSystem == 0._X)
             {
-                betaIonSystem = float3_64(0.); // = 0.
-                normBeuaredBetaIon_LabSystem = 0.;
+                if constexpr(picongpu::simDim == 2u)
+                    betaIonSystem = floatD_64(0., 0.);
+                if constexpr(picongpu::simDim == 3u)
+                    betaIonSystem = floatD_64(0., 0., 0.);
+
+                normSquaredBetaIon_LabSystem = 0.;
             }
             else
             {
@@ -260,7 +272,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                     // magnitude
                     math::sqrt(normSquaredBetaIon_LabSystem)
                     // direction
-                    * static_cast<float3_64>(ion[momentum_] / pmacc::math::l2norm(ion[momentum_]));
+                    * static_cast<floatD_64>(ion[momentum_] / pmacc::math::l2norm(ion[momentum_]));
             }
 
             // unitless
@@ -270,7 +282,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             // lower 3x3 block of Lorentz transformation matrix for transformation from
             // Ion-System to Lab-System
-            Matrix_3x3 lorentzMatrix;
+            Matrix_DxD lorentzMatrix;
             fillLorentzMatrix(beta, gammaIonSystem, normSquaredBetaIon_LabSystem, lorentzMatrix);
 
             //      space components of Lorentz boost

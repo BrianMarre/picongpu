@@ -95,7 +95,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          * @return unit: unitless
          */
         template<typename T_BoundBoundTransitionDataBox>
-        HDINLINE statc float_X gauntFactor(
+        HDINLINE static float_X gauntFactor(
             float_X const U, // unitless
             uint32_t const collectionIndexTransition,
             T_BoundBoundTransitionDataBox const boundBoundTransitionDataBox)
