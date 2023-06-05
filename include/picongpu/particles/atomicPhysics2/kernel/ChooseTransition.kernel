@@ -102,4 +102,4 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 });
         }
     };
-} // namespace picongpu::ions::atomicPhysics2::kernel
+} // namespace picongpu::particles::atomicPhysics2::kernel

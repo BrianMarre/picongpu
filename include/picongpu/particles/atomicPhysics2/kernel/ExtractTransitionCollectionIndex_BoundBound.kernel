@@ -79,12 +79,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_fieldIonization>;
 
         using S_ProcessIDConversion = picongpu::particles::atomicPhysics2::processClass::ProcessIDConversion<
-                T_electronicExcitation,
-                T_electronicDeexcitation,
-                T_spontaneousDeexcitation,
-                T_electronicIonization,
-                T_autonomousIonization,
-                T_fieldIonization>;
+            T_electronicExcitation,
+            T_electronicDeexcitation,
+            T_spontaneousDeexcitation,
+            T_electronicIonization,
+            T_autonomousIonization,
+            T_fieldIonization>;
 
         //! check for not found transition
         template<bool T_up>
@@ -140,10 +140,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // check that correct databoxes are given
             PMACC_CASSERT(
                 static_cast<uint8_t>(T_AtomicStateBoundBoundNumberTransitionsDataBox::processClassGroup)
-                == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased));
+                == static_cast<uint8_t>(
+                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased));
             PMACC_CASSERT(
                 static_cast<uint8_t>(T_AtomicStateBoundBoundStartIndexBlockDataBox::processClassGroup)
-                == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased));
+                == static_cast<uint8_t>(
+                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased));
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
@@ -216,8 +218,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         }
                         ion[processClass_] = S_ProcessIDConversion::getProcessClassBoundBound_Up(processID);
 
-                        ion[transitionIndex_]
-                            = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex)
+                        ion[transitionIndex_] = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex)
                             + (ion[transitionIndex_] - offset) / factorUp;
                         ion[binIndex_] = rngGenerator() % T_numberBins;
                     }

@@ -65,7 +65,8 @@ namespace picongpu::atomicPhysics2
     //! check for match between inital ionizing transition state of ion and ion transition
     constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG = true;
 
-    //! debug print of console of all tested transitions acceptance probabilities, @attention only viable serial and cpu only compile
+    //! debug print of console of all tested transitions acceptance probabilities, @attention only viable serial and
+    //! cpu only compile
     constexpr bool ATOMIC_PHYSICS_ACCEPTANCE_PROBABILITY_DEBUG_PRINT = false;
 
     //! debug print of ions to console

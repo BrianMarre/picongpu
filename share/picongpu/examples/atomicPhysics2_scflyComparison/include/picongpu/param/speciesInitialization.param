@@ -48,7 +48,7 @@ namespace picongpu
             Manipulate<manipulators::SetIonization, ArgonIons>,
             // Set initial temperature of bulk electrons
             Manipulate<manipulators::AddTemperature, BulkElectrons>>;
-            >;
+        > ;
 
     } // namespace particles
 } // namespace picongpu

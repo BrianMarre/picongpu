@@ -49,14 +49,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param electronBox deviceDataBox giving access to the particle species particle frames
          *   of all local superCells
          */
-        template<
-            typename T_Worker,
-            typename T_AreaMapping,
-            typename T_ElectronBox>
-        HDINLINE void operator()(
-            T_Worker const& worker,
-            T_AreaMapping const areaMapping,
-            T_ElectronBox electronBox) const
+        template<typename T_Worker, typename T_AreaMapping, typename T_ElectronBox>
+        HDINLINE void operator()(T_Worker const& worker, T_AreaMapping const areaMapping, T_ElectronBox electronBox)
+            const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
@@ -69,11 +64,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 return;
 
             // bin electrons
-            forEachLocalElectronBoxEntry(
-                [](T_Worker const& worker, auto& electron)
-                {
-                    electron[momentum_] = float3_X::create(0.);
-                });
+            forEachLocalElectronBoxEntry([](T_Worker const& worker, auto& electron)
+                                         { electron[momentum_] = float3_X::create(0.); });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

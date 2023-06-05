@@ -64,7 +64,7 @@ namespace picongpu
             {
                 static constexpr float_X targetChargeState = 16._X;
             }
-        }
+        } // namespace startChargeState
 
         namespace manipulators
         {

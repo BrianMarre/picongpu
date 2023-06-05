@@ -121,7 +121,7 @@ namespace picongpu
         atomicNumbers<ionization::atomicNumbers::Argon_t>,
         ionizationElectronSpecies<BulkElectrons>, // which species to spawn as electrons upon ionization
         isAtomicPhysicsIon<>>;
-        //! @attention only channels activated in both data and solver are actually possible
+    //! @attention only channels activated in both data and solver are actually possible
 
     using ArgonAttributes = MakeSeq_t<
         DefaultParticleAttributes,

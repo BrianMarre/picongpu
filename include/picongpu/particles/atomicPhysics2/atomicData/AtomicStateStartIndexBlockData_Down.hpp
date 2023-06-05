@@ -21,7 +21,6 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
-
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
 #include <cstdint>
@@ -127,14 +126,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         HINLINE DataBoxType getHostDataBox()
         {
-            return DataBoxType(
-                bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox());
+            return DataBoxType(bufferStartIndexBlockTransitionsDown->getHostBuffer().getDataBox());
         }
 
         HINLINE DataBoxType getDeviceDataBox()
         {
-            return DataBoxType(
-                bufferStartIndexBlockTransitionsDown->getDeviceBuffer().getDataBox());
+            return DataBoxType(bufferStartIndexBlockTransitionsDown->getDeviceBuffer().getDataBox());
         }
 
         HINLINE void hostToDevice()

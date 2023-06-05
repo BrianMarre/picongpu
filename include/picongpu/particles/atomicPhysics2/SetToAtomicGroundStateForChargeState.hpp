@@ -57,9 +57,8 @@ namespace picongpu
                     particle[boundElectrons_] = numberBoundElectrons;
 
                     // init atomic state consistently if present
-                    if constexpr(pmacc::traits::HasFlag<
-                                     typename T_Particle::FrameType,
-                                     isAtomicPhysicsIon<>>::type::value)
+                    if constexpr(pmacc::traits::HasFlag<typename T_Particle::FrameType, isAtomicPhysicsIon<>>::type::
+                                     value)
                     {
                         // get current Configuration number object
                         auto configNumber = particle[atomicConfigNumber_];

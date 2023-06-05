@@ -21,7 +21,6 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
-
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
 #include <cstdint>
@@ -45,8 +44,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     template<
         typename T_Number,
         typename T_Value,
-        particles::atomicPhysics2::processClass::ProcessClassGroup T_ProcessClassGroup
-        >
+        particles::atomicPhysics2::processClass::ProcessClassGroup T_ProcessClassGroup>
     class AtomicStateNumberOfTransitionsDataBox_UpDown : public DataBox<T_Number, T_Value>
     {
     public:

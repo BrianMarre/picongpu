@@ -115,7 +115,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             float_X const logU = math::log(U);
             bool gauntFitUnPhysical;
 
-            if ((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
+            if((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
             {
                 // use mewe approximation if all gaunt coefficients are zero
                 g = 0.15 + 0.28 * logU;
@@ -123,18 +123,18 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             else
             {
                 // detect division  by 0
-                if ((U+a) == 0._X)
+                if((U + a) == 0._X)
                     gauntFitUnPhysical = true;
 
                 // chuung approximation
                 g = A * logU + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
             }
 
-            if (g < 0._X)
+            if(g < 0._X)
                 gauntFitUnPhysical = true;
 
             bool const forbiddenTransition = (U < 1._X);
-            if (gauntFitUnPhysical || forbiddenTransition)
+            if(gauntFitUnPhysical || forbiddenTransition)
             {
                 //  untiless
                 g = 0._X;
@@ -288,10 +288,10 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 U = (energyElectron + energyDifference) / energyDifference;
             }
 
-            float_X result = crossSection_butGaunt * ratio * gauntFactor(
-                U,
-                transitionCollectionIndex,
-                boundBoundTransitionDataBox); // [1e6b]
+            float_X result = crossSection_butGaunt * ratio
+                * gauntFactor(U,
+                              transitionCollectionIndex,
+                              boundBoundTransitionDataBox); // [1e6b]
 
             return result;
         }
@@ -339,14 +339,15 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 densityElectrons,
                 sigma);
 
-            if (result < 0._X)
+            if(result < 0._X)
             {
-                printf("atomicPhysics ERROR: negative bound-bound collisional rate, "
-                    "transition: %u\n", transitionCollectionIndex);
+                printf(
+                    "atomicPhysics ERROR: negative bound-bound collisional rate, "
+                    "transition: %u\n",
+                    transitionCollectionIndex);
             }
 
             return result;
-
         }
 
         /** rate of spontaneous photon emission for a given bound-bound transition

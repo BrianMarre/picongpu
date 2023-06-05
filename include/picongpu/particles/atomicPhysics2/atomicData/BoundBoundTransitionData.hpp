@@ -23,7 +23,6 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
-
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
 #include <cstdint>
@@ -45,17 +44,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
      *      typically uint64_t
-     * 
+     *
      * @attention ConfigNumber specifies the number of a state as defined by the configNumber
      *      class, while index always refers to a collection index.
      *      The configNumber of a given state is always the same, its collection index depends
      *      on input file,it should therefore only be used internally!
      */
-    template<
-        typename T_Number,
-        typename T_Value,
-        typename T_CollectionIndex,
-        typename T_ConfigNumberDataType>
+    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
     class BoundBoundTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
@@ -314,11 +309,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_CollectionIndex used for index storage, typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage, typically uint64_t
      */
-    template<
-        typename T_Number,
-        typename T_Value,
-        typename T_CollectionIndex,
-        typename T_ConfigNumberDataType>
+    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
     class BoundBoundTransitionDataBuffer : public TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>
     {
     public:

@@ -24,7 +24,6 @@
 //  and picongpu/param/atomicPhysics2_debug.param
 
 #include "picongpu/particles/InitFunctors.hpp"
-
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/AcceptTransitionTest.stage"
@@ -34,6 +33,7 @@
 #include "picongpu/particles/atomicPhysics2/stage/CheckForOverSubscription.stage"
 #include "picongpu/particles/atomicPhysics2/stage/ChooseTransition.stage"
 #include "picongpu/particles/atomicPhysics2/stage/DecelerateElectrons.stage"
+#include "picongpu/particles/atomicPhysics2/stage/DumpAllIonsToConsole.stage"
 #include "picongpu/particles/atomicPhysics2/stage/ExtractTransitionCollectionIndex.stage"
 #include "picongpu/particles/atomicPhysics2/stage/FillLocalRateCache.stage"
 #include "picongpu/particles/atomicPhysics2/stage/RecordChanges.stage"
@@ -42,11 +42,9 @@
 #include "picongpu/particles/atomicPhysics2/stage/ResetLocalRateCache.stage"
 #include "picongpu/particles/atomicPhysics2/stage/ResetLocalTimeStepField.stage"
 #include "picongpu/particles/atomicPhysics2/stage/RollForOverSubscription.stage"
+#include "picongpu/particles/atomicPhysics2/stage/SetMomentumToZero.stage"
 #include "picongpu/particles/atomicPhysics2/stage/SpawnIonizationElectrons.stage"
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.stage"
-
-#include "picongpu/particles/atomicPhysics2/stage/SetMomentumToZero.stage"
-#include "picongpu/particles/atomicPhysics2/stage/DumpAllIonsToConsole.stage"
 
 #include <pmacc/device/Reduce.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
@@ -240,9 +238,8 @@ namespace picongpu::simulation::stage
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesSetMomentumToZero{}(mappingDesc);
-                    picongpu::particles::Manipulate<
-                        picongpu::particles::manipulators::AddTemperature,
-                        BulkElectrons>{}(currentStep);
+                    picongpu::particles::
+                        Manipulate<picongpu::particles::manipulators::AddTemperature, BulkElectrons>{}(currentStep);
                 }
 
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);

@@ -70,7 +70,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         {
             /// @detail not that readable but faster than checking for every component
             // general contributions
-            if (normBetaSquared == 0.)
+            if(normBetaSquared == 0.)
             {
                 // special case non moving system
 
@@ -227,8 +227,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             float_X cosPhi;
             pmacc::math::sincos(phi, sinPhiValue, cosPhiValue);
 
-            float3_64 const directionVector
-                = float3_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
+            float3_64 const directionVector = float3_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             auto momentumStarElectron_IonSystem = MatrixVector(normMomentumStarElectron_IonSystem * directionVector);
 
@@ -243,7 +242,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             // unitless
             float_64 normSquaredBetaIon_LabSystem;
 
-            if (momentumSquaredIon_LabSystem == 0._X)
+            if(momentumSquaredIon_LabSystem == 0._X)
             {
                 betaIonSystem = float3_64(0.); // = 0.
                 normBeuaredBetaIon_LabSystem = 0.;
@@ -297,7 +296,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                 ion[momentum_][i]
                     = static_cast<float_X>(momentumStarIon_LabSystem.element(i, static_cast<uint32_t>(0u)));
 
-            // set to particle
+                // set to particle
 #pragma unroll
             for(uint32_t i = 0u; i < picongpu::simDim; i++)
                 electron[momentum_][i]

@@ -66,14 +66,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_fieldIonization>;
 
         // specialization for active paths, namespaces relative to current namespace
-        using S_ProcessIDConversion
-            = picongpu::particles::atomicPhysics2::processClass::ProcessIDConversion<
-                T_electronicExcitation,
-                T_electronicDeexcitation,
-                T_spontaneousDeexcitation,
-                T_electronicIonization,
-                T_autonomousIonization,
-                T_fieldIonization>;
+        using S_ProcessIDConversion = picongpu::particles::atomicPhysics2::processClass::ProcessIDConversion<
+            T_electronicExcitation,
+            T_electronicDeexcitation,
+            T_spontaneousDeexcitation,
+            T_electronicIonization,
+            T_autonomousIonization,
+            T_fieldIonization>;
 
         template<bool T_up>
         HDINLINE static void checkProcessClass(uint8_t const processClass)
@@ -127,10 +126,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // check that correct databoxes are given
             PMACC_CASSERT(
                 static_cast<uint8_t>(T_AtomicStateBoundFreeNumberTransitionsDataBox::processClassGroup)
-                == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+                == static_cast<uint8_t>(
+                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT(
                 static_cast<uint8_t>(T_AtomicStateBoundFreeStartIndexBlockDataBox::processClassGroup)
-                == static_cast<uint8_t>(picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+                == static_cast<uint8_t>(
+                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
@@ -179,7 +180,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     bool const belowOffset = (ion[transitionIndex_] < offset);
                     // recombination not yet implemented, Brian Marre, 2023
                     bool const aboveRange = (ion[transitionIndex_] >= offset + numberPhysicalTransitionsUp);
-                    if( belowOffset || aboveRange)
+                    if(belowOffset || aboveRange)
                         // not a bound-free transition
                         return;
 

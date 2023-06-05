@@ -33,14 +33,12 @@
 #include <pmacc/identifier/value_identifier.hpp>
 
 
-
 namespace picongpu::atomicPhysics2
 {
-    using ElectronHistogram =
-        particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
-            uint32_t, // T_Storage, magic ;)
-            100u, // T_numberBins
-            static_cast<uint32_t>(float_X(1e7))>; // T_maxEnergy, stored as T_Storage
+    using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
+        uint32_t, // T_Storage, magic ;)
+        100u, // T_numberBins
+        static_cast<uint32_t>(float_X(1e7))>; // T_maxEnergy, stored as T_Storage
 
     // atomicPhysics rate solver settings
     //      atomicPhysics timeStepLength sub-stepping of numerical limit
@@ -72,11 +70,8 @@ namespace picongpu::atomicPhysics2
      * @attention actual data type must be defined separately from value_identifier,
      *  since all "," are interpreted as separating macro arguments
      */
-    using ConfigNumber_Argon =
-        particles::atomicPhysics2::stateRepresentation::ConfigNumber<
-            configNumberStorageDataType_Ar,
-            numLevels_Ar,
-            protonNumber_Ar>;
+    using ConfigNumber_Argon = particles::atomicPhysics2::stateRepresentation::
+        ConfigNumber<configNumberStorageDataType_Ar, numLevels_Ar, protonNumber_Ar>;
 
     // datatype to be used for configNumber storage
     value_identifier(ConfigNumber_Argon, ConfigNumber_Ar, ConfigNumber_Argon(1u));

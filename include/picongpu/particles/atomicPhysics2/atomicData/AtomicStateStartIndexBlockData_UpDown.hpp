@@ -21,7 +21,6 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBox.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/DataBuffer.hpp"
-
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
 #include <cstdint>
