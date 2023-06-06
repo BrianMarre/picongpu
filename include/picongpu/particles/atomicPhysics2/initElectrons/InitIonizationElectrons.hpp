@@ -26,7 +26,8 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
-#include "picongpu/particles/atomicPhysics2/initElectrons/InitElectronAs.hpp"
+#include "picongpu/particles/atomicPhysics2/initElectrons/CoMoving.hpp"
+#include "picongpu/particles/atomicPhysics2/initElectrons/Inelastic2BodyCollisionFromCoMoving.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 
 #include <cstdint>
@@ -70,7 +71,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         HDINLINE void operator()(T_IonParticle& ion, T_ElectronParticle& electron) const
         {
             /// @todo sample three body inelastic collision for ionization for ionization, Brian Marre, 2023
-            InitElectronAs::coMoving<T_IonParticle, T_ElectronParticle>(ion, electron);
+            CoMoving::init<T_IonParticle, T_ElectronParticle>(ion, electron);
         }
     };
 
@@ -114,7 +115,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                     autonomousTransitionDataBox,
                     chargeStateDataBox);
 
-            InitElectronAs::decayByInelastic2BodyCollision<T_IonParticle, T_ElectronParticle>(
+            Inelastic2BodyCollisionFromCoMoving::init<T_IonParticle, T_ElectronParticle>(
                 ion,
                 electron,
                 deltaEnergy,

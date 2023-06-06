@@ -17,12 +17,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file init methods for macro electrons
+//! @file implements init of macro electron as inelastic collision of co-moving electron with ion
 
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 // need physicalConstants.param
+
+#include "picongpu/particles/atomicPhysics2/initElectrons/CloneAdditionalAttributes.hpp"
 
 #include <pmacc/algorithms/math/PowerFunction.hpp>
 #include <pmacc/math/Matrix.hpp>
@@ -31,32 +33,12 @@
 
 namespace picongpu::particles::atomicPhysics2::initElectrons
 {
-    struct InitElectronAs
+
+    struct Inelastic2BodyCollisionFromCoMoving
     {
+    private:
         using Matrix_DxD = pmacc::math::Matrix<float_64, pmacc::math::CT::UInt32<picongpu::simDim, picongpu::simDim>>;
         using MatrixVector = pmacc::math::Matrix<float_64, pmacc::math::CT::UInt32<picongpu::simDim, 1u>>;
-
-    private:
-        /** clone all add attributes that exist in both electron and ion species
-         *
-         * excludes:
-         *  - particleId, new particle --> new ID required, init by default
-         *  - multiMask, faster to set hard than copy, set in Kernel directly
-         *  - momentum, is mass dependent and therefore always changes
-         */
-        template<typename T_IonParticle, typename T_ElectronParticle>
-        HDINLINE static void cloneAdditionalAttributes(
-            T_IonParticle& ion,
-            // cannot be const even though we do not write to the ion
-            T_ElectronParticle& electron)
-        {
-            namespace partOp = pmacc::particles::operations;
-
-            auto targetElectronClone = partOp::deselect<pmacc::mp_list<multiMask, momentum>>(electron);
-
-            // otherwise this deselect will create incomplete type compile error
-            partOp::assign(targetElectronClone, partOp::deselect<particleId>(ion));
-        }
 
         /** fill space components of a Lorentz boots matrix
          *
@@ -108,58 +90,45 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         }
 
     public:
-        template<typename T_IonParticle, typename T_ElectronParticle>
-        HDINLINE static void coMoving(T_IonParticle& ion, T_ElectronParticle& electron)
-        {
-            cloneAdditionalAttributes<T_IonParticle, T_ElectronParticle>(ion, electron);
-
-            constexpr float_X massElectronPerMassIon
-                = picongpu::traits::frame::getMass<typename T_ElectronParticle::FrameType>()
-                / picongpu::traits::frame::getMass<typename T_IonParticle::FrameType>();
-
-            // init electron as co-moving with ion
-            electron[momentum_] = ion[momentum_] * massElectronPerMassIon;
-        }
-
         /** init electron according to inelastic relativistic collision of initially
-         *  co-moving particles with deltaEnergy equal to transition energy
+         *  co-moving particles with deltaEnergy
          *
          * @param ion Particle, view of ion frame slot
          * @param electron Particle, view of electron frame slot
-         * @param deltaEnergyTransition in eV, energy difference between initial and
+         * @param deltaEnergy in eV, energy difference between initial and
          *  final state of transition
          * @param rngFactory factory for uniformly distributed random number generator
          *
-         * @attention numerically unstable for highly relativistic ion/electrons(MeV+ deltaEnergyTransitions)
+         * @attention numerically unstable for highly relativistic ion/electrons( and MeV+ deltaEnergys)
          */
         template<typename T_IonParticle, typename T_ElectronParticle, typename T_RngGeneratorFloat>
-        HDINLINE static void decayByInelastic2BodyCollision(
+        HDINLINE static void init(
             T_IonParticle& ion,
             // cannot be const even though we do not write to the ion
             T_ElectronParticle& electron,
             // eV
-            float_X const deltaEnergyTransition,
+            float_X const deltaEnergy,
             /// const?, @todo Brian Marre, 2023
             T_RngGeneratorFloat& rngGenerator)
         {
-            cloneAdditionalAttributes<T_IonParticle, T_ElectronParticle>(ion, electron);
+            CloneAdditionalAttributes::init<T_IonParticle, T_ElectronParticle>(ion, electron);
 
             /* setting new electron and ion momentum
              *
              * see Brian Marre, notebook 01.06.2022-?, p.78-87 for full derivation
              *
-             * Reference naming:
+             * Naming Legend:
              * - Def.: Ion-system ... frame of reference co-moving with original ion speed
              * - Def.: Lab-system ... frame of reference PIC-simulation
-             * - *Star* after inelastic collision, otherwise before
+             * - *Star* ... after inelastic collision, otherwise before
              */
 
             // special case dE <= 0
-            if(deltaEnergyTransition <= 0._X)
+            if(deltaEnergy <= 0._X)
             {
                 /// @todo generalize the error message,  Brian Marre, 2023
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
-                    if(deltaEnergyTransition < 0._X)
+                    if(deltaEnergy < 0._X)
                         printf("atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0!\n");
 
 #pragma unroll
@@ -192,9 +161,9 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                 * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * picongpu::UNITCONV_Joule_to_keV * 1.e3;
 
             // unitless + kg/kg * eV/eV = unitless
-            float_64 const A_e = 0.25 + 1. + mI_mE * deltaEnergyTransition / restEnergyElectron;
+            float_64 const A_e = 0.25 + 1. + mI_mE * deltaEnergy / restEnergyElectron;
             // unitless
-            float_64 const A_i = 0.25 + 1. + mE_mI * deltaEnergyTransition / restEnergyIon;
+            float_64 const A_i = 0.25 + 1. + mE_mI * deltaEnergy / restEnergyIon;
 
             // Lorentz factor after inelastic collision in Ion-System
             // unitless + sqrt(unitless + kg/kg * eV) = unitless
