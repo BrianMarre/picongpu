@@ -129,7 +129,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                 /// @todo generalize the error message,  Brian Marre, 2023
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
                     if(deltaEnergy < 0._X)
-                        printf("atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0!\n");
+                        printf("atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0,  %.8f !\n", deltaEnergy);
 
 #pragma unroll
                 for (uint8_t i = 0u; i < picongpu::simDim; i++)
