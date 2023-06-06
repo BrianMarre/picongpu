@@ -278,7 +278,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 // deexcitation
                 //      different multiplicityConfigNumber for deexcitation
                 // unitless
-                float_X const ratio = static_cast<float_X>(
+                ratio = static_cast<float_X>(
                     multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(lowerStateClctIdx))
                     / multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(upperStateClctIdx)));
 
@@ -288,10 +288,9 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 U = (energyElectron + energyDifference) / energyDifference;
             }
 
+            // [1e6b]
             float_X result = crossSection_butGaunt * ratio
-                * gauntFactor(U,
-                              transitionCollectionIndex,
-                              boundBoundTransitionDataBox); // [1e6b]
+                * gauntFactor(U, transitionCollectionIndex, boundBoundTransitionDataBox);
 
             return result;
         }
