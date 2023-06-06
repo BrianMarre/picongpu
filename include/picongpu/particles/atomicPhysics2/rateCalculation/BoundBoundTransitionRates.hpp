@@ -108,36 +108,35 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             float_X const a = boundBoundTransitionDataBox.cxin5(collectionIndexTransition);
 
             // calculate gaunt Factor
-            float_X g;
+            float_X g = 0._X;
 
-            // no need to check for U <= 0, since
+            // no need to check for U <= 0, since always U > 0,
+            //  due to definition as central energy of bin of energy histogram
 
-            float_X const logU = math::log(U);
-            bool gauntFitUnPhysical;
-
-            if((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
+            // not a physical forbidden transition, electron has enough energy  higher than deltaE of transition
+            if (U >=  1._X)
             {
-                // use mewe approximation if all gaunt coefficients are zero
-                g = 0.15 + 0.28 * logU;
-            }
-            else
-            {
-                // detect division  by 0
-                if((U + a) == 0._X)
-                    gauntFitUnPhysical = true;
+                float_X const logU = math::log(U);
 
-                // chuung approximation
-                g = A * logU + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
-            }
+                if((A == 0._X) && (B == 0._X) && (C == 0._X) && (D == 0._X) && (a == 0._X))
+                {
+                    // use mewe approximation if all gaunt coefficients are zero
+                    g = 0.15 + 0.28 * logU;
+                }
+                else
+                {
+                    // avoid division by 0
+                    if((U + a) != 0._X)
+                        // chuung approximation
+                        g = A * logU + B + C / (U + a) + D / ((U + a) * (U + a)); // unitless
+                }
 
-            if(g < 0._X)
-                gauntFitUnPhysical = true;
-
-            bool const forbiddenTransition = (U < 1._X);
-            if(gauntFitUnPhysical || forbiddenTransition)
-            {
-                //  untiless
-                g = 0._X;
+                bool const gauntFitUnPhysical = (g < 0._X);
+                if(gauntFitUnPhysical)
+                {
+                    //  untiless
+                    g = 0._X;
+                }
             }
 
             // unitless
