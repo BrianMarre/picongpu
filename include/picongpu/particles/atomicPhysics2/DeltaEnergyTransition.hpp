@@ -21,6 +21,7 @@
 
 #pragma once
 
+// need atomicPhysics_Debug.param
 #include "picongpu/simulation_defines.hpp"
 
 namespace picongpu::particles::atomicPhysics2
@@ -108,6 +109,13 @@ namespace picongpu::particles::atomicPhysics2
                     lowerStateChargeState,
                     chargeStateDataBox...); // eV
             }
+
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG)
+                if (deltaEnergy < 0._X)
+                    printf("atomicPhysics ERROR: negative energy in DeltaEnergyTransition::get(...) call\n"
+                      "\t tranisitionIndex: %u, lowerStateClctIdx: %u, upperStateClctIdx: %u,"
+                      " deltaEnergy[eV]:  %.8f \n",
+                      transitionIndex, lowerStateCollectionIndex, upperStateCollectionIndex, deltaEnergy);
             return deltaEnergy;
         }
     };
