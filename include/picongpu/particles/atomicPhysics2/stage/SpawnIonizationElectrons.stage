@@ -116,7 +116,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     ions.getDeviceParticlesBox(),
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getAutonomousTransitionDataBox<false>(),
+                    atomicData.template getInverseAutonomousTransitionDataBox<false>(),
                     rngFactory,
                     atomicData.template getChargeStateDataDataBox<false>());
             }

@@ -113,9 +113,10 @@ namespace picongpu::particles::atomicPhysics2
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG)
                 if (deltaEnergy < 0._X)
                     printf("atomicPhysics ERROR: negative energy in DeltaEnergyTransition::get(...) call\n"
-                      "\t tranisitionIndex: %u, lowerStateClctIdx: %u, upperStateClctIdx: %u,"
-                      " deltaEnergy[eV]:  %.8f \n",
-                      transitionIndex, lowerStateCollectionIndex, upperStateCollectionIndex, deltaEnergy);
+                        "\t processClassGroup %u, transitionIndex: %u, lowerStateClctIdx: %u, upperStateClctIdx: %u,"
+                        " deltaEnergy[eV]:  %.8f \n",
+                        static_cast<uint32_t>(T_TransitionDataBox::processClassGroup),
+                        transitionIndex, lowerStateCollectionIndex, upperStateCollectionIndex, deltaEnergy);
             return deltaEnergy;
         }
     };
