@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements enum of different groups of process classes
+//! @file implements enum of process directions
 
 #pragma once
 
@@ -26,14 +26,9 @@
 namespace picongpu::particles::atomicPhysics2::processClass
 {
     //! predefined groups of processClass
-    enum struct ProcessClassGroup : uint8_t
+    enum struct TransitionDirection : uint8_t
     {
-        boundBoundBased = 0u,
-        boundFreeBased = 1u,
-        autonomousBased = 2u,
-        ionizing = 3u,
-        electronicCollisional = 4u,
-        upward = 5u,
-        downward = 6u
+        upward = 0u,
+        downward = 1u
     };
 } // namespace picongpu::particles::atomicPhysics2::processClass

@@ -44,21 +44,29 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
      *      typically uint64_t
+     * @tparam T_Direction transition direction data is stored by
      *
      * @attention ConfigNumber specifies the number of a state as defined by the configNumber
      *      class, while index always refers to a collection index.
      *      The configNumber of a given state is always the same, its collection index depends
      *      on input file,it should therefore only be used internally!
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType,
+        picongpu::particles::atomicPhysics2::processClass::TransitionDirection T_Direction>
     class BoundBoundTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBox = TransitionDataBox<T_Number, T_Value, T_CollectionIndex>;
         using S_BoundBoundTransitionTuple
             = BoundBoundTransitionTuple<typename S_TransitionDataBox::TypeValue, T_ConfigNumberDataType>;
+
         static constexpr auto processClassGroup
             = particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased;
+        static constexpr auto direction = T_Direction;
 
     private:
         //! unitless
@@ -308,15 +316,24 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_Value dataType used for value storage, typically float_X
      * @tparam T_CollectionIndex used for index storage, typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage, typically uint64_t
+     * @tparam T_Direction transition direction data is stored by
      */
-    template<typename T_Number, typename T_Value, typename T_CollectionIndex, typename T_ConfigNumberDataType>
+    template<
+        typename T_Number,
+        typename T_Value,
+        typename T_CollectionIndex,
+        typename T_ConfigNumberDataType,
+        picongpu::particles::atomicPhysics2::processClass::TransitionDirection T_Direction>
     class BoundBoundTransitionDataBuffer : public TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBuffer = TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>;
-        using DataBoxType = BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>;
+        using DataBoxType = BoundBoundTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType,
+            T_Direction>;
+
         static constexpr auto processClassGroup
             = particles::atomicPhysics2::processClass::ProcessClassGroup::boundBoundBased;
+        static constexpr auto direction = T_Direction;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCollisionalOscillatorStrength;
