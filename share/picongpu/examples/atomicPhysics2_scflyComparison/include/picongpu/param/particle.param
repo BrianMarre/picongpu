@@ -58,42 +58,8 @@ namespace picongpu
          */
         constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter::numParticlesPerCell;
 
-        namespace startChargeState
-        {
-            struct ChargeStateParam
-            {
-                static constexpr float_X targetChargeState = 16._X;
-            }
-        } // namespace startChargeState
-
         namespace manipulators
         {
-            template<typename T_ChargeStateParam>
-            struct ChargeState
-            {
-                /** set ions to targetChargeState times ionized and atomic ground state for
-                 *  that charge state.
-                 */
-                template<typename T_Particle>
-                DINLINE void operator()(T_Particle& particle)
-                {
-                    constexpr float_X numberBoundElectronsNeutralAtom
-                        = picongpu::traits::GetAtomicNumbers<T_Particle>::type::numberOfProtons;
-
-                    // check if target charge state is physical
-                    PMACC_ASSERT_MSG(
-                        numberBoundElectronsNeutralAtom >= T_ChargeStateParam::targetChargeState,
-                        "too few protons for target charge state");
-
-                    constexpr float_X targetNumberBoundElectrons
-                        = numberBoundElectronsNeutralAtom - T_ChargeStateParam::targetChargeState;
-
-                    picongpu::particles::atomicPhysics2::SetToAtomicGroundStateForChargeState{}(
-                        particle,
-                        targetNumberBoundElectrons);
-                }
-            };
-
             struct TemperatureParam
             {
                 /** Initial temperature
@@ -103,9 +69,8 @@ namespace picongpu
             };
             using AddTemperature = unary::Temperature<TemperatureParam>;
 
-
             // definition of set initial ionization
-            using SetIonization = generic::Free<ChargeState<ChargeStateParam>>;
+            using SetIonization = unary::ChargeState<15u>;
 
         } // namespace manipulators
     } // namespace particles
