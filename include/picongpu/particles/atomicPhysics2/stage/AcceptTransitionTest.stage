@@ -193,7 +193,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             // bound-free down
             /// @todo implement recombination, Brian Marre, 2023
 
-            // autonomous down
+            // autonomous ionization
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
                 PMACC_LOCKSTEP_KERNEL(

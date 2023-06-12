@@ -23,8 +23,10 @@
 // need unit.param, UNIT_LENGTH for normalisation
 
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
 
+#include <pmacc/static_assert.hpp>
 #include <pmacc/algorithms/math/PowerFunction.hpp>
 #include <pmacc/lockstep/ForEach.hpp>
 
@@ -32,6 +34,8 @@
 
 namespace picongpu::particles::atomicPhysics2::kernel
 {
+    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+
     /** @class fill rate cache kernel
      *
      * add for all atomic states and all bins the rate of each upward bound-free
@@ -51,8 +55,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
      * @tparam T_numberBins number of regular bins in histogram
      *
      * @tparam electronicIonization is channel active?
+     * @tparam T_TransitionOrdering ordering of assumed for transition DataBox
      */
-    template<uint8_t T_numberLevels, uint32_t T_numberAtomicStates, uint32_t T_numberBins, bool T_electronicIonization>
+    template<
+        uint8_t T_numberLevels,
+        uint32_t T_numberAtomicStates,
+        uint32_t T_numberBins,
+        bool T_electronicIonization,
+        procClass::TransitionOrdering T_TransitionOrdering>
     struct FillLocalRateCacheKernel_BoundFree
     {
         /** call operator
@@ -97,20 +107,28 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox) const
         {
             // check that correct databoxes are given
-            PMACC_CASSERT(
+            PMACC_CASSERT_MSG(
+                number_transitions_dataBox_not_bound_free_based,
                 static_cast<uint8_t>(T_AtomicStateNumberTransitionsBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
-            PMACC_CASSERT(
+                    == static_cast<uint8_t>(
+                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+            PMACC_CASSERT_MSG(
+                startIndex_dataBox_not_bound_free_based,
                 static_cast<uint8_t>(T_AtomicStateStartIndexBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
-            PMACC_CASSERT(
+                    == static_cast<uint8_t>(
+                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+            PMACC_CASSERT_MSG(
+                transition_dataBox_not_boud_free_based,
                 static_cast<uint8_t>(T_BoundFreeTransitionDataBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+                    == static_cast<uint8_t>(
+                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+            // check ordering of transition dataBox
+            PMACC_CASSERT_MSG(
+                wrong_ordering_of_DataBox,
+                static_cast<uint8_t>(T_BoundFreeTransitionDataBox::transitionOrdering)
+                    ==  static_cast<uint8_t>(T_TransitionOrdering));
 
-            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+                    // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())))

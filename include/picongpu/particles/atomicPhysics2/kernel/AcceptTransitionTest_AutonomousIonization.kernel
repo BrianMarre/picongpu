@@ -23,6 +23,8 @@
 
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
+
 #include "picongpu/particles/atomicPhysics2/rateCalculation/AutonomousTransitionRates.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
@@ -67,11 +69,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_TimeStepDataBox const localTimeStepBox,
             T_AutonomousTransitionDataBox const autonomousTransitionDataBox) const
         {
-            // check that correct databox given
-            PMACC_CASSERT(
+            // check that dataBox assumptions given
+            PMACC_CASSERT_MSG(
+                dataBox_does_not_contain_autonomous_transitions,
                 static_cast<uint8_t>(T_AutonomousTransitionDataBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
+                    == static_cast<uint8_t>(
+                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
+            PMACC_CASSERT_MSG(
+                wrong_ordering_of_DataBox,
+                static_cast<uint8_t>(T_AutonomousTransitionDataBox::transitionOrdering)
+                    == static_cast<uint8_t>(
+                        picongpu::particles::atomicPhysics2::processClass::TransitionOrdering::byUpperState));
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));

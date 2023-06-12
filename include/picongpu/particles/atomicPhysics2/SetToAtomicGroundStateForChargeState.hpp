@@ -21,7 +21,7 @@
 
 #include <pmacc/traits/HasFlag.hpp>
 
-namespace picongpu::particles::atomciPhysics2
+namespace picongpu::particles::atomicPhysics2
 {
     struct SetToAtomicGroundStateForChargeState
     {

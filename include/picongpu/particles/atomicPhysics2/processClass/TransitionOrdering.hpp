@@ -26,9 +26,9 @@
 namespace picongpu::particles::atomicPhysics2::processClass
 {
     //! predefined groups of processClass
-    enum struct TransitionDirection : uint8_t
+    enum struct TransitionOrdering : uint8_t
     {
-        upward = 0u,
-        downward = 1u
+        byLowerState = 0u,
+        byUpperState = 1u
     };
 } // namespace picongpu::particles::atomicPhysics2::processClass

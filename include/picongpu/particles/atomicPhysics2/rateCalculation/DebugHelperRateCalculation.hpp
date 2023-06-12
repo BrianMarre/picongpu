@@ -33,10 +33,10 @@
 
 #include "picongpu/particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
-#include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionData.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundBoundTransitionRates.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
+
+#include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 
 #include <pmacc/algorithms/math.hpp>
 
@@ -49,6 +49,8 @@
 
 namespace picongpu::particles::atomicPhysics2::rateCalculation::debug
 {
+    using tranOrd = picongpu::particles::atomicPhysics2::processClass::TransitionOrdering;
+
     /** collection of rate calculation tests
      *
      * see picongpuAtomicPhysicsTools repo, RateCalculationReference/calculatorMain.py
@@ -75,10 +77,10 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation::debug
         static constexpr float_X energyElectronBinWidth = 10._X; // eV
         static constexpr float_64 densityElectrons = 1.e28_X; // 1/(eV * m^3)
 
-        using S_BoundBoundBuffer = atomicData::BoundBoundTransitionDataBuffer<uint32_t, float_X, uint32_t, uint64_t>;
-        using S_BoundFreeBuffer = atomicData::BoundFreeTransitionDataBuffer<uint32_t, float_X, uint32_t, uint64_t>;
-        using S_BoundBoundBox = atomicData::BoundBoundTransitionDataBox<uint32_t, float_X, uint32_t, uint64_t>;
-        using S_BoundFreeBox = atomicData::BoundFreeTransitionDataBox<uint32_t, float_X, uint32_t, uint64_t>;
+        using S_BoundBoundBuffer = atomicData::BoundBoundTransitionDataBuffer<uint32_t, float_X, uint32_t, uint64_t, tranOrd::byLowerState>;
+        using S_BoundFreeBuffer = atomicData::BoundFreeTransitionDataBuffer<uint32_t, float_X, uint32_t, uint64_t, tranOrd::byLowerState>;
+        using S_BoundBoundBox = atomicData::BoundBoundTransitionDataBox<uint32_t, float_X, uint32_t, uint64_t, tranOrd::byLowerState>;
+        using S_BoundFreeBox = atomicData::BoundFreeTransitionDataBox<uint32_t, float_X, uint32_t, uint64_t, tranOrd::byLowerState>;
 
         using S_ChargeStateBuffer = atomicData::ChargeStateDataBuffer<uint32_t, float_X, S_ConfigNumber::atomicNumber>;
         using S_ChargeStateBox = atomicData::ChargeStateDataBox<uint32_t, float_X, S_ConfigNumber::atomicNumber>;

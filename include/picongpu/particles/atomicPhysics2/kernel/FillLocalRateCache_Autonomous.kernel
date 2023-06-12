@@ -22,14 +22,18 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/AutonomousTransitionRates.hpp"
 
+#include <pmacc/static_assert.hpp>
 #include <pmacc/lockstep/ForEach.hpp>
 
 #include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2::kernel
 {
+    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+
     /** fill rate cache kernel
      *
      * add for all atomic states the rate of each downward autonomous transition to the
@@ -40,8 +44,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
      *
      * @tparam T_numberAtomicStates number of atomic states in atomic data data base
      * @tparam T_autonomousIonization is channel active?
+     * @tparam T_TransitionOrdering ordering of assumed for transition DataBox
      */
-    template<uint32_t T_numberAtomicStates>
+    template<
+        uint32_t T_numberAtomicStates,
+        bool T_autonomousIonization,
+        procClass::TransitionOrdering T_TransitionOrdering>
     struct FillLocalRateCacheKernel_Autonomous
     {
         /** call operator
@@ -78,18 +86,23 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_AutonomousTransitionDataBox const autonomousTransitionDataBox) const
         {
             // check that correct databoxes are given
-            PMACC_CASSERT(
+            PMACC_CASSERT_MSG(
+                number_transitions_dataBox_not_autonomous_based,
                 static_cast<uint8_t>(T_AtomicStateNumberTransitionsBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
-            PMACC_CASSERT(
+                == static_cast<uint8_t>(procClass::ProcessClassGroup::autonomousBased));
+            PMACC_CASSERT_MSG(
+                startIndex_DataBox_not_autonomous_based,
                 static_cast<uint8_t>(T_AtomicStateStartIndexBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
-            PMACC_CASSERT(
+                == static_cast<uint8_t>(procClass::ProcessClassGroup::autonomousBased));
+            PMACC_CASSERT_MSG(
+                transition_dataBox_not_autonomousBased,
                 static_cast<uint8_t>(T_AutonomousTransitionDataBox::processClassGroup)
-                == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
+                == static_cast<uint8_t>(procClass::ProcessClassGroup::autonomousBased));
+            // check ordering of transition dataBox
+            PMACC_CASSERT_MSG(
+                wrong_ordering_of_DataBox,
+                static_cast<uint8_t>(T_AutonomousTransitionDataBox::transitionOrdering)
+                    ==  static_cast<uint8_t>(T_TransitionOrdering));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -98,33 +111,32 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 - areaMapping.getGuardingSuperCells();
 
             auto& rateCache = localRateCacheBox(superCellFieldIdx);
-
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
 
-            forEachAtomicState(
-                [&worker, &rateCache, &startIndexDataBox, &numberTransitionsDataBox, &autonomousTransitionDataBox](
-                    uint32_t const atomicStateCollectionIndex)
-                {
-                    uint32_t const numberTransitionsDown
-                        = numberTransitionsDataBox.numberOfTransitionsDown(atomicStateCollectionIndex);
-
-                    uint32_t offset = startIndexDataBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex);
-
-                    for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsDown; i++)
+            if constexpr(T_autonomousIonization)
+            {
+                forEachAtomicState(
+                    [&worker, &rateCache, &startIndexDataBox, &numberTransitionsDataBox, &autonomousTransitionDataBox](
+                        uint32_t const atomicStateCollectionIndex)
                     {
-                        // no check for if processClass channel is active, since currently
-                        //  only one exist at all
+                        uint32_t const numberTransitionsDown
+                            = numberTransitionsDataBox.numberOfTransitionsDown(atomicStateCollectionIndex);
 
-                        // 1/UNIT_TIME
-                        rateCache.add(
-                            atomicStateCollectionIndex,
-                            -picongpu::particles::atomicPhysics2::rateCalculation::AutonomousTransitionRates ::
-                                template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
-                                    // transitionCollectionIndex
-                                    offset + i,
-                                    autonomousTransitionDataBox));
-                    }
-                });
+                        uint32_t offset = startIndexDataBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex);
+
+                        for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsDown; i++)
+                        {
+                                // 1/UNIT_TIME
+                                rateCache.add(
+                                    atomicStateCollectionIndex,
+                                    -picongpu::particles::atomicPhysics2::rateCalculation::AutonomousTransitionRates ::
+                                        template rateAutonomousIonization<T_AutonomousTransitionDataBox>(
+                                            // transitionCollectionIndex
+                                            offset + i,
+                                            autonomousTransitionDataBox));
+                        }
+                    });
+            }
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

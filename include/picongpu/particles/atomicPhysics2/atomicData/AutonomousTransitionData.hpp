@@ -25,6 +25,7 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -48,7 +49,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage,
      *      typically uint64_t
-     * @tparam T_Direction transition direction data is stored by
+     * @tparam T_TransitionOrdering ordering used for data
      *
      * @attention ConfigNumber specifies the number of a state as defined by the configNumber
      *      class, while index always refers to a collection index.
@@ -59,8 +60,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         typename T_Number,
         typename T_Value,
         typename T_CollectionIndex,
-        typename T_ConfigNumberDataType
-        picongpu::particles::atomicPhysics2::processClass::TransitionDirection T_Direction>
+        typename T_ConfigNumberDataType,
+        picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
     class AutonomousTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
@@ -69,7 +70,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         static constexpr auto processClassGroup
             = particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased;
-        static constexpr auto direction = T_Direction;
+        static constexpr auto transitionOrdering = T_TransitionOrdering;
 
     private:
         typename S_TransitionDataBox::S_DataBox::BoxValue m_boxTransitionRate; // unit: 1/UNIT_TIME
@@ -162,23 +163,24 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_Value dataType used for value storage, typically float_X
      * @tparam T_CollectionIndex data type used for configNumber storage, typically uint32_t
      * @tparam T_ConfigNumberDataType dataType used for configNumber storage, typically uint64_t
-     * @tparam T_Direction transition direction data is stored by
+     * @tparam T_TransitionOrdering ordering used for data
      */
     template<
         typename T_Number,
         typename T_Value,
         typename T_CollectionIndex,
         typename T_ConfigNumberDataType,
-        picongpu::particles::atomicPhysics2::processClass::TransitionDirection T_Direction>
+        picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
     class AutonomousTransitionDataBuffer : public TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBuffer = TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>;
-        using DataBoxType = AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType>;
+        using DataBoxType = AutonomousTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType,
+            T_TransitionOrdering>;
 
         static constexpr auto processClassGroup
             = particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased;
-        static constexpr auto direction = T_Direction;
+        static constexpr auto transitionOrdering = T_TransitionOrdering;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferTransitionRate;

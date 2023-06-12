@@ -26,6 +26,7 @@
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
+#include <pmacc/static_assert.hpp>
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
 #include <cstdint>
@@ -54,9 +55,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param transitionBox deviceDataBox giving access to transition property data,
          * @param chargeStateBox optional deviceDataBox giving access to charge state property data
          *  required for T_ProcessClassGroup = boundFreeBased
-         *
-         * @attention transitionBox must be consistent with T_ProcessClass,
-         *      otherwise you will create unphysical behaviour and/or illegal memory accesses
          */
         template<
             typename T_Worker,
@@ -75,6 +73,15 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_TransitionDataBox transitionBox,
             T_ChargeStateBox... chargeStateBox) const
         {
+            namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+
+            // check transition dataBox consistent with T_ProcessClass
+            //  otherwise unphysical behaviour and/or illegal memory accesses
+            PMACC_CASSERT_MSG(
+                transition_dataBox_and_processClass_inconsistent,
+                procClass::IsProcess<T_TransitionDataBox::processClassGroup>::check(
+                    static_cast<uint8_t>(T_ProcessClass)));
+
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
 
@@ -91,8 +98,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // end kernel if no particles
             if(!forEachLocalIonBoxEntry.hasParticles())
                 return;
-
-            namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
             forEachLocalIonBoxEntry(
                 [&electronHistogram, &atomicStateBox, &transitionBox, &chargeStateBox...](
