@@ -53,7 +53,7 @@
 
 // enum of groups of processClass's
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
-// enum of transition directions
+// enum of transition ordering in dataBoxes
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 
 #include <cstdint>
@@ -1325,9 +1325,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // autonomous transitions are always only downward
 
             // re-sort by upper state of transition
-            boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
-            boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
-            autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx, false>());
+            boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
+            boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
+            autonomousTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
 
             // store transition data in inverse order
             storeTransitionData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byUpperState>, S_AtomicStateDataBox>(

@@ -22,47 +22,89 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
+#include "picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp"
+
 #include <cstdint>
 #include <tuple>
+#include <stdexcept>
+#include <string>
 
-namespace picongpu
+namespace picongpu::particles::atomicPhysics2::atomicData
 {
-    namespace particles
+    /** comparison functor in between transition tuples
+     *
+     * transitions are ordered primarily ascending by lower/upper charge state,
+     *  secondary ascending by lower/upper atomicConfigNumber,
+     *  tertiary ascending by upper/lower charge state,
+     *  quartary ascending by upper/lower atomicConfigNumber
+     *
+     * @tparam T_Number data type used for numbers
+     * @tparam T_ConfigNumber dataType used for storage of configNumber
+     * @tparam orderByLowerState true=^=order by by lower , false=^=upper state
+     */
+    template<
+        typename T_Value,
+        typename T_ConfigNumber,
+        bool orderByLowerState>
+    class CompareTransitionTupel
     {
-        namespace atomicPhysics2
+    public:
+        template<typename T_Tuple>
+        bool operator()(T_Tuple& tuple_1, T_Tuple& tuple_2)
         {
-            namespace atomicData
+            using Idx = typename T_ConfigNumber::DataType;
+
+            Idx lowerAtomicState_1 = getLowerStateConfigNumber<Idx, T_Value>(tuple_1);
+            Idx lowerAtomicState_2 = getLowerStateConfigNumber<Idx, T_Value>(tuple_2);
+            uint8_t lowerChargeState_1 = T_ConfigNumber::getIonizationState(
+                lowerAtomicState_1);
+            uint8_t lowerChargeState_2 = T_ConfigNumber::getIonizationState(
+                lowerAtomicState_2);
+
+            Idx upperAtomicState_1 = getUpperStateConfigNumber<Idx, T_Value>(tuple_1);
+            Idx upperAtomicState_2 = getUpperStateConfigNumber<Idx, T_Value>(tuple_2);
+            uint8_t upperChargeState_1 = T_ConfigNumber::getIonizationState(
+                upperAtomicState_1);
+            uint8_t upperChargeState_2 = T_ConfigNumber::getIonizationState(
+                upperAtomicState_2);
+
+            if constexpr(orderByLowerState)
             {
-                /** comparison functor in between transition tuples
-                 *
-                 * @tparam T_Number data type used for numbers
-                 * @tparam T_idx data type used for condigNumbers
-                 * @tparam orderByLowerState true=^=order by by lower , false=^=upper state
-                 */
-                template<typename T_Value, typename T_Idx, bool orderByLowerState>
-                class CompareTransitionTupel
-                {
-                public:
-                    template<typename T_Tuple>
-                    bool operator()(T_Tuple& tuple_1, T_Tuple& tuple_2)
-                    {
-                        T_Idx lowerState_1 = getLowerStateConfigNumber<T_Idx, T_Value>(tuple_1);
-                        T_Idx lowerState_2 = getLowerStateConfigNumber<T_Idx, T_Value>(tuple_2);
+                if (lowerChargeState_1 != lowerChargeState_2)
+                    return (lowerChargeState_1 < lowerChargeState_2);
+                // lowerChargeState_1 == lowerChargeState_2
+                if (lowerAtomicState_1 != lowerAtomicState_2)
+                    return (lowerAtomicState_1 < lowerAtomicState_2);
+                // lowerAtomicState_1 == lowerAtomicState_2
+                if (upperChargeState_1 != upperChargeState_2)
+                    return (upperChargeState_1 < lowerChargeState_2);
+                // upperChargeState_1 == upperChargeState_2
+                if (upperAtomicState_1 != upperAtomicState_2)
+                    return (upperAtomicState_1 < upperAtomicState_2);
 
-                        T_Idx upperState_1 = getUpperStateConfigNumber<T_Idx, T_Value>(tuple_1);
-                        T_Idx upperState_2 = getUpperStateConfigNumber<T_Idx, T_Value>(tuple_2);
+                // upperAtomicState_1 == upperAtomicState_2: --> all equal
+                throw std::runtime_error("transitions with lower and upper state being equal are not allowed in the input data set!, Z: "
+                    + std::to_string(T_ConfigNumber::atomicNumber));
+            }
+            else
+            {
+                if (upperChargeState_1 != upperChargeState_2)
+                    return (upperChargeState_1 < lowerChargeState_2);
+                // upperChargeState_1 == upperChargeState_2
+                if (upperAtomicState_1 != upperAtomicState_2)
+                    return (upperAtomicState_1 < upperAtomicState_2);
+                // upperAtomicState_1 == upperAtomicState_2
+                if (lowerChargeState_1 != lowerChargeState_2)
+                    return (lowerChargeState_1 < lowerChargeState_2);
+                // lowerChargeState_1 == lowerChargeState_2
+                if (lowerAtomicState_1 != lowerAtomicState_2)
+                    return (lowerAtomicState_1 < lowerAtomicState_2);
 
-                        if constexpr(orderByLowerState)
-                            return (
-                                (lowerState_1 < lowerState_2)
-                                || ((lowerState_1 == lowerState_2) && (upperState_1 < upperState_2)));
-                        else
-                            return (
-                                (upperState_1 < upperState_2)
-                                || ((upperState_1 == upperState_2) && (lowerState_1 < lowerState_2)));
-                    }
-                };
-            } // namespace atomicData
-        } // namespace atomicPhysics2
-    } // namespace particles
-} // namespace picongpu
+                // lowerAtomicState_1 == lowerAtomicState_2: --> all equal
+                throw std::runtime_error("transitions with lower and upper state being equal are not"
+                "allowed in the input data set!, Z: "
+                    + std::to_string(T_ConfigNumber::atomicNumber));
+            }
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2::atomicData
