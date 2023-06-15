@@ -24,7 +24,6 @@
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
-
 #include "picongpu/particles/atomicPhysics2/rateCalculation/AutonomousTransitionRates.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>

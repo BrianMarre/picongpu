@@ -33,7 +33,6 @@
 
 namespace picongpu::particles::atomicPhysics2::initElectrons
 {
-
     struct Inelastic2BodyCollisionFromCoMoving
     {
     private:
@@ -129,10 +128,12 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                 /// @todo generalize the error message,  Brian Marre, 2023
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
                     if(deltaEnergy < 0._X)
-                        printf("atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0,  %.8f !\n", deltaEnergy);
+                        printf(
+                            "atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0,  %.8f !\n",
+                            deltaEnergy);
 
 #pragma unroll
-                for (uint8_t i = 0u; i < picongpu::simDim; i++)
+                for(uint8_t i = 0u; i < picongpu::simDim; i++)
                 {
                     electron[momentum_][i] = 0._X;
                     ion[momentum_][i] = 0._X;
@@ -200,9 +201,9 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             pmacc::math::sincos(phi, sinPhi, cosPhi);
 
             floatD_64 directionVector;
-            if constexpr (picongpu::simDim == 2u)
+            if constexpr(picongpu::simDim == 2u)
                 directionVector = floatD_64(cosPhi, sinTheta);
-            if constexpr (picongpu::simDim == 3u)
+            if constexpr(picongpu::simDim == 3u)
                 directionVector = floatD_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
 
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted

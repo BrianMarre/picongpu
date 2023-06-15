@@ -26,9 +26,9 @@
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
 
-#include <pmacc/static_assert.hpp>
 #include <pmacc/algorithms/math/PowerFunction.hpp>
 #include <pmacc/lockstep/ForEach.hpp>
+#include <pmacc/static_assert.hpp>
 
 #include <cstdint>
 
@@ -126,9 +126,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
             PMACC_CASSERT_MSG(
                 wrong_ordering_of_DataBox,
                 static_cast<uint8_t>(T_BoundFreeTransitionDataBox::transitionOrdering)
-                    ==  static_cast<uint8_t>(T_TransitionOrdering));
+                    == static_cast<uint8_t>(T_TransitionOrdering));
 
-                    // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())))

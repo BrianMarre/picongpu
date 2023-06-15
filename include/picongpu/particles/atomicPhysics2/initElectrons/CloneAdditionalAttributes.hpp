@@ -17,7 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements cloning all particle attributes, excluding momentum, particleID and multiMask, from ion to electron
+//! @file implements cloning all particle attributes, excluding momentum, particleID and multiMask, from ion to
+//! electron
 
 #pragma once
 
@@ -33,7 +34,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
          *  - particleId, new particle --> new ID required, init by default
          *  - multiMask, faster to set hard than copy, set in Kernel directly
          *  - momentum, is mass dependent and therefore always changes
-        */
+         */
         template<typename T_IonParticle, typename T_ElectronParticle>
         HDINLINE static void init(
             T_IonParticle& ion,

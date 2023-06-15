@@ -48,15 +48,13 @@ namespace picongpu::particles::atomicPhysics2
             PMACC_DEVICE_ASSERT_MSG(numberBoundElectrons >= 0, "Number of bound electrons must be >= 0");
 
             // init atomic state consistently if present
-            if constexpr(pmacc::traits::HasFlag<typename T_Ion::FrameType, isAtomicPhysicsIon<>>::type::
-                                value)
+            if constexpr(pmacc::traits::HasFlag<typename T_Ion::FrameType, isAtomicPhysicsIon<>>::type::value)
             {
                 // get current Configuration number object
                 auto configNumber = ion[atomicConfigNumber_];
 
                 // create blank occupation number vector
-                auto occupationNumberVector
-                    = pmacc::math::Vector<uint8_t, configNumber.numberLevels>::create(0);
+                auto occupationNumberVector = pmacc::math::Vector<uint8_t, configNumber.numberLevels>::create(0);
                 // could actually be reduced to uint8_t since Z<=98(Californium) for our purposes
 
                 uint8_t numberElectronsRemaining = static_cast<uint8_t>(numberBoundElectrons);

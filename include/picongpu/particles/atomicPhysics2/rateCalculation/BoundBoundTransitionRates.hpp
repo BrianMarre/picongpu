@@ -114,7 +114,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             //  due to definition as central energy of bin of energy histogram
 
             // not a physical forbidden transition, electron has enough energy  higher than deltaE of transition
-            if (U >=  1._X)
+            if(U >= 1._X)
             {
                 float_X const logU = math::log(U);
 

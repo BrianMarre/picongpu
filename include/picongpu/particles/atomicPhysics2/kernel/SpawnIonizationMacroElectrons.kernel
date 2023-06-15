@@ -28,9 +28,9 @@
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 
-#include <pmacc/static_assert.hpp>
 #include <pmacc/lockstep/ForEach.hpp>
 #include <pmacc/particles/algorithm/ForEach.hpp>
+#include <pmacc/static_assert.hpp>
 
 #include <cstdint>
 
@@ -100,7 +100,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
         {
             namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
-            //check transition data box content consistent with processClassGroup,
+            // check transition data box content consistent with processClassGroup,
             //  otherwise unpyhsical behaviour and/or illegal memory access
             PMACC_CASSERT_MSG(
                 processClassGroup_and_transition_dataBox_not_consistent,

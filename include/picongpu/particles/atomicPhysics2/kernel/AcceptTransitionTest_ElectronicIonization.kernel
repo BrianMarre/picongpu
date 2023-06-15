@@ -82,7 +82,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 dataBox_does_not_contain_bound_free_transitions,
                 static_cast<uint8_t>(T_BoundFreeTransitionDataBox::processClassGroup)
                     == static_cast<uint8_t>(
-                    picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
+                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT_MSG(
                 wrong_ordering_of_DataBox,
                 static_cast<uint8_t>(T_BoundFreeTransitionDataBox::transitionOrdering)

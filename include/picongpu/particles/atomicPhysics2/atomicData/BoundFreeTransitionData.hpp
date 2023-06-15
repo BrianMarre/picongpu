@@ -354,7 +354,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     {
     public:
         using S_TransitionDataBuffer = TransitionDataBuffer<T_Number, T_Value, T_CollectionIndex>;
-        using DataBoxType = BoundFreeTransitionDataBox<T_Number, T_Value, T_CollectionIndex, T_ConfigNumberDataType,
+        using DataBoxType = BoundFreeTransitionDataBox<
+            T_Number,
+            T_Value,
+            T_CollectionIndex,
+            T_ConfigNumberDataType,
             T_TransitionOrdering>;
 
         static constexpr auto processClassGroup
