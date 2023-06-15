@@ -229,26 +229,17 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             = AtomicStateNumberOfTransitionsDataBox_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
         template<picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
-        using S_BoundBoundTransitionDataBox = BoundBoundTransitionDataBox<
-            TypeNumber,
-            TypeValue,
-            T_CollectionIndex,
-            typename T_ConfigNumber::DataType,
-            T_TransitionOrdering>;
+        using S_BoundBoundTransitionDataBox
+            = BoundBoundTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, typename T_ConfigNumber::DataType,
+                T_TransitionOrdering>;
         template<picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
-        using S_BoundFreeTransitionDataBox = BoundFreeTransitionDataBox<
-            TypeNumber,
-            TypeValue,
-            T_CollectionIndex,
-            typename T_ConfigNumber::DataType,
-            T_TransitionOrdering>;
+        using S_BoundFreeTransitionDataBox
+            = BoundFreeTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, typename T_ConfigNumber::DataType,
+                T_TransitionOrdering>;
         template<picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
-        using S_AutonomousTransitionDataBox = AutonomousTransitionDataBox<
-            TypeNumber,
-            TypeValue,
-            T_CollectionIndex,
-            typename T_ConfigNumber::DataType,
-            T_TransitionOrdering>;
+        using S_AutonomousTransitionDataBox
+            = AutonomousTransitionDataBox<TypeNumber, TypeValue, T_CollectionIndex, typename T_ConfigNumber::DataType,
+                T_TransitionOrdering>;
 
         using S_TransitionSelectionDataBox = TransitionSelectionDataBox<TypeNumber, TypeValue>;
 
@@ -275,20 +266,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateNumberOfTransitionsDataBuffer_Autonomous;
 
         // transition data, normal, sorted by lower state
-        std::unique_ptr<S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>>
-            boundBoundTransitionDataBuffer;
-        std::unique_ptr<S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>>
-            boundFreeTransitionDataBuffer;
-        std::unique_ptr<S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>>
-            autonomousTransitionDataBuffer;
+        std::unique_ptr<S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>>boundBoundTransitionDataBuffer;
+        std::unique_ptr<S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>> boundFreeTransitionDataBuffer;
+        std::unique_ptr<S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>> autonomousTransitionDataBuffer;
 
         // transition data, inverted,sorted by upper state
-        std::unique_ptr<S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>>
-            inverseBoundBoundTransitionDataBuffer;
-        std::unique_ptr<S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>>
-            inverseBoundFreeTransitionDataBuffer;
-        std::unique_ptr<S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>>
-            inverseAutonomousTransitionDataBuffer;
+        std::unique_ptr<S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>> inverseBoundBoundTransitionDataBuffer;
+        std::unique_ptr<S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>> inverseBoundFreeTransitionDataBuffer;
+        std::unique_ptr<S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>> inverseAutonomousTransitionDataBuffer;
 
         // transition selection data
         std::unique_ptr<S_TransitionSelectionDataBuffer> transitionSelectionDataBuffer;
@@ -799,25 +784,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     m_numberAtomicStates));
 
             // transition data
-            boundBoundTransitionDataBuffer.reset(
-                new S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>(
-                    m_numberBoundBoundTransitions));
-            boundFreeTransitionDataBuffer.reset(
-                new S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>(
-                    m_numberBoundFreeTransitions));
-            autonomousTransitionDataBuffer.reset(
-                new S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>(
-                    m_numberAutonomousTransitions));
+            boundBoundTransitionDataBuffer.reset(new S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>(m_numberBoundBoundTransitions));
+            boundFreeTransitionDataBuffer.reset(new S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>(m_numberBoundFreeTransitions));
+            autonomousTransitionDataBuffer.reset(new S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byLowerState>(m_numberAutonomousTransitions));
 
             inverseBoundBoundTransitionDataBuffer.reset(
-                new S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>(
-                    m_numberBoundBoundTransitions));
+                new S_BoundBoundTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>(m_numberBoundBoundTransitions));
             inverseBoundFreeTransitionDataBuffer.reset(
-                new S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>(
-                    m_numberBoundFreeTransitions));
+                new S_BoundFreeTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>(m_numberBoundFreeTransitions));
             inverseAutonomousTransitionDataBuffer.reset(
-                new S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>(
-                    m_numberAutonomousTransitions));
+                new S_AutonomousTransitionDataBuffer<procClass::TransitionOrdering::byUpperState>(m_numberAutonomousTransitions));
 
             // transition selection data
             transitionSelectionDataBuffer.reset(new S_TransitionSelectionDataBuffer(m_numberAtomicStates));
@@ -1167,8 +1143,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             startIndexHostBox.storeDown(lastAtomicStateCollectionIndex, lastStartIndex);
             numberHostBox.storeDown(lastAtomicStateCollectionIndex, numberInBlock);
             lastStartIndex = i;
-
-            /// @attention
         }
 
         /** fill the transition selectionBuffer
@@ -1307,28 +1281,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateDataBuffer->hostToDevice();
 
             //      transitions
-            storeTransitionData<
-                S_BoundBoundTransitionTuple,
-                S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byLowerState>,
-                S_AtomicStateDataBox>(
+            storeTransitionData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byLowerState>, S_AtomicStateDataBox>(
                 boundBoundTransitions,
                 boundBoundTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             boundBoundTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
-                S_BoundFreeTransitionTuple,
-                S_BoundFreeTransitionDataBox<procClass::TransitionOrdering::byLowerState>,
-                S_AtomicStateDataBox>(
+            storeTransitionData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox<procClass::TransitionOrdering::byLowerState>, S_AtomicStateDataBox>(
                 boundFreeTransitions,
                 boundFreeTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             boundFreeTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
-                S_AutonomousTransitionTuple,
-                S_AutonomousTransitionDataBox<procClass::TransitionOrdering::byLowerState>,
-                S_AtomicStateDataBox>(
+            storeTransitionData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox<procClass::TransitionOrdering::byLowerState>, S_AtomicStateDataBox>(
                 autonomousTransitions,
                 autonomousTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
@@ -1363,28 +1328,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             autonomousTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
 
             // store transition data in inverse order
-            storeTransitionData<
-                S_BoundBoundTransitionTuple,
-                S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byUpperState>,
-                S_AtomicStateDataBox>(
+            storeTransitionData<S_BoundBoundTransitionTuple, S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byUpperState>, S_AtomicStateDataBox>(
                 boundBoundTransitions,
                 inverseBoundBoundTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             inverseBoundBoundTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
-                S_BoundFreeTransitionTuple,
-                S_BoundFreeTransitionDataBox<procClass::TransitionOrdering::byUpperState>,
-                S_AtomicStateDataBox>(
+            storeTransitionData<S_BoundFreeTransitionTuple, S_BoundFreeTransitionDataBox<procClass::TransitionOrdering::byUpperState>, S_AtomicStateDataBox>(
                 boundFreeTransitions,
                 inverseBoundFreeTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             inverseBoundFreeTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
-                S_AutonomousTransitionTuple,
-                S_AutonomousTransitionDataBox<procClass::TransitionOrdering::byUpperState>,
-                S_AtomicStateDataBox>(
+            storeTransitionData<S_AutonomousTransitionTuple, S_AutonomousTransitionDataBox<procClass::TransitionOrdering::byUpperState>, S_AtomicStateDataBox>(
                 autonomousTransitions,
                 inverseAutonomousTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
@@ -1601,70 +1557,93 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return atomicStateNumberOfTransitionsDataBuffer_Autonomous->getDeviceDataBox();
         }
 
-        // transition data, normal
-        //! upward transition access, @tparam hostData true: get hostDataBox, false: get DeviceDataBox
-        template<bool hostData>
-        S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byLowerState> getBoundBoundTransitionDataBox()
+        // transition data
+        /** bound-bound transition data access
+         *
+         * @tparam hostData true =^= get hostDataBox, false =^= get DeviceDataBox
+         * @tparam T_TransitionOrdering, get data box ordered by lower or upper state,
+         *  ordering defined by CompareTransitionTupel implementation
+         */
+        template<bool hostData, procClass::TransitionOrdering T_TransitionOrdering>
+        S_BoundBoundTransitionDataBox<T_TransitionOrdering> getBoundBoundTransitionDataBox()
         {
-            if constexpr(hostData)
-                return boundBoundTransitionDataBuffer->getHostDataBox();
+            constexpr bool byLowerState
+                = (static_cast<uint8_t>(T_TransitionOrdering)
+                    == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
+
+            if constexpr(byLowerState)
+            {
+                if constexpr(hostData)
+                    return boundBoundTransitionDataBuffer->getHostDataBox();
+                else
+                    return boundBoundTransitionDataBuffer->getDeviceDataBox();
+            }
             else
-                return boundBoundTransitionDataBuffer->getDeviceDataBox();
+            {
+                if constexpr(hostData)
+                    return inverseBoundBoundTransitionDataBuffer->getHostDataBox();
+                else
+                    return inverseBoundBoundTransitionDataBuffer->getDeviceDataBox();
+            }
         }
 
-        //! upward transition access, upward transition access,@tparam hostData true: get hostDataBox, false: get
-        //! DeviceDataBox
-        template<bool hostData>
-        S_BoundFreeTransitionDataBox<procClass::TransitionOrdering::byLowerState> getBoundFreeTransitionDataBox()
+         /** bound-free transition data access
+         *
+         * @tparam hostData true =^= get hostDataBox, false =^= get DeviceDataBox
+         * @tparam T_TransitionOrdering, get data box ordered by lower or upper state,
+         *  ordering defined by CompareTransitionTupel implementation
+         */
+        template<bool hostData, procClass::TransitionOrdering T_TransitionOrdering>
+        S_BoundFreeTransitionDataBox<T_TransitionOrdering> getBoundFreeTransitionDataBox()
         {
-            if constexpr(hostData)
-                return boundFreeTransitionDataBuffer->getHostDataBox();
+            constexpr bool byLowerState
+                = (static_cast<uint8_t>(T_TransitionOrdering)
+                    == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
+
+            if constexpr(byLowerState)
+            {
+                if constexpr(hostData)
+                    return boundFreeTransitionDataBuffer->getHostDataBox();
+                else
+                    return boundFreeTransitionDataBuffer->getDeviceDataBox();
+            }
             else
-                return boundFreeTransitionDataBuffer->getDeviceDataBox();
+            {
+                if constexpr(hostData)
+                    return inverseBoundFreeTransitionDataBuffer->getHostDataBox();
+                else
+                    return inverseBoundFreeTransitionDataBuffer->getDeviceDataBox();
+            }
         }
 
-        //! upward transition access, @tparam hostData true: get hostDataBox, false: get DeviceDataBox
-        template<bool hostData>
-        S_AutonomousTransitionDataBox<procClass::TransitionOrdering::byLowerState> getAutonomousTransitionDataBox()
+         /** autonomous transition data access
+         *
+         * @tparam hostData true =^= get hostDataBox, false =^= get DeviceDataBox
+         * @tparam T_TransitionOrdering, get data box ordered by lower or upper state,
+         *  ordering defined by CompareTransitionTupel implementation
+         */
+        template<bool hostData, procClass::TransitionOrdering T_TransitionOrdering>
+        S_AutonomousTransitionDataBox<T_TransitionOrdering> getAutonomousTransitionDataBox()
         {
-            if constexpr(hostData)
-                return autonomousTransitionDataBuffer->getHostDataBox();
-            else
-                return autonomousTransitionDataBuffer->getDeviceDataBox();
-        }
+            constexpr bool byLowerState
+                = (static_cast<uint8_t>(T_TransitionOrdering)
+                    == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
 
-        // transition data, inverted
-        //! downward transition access,@tparam hostData true: get hostDataBox, false: get DeviceDataBox
-        template<bool hostData>
-        S_BoundBoundTransitionDataBox<procClass::TransitionOrdering::byUpperState>
-        getInverseBoundBoundTransitionDataBox()
-        {
-            if constexpr(hostData)
-                return inverseBoundBoundTransitionDataBuffer->getHostDataBox();
+            if constexpr(byLowerState)
+            {
+                if constexpr(hostData)
+                    return autonomousTransitionDataBuffer->getHostDataBox();
+                else
+                    return autonomousTransitionDataBuffer->getDeviceDataBox();
+            }
             else
-                return inverseBoundBoundTransitionDataBuffer->getDeviceDataBox();
-        }
+            {
 
-        //! downward transition access, @tparam hostData true: get hostDataBox, false: get DeviceDataBox
-        template<bool hostData>
-        S_BoundFreeTransitionDataBox<procClass::TransitionOrdering::byUpperState>
-        getInverseBoundFreeTransitionDataBox()
-        {
-            if constexpr(hostData)
-                return inverseBoundFreeTransitionDataBuffer->getHostDataBox();
-            else
-                return inverseBoundFreeTransitionDataBuffer->getDeviceDataBox();
-        }
-
-        //! downward transition access @tparam hostData true: get hostDataBox, false: get DeviceDataBox
-        template<bool hostData>
-        S_AutonomousTransitionDataBox<procClass::TransitionOrdering::byUpperState>
-        getInverseAutonomousTransitionDataBox()
-        {
-            if constexpr(hostData)
-                return inverseAutonomousTransitionDataBuffer->getHostDataBox();
-            else
-                return inverseAutonomousTransitionDataBuffer->getDeviceDataBox();
+                if constexpr(hostData)
+                    return inverseAutonomousTransitionDataBuffer->getHostDataBox();
+                else
+                    return inverseAutonomousTransitionDataBuffer->getDeviceDataBox();
+            }
         }
 
         // transition selection data
@@ -1691,6 +1670,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         {
             return m_numberBoundFreeTransitions;
         }
+
         uint32_t getNumberAutonomousTransitions() const
         {
             return m_numberAutonomousTransitions;
