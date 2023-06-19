@@ -21,6 +21,8 @@
 
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 
+#include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
+
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -321,4 +323,15 @@ namespace picongpu::particles::atomicPhysics2::debug
         std::cout << "\t\t - boundElectrons: " << ion[boundElectrons_] << std::endl;
     }
 
+    template<typename T_Tuple, typename T_Idx, typename T_Value, typename T_ConfigNumber>
+    void printTransitionTupleToConsole(T_Tuple const& tuple)
+    {
+        T_Idx const upperAtomicState = picongpu::particles::atomicPhysics2::atomicData::getUpperStateConfigNumber<T_Idx, T_Value>(tuple);
+        T_Idx const lowerAtomicState = picongpu::particles::atomicPhysics2::atomicData::getLowerStateConfigNumber<T_Idx, T_Value>(tuple);
+        uint8_t const upperChargeState = T_ConfigNumber::getChargeState(upperAtomicState);
+        uint8_t const lowerChargeState = T_ConfigNumber::getChargeState(lowerAtomicState);
+
+        std::cout <<"State : " << static_cast<uint16_t>(lowerChargeState) << ", " << lowerAtomicState
+            << ", " << static_cast<uint16_t>(upperChargeState) << ", " << upperAtomicState << std::endl;
+    }
 } // namespace picongpu::particles::atomicPhysics2::debug

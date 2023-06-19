@@ -56,6 +56,9 @@
 // enum of transition ordering in dataBoxes
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 
+// debug only
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -708,7 +711,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 checkTransitionTuple(currentTransitionTuple);
 
                 if (CompareTransitionTupel<TypeValue, ConfigNumber, /*order by Lower state*/ true>{}(currentTransitionTuple, lastTransitionTuple))
+                {
+                    picongpu::particles::atomicPhysics2::debug::printTransitionTupleToConsole<T_TransitionTuple, Idx, TypeValue, ConfigNumber>(lastTransitionTuple);
+                    picongpu::particles::atomicPhysics2::debug::printTransitionTupleToConsole<T_TransitionTuple, Idx, TypeValue, ConfigNumber>(currentTransitionTuple);
                     throw std::runtime_error("atomicPhysics ERROR: wrong ordering of input data");
+                }
 
                 lastTransitionTuple = currentTransitionTuple;
             }
@@ -1627,10 +1634,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         {
             return m_numberAtomicStates;
         }
+
         uint32_t getNumberBoundBoundTransitions() const
         {
             return m_numberBoundBoundTransitions;
         }
+
         uint32_t getNumberBoundFreeTransitions() const
         {
             return m_numberBoundFreeTransitions;

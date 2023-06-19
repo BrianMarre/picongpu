@@ -141,8 +141,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
 
             forEachAtomicStateAndBin(
-                [&upward,
-                 &worker,
+                [&worker,
                  &rateCache,
                  &histogram,
                  &atomicStateDataDataBox,
