@@ -94,7 +94,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     ions.getDeviceParticlesBox(),
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundFreeTransitionDataBox<false>());
+                    atomicData.template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
 
                 /// @todo field ionization, Brian Marre, 2023
             }
@@ -116,7 +116,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     ions.getDeviceParticlesBox(),
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getInverseAutonomousTransitionDataBox<false>(),
+                    atomicData.template getAutonomousTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>(),
                     rngFactory,
                     atomicData.template getChargeStateDataDataBox<false>());
             }

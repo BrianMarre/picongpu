@@ -654,6 +654,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<typename T_TransitionTuple>
         ALPAKA_FN_HOST void checkTransitionTuple(T_TransitionTuple& transitionTuple)
         {
+            std::string transitionType = getStringTransitionType<T_TransitionTuple>();
+
             uint8_t const lowerChargeState = ConfigNumber::getChargeState(getLowerStateConfigNumber<Idx, TypeValue>(transitionTuple));
             uint8_t const upperChargeState = ConfigNumber::getChargeState(getUpperStateConfigNumber<Idx, TypeValue>(transitionTuple));
 
@@ -686,16 +688,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<typename T_TransitionTuple>
         ALPAKA_FN_HOST void checkTransitionList(std::list<T_TransitionTuple>& transitionList)
         {
-            std::string transitionType = getStringTransitionType<T_TransitionTuple>();
-
             typename std::list<T_TransitionTuple>::iterator iter = transitionList.begin();
 
-            T_TransitionTuple& currentTransitionTuple;
-
-            Idx currentLowerAtomicStateConfigNumber;
-            Idx currentUpperAtomicStateConfigNumber;
-            uint8_t currentLowerChargeState;
-            uint8_t currentUpperChargeState;
+            T_TransitionTuple currentTransitionTuple;
 
             // empty transition list, i.e. ground-ground transitions only
             if(iter == transitionList.end())
@@ -703,7 +698,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             // read first list entry
             checkTransitionTuple<T_TransitionTuple>(*iter);
-            T_TransitionTuple& lastTransitionTuple = *iter;
+            T_TransitionTuple lastTransitionTuple = *iter;
             iter++;
 
             for(; iter != transitionList.end(); iter++)
@@ -823,7 +818,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @param atomicStateList list of all atomicStates, sorted block wise by charge state
          */
         ALPAKA_FN_HOST void fillChargeStateOrgaData(std::list<S_AtomicStateTuple>& atomicStateList)
-void fi        {
+        {
             typename std::list<S_AtomicStateTuple>::iterator iter = atomicStateList.begin();
 
             S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox = chargeStateOrgaDataBuffer->getHostDataBox();
