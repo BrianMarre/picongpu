@@ -61,13 +61,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             uint8_t upperChargeState_1 = T_ConfigNumber::getChargeState(upperAtomicState_1);
             uint8_t upperChargeState_2 = T_ConfigNumber::getChargeState(upperAtomicState_2);
 
-            // debug only
-            // and upperAtomicState_1 == upperAtomicState_2: --> all equal
-            std::cout <<"State 1: " << static_cast<uint16_t>(lowerChargeState_1) << ", " << lowerAtomicState_1
-                << ", " << static_cast<uint16_t>(upperChargeState_1) << ", " << upperAtomicState_1 << std::endl;
-            std::cout <<"State 2: " << static_cast<uint16_t>(lowerChargeState_2) << ", " << lowerAtomicState_2
-                << ", " << static_cast<uint16_t>(upperChargeState_2) << ", " << upperAtomicState_2 << std::endl;
-
             if constexpr(orderByLowerState)
             {
                 if(lowerChargeState_1 != lowerChargeState_2)
