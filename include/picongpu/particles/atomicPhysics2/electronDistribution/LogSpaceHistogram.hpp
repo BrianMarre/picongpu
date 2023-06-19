@@ -26,6 +26,8 @@
 
 #include "picongpu/particles/atomicPhysics2/electronDistribution/HistogramInterface.hpp"
 
+#include <pmacc/static_assert.hpp>
+
 #include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2::electronDistribution
@@ -54,6 +56,8 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
     public:
         static constexpr float_X maxEnergy = static_cast<float_X>(T_maxEnergy);
         static constexpr uint32_t numberBins = T_numberBins;
+
+        PMACC_CASSERT_MSG(Log_Space_Histogram_needs_at_least_2_bins, T_numberBins >= 2);
 
     private:
         float_X binWeights0[T_numberBins] = {0};
