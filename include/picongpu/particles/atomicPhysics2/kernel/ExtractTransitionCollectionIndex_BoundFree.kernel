@@ -165,7 +165,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     typename T_ConfigNumber::DataType const atomicStateConfigNumber
                         = ion[atomicConfigNumber_].getConfigNumber();
 
-                    uint8_t const chargeState = T_ConfigNumber::getIonizationState(atomicStateConfigNumber);
+                    uint8_t const chargeState = T_ConfigNumber::getChargeState(atomicStateConfigNumber);
 
                     uint32_t const atomicStateCollectionIndex = atomicStateDataDataBox.findStateCollectionIndex(
                         atomicStateConfigNumber,

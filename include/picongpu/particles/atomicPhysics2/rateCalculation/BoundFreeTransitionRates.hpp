@@ -165,7 +165,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             // 10^6*b * eV^2
             // m^2 / (m^2/10^6*b) * (eV)^2= m^2/m^2 * 10^6*b * eV^2
 
-            uint8_t const lowerStateChargeState = S_ConfigNumber::getIonizationState(lowerStateConfigNumber);
+            uint8_t const lowerStateChargeState = S_ConfigNumber::getChargeState(lowerStateConfigNumber);
 
             /// @todo replace with screenedCharge(upperStateChargeState)?, Brian Marre, 2023
             float_X const screenedCharge = chargeStateDataBox.screenedCharge(lowerStateChargeState) - 1._X; // [e]
@@ -276,7 +276,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
         //    // no need to test for chargeState < protonNumber,
         //    // since no bound-free transition exists otherwise
         //    uint8_t lowerStateChargeState
-        //        = S_ConfigNumber::getIonizationState(lowerStateConfigNumber);
+        //        = S_ConfigNumber::getChargeState(lowerStateConfigNumber);
         //
         //    LevelVector upperStateLevelVector = S_ConfigNumber::getLevelVector(upperStateConfigNumber);
         //    LevelVector lowerStateLevelVector = S_ConfigNumber::getLevelVector(lowerStateConfigNumber);

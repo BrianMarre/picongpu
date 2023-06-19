@@ -80,11 +80,11 @@
  *      * ionization energy
  *      * screened charge
  *  - charge state orga data [ChargeStateOrgaDataBox.hpp]
- *      * number of atomic states for charge state
- *      * start index block for charge state
+ *      * number of atomic states for each charge state
+ *      * start index block for charge state in list of atomic states
  * - atomic state property data [AtomicStateDataBox.hpp]
  *      * configNumber
- *      * state energy, above ground state
+ *      * state energy, above ground state of charge state
  * - atomic state orga data
  *      [AtomicStateNumberOfTransitionsDataBox_Down, AtomicStateNumberOfTransitionsDataBox_UpDown]
  *       * number of transitions (up-/)down for each atomic state,
@@ -100,11 +100,11 @@
  * (orga data describes the structure of the property data for faster lookups, lookups are
  *  are always possible without it, but are possibly non performant)
  *
- * For each of data subsets exists a dataBox class, a container class giving holding
+ * For each of data subsets exists a dataBox class, a container class holding
  *      pmacc::dataBox'es, and a dataBuffer class, a container class holding
- *      pmacc::buffers in turn allowing access to  the pmacc::dataBox'es.
+ *      pmacc::buffers in turn allowing access to the pmacc::dataBox'es.
  *
- * Each data Buffer will create on demand a host or device side dataBox class object which
+ * Each dataBuffer will create on demand a host or device side dataBox class object which
  *  in turn gives access to the data.
  */
 
@@ -166,7 +166,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_ChargeStateDataBuffer = ChargeStateDataBuffer<TypeNumber, TypeValue, T_ConfigNumber::atomicNumber>;
         using S_ChargeStateOrgaDataBuffer
             = ChargeStateOrgaDataBuffer<TypeNumber, TypeValue, T_ConfigNumber::atomicNumber>;
-
         using S_AtomicStateDataBuffer = AtomicStateDataBuffer<TypeNumber, TypeValue, T_ConfigNumber>;
 
         template<ProcClassGroup T_ProcessClassGroup>
@@ -182,21 +181,21 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_AtomicStateNumberOfTransitionsDataBuffer_Down
             = AtomicStateNumberOfTransitionsDataBuffer_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
-        template<picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
+        template<procClass::TransitionOrdering T_TransitionOrdering>
         using S_BoundBoundTransitionDataBuffer = BoundBoundTransitionDataBuffer<
             TypeNumber,
             TypeValue,
             T_CollectionIndex,
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
-        template<picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
+        template<procClass::TransitionOrdering T_TransitionOrdering>
         using S_BoundFreeTransitionDataBuffer = BoundFreeTransitionDataBuffer<
             TypeNumber,
             TypeValue,
             T_CollectionIndex,
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
-        template<picongpu::particles::atomicPhysics2::processClass::TransitionOrdering T_TransitionOrdering>
+        template<procClass::TransitionOrdering T_TransitionOrdering>
         using S_AutonomousTransitionDataBuffer = AutonomousTransitionDataBuffer<
             TypeNumber,
             TypeValue,
@@ -560,8 +559,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             if(iter == chargeStateList.end())
                 throw std::runtime_error("atomicPhysics ERROR: empty charge state list");
-            lastChargeState = std::get<0>(*iter);
 
+            lastChargeState = std::get<0>(*iter);
             iter++;
 
             if(lastChargeState != 0u)
@@ -585,7 +584,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
                 // completely ionized state
                 if(chargeState == T_ConfigNumber::atomicNumber)
-                    throw std::runtime_error("atomicPhysics ERROR: completely ionized charge state found");
+                    throw std::runtime_error("atomicPhysics ERROR: completely ionized charge state found in charge state input data");
 
                 // unphysical state
                 if(chargeState > T_ConfigNumber::atomicNumber)
@@ -611,19 +610,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             Idx currentAtomicStateConfigNumber;
             uint8_t currentChargeState;
 
-            // empty transition list
+            // empty atomic state list, allowed for ground state only sims
             if(iter == atomicStateList.end())
                 return;
 
             Idx lastAtomicStateConfigNumber = std::get<0>(*iter);
-            uint8_t lastChargeState = ConfigNumber::getIonizationState(lastAtomicStateConfigNumber);
+            uint8_t lastChargeState = ConfigNumber::getChargeState(lastAtomicStateConfigNumber);
 
             iter++;
 
             for(; iter != atomicStateList.end(); iter++)
             {
                 currentAtomicStateConfigNumber = std::get<0>(*iter);
-                currentChargeState = ConfigNumber::getIonizationState(currentAtomicStateConfigNumber);
+                currentChargeState = ConfigNumber::getChargeState(currentAtomicStateConfigNumber);
 
                 // duplicate atomic state
                 if(currentAtomicStateConfigNumber == lastAtomicStateConfigNumber)
@@ -651,6 +650,27 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
         }
 
+        //! check transition tuple for internal consistency
+        template<typename T_TransitionTuple>
+        ALPAKA_FN_HOST void checkTransitionTuple(T_TransitionTuple& transitionTuple)
+        {
+            uint8_t const lowerChargeState = ConfigNumber::getChargeState(getLowerStateConfigNumber<Idx, TypeValue>(transitionTuple));
+            uint8_t const upperChargeState = ConfigNumber::getChargeState(getUpperStateConfigNumber<Idx, TypeValue>(transitionTuple));
+
+            // transitionType <-> charge state pair
+            if(wrongForTransitionType<T_TransitionTuple>(lowerChargeState, upperChargeState))
+                throw std::runtime_error(
+                    "atomicPhysics ERROR: wrong last upper-/lower charge state pair for transition type "
+                    + transitionType);
+
+            // unphysical lower charge state
+            if(lowerChargeState > T_ConfigNumber::atomicNumber)
+                throw std::runtime_error("atomicPhysics ERROR: unphysical lower charge State");
+            // unphysical upper charge state
+            if(upperChargeState > T_ConfigNumber::atomicNumber)
+                throw std::runtime_error("atomicPhysics ERROR: unphysical upper charge State");
+        }
+
         /** check transition list
          *
          * @attention assumes that chargeStateList and atomicStateList fulfil all ordering assumptions
@@ -670,87 +690,36 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             typename std::list<T_TransitionTuple>::iterator iter = transitionList.begin();
 
+            T_TransitionTuple& currentTransitionTuple;
+
             Idx currentLowerAtomicStateConfigNumber;
             Idx currentUpperAtomicStateConfigNumber;
             uint8_t currentLowerChargeState;
             uint8_t currentUpperChargeState;
 
-            // empty transition list
+            // empty transition list, i.e. ground-ground transitions only
             if(iter == transitionList.end())
                 return;
 
-            // read first entry
-            Idx lastLowerAtomicStateConfigNumber = getLowerStateConfigNumber<Idx, TypeValue>(*iter);
-            Idx lastUpperAtomicStateConfigNumber = getUpperStateConfigNumber<Idx, TypeValue>(*iter);
-            uint8_t lastLowerChargeState = ConfigNumber::getIonizationState(lastLowerAtomicStateConfigNumber);
-            uint8_t lastUpperChargeState = ConfigNumber::getIonizationState(lastUpperAtomicStateConfigNumber);
+            // read first list entry
+            checkTransitionTuple<T_TransitionTuple>(*iter);
+            T_TransitionTuple& lastTransitionTuple = *iter;
             iter++;
-
-            // transitionType <-> charge state pair
-            if(wrongForTransitionType<T_TransitionTuple>(lastLowerChargeState, lastUpperChargeState))
-                throw std::runtime_error(
-                    "atomicPhysics ERROR: wrong last upper-/lower charge state pair for transition type "
-                    + transitionType);
-
-            // unphysical lower charge state
-            if(lastLowerChargeState > T_ConfigNumber::atomicNumber)
-                throw std::runtime_error("atomicPhysics ERROR: unphysical lower charge State");
-
-            // unphysical upper charge state
-            if(lastUpperChargeState > T_ConfigNumber::atomicNumber)
-                throw std::runtime_error("atomicPhysics ERROR: unphysical upper charge State");
-
-            // upper charge state less energy than lower charge state
-            // float_X upperStateEnergy = ;
-            // if (upperStateEnergy + sumIonizationEnergies - lowerStateEnergy < 0)
-            //    throw std::runtime_error("atomicPhysics ERROR: upper state lower energy than lower state");
 
             for(; iter != transitionList.end(); iter++)
             {
-                currentLowerAtomicStateConfigNumber
-                    = picongpu::particles::atomicPhysics2::atomicData::getLowerStateConfigNumber(*iter);
-                currentUpperAtomicStateConfigNumber
-                    = picongpu::particles::atomicPhysics2::atomicData::getUpperStateConfigNumber(*iter);
-                currentLowerChargeState = ConfigNumber::getIonizationState(currentLowerAtomicStateConfigNumber);
-                currentUpperChargeState = ConfigNumber::getIonizationState(currentUpperAtomicStateConfigNumber);
+                currentTransitionTuple = *iter;
 
-                // primary/secondary order
-                if(lastLowerAtomicStateConfigNumber == currentLowerAtomicStateConfigNumber)
-                    // same block
-                    if(currentUpperAtomicStateConfigNumber < lastUpperAtomicStateConfigNumber)
-                        throw std::runtime_error(
-                            "atomicPhysics ERROR: wrong secondary ordering of " + transitionType + " transitions");
-                    else
-                        // next block
-                        if(lastLowerAtomicStateConfigNumber > currentLowerAtomicStateConfigNumber)
-                        throw std::runtime_error(
-                            "atomicPhysics ERROR: wrong primary ordering of " + transitionType + " transition");
+                checkTransitionTuple(currentTransitionTuple);
 
-                // transitionType <-> charge state pair
-                if(wrongForTransitionType<T_TransitionTuple>(currentLowerChargeState, currentUpperChargeState))
-                    throw std::runtime_error(
-                        "atomicPhysics ERROR: wrong current upper-/lower charge state pair for transition "
-                        "type "
-                        + transitionType);
+                if (CompareTransitionTupel<TypeValue, ConfigNumber, /*order by Lower state*/ true>{}(currentTransitionTuple, lastTransitionTuple))
+                    throw std::runtime_error("atomicPhysics ERROR: wrong ordering of input data");
 
-                // unphysical lower charge state
-                if(currentLowerChargeState > T_ConfigNumber::atomicNumber)
-                    throw std::runtime_error(
-                        "atomicPhysics ERROR: unphysical lower charge State in " + transitionType + " transitions");
-
-                // unphysical upper charge state
-                if(currentUpperChargeState > T_ConfigNumber::atomicNumber)
-                    throw std::runtime_error(
-                        "atomicPhysics ERROR: unphysical upper charge State in " + transitionType + " transitions");
-
-                lastLowerChargeState = currentLowerChargeState;
-                lastUpperChargeState = currentUpperChargeState;
-                lastLowerAtomicStateConfigNumber = currentLowerAtomicStateConfigNumber;
-                lastUpperAtomicStateConfigNumber = currentUpperAtomicStateConfigNumber;
+                lastTransitionTuple = currentTransitionTuple;
             }
         }
 
-        /** init buffers,
+          /** init buffers,
          *
          * @attention all readMethods must have been executed exactly once before calling this method!,
          *  otherwise buffer size is unknown, depends in number of states/transitions in buffer
@@ -803,7 +772,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @tparam T_Tuple type of tuple
          * @tparam T_DataBox type of dataBox
-         * @tparam T_Buffer type of buffer, automatically deduce able
          *
          * @param list correctly ordered list of data tuples to store
          * @attention does not sync to device, must be synced externally explicitly
@@ -826,7 +794,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @tparam T_Tuple type of tuple
          * @tparam T_DataBox type of dataBox
-         * @tparam T_Buffer type of buffer, automatically deduce able
+         * @tparam T_StateDataBox type of atomicState property dataox
          *
          * @param list correctly ordered list of data tuples to store
          * @attention does not sync to device, must be synced externally explicitly
@@ -854,8 +822,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param atomicStateList list of all atomicStates, sorted block wise by charge state
          */
-        ALPAKA_FN_HOST void fillChargeStateOrgaData(std::list<S_AtomicStateTuple> atomicStateList)
-        {
+        ALPAKA_FN_HOST void fillChargeStateOrgaData(std::list<S_AtomicStateTuple>& atomicStateList)
+void fi        {
             typename std::list<S_AtomicStateTuple>::iterator iter = atomicStateList.begin();
 
             S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox = chargeStateOrgaDataBuffer->getHostDataBox();
@@ -867,7 +835,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return;
 
             // read first entry as first last entry
-            uint8_t lastChargeState = ConfigNumber::getIonizationState(std::get<0>(*iter));
+            uint8_t lastChargeState = ConfigNumber::getChargeState(std::get<0>(*iter));
 
             TypeNumber numberStates = 1u;
             TypeNumber startIndexLastBlock = 0u;
@@ -877,7 +845,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             TypeNumber i = 1u;
             for(; iter != atomicStateList.end(); iter++)
             {
-                currentChargeState = ConfigNumber::getIonizationState(std::get<0>(*iter));
+                currentChargeState = ConfigNumber::getChargeState(std::get<0>(*iter));
 
                 if(currentChargeState != lastChargeState)
                 {
@@ -903,7 +871,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         /** fill the upward atomic state orga buffers for a transition groups
          *
-         * i.e. number of transitions and start index, up( and down) for each atomic state
+         * i.e. number of transitions and start index, up, for each atomic state
          *  for a transition group(either bound-bound or bound-free)
          *
          * @tparam T_Tuple transition tuple type
@@ -965,7 +933,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             iter++;
 
             // init states before start of first block
-            lastChargeState = ConfigNumber::getIonizationState(lastLower);
+            lastChargeState = ConfigNumber::getChargeState(lastLower);
             lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                 lastLower,
                 chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
@@ -981,7 +949,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 {
                     // new lower/upper state transition block
                     {
-                        lastChargeState = ConfigNumber::getIonizationState(lastLower);
+                        lastChargeState = ConfigNumber::getChargeState(lastLower);
 
                         lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                             lastLower,
@@ -1010,7 +978,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
 
             // finish last block
-            lastChargeState = ConfigNumber::getIonizationState(lastLower);
+            lastChargeState = ConfigNumber::getChargeState(lastLower);
 
             lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                 lastLower,
@@ -1089,7 +1057,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             iter++;
 
             // init states before start of first block
-            lastChargeState = ConfigNumber::getIonizationState(lastUpper);
+            lastChargeState = ConfigNumber::getChargeState(lastUpper);
             lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                 lastUpper,
                 chargeStateOrgaDataHostBox.numberAtomicStates(lastChargeState),
@@ -1104,7 +1072,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 if(currentUpper != lastUpper)
                 {
                     // new block
-                    lastChargeState = ConfigNumber::getIonizationState(lastUpper);
+                    lastChargeState = ConfigNumber::getChargeState(lastUpper);
 
                     lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                         lastUpper,
@@ -1132,7 +1100,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
 
             // finish last block
-            lastChargeState = ConfigNumber::getIonizationState(lastUpper);
+            lastChargeState = ConfigNumber::getChargeState(lastUpper);
 
             lastAtomicStateCollectionIndex = atomicStateDataHostBox.findStateCollectionIndex(
                 lastUpper,
@@ -1229,7 +1197,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param fileChargeData path to file containing charge state data
          * @param fileAtomicStateData path to file containing atomic state data
-         * @param fileTransitionData path to file containing atomic state data
+         * @param fileBoundBoundTransitionData path to file containing bound-bound transition data
+         * @param fileBoundFreeTransitionData path to file containing bound-free transition data
+         * @param fileAutonomousTransitionData path to file containing autonomous transition data
          */
         AtomicData(
             std::string fileChargeStateData,

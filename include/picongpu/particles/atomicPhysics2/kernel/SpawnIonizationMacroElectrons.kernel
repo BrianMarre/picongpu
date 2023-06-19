@@ -188,9 +188,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         auto const lowerStateConfigNumber = atomicStateBox.configNumber(lowerStateClctIdx);
 
                         uint8_t const lowerChargeState
-                            = T_AtomicStateDataBox::ConfigNumber::getIonizationState(lowerStateConfigNumber);
+                            = T_AtomicStateDataBox::ConfigNumber::getChargeState(lowerStateConfigNumber);
                         uint8_t const upperChargeState
-                            = T_AtomicStateDataBox::ConfigNumber::getIonizationState(upperStateConfigNumber);
+                            = T_AtomicStateDataBox::ConfigNumber::getChargeState(upperStateConfigNumber);
 
                         // set context array value
                         numberIonizationElectrons = upperChargeState - lowerChargeState;

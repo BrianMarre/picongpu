@@ -100,8 +100,8 @@ namespace picongpu::particles::atomicPhysics2
                 ConfigNumberIdx const upperStateConfigNumber
                     = atomicStateDataBox.configNumber(upperStateCollectionIndex);
 
-                uint8_t const lowerStateChargeState = ConfigNumber::getIonizationState(lowerStateConfigNumber);
-                uint8_t const upperStateChargeState = ConfigNumber::getIonizationState(upperStateConfigNumber);
+                uint8_t const lowerStateChargeState = ConfigNumber::getChargeState(lowerStateConfigNumber);
+                uint8_t const upperStateChargeState = ConfigNumber::getChargeState(upperStateConfigNumber);
 
                 // + ionization energy
                 deltaEnergy += DeltaEnergyTransition::ionizationEnergy<T_ChargeStateDataBox...>(

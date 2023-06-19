@@ -133,19 +133,19 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation::debug
                 std::cout << std::endl;
             }
 
-            // getIonizationState()
+            // getChargeState()
             uint8_t numberElectrons = 0u;
             for(uint8_t i = 0u; i < numberLevels; i++)
             {
                 numberElectrons += levelVector[i];
             }
-            pass = (pass && ((atomicNumber - numberElectrons) == Config::getIonizationState(knownConfigNumber)));
+            pass = (pass && ((atomicNumber - numberElectrons) == Config::getChargeState(knownConfigNumber)));
 
             if constexpr(T_ConsoleOutput)
             {
-                std::cout << "\t getIonizationState(): " << std::to_string(atomicNumber - numberElectrons);
+                std::cout << "\t getChargeState(): " << std::to_string(atomicNumber - numberElectrons);
                 std::cout << " =?= (returnValue:) ";
-                std::cout << std::to_string(static_cast<uint16_t>(Config::getIonizationState(knownConfigNumber)));
+                std::cout << std::to_string(static_cast<uint16_t>(Config::getChargeState(knownConfigNumber)));
                 std::cout << std::endl;
             }
 

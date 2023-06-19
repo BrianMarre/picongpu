@@ -145,7 +145,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             uint64_t stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(i));
 
             std::cout << "\t" << i << " : [" << stateConfigNumber << ", "
-                      << static_cast<uint16_t>(S_ConfigNumber::getIonizationState(stateConfigNumber)) << ", ";
+                      << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", ";
 
             auto levelVector = S_ConfigNumber::getLevelVector(stateConfigNumber);
             std::cout << "(" << static_cast<uint16_t>(levelVector[0u]);

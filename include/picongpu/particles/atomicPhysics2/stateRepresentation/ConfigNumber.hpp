@@ -337,7 +337,7 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
          *
          * @returns charge of ion
          */
-        HDINLINE static constexpr uint8_t getIonizationState(T_DataType configNumber)
+        HDINLINE static constexpr uint8_t getChargeState(T_DataType configNumber)
         {
             return T_atomicNumber - getBoundElectrons(configNumber);
         }

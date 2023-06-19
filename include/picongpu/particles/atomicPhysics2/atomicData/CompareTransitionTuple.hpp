@@ -52,13 +52,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             Idx lowerAtomicState_1 = getLowerStateConfigNumber<Idx, T_Value>(tuple_1);
             Idx lowerAtomicState_2 = getLowerStateConfigNumber<Idx, T_Value>(tuple_2);
-            uint8_t lowerChargeState_1 = T_ConfigNumber::getIonizationState(lowerAtomicState_1);
-            uint8_t lowerChargeState_2 = T_ConfigNumber::getIonizationState(lowerAtomicState_2);
+            uint8_t lowerChargeState_1 = T_ConfigNumber::getChargeState(lowerAtomicState_1);
+            uint8_t lowerChargeState_2 = T_ConfigNumber::getChargeState(lowerAtomicState_2);
 
             Idx upperAtomicState_1 = getUpperStateConfigNumber<Idx, T_Value>(tuple_1);
             Idx upperAtomicState_2 = getUpperStateConfigNumber<Idx, T_Value>(tuple_2);
-            uint8_t upperChargeState_1 = T_ConfigNumber::getIonizationState(upperAtomicState_1);
-            uint8_t upperChargeState_2 = T_ConfigNumber::getIonizationState(upperAtomicState_2);
+            uint8_t upperChargeState_1 = T_ConfigNumber::getChargeState(upperAtomicState_1);
+            uint8_t upperChargeState_2 = T_ConfigNumber::getChargeState(upperAtomicState_2);
 
             if constexpr(orderByLowerState)
             {
@@ -67,14 +67,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 // lowerChargeState_1 == lowerChargeState_2
                 if(lowerAtomicState_1 != lowerAtomicState_2)
                     return (lowerAtomicState_1 < lowerAtomicState_2);
-                // lowerAtomicState_1 == lowerAtomicState_2
+                // and lowerAtomicState_1 == lowerAtomicState_2
                 if(upperChargeState_1 != upperChargeState_2)
                     return (upperChargeState_1 < lowerChargeState_2);
-                // upperChargeState_1 == upperChargeState_2
+                // and upperChargeState_1 == upperChargeState_2
                 if(upperAtomicState_1 != upperAtomicState_2)
                     return (upperAtomicState_1 < upperAtomicState_2);
 
-                // upperAtomicState_1 == upperAtomicState_2: --> all equal
+                // and upperAtomicState_1 == upperAtomicState_2: --> all equal
                 throw std::runtime_error(
                     "transitions with lower and upper state being equal are not allowed in the input data set!, Z: "
                     + std::to_string(T_ConfigNumber::atomicNumber));
