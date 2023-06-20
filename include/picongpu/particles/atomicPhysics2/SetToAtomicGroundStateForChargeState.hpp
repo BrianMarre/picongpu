@@ -43,10 +43,8 @@ namespace picongpu::particles::atomicPhysics2
          *      like Cu.
          */
         template<typename T_Ion>
-        DINLINE void operator()(T_Ion& ion, float_X numberBoundElectrons)
+        DINLINE void operator()(T_Ion& ion, uint8_t numberBoundElectrons)
         {
-            PMACC_DEVICE_ASSERT_MSG(numberBoundElectrons >= 0, "Number of bound electrons must be >= 0");
-
             // init atomic state consistently if present
             if constexpr(pmacc::traits::HasFlag<typename T_Ion::FrameType, isAtomicPhysicsIon<>>::type::value)
             {
@@ -57,21 +55,19 @@ namespace picongpu::particles::atomicPhysics2
                 auto occupationNumberVector = pmacc::math::Vector<uint8_t, configNumber.numberLevels>::create(0);
                 // could actually be reduced to uint8_t since Z<=98(Californium) for our purposes
 
-                uint8_t numberElectronsRemaining = static_cast<uint8_t>(numberBoundElectrons);
-
                 // fill from bottom up until no electrons remaining -> ground state init
                 /// @todo : implement Mandelung Schema and exceptions, Brian Marre, 2022
                 for(uint8_t level = 1u; level <= configNumber.numberLevels; level++)
                 {
                     // g(n) = 2*n^2; for hydrogen like states
-                    if(numberElectronsRemaining >= 2u * level * level)
+                    if(numberBoundElectrons >= 2u * level * level)
                     {
                         (occupationNumberVector)[level - 1u] = 2u * level * level;
-                        numberElectronsRemaining -= 2u * level * level;
+                        numberBoundElectrons -= 2u * level * level;
                     }
                     else
                     {
-                        (occupationNumberVector)[level - 1u] = numberElectronsRemaining;
+                        (occupationNumberVector)[level - 1u] = numberBoundElectrons;
                         break;
                     }
                 }
