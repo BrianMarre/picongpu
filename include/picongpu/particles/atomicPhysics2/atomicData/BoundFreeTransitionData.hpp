@@ -1,5 +1,4 @@
 /* Copyright 2022-2023 Brian Marre
- *
  * This file is part of PIConGPU.
  *
  * PIConGPU is free software: you can redistribute it and/or modify

@@ -26,19 +26,16 @@
 // charge state data
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateOrgaData.hpp"
-
 // atomic state data
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_Down.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_UpDown.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_Down.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_UpDown.hpp"
-
 // transition data
 #include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionData.hpp"
-
 // precomputed cache for chooseTransition kernel
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionData.hpp"
 
@@ -48,13 +45,16 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTuple.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
-// number of physical transitions for each transition data entry
-#include "picongpu/particles/atomicPhysics2/processClass/NumberPhysicalTransitions.hpp"
-
 // enum of groups of processClass's
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 // enum of transition ordering in dataBoxes
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
+
+// number of physical transitions for each transition data entry
+#include "picongpu/particles/atomicPhysics2/processClass/NumberPhysicalTransitions.hpp"
+
+#include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
+#include "picongpu/particles/atomicPhysics2/ConvertEnumToUnit.hpp"
 
 // debug only
 #include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
@@ -721,6 +721,33 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
         }
 
+        /** check that for all transitions lower state is lower in energy than upper state
+         *
+         * @param transitionHostBox host dataBox of transition data to check
+         *
+         * @attention assumes that all transition buffers have been filled previously
+         */
+        template<typename T_TransitionHostBox>
+        ALPAKA_FN_HOST void checkTransitionsForLowerUpperInversion(T_TransitionHostBox const transitionHostBox)
+        {
+            constexpr procClass::TransitionOrdering = T_TransitionHostBox::transitionOrdering;
+
+            uint32_t const numberTransitions = transitionHostBox.getNumberOfTransitionsTotal();
+
+            for(uint32_t collectionIndex = static_cast<uint32_t>(0u); collectionIndex < numberTransitions; collectionIndex++)
+            {
+                deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get</*ionizing*/true>(
+                    collectionIndex,
+                    this->getAtomicStateDataDataBox<true>(),
+                    transitionHostBox,
+                    this->getChargeStateDataDataBox<true>());
+
+                if (deltaEnergy < 0._X)
+                    throw std::runtime_error("atomicPhysics ERROR: upper and lower state inverted in energy in input"
+                        ", energy lower state must be <= energy upper state, transition #" + std::string(i));
+            }
+        }
+
           /** init buffers,
          *
          * @attention all readMethods must have been executed exactly once before calling this method!,
@@ -995,7 +1022,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         /** fill the downward atomic state orga buffers for a transition groups
          *
-         * i.e. number of transitions and start index, up( and down) of each atomic state
+         * i.e. number of transitions and start index, down, of each atomic state
          *  for a transition group(either bound-bound, bound-free or autonomous)
          *
          * @tparam T_Tuple transition tuple type
@@ -1023,11 +1050,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             T_StartIndexHostBox startIndexHostBox)
         {
             // check consistency of intended processClass group and given boxes
-            PMACC_CASSERT(
-                static_cast<uint8_t>(T_NumberHostBox::processClassGroup) == static_cast<uint8_t>(T_ProcessClassGroup));
-            PMACC_CASSERT(
-                static_cast<uint8_t>(T_StartIndexHostBox::processClassGroup)
-                == static_cast<uint8_t>(T_ProcessClassGroup));
+            PMACC_CASSERT_MSG(
+                inconsistent_indicated_processClassGroup_and_passed_numberHostBox,
+                u8(T_NumberHostBox::processClassGroup) == u8(T_ProcessClassGroup));
+            PMACC_CASSERT_MSG(
+                inconsistent_indicated_processClassGroup_and_passed_startIndexHostBox
+                u8(T_StartIndexHostBox::processClassGroup) == u8(T_ProcessClassGroup));
 
             typename std::list<T_Tuple>::iterator iter = transitionList.begin();
 
@@ -1270,6 +1298,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 autonomousTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             autonomousTransitionDataBuffer->hostToDevice();
+
+            // check for inversions in upper lower state of transitions
+            checkTransitionsForLowerUpperInversion(this->getBoundBoundTransitionDataBox</*host*/true>());
+            checkTransitionsForLowerUpperInversion(this->getBoundFreeTransitionDataBox</*host*/true>());
+            checkTransitionsForLowerUpperInversion(this->getAutonomousTransitionDataBox</*host*/true>());
 
             // fill orga data buffers 1,)
             //          charge state
@@ -1539,9 +1572,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<bool hostData, procClass::TransitionOrdering T_TransitionOrdering>
         S_BoundBoundTransitionDataBox<T_TransitionOrdering> getBoundBoundTransitionDataBox()
         {
-            constexpr bool byLowerState
-                = (static_cast<uint8_t>(T_TransitionOrdering)
-                    == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
+            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(procClass::TransitionOrdering::byLowerState));
 
             if constexpr(byLowerState)
             {
@@ -1568,9 +1599,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<bool hostData, procClass::TransitionOrdering T_TransitionOrdering>
         S_BoundFreeTransitionDataBox<T_TransitionOrdering> getBoundFreeTransitionDataBox()
         {
-            constexpr bool byLowerState
-                = (static_cast<uint8_t>(T_TransitionOrdering)
-                    == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
+            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(procClass::TransitionOrdering::byLowerState));
 
             if constexpr(byLowerState)
             {
@@ -1597,9 +1626,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<bool hostData, procClass::TransitionOrdering T_TransitionOrdering>
         S_AutonomousTransitionDataBox<T_TransitionOrdering> getAutonomousTransitionDataBox()
         {
-            constexpr bool byLowerState
-                = (static_cast<uint8_t>(T_TransitionOrdering)
-                    == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
+            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(procClass::TransitionOrdering::byLowerState));
 
             if constexpr(byLowerState)
             {

@@ -117,7 +117,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         uint8_t lowerChargeState,
         uint8_t upperChargeState)
     {
-        if(lowerChargeState < upperChargeState)
+        if(lowerChargeState != upperChargeState)
             return false; // correct case
         return true; // error case
     }
@@ -127,6 +127,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         uint8_t lowerChargeState,
         uint8_t upperChargeState)
     {
-        return false; // charge state might change or not
+        if(lowerChargeState > upperChargeState)
+            return false; // correct case
+        return true; // error case
     }
 } // namespace picongpu::particles::atomicPhysics2::atomicData
