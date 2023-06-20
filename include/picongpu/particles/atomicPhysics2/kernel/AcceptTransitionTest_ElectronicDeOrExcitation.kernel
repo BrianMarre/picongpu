@@ -21,6 +21,7 @@
 
 #include "picongpu/simulation_defines.hpp" // need: picongpu/unitless/grid.unitless for CELL_VOLUME
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
@@ -84,22 +85,22 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // check that assumptions on databox given
             PMACC_CASSERT_MSG(
                 dataBox_does_not_contain_bound_bound_transitions,
-                static_cast<uint8_t>(T_BoundBoundTransitionDataBox::processClassGroup)
-                    == static_cast<uint8_t>(procClass::ProcessClassGroup::boundBoundBased));
+                u8(T_BoundBoundTransitionDataBox::processClassGroup)
+                    == u8(procClass::ProcessClassGroup::boundBoundBased));
 
             if constexpr(T_excitation)
             {
                 PMACC_CASSERT_MSG(
                     wrong_ordering_of_DataBox,
-                    static_cast<uint8_t>(T_BoundBoundTransitionDataBox::transitionOrdering)
-                        == static_cast<uint8_t>(procClass::TransitionOrdering::byLowerState));
+                    u8(T_BoundBoundTransitionDataBox::transitionOrdering)
+                        == u8(procClass::TransitionOrdering::byLowerState));
             }
             else
             {
                 PMACC_CASSERT_MSG(
                     wrong_ordering_of_DataBox,
-                    static_cast<uint8_t>(T_BoundBoundTransitionDataBox::transitionOrdering)
-                        == static_cast<uint8_t>(procClass::TransitionOrdering::byUpperState));
+                    u8(T_BoundBoundTransitionDataBox::transitionOrdering)
+                        == u8(procClass::TransitionOrdering::byUpperState));
             }
 
             pmacc::DataSpace<simDim> const superCellIdx(

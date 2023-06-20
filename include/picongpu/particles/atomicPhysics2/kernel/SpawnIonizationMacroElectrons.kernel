@@ -23,6 +23,7 @@
 // need: picongpu/param/atomicPhysics2_Debug.param,
 //       picongpu/param/atomicPhysics2.param
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
 #include "picongpu/particles/atomicPhysics2/initElectrons/InitIonizationElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
@@ -104,8 +105,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             //  otherwise unpyhsical behaviour and/or illegal memory access
             PMACC_CASSERT_MSG(
                 processClassGroup_and_transition_dataBox_not_consistent,
-                static_cast<uint8_t>(T_ProcessClassGroup)
-                    == static_cast<uint8_t>(T_TransitionDataBox::processClassGroup));
+                u8(T_ProcessClassGroup) == u8(T_TransitionDataBox::processClassGroup));
 
             using ElectronFramePtr = typename T_IonizationElectronBox::FramePtr;
             using IonFramePtr = typename T_IonBox::FramePtr;
@@ -193,11 +193,26 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             = T_AtomicStateDataBox::ConfigNumber::getChargeState(upperStateConfigNumber);
 
                         // set context array value
-                        numberIonizationElectrons = upperChargeState - lowerChargeState;
+                        if constexpr(u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
+                        {
+                            // for autonomous transitions allows initialState == upperState
+                            numberIonizationElectrons = lowerChargeState - upperChargeState;
+                        }
+                        if constexpr(u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
+                        {
+                            // bound-free transition allow both ways
+                            if(upperChargeState > lowerChargeState)
+                                numberIonizationElectrons = upperChargeState - lowerChargeState;
+                            else
+                                numberIonizationElectrons = lowerChargeState - upperChargeState;
+                        }
+                        else
+                        {
+                            printf("atomicPhysics ERROR: unknown processClassGroup in "
+                                   "SpawnionizationMacroElectronsKernel\n");
+                            numberIonizationElectrons = static_cast<int8_t>(0u);
+                        }
 
-                        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG)
-                            if(upperChargeState < lowerChargeState)
-                                printf("AtomicPhysics ERROR: negative number of ionization electrons\n");
 
                         uint32_t const temp = numberIonizationElectrons;
                         // update global counter

@@ -21,6 +21,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessIDConversion.hpp"
@@ -32,6 +33,8 @@
 
 namespace picongpu::particles::atomicPhysics2::kernel
 {
+    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+
     /** extract transitionCollectionIndex from previously set transitionIndex
      *   for bound-free transitions is originally set by chooseTransitionKernel
      *
@@ -118,14 +121,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // check that correct databoxes are given
             PMACC_CASSERT_MSG(
                 number_transition_dataBox_not_autonomous_based,
-                static_cast<uint8_t>(T_AtomicStateAutonomousNumberTransitionsDataBox::processClassGroup)
-                    == static_cast<uint8_t>(
-                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
+                u8(T_AtomicStateAutonomousNumberTransitionsDataBox::processClassGroup)
+                    == u8(procClass::ProcessClassGroup::autonomousBased));
             PMACC_CASSERT_MSG(
                 startIndex_dataBox_not_autonomous_based,
-                static_cast<uint8_t>(T_AtomicStateAutonomousStartIndexBlockDataBox::processClassGroup)
-                    == static_cast<uint8_t>(
-                        picongpu::particles::atomicPhysics2::processClass::ProcessClassGroup::autonomousBased));
+                u8(T_AtomicStateAutonomousStartIndexBlockDataBox::processClassGroup)
+                    == u8(procClass::ProcessClassGroup::autonomousBased));
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
