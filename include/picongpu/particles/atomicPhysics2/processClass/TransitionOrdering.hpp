@@ -22,13 +22,30 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
-namespace picongpu::particles::atomicPhysics2::processClass
+namespace picongpu::particles::atomicPhysics2
 {
-    //! predefined groups of processClass
-    enum struct TransitionOrdering : uint8_t
+    namespace processClass
     {
-        byLowerState = 0u,
-        byUpperState = 1u
-    };
-} // namespace picongpu::particles::atomicPhysics2::processClass
+        //! predefined transitionOrderings
+        enum struct TransitionOrdering : uint8_t
+        {
+            byLowerState = 0u,
+            byUpperState = 1u
+        };
+    } // namespace processClass
+
+    template<processClass::TransitionOrdering T_TransitionOrdering>
+    ALPAKA_FN_HOST std::string enumToString()
+    {
+        if constexpr(
+            static_cast<uint8_t>(T_TransitionOrdering)
+            == static_cast<uint8_t>(processClass::TransitionOrdering::byLowerState))
+            return "byLowerState";
+        if constexpr(
+            static_cast<uint8_t>(T_TransitionOrdering)
+            == static_cast<uint8_t>(processClass::TransitionOrdering::byUpperState))
+            return "byUpperState";
+    }
+} // namespace picongpu::particles::atomicPhysics2

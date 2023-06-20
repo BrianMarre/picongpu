@@ -22,18 +22,55 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
-namespace picongpu::particles::atomicPhysics2::processClass
+namespace picongpu::particles::atomicPhysics2
 {
-    //! predefined groups of processClass
-    enum struct ProcessClassGroup : uint8_t
+    namespace processClass
     {
-        boundBoundBased = 0u,
-        boundFreeBased = 1u,
-        autonomousBased = 2u,
-        ionizing = 3u,
-        electronicCollisional = 4u,
-        upward = 5u,
-        downward = 6u
-    };
-} // namespace picongpu::particles::atomicPhysics2::processClass
+        //! predefined groups of processClass
+        enum struct ProcessClassGroup : uint8_t
+        {
+            boundBoundBased = 0u,
+            boundFreeBased = 1u,
+            autonomousBased = 2u,
+            ionizing = 3u,
+            electronicCollisional = 4u,
+            upward = 5u,
+            downward = 6u
+        };
+    } // namespace processClass
+
+    template<processClass::ProcessClassGroup T_ProcessClassGroup>
+    ALPAKA_FN_HOST std::string enumToString()
+    {
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup)
+            == static_cast<uint8_t>(processClass::ProcessClassGroup::boundBoundBased))
+            return "boundBound";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup)
+            == static_cast<uint8_t>(processClass::ProcessClassGroup::boundFreeBased))
+            return "boundFree";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup)
+            == static_cast<uint8_t>(processClass::ProcessClassGroup::autonomousBased))
+            return "autonomous";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup)
+            == static_cast<uint8_t>(processClass::ProcessClassGroup::ionizing))
+            return "ionizing";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup)
+            == static_cast<uint8_t>(processClass::ProcessClassGroup::electronicCollisional))
+            return "electronicCollisional";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup) == static_cast<uint8_t>(processClass::ProcessClassGroup::upward))
+            return "upward";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClassGroup)
+            == static_cast<uint8_t>(processClass::ProcessClassGroup::downward))
+            return "downard";
+        return "unknown";
+    }
+} // namespace picongpu::particles::atomicPhysics2

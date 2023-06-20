@@ -28,8 +28,8 @@
 
 namespace picongpu::particles::atomicPhysics2
 {
-    template<T_Enum>
-    constexpr uint8_t u8(T_enum const enumInstance)
+    template<typename T_Enum>
+    constexpr uint8_t u8(T_Enum const enumInstance)
     {
         return static_cast<uint8_t>(enumInstance);
     }

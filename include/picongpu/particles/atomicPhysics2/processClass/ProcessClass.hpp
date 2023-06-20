@@ -26,17 +26,53 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
-namespace picongpu::particles::atomicPhysics2::processClass
+namespace picongpu::particles::atomicPhysics2
 {
-    enum struct ProcessClass : uint8_t
+    namespace processClass
     {
-        noChange = 0u,
-        spontaneousDeexcitation = 1u,
-        electronicExcitation = 2u,
-        electronicDeexcitation = 3u,
-        electronicIonization = 4u,
-        autonomousIonization = 5u,
-        fieldIonization = 6u
-    };
-} // namespace picongpu::particles::atomicPhysics2::processClass
+        enum struct ProcessClass : uint8_t
+        {
+            noChange = 0u,
+            spontaneousDeexcitation = 1u,
+            electronicExcitation = 2u,
+            electronicDeexcitation = 3u,
+            electronicIonization = 4u,
+            autonomousIonization = 5u,
+            fieldIonization = 6u
+        };
+    } // namespace processClass
+
+    template<processClass::ProcessClass T_ProcessClass>
+    ALPAKA_FN_HOST std::string enumToString()
+    {
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass) == static_cast<uint8_t>(processClass::ProcessClass::noChange))
+            return "noChange";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass)
+            == static_cast<uint8_t>(processClass::ProcessClass::spontaneousDeexcitation))
+            return "spontaneousDeexcitation";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass)
+            == static_cast<uint8_t>(processClass::ProcessClass::electronicExcitation))
+            return "electronicExcitation";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass)
+            == static_cast<uint8_t>(processClass::ProcessClass::electronicDeexcitation))
+            return "electronicDeexcitation";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass)
+            == static_cast<uint8_t>(processClass::ProcessClass::electronicIonization))
+            return "electronicIonization";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass)
+            == static_cast<uint8_t>(processClass::ProcessClass::autonomousIonization))
+            return "autonomousIonization";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass) == static_cast<uint8_t>(processClass::ProcessClass::fieldIonization))
+            return "fieldIonization";
+        return "unknown";
+    }
+} // namespace picongpu::particles::atomicPhysics2
