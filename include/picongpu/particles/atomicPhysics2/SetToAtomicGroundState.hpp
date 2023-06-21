@@ -23,7 +23,7 @@
 
 namespace picongpu::particles::atomicPhysics2
 {
-    struct SetToAtomicGroundStateForChargeState
+    struct SetToAtomicGroundState
     {
         /** set a given ion to its ground state for a given number of bound
          *  electrons
