@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/SetToAtomicGroundStateForChargeState.hpp"
 #include "picongpu/particles/manipulators/manipulators.def"
 #include "picongpu/particles/startPosition/functors.def"
 

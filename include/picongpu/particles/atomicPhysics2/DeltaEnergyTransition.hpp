@@ -35,21 +35,21 @@ namespace picongpu::particles::atomicPhysics2
          */
         template<typename T_ChargeStateDataBox>
         HDINLINE static float_X ionizationEnergy(
-            uint8_t const upperStateChargeState,
-            uint8_t const lowerStateChargeState,
+            uint8_t const lowerChargeState,
+            uint8_t const upperChargeState,
             T_ChargeStateDataBox const chargeStateDataBox)
         {
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
             {
-                if(upperStateChargeState < lowerStateChargeState)
+                if(lowerChargeState < upperChargeState)
                 {
-                    printf("atomicPhysics ERROR: upper and lower state inverted in ionizationEnergy() call\n");
+                    printf("atomicPhysics ERROR:  chargeState inverted in ionizationEnergy() call\n");
                     return -1._X; // eV
                 }
             }
 
             float_X sumIonizationEnergies = 0._X; // eV
-            for(uint8_t k = lowerStateChargeState; k < upperStateChargeState; k++)
+            for(uint8_t k = lowerChargeState; k < upperChargeState; k++)
             {
                 sumIonizationEnergies += chargeStateDataBox.ionizationEnergy(k); // eV
             }
@@ -104,10 +104,22 @@ namespace picongpu::particles::atomicPhysics2
                 uint8_t const upperStateChargeState = ConfigNumber::getChargeState(upperStateConfigNumber);
 
                 // + ionization energy
-                deltaEnergy += DeltaEnergyTransition::ionizationEnergy<T_ChargeStateDataBox...>(
-                    upperStateChargeState,
-                    lowerStateChargeState,
-                    chargeStateDataBox...); // eV
+                if (lowerStateChargeState < upperStateChargeState)
+                {
+                    // eV
+                    deltaEnergy += DeltaEnergyTransition::ionizationEnergy<T_ChargeStateDataBox...>(
+                        lowerStateChargeState,
+                        upperStateChargeState,
+                        chargeStateDataBox...);
+                }
+                else
+                {
+                    // eV
+                    deltaEnergy += DeltaEnergyTransition::ionizationEnergy<T_ChargeStateDataBox...>(
+                        upperStateChargeState,
+                        lowerStateChargeState,
+                        chargeStateDataBox...);
+                }
             }
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG)
