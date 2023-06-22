@@ -17,13 +17,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+//! @file gathers all definitions of tuples for atomicPhysics
+
 #pragma once
 
-#include <cstdint>
-#include <exception>
-#include <string>
+#include "picongpu/simulation_defines.hpp"
 
-//! @file gathers all definitions of tuples for atomicPhysics
+#include <cstdint>
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
@@ -47,8 +48,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         T_Value, // cxin3                          , #4
         T_Value, // cxin4                          , #5
         T_Value, // cxin5                          , #6
-        T_Idx, // lowerState configNumber        , #7
-        T_Idx>; // upperState configNumber        , #8
+        T_Idx, // lowerState configNumber, #7
+        T_Idx>; // upperState configNumber, #8
 
     template<typename T_Value, typename T_Idx>
     using BoundFreeTransitionTuple = std::tuple<
@@ -92,43 +93,5 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     HINLINE std::string getStringTransitionType<AutonomousTransitionTuple<uint64_t>>()
     {
         return "autonomous";
-    }
-
-    //! helper function checking for charge states compatibility with transition type
-    template<typename T_TransitionTuple>
-    HINLINE bool wrongForTransitionType(uint8_t lowerChargeState, uint8_t upperChargeState)
-    {
-        throw std::runtime_error("not implemented!");
-        return false;
-    }
-
-    template<>
-    HINLINE bool wrongForTransitionType<BoundBoundTransitionTuple<float_X, uint64_t>>(
-        uint8_t lowerChargeState,
-        uint8_t upperChargeState)
-    {
-        if(lowerChargeState == upperChargeState)
-            return false; // correct case
-        return true; // error case
-    }
-
-    template<>
-    HINLINE bool wrongForTransitionType<BoundFreeTransitionTuple<float_X, uint64_t>>(
-        uint8_t lowerChargeState,
-        uint8_t upperChargeState)
-    {
-        if(lowerChargeState != upperChargeState)
-            return false; // correct case
-        return true; // error case
-    }
-
-    template<>
-    HINLINE bool wrongForTransitionType<AutonomousTransitionTuple<uint64_t>>(
-        uint8_t lowerChargeState,
-        uint8_t upperChargeState)
-    {
-        if(lowerChargeState > upperChargeState)
-            return false; // correct case
-        return true; // error case
     }
 } // namespace picongpu::particles::atomicPhysics2::atomicData

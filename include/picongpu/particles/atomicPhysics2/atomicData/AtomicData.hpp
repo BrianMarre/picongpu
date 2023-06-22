@@ -42,6 +42,7 @@
 // tuple definitions
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 // helper stuff for transition tuples
+#include "picongpu/particles/atomicPhysics2/atomicData/CheckTransitionTuple.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/CompareTransitionTuple.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/GetStateFromTransitionTuple.hpp"
 
@@ -668,31 +669,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
         }
 
-        //! check transition tuple for internal consistency
-        template<typename T_TransitionTuple>
-        ALPAKA_FN_HOST void checkTransitionTuple(T_TransitionTuple& transitionTuple)
-        {
-            std::string transitionType = getStringTransitionType<T_TransitionTuple>();
-
-            uint8_t const lowerChargeState
-                = ConfigNumber::getChargeState(getLowerStateConfigNumber<Idx, TypeValue>(transitionTuple));
-            uint8_t const upperChargeState
-                = ConfigNumber::getChargeState(getUpperStateConfigNumber<Idx, TypeValue>(transitionTuple));
-
-            // transitionType <-> charge state pair
-            if(wrongForTransitionType<T_TransitionTuple>(lowerChargeState, upperChargeState))
-                throw std::runtime_error(
-                    "atomicPhysics ERROR: wrong last upper-/lower charge state pair for transition type "
-                    + transitionType);
-
-            // unphysical lower charge state
-            if(lowerChargeState > T_ConfigNumber::atomicNumber)
-                throw std::runtime_error("atomicPhysics ERROR: unphysical lower charge State");
-            // unphysical upper charge state
-            if(upperChargeState > T_ConfigNumber::atomicNumber)
-                throw std::runtime_error("atomicPhysics ERROR: unphysical upper charge State");
-        }
-
         /** check transition list
          *
          * @attention assumes that chargeStateList and atomicStateList fulfil all ordering assumptions
@@ -717,16 +693,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 return;
 
             // read first list entry
-            checkTransitionTuple<T_TransitionTuple>(*iter);
             T_TransitionTuple lastTransitionTuple = *iter;
+            checkTransitionTuple<ConfigNumber>(lastTransitionTuple);
             iter++;
 
             for(; iter != transitionList.end(); iter++)
             {
                 currentTransitionTuple = *iter;
+                checkTransitionTuple<ConfigNumber>(currentTransitionTuple);
 
-                checkTransitionTuple(currentTransitionTuple);
-
+                // check for ordering
                 if(CompareTransitionTupel<TypeValue, ConfigNumber, /*order by Lower state*/ true>{}(
                        currentTransitionTuple,
                        lastTransitionTuple))
@@ -744,14 +720,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
         }
 
-        /** check that for all transitions lower state is lower in energy than upper state
+        /** check that for all transitions in trnasitionHostBox, the lower state is lower in energy than the upper state
          *
          * @param transitionHostBox host dataBox of transition data to check
          *
          * @attention assumes that all transition buffers have been filled previously
          */
         template<typename T_TransitionHostBox>
-        ALPAKA_FN_HOST void checkTransitionsForLowerUpperInversion(T_TransitionHostBox transitionHostBox)
+        ALPAKA_FN_HOST void checkTransitionsForEnergyInversion(T_TransitionHostBox transitionHostBox)
         {
             uint32_t const numberTransitions = transitionHostBox.getNumberOfTransitionsTotal();
 
@@ -1344,13 +1320,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             autonomousTransitionDataBuffer->hostToDevice();
 
             // check for inversions in upper lower state of transitions
-            checkTransitionsForLowerUpperInversion(this->getBoundBoundTransitionDataBox<
+            checkTransitionsForEnergyInversion(this->getBoundBoundTransitionDataBox<
                                                    /*host*/ true,
                                                    procClass::TransitionOrdering::byLowerState>());
-            checkTransitionsForLowerUpperInversion(this->getBoundFreeTransitionDataBox<
-                                                   /*host*/ true,
-                                                   procClass::TransitionOrdering::byLowerState>());
-            checkTransitionsForLowerUpperInversion(this->getAutonomousTransitionDataBox<
+            // no check for bound-free, since bound-free transitions may reduce overall energy
+            checkTransitionsForEnergyInversion(this->getAutonomousTransitionDataBox<
                                                    /*host*/ true,
                                                    procClass::TransitionOrdering::byLowerState>());
 
