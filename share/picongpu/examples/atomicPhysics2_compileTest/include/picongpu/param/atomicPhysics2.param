@@ -35,10 +35,14 @@
 
 namespace picongpu::atomicPhysics2
 {
+    struct MaxEnergyParam
+    {
+        static constexpr float_X maxEnergy = float_X(1e7);
+    };
+
     using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
-        uint32_t, // T_Storage, magic ;)
         100u, // T_numberBins
-        static_cast<uint32_t>(float_X(1e7))>; // T_maxEnergy, stored as T_Storage
+        MaxEnergyParam>;
 
     // atomicPhysics rate solver settings
     //      atomicPhysics timeStepLength sub-stepping of numerical limit

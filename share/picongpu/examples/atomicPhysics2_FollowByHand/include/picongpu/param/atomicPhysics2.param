@@ -37,11 +37,13 @@
 
 namespace picongpu::atomicPhysics2
 {
+    struct MaxEnergyParam
+    {
+        static constexpr float_X maxEnergy = float_X(1e6);
+    };
     using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
-        uint32_t, // T_Storage, magic ;)
         5u, // T_numberBins
-        static_cast<uint32_t>(float_X(1e6)) // T_maxEnergy[eV], stored as T_Storage
-        >;
+        MaxEnergyParam>;
 
     // NOTE: both the following must be the same for all ion-species!, otherwise shared histogram not well defined
     constexpr float_X timeStepAlpha = 0.3_X;

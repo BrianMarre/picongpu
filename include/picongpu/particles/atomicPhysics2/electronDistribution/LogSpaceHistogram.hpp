@@ -32,6 +32,12 @@
 
 namespace picongpu::particles::atomicPhysics2::electronDistribution
 {
+    struct MaxEnergyParam
+    {
+        // eV
+        static constexpr float_X maxEnergy = 2;
+    };
+
     /** @class histogram of logarithmically evenly distributed bins
      *
      * The histogram uses (T_numberBins)-bins, logarithmically evenly distributed,
@@ -46,15 +52,15 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
      * For the overflow bin only the total weight outside the range is stored,
      *  since not atomic transitions may use this bin due to it's unknown energy.
      *
-     * @tparam T_maxEnergy maximum energy of the range covered, > 0, [eV]:float_X but stored as T_Storage
+     * @tparam T_MaxEnergyParam maximum energy of the range covered, > 0, [eV]:float_X
+     *  specified as MaxEnergyParam like struct
      * @tparam T_numberBins number of bins, does not include the overflow bin, unitless
-     * @tparam T_Storage storage type of T_maxEnergy
      */
-    template<typename T_Storage, uint32_t T_numberBins, T_Storage T_maxEnergy>
+    template<uint32_t T_numberBins, typename T_MaxEnergyParam>
     class LogSpaceHistogram : HistogramInterface
     {
     public:
-        static constexpr float_X maxEnergy = static_cast<float_X>(T_maxEnergy);
+        static constexpr float_X maxEnergy = T_MaxEnergyParam::maxEnergy;
         static constexpr uint32_t numberBins = T_numberBins;
 
         PMACC_CASSERT_MSG(Log_Space_Histogram_needs_at_least_2_bins, T_numberBins >= 2);
