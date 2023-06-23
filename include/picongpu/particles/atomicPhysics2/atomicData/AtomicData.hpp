@@ -68,49 +68,7 @@
 #include <string>
 #include <tuple>
 
-/** @file gathers atomic data storage implementations and implements filling them on runtime
- *
- * The atomicPhysics step relies on a model of atomic states and transitions for each
- * atomicPhysics ion species.
- * These model's parameters are provided by the user as a .txt file of specified format
- * (see documentation) at runtime.
- *
- *  PIConGPU itself only includes charge state data, for ADK-, Thomas-Fermi- and BSI-ionization.
- *  All other atomic state data is kept separate from PIConGPU itself, due to license requirements.
- *
- * This file is read at the start of the simulation and stored distributed over the following:
- *  - charge state property data [ChargeStateDataBox.hpp]
- *      * ionization energy
- *      * screened charge
- *  - charge state orga data [ChargeStateOrgaDataBox.hpp]
- *      * number of atomic states for each charge state
- *      * start index block for charge state in list of atomic states
- * - atomic state property data [AtomicStateDataBox.hpp]
- *      * configNumber
- *      * state energy, above ground state of charge state
- * - atomic state orga data
- *      [AtomicStateNumberOfTransitionsDataBox_Down, AtomicStateNumberOfTransitionsDataBox_UpDown]
- *       * number of transitions (up-/)down for each atomic state,
- *          by type of transition(bound-bound/bound-free/autonomous)
- *       * offset in transition selection ordering for each atomic state
- *      [AtomicStateStartIndexBlockDataBox_Down, AtomicStateStartIndexBlockDataBox_UpDown]
- *       * start index of block in transition collection index for atomic state,
- *          by type of transition(bound-bound/bound-free/autonomous)
- * - transition property data[BoundBoundTransitionDataBox, BoundFreeTransitionDataBox,
- *      AutonomousTransitionDataBox]
- *      * parameters for cross section calculation for each modelled transition
- *
- * (orga data describes the structure of the property data for faster lookups, lookups are
- *  are always possible without it, but are possibly non performant)
- *
- * For each of data subsets exists a dataBox class, a container class holding
- *      pmacc::dataBox'es, and a dataBuffer class, a container class holding
- *      pmacc::buffers in turn allowing access to the pmacc::dataBox'es.
- *
- * Each dataBuffer will create on demand a host or device side dataBox class object which
- *  in turn gives access to the data.
- */
-
+//! @file gathers atomic data storage implementations and implements filling them on runtime
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
@@ -130,6 +88,50 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_autonomousIonization is channel active?
      * @tparam T_electronicIonization is channel active?
      * @tparam T_fieldIonization is channel active?
+     *
+     * The atomicPhysics step relies on a model of atomic states and transitions for each
+     * atomicPhysics ion species.
+     * These model's parameters are provided by the user as a .txt file of specified format
+     * (see documentation) at runtime.
+     *
+     *  PIConGPU itself only includes charge state data, for ADK-, Thomas-Fermi- and BSI-ionization.
+     *  All other atomic state data is kept separate from PIConGPU itself, due to license requirements.
+     *
+     * This file is read at the start of the simulation and stored distributed over the following:
+     *  - charge state property data [ChargeStateDataBox.hpp]
+     *      * ionization energy
+     *      * screened charge
+     *  - charge state orga data [ChargeStateOrgaDataBox.hpp]
+     *      * number of atomic states for each charge state
+     *      * start index block for charge state in list of atomic states
+     * - atomic state property data [AtomicStateDataBox.hpp]
+     *      * configNumber
+     *      * state energy, above ground state of charge state
+     * - atomic state orga data
+     *      [AtomicStateNumberOfTransitionsDataBox_Down, AtomicStateNumberOfTransitionsDataBox_UpDown]
+     *       * number of transitions (up-/)down for each atomic state,
+     *          by type of transition(bound-bound/bound-free/autonomous)
+     *       * offset in transition selection ordering for each atomic state
+     *      [AtomicStateStartIndexBlockDataBox_Down, AtomicStateStartIndexBlockDataBox_UpDown]
+     *       * start index of block in transition collection index for atomic state,
+     *          by type of transition(bound-bound/bound-free/autonomous)
+     * - transition property data[BoundBoundTransitionDataBox, BoundFreeTransitionDataBox,
+     *      AutonomousTransitionDataBox]
+     *      * parameters for cross section calculation for each modelled transition
+     *
+     * (orga data describes the structure of the property data for faster lookups, lookups are
+     *  are always possible without it, but are possibly non performant)
+     *
+     * For each of data subsets exists a dataBox class, a container class holding
+     *      pmacc::dataBox'es, and a dataBuffer class, a container class holding
+     *      pmacc::buffers in turn allowing access to the pmacc::dataBox'es.
+     *
+     * Each dataBuffer will create on demand a host or device side dataBox class object which
+     *  in turn gives access to the data.
+     *
+     * Assumptions about input data are described in CheckTransitionTuple.hpp, ordering requirements of transitions in
+     *  CompareTransitionTuple.hpp and all other requirements in the checkChargeStateList(), checkAtomicStateList() and
+     *  checkTransitionsForEnergyInversion() methods.
      */
     template<
         typename T_Number,
@@ -563,7 +565,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @throws runtime error if duplicate charge state, missing charge state,
          *  order broken(ascending in charge state), completely ionized state included or
-         *  unphysical charge state
+         *  unphysical(Q > Z) charge state
          */
         ALPAKA_FN_HOST void checkChargeStateList(std::list<S_ChargeStateTuple>& chargeStateList)
         {
@@ -671,56 +673,58 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         /** check transition list
          *
+         * @param transitionList
+         *
          * @attention assumes that chargeStateList and atomicStateList fulfil all ordering assumptions
          * @return passes silently if correct
-         *
-         * @throws runtime error if primary order broken,
-         *  secondary order broken, transition from/to unphysical charge state found,
-         *  wrong transition type for lower/upper charge state pair,
-         *  @todo upper state has lower energy than lower state, Brian Marre, 2022
-         *
-         * @param transitionList
+         * @throws runtime error if transition order broken, as defined by CompareTransitionTupel.hpp,
+         *  or the transition tuple is not internally consistent(for its transition type),
+         *  as defined by CheckTransitionTuple.hpp
          */
         template<typename T_TransitionTuple>
         ALPAKA_FN_HOST void checkTransitionList(std::list<T_TransitionTuple>& transitionList)
         {
             typename std::list<T_TransitionTuple>::iterator iter = transitionList.begin();
 
-            T_TransitionTuple currentTransitionTuple;
-
             // empty transition list, i.e. ground-ground transitions only
             if(iter == transitionList.end())
                 return;
 
-            // read first list entry
+            // read first list entry as comparison point
             T_TransitionTuple lastTransitionTuple = *iter;
             checkTransitionTuple<ConfigNumber>(lastTransitionTuple);
             iter++;
 
+            // read the rest
+            T_TransitionTuple currentTransitionTuple;
             for(; iter != transitionList.end(); iter++)
             {
                 currentTransitionTuple = *iter;
                 checkTransitionTuple<ConfigNumber>(currentTransitionTuple);
 
-                // check for ordering
+                // check for (lastTransitionTuple >= currentTransitionTuple)
                 if(CompareTransitionTupel<TypeValue, ConfigNumber, /*order by Lower state*/ true>{}(
                        currentTransitionTuple,
                        lastTransitionTuple))
                 {
+                    // print debug info
                     picongpu::particles::atomicPhysics2::debug::
                         printTransitionTupleToConsole<T_TransitionTuple, Idx, TypeValue, ConfigNumber>(
                             lastTransitionTuple);
                     picongpu::particles::atomicPhysics2::debug::
                         printTransitionTupleToConsole<T_TransitionTuple, Idx, TypeValue, ConfigNumber>(
                             currentTransitionTuple);
+
                     throw std::runtime_error("atomicPhysics ERROR: wrong ordering of input data");
                 }
 
+                // move to next entry for comparison
                 lastTransitionTuple = currentTransitionTuple;
             }
         }
 
-        /** check that for all transitions in trnasitionHostBox, the lower state is lower in energy than the upper state
+        /** check that for all transitions in transitionHostBox, the lower state is lower in energy than the upper
+         * state
          *
          * @param transitionHostBox host dataBox of transition data to check
          *
@@ -1321,12 +1325,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             // check for inversions in upper lower state of transitions
             checkTransitionsForEnergyInversion(this->getBoundBoundTransitionDataBox<
-                                                   /*host*/ true,
-                                                   procClass::TransitionOrdering::byLowerState>());
+                                               /*host*/ true,
+                                               procClass::TransitionOrdering::byLowerState>());
             // no check for bound-free, since bound-free transitions may reduce overall energy
             checkTransitionsForEnergyInversion(this->getAutonomousTransitionDataBox<
-                                                   /*host*/ true,
-                                                   procClass::TransitionOrdering::byLowerState>());
+                                               /*host*/ true,
+                                               procClass::TransitionOrdering::byLowerState>());
 
             // fill orga data buffers 1,)
             //          charge state

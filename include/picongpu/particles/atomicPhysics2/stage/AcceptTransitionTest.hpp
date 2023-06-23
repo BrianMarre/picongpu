@@ -19,21 +19,19 @@
 
 //! @file calculateRate and acceptTransition substage of atomicPhysics
 
-# pragma once
+#pragma once
 
 #include "picongpu/simulation_defines.hpp"
 // need: ProbabilityApproximationFunctor from picongpu/param/atomicPhysics2.param
 
-#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_NoChange.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_ElectronicDeOrExcitation.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_SpontaneousDeexcitation.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_ElectronicIonization.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_AutonomousIonization.kernel"
-
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_AutonomousIonization.kernel"
+#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_ElectronicDeOrExcitation.kernel"
+#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_ElectronicIonization.kernel"
+#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_NoChange.kernel"
+#include "picongpu/particles/atomicPhysics2/kernel/AcceptTransitionTest_SpontaneousDeexcitation.kernel"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRateCacheField.hpp"
-
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeStepField.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
 
 #include <cstdint>
@@ -64,9 +62,7 @@ namespace picongpu::particles::atomicPhysics2::stage
         using RngFactoryFloat = particles::functor::misc::Rng<DistributionFloat>;
 
         //! call of kernel for every superCell
-        HINLINE void operator()(
-            picongpu::MappingDesc const mappingDesc,
-            uint32_t const currentStep) const
+        HINLINE void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
@@ -82,18 +78,16 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             auto& localElectronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics2::electronDistribution::
-                    LocalHistogramField<
-                        picongpu::atomicPhysics2::ElectronHistogram,
-                        picongpu::MappingDesc>>(
+                              LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
                     "Electron_localHistogramField");
 
-            auto& localTimeStepField = *dc.get<picongpu::particles::atomicPhysics2
-                ::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
-                    "LocalTimeStepField");
+            auto& localTimeStepField = *dc.get<
+                picongpu::particles::atomicPhysics2 ::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
+                "LocalTimeStepField");
 
-            auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics2
-                ::localHelperFields::LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                    IonSpecies::FrameType::getName() + "_localRateCacheField");
+            auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics2 ::localHelperFields::
+                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_localRateCacheField");
 
             RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
@@ -117,12 +111,11 @@ namespace picongpu::particles::atomicPhysics2::stage
             if constexpr(AtomicDataType::switchElectronicExcitation)
             {
                 PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel
-                        ::AcceptTransitionTestKernel_ElectronicDeOrExcitation<
-                            picongpu::atomicPhysics2::ElectronHistogram,
-                            AtomicDataType::ConfigNumber::numberLevels,
-                            picongpu::atomicPhysics2::ProbabilityApproximationFunctor,
-                            /* excitation */ true>(),
+                    picongpu::particles::atomicPhysics2::kernel ::AcceptTransitionTestKernel_ElectronicDeOrExcitation<
+                        picongpu::atomicPhysics2::ElectronHistogram,
+                        AtomicDataType::ConfigNumber::numberLevels,
+                        picongpu::atomicPhysics2::ProbabilityApproximationFunctor,
+                        /* excitation */ true>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -131,7 +124,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localTimeStepField.getDeviceDataBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
+                    atomicData.template getBoundBoundTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byLowerState>());
             }
 
             // bound-bound down
@@ -152,7 +147,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localTimeStepField.getDeviceDataBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>());
+                    atomicData.template getBoundBoundTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byUpperState>());
             }
             //      spontaneous radiative deexcitation
             if constexpr(AtomicDataType::switchSpontaneousDeexcitation)
@@ -168,7 +165,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                     ions.getDeviceParticlesBox(),
                     localTimeStepField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>());
+                    atomicData.template getBoundBoundTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byUpperState>());
             }
 
             // bound-free up
@@ -189,7 +188,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getChargeStateDataDataBox<false>(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
+                    atomicData
+                        .template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
             }
             //      fieldIonization
             /// @todo implement field ionization, Brian Marre, 2023
@@ -209,9 +209,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                     rngFactory,
                     ions.getDeviceParticlesBox(),
                     localTimeStepField.getDeviceDataBox(),
-                    atomicData.template getAutonomousTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>());
+                    atomicData.template getAutonomousTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byUpperState>());
             }
-
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

@@ -39,14 +39,11 @@ namespace picongpu::particles::atomicPhysics2::stage
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
         template<typename T_MappingDescription>
-        ALPAKA_FN_HOST void operator()(
-            DataConnector& dataConnector,
-            T_MappingDescription const& mappingDesc) const
+        ALPAKA_FN_HOST void operator()(DataConnector& dataConnector, T_MappingDescription const& mappingDesc) const
         {
-            auto localRateCacheField = std::make_unique<
-                picongpu::particles::atomicPhysics2::localHelperFields::LocalRateCacheField<
-                    picongpu::MappingDesc,
-                    IonSpecies>>(mappingDesc);
+            auto localRateCacheField
+                = std::make_unique<picongpu::particles::atomicPhysics2::localHelperFields::
+                                       LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(mappingDesc);
             dataConnector.consume(std::move(localRateCacheField));
         }
     };

@@ -1,17 +1,17 @@
 /* Copyright 2023 Brian Marre
- * 
+ *
  * This file is part of PIConGPU.
- * 
+ *
  * PIConGPU is free software you can redistribute it andor modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with PIConGPU.
  * If not, see <http://www.gnu.org/licenses/>.
@@ -21,10 +21,10 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/kernel/ExtractTransitionCollectionIndex_NoChange.kernel"
+#include "picongpu/particles/atomicPhysics2/kernel/ExtractTransitionCollectionIndex_Autonomous.kernel"
 #include "picongpu/particles/atomicPhysics2/kernel/ExtractTransitionCollectionIndex_BoundBound.kernel"
 #include "picongpu/particles/atomicPhysics2/kernel/ExtractTransitionCollectionIndex_BoundFree.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/ExtractTransitionCollectionIndex_Autonomous.kernel"
+#include "picongpu/particles/atomicPhysics2/kernel/ExtractTransitionCollectionIndex_NoChange.kernel"
 
 namespace picongpu::particles::atomicPhysics2::stage
 {
@@ -47,7 +47,7 @@ namespace picongpu::particles::atomicPhysics2::stage
         using RngFactoryInt = particles::functor::misc::Rng<DistributionInt>;
 
         //! call of kernel for every superCell
-        HINLINE void operator() (picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
+        HINLINE void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
@@ -65,30 +65,25 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             // no-change transition
             PMACC_LOCKSTEP_KERNEL(
-                picongpu::particles::atomicPhysics2::kernel::
-                    ExtractTransitionCollectionIndexKernel_NoChange(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                ions.getDeviceParticlesBox());
+                picongpu::particles::atomicPhysics2::kernel::ExtractTransitionCollectionIndexKernel_NoChange(),
+                workerCfg)
+            (mapper.getGridDim())(mapper, ions.getDeviceParticlesBox());
 
             if constexpr(
-                AtomicDataType::switchElectronicExcitation
-                || AtomicDataType::switchElectronicDeexcitation
+                AtomicDataType::switchElectronicExcitation || AtomicDataType::switchElectronicDeexcitation
                 || AtomicDataType::switchSpontaneousDeexcitation)
             {
                 // bound-bound transitions
                 PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel::
-                        ExtractTransitionCollectionIndexKernel_BoundBound<
-                            SpeciesConfigNumberType,
-                            picongpu::atomicPhysics2::ElectronHistogram::numberBins,
-                            AtomicDataType::switchElectronicExcitation,
-                            AtomicDataType::switchElectronicDeexcitation,
-                            AtomicDataType::switchSpontaneousDeexcitation,
-                            AtomicDataType::switchElectronicIonization,
-                            AtomicDataType::switchAutonomousIonization,
-                            AtomicDataType::switchFieldIonization
-                        >(),
+                    picongpu::particles::atomicPhysics2::kernel::ExtractTransitionCollectionIndexKernel_BoundBound<
+                        SpeciesConfigNumberType,
+                        picongpu::atomicPhysics2::ElectronHistogram::numberBins,
+                        AtomicDataType::switchElectronicExcitation,
+                        AtomicDataType::switchElectronicDeexcitation,
+                        AtomicDataType::switchSpontaneousDeexcitation,
+                        AtomicDataType::switchElectronicIonization,
+                        AtomicDataType::switchAutonomousIonization,
+                        AtomicDataType::switchFieldIonization>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -100,23 +95,19 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getBoundBoundStartIndexBlockDataBox<false>());
             }
 
-            if constexpr(
-                AtomicDataType::switchElectronicIonization
-                || AtomicDataType::switchFieldIonization)
+            if constexpr(AtomicDataType::switchElectronicIonization || AtomicDataType::switchFieldIonization)
             {
                 // bound-free transitions
                 PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel::
-                        ExtractTransitionCollectionIndexKernel_BoundFree<
-                            SpeciesConfigNumberType,
-                            picongpu::atomicPhysics2::ElectronHistogram::numberBins,
-                            AtomicDataType::switchElectronicExcitation,
-                            AtomicDataType::switchElectronicDeexcitation,
-                            AtomicDataType::switchSpontaneousDeexcitation,
-                            AtomicDataType::switchElectronicIonization,
-                            AtomicDataType::switchAutonomousIonization,
-                            AtomicDataType::switchFieldIonization
-                        >(),
+                    picongpu::particles::atomicPhysics2::kernel::ExtractTransitionCollectionIndexKernel_BoundFree<
+                        SpeciesConfigNumberType,
+                        picongpu::atomicPhysics2::ElectronHistogram::numberBins,
+                        AtomicDataType::switchElectronicExcitation,
+                        AtomicDataType::switchElectronicDeexcitation,
+                        AtomicDataType::switchSpontaneousDeexcitation,
+                        AtomicDataType::switchElectronicIonization,
+                        AtomicDataType::switchAutonomousIonization,
+                        AtomicDataType::switchFieldIonization>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -132,15 +123,14 @@ namespace picongpu::particles::atomicPhysics2::stage
             {
                 // autonomous transitions
                 PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel::
-                        ExtractTransitionCollectionIndexKernel_Autonomous<
-                            SpeciesConfigNumberType,
-                            AtomicDataType::switchElectronicExcitation,
-                            AtomicDataType::switchElectronicDeexcitation,
-                            AtomicDataType::switchSpontaneousDeexcitation,
-                            AtomicDataType::switchElectronicIonization,
-                            AtomicDataType::switchAutonomousIonization,
-                            AtomicDataType::switchFieldIonization>(),
+                    picongpu::particles::atomicPhysics2::kernel::ExtractTransitionCollectionIndexKernel_Autonomous<
+                        SpeciesConfigNumberType,
+                        AtomicDataType::switchElectronicExcitation,
+                        AtomicDataType::switchElectronicDeexcitation,
+                        AtomicDataType::switchSpontaneousDeexcitation,
+                        AtomicDataType::switchElectronicIonization,
+                        AtomicDataType::switchAutonomousIonization,
+                        AtomicDataType::switchFieldIonization>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,

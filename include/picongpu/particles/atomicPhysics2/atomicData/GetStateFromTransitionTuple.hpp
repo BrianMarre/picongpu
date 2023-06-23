@@ -31,22 +31,22 @@
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
     template<typename T_ConfigNumberDataType, typename T_Value = float_X>
-    HINLINE T_ConfigNumberDataType getLowerStateConfigNumber(
-        atomicData::BoundBoundTransitionTuple<T_Value, T_ConfigNumberDataType> const& tupel)
+    HINLINE T_ConfigNumberDataType
+    getLowerStateConfigNumber(atomicData::BoundBoundTransitionTuple<T_Value, T_ConfigNumberDataType> const& tupel)
     {
         return std::get<7>(tupel);
     }
 
     template<typename T_ConfigNumberDataType, typename T_Value = float_X>
-    HINLINE T_ConfigNumberDataType getUpperStateConfigNumber(
-        atomicData::BoundBoundTransitionTuple<T_Value, T_ConfigNumberDataType> const& tupel)
+    HINLINE T_ConfigNumberDataType
+    getUpperStateConfigNumber(atomicData::BoundBoundTransitionTuple<T_Value, T_ConfigNumberDataType> const& tupel)
     {
         return std::get<8>(tupel);
     }
 
     template<typename T_ConfigNumberDataType, typename T_Value = float_X>
-    HINLINE T_ConfigNumberDataType getLowerStateConfigNumber(
-        atomicData::BoundFreeTransitionTuple<T_Value, T_ConfigNumberDataType> const& tupel)
+    HINLINE T_ConfigNumberDataType
+    getLowerStateConfigNumber(atomicData::BoundFreeTransitionTuple<T_Value, T_ConfigNumberDataType> const& tupel)
     {
         return std::get<8>(tupel);
     }

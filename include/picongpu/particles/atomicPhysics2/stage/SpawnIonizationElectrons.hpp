@@ -29,10 +29,8 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/kernel/SpawnIonizationMacroElectrons.kernel"
-
-#include "picongpu/particles/traits/GetIonizationElectronSpecies.hpp"
-
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+#include "picongpu/particles/traits/GetIonizationElectronSpecies.hpp"
 
 #include <cstdint>
 
@@ -49,8 +47,8 @@ namespace picongpu::particles::atomicPhysics2::stage
 
         //! resolved type of electron species to spawn upon ionization
         using IonizationElectronSpecies = pmacc::particles::meta::FindByNameOrType_t<
-                VectorAllSpecies,
-                typename picongpu::traits::GetIonizationElectronSpecies<IonSpecies>::type>;
+            VectorAllSpecies,
+            typename picongpu::traits::GetIonizationElectronSpecies<IonSpecies>::type>;
 
         using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
@@ -63,8 +61,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg(
-                MappingDesc::SuperCellSize{});
+            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg(MappingDesc::SuperCellSize{});
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
             auto& electrons = *dc.get<IonizationElectronSpecies>(IonizationElectronSpecies::FrameType::getName());
@@ -76,47 +73,42 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             // spawn ionization electrons
             //      bound-free based transitions
-            if constexpr(
-                AtomicDataType::switchElectronicIonization
-                ||
-                AtomicDataType::switchFieldIonization)
+            if constexpr(AtomicDataType::switchElectronicIonization || AtomicDataType::switchFieldIonization)
             {
-                using SpawnElectrons_BoundFree = picongpu::particles::atomicPhysics2::kernel
-                    ::SpawnIonizationMacroElectronsKernel<
+                using SpawnElectrons_BoundFree
+                    = picongpu::particles::atomicPhysics2::kernel ::SpawnIonizationMacroElectronsKernel<
                         procClass::ProcessClassGroup::boundFreeBased>;
 
                 // spawn ionization electrons for bound-free based processes
-                PMACC_LOCKSTEP_KERNEL(
-                    SpawnElectrons_BoundFree(),
-                    workerCfg)
+                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_BoundFree(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
                     ions.getDeviceParticlesBox(),
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
+                    atomicData
+                        .template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
 
                 /// @todo field ionization, Brian Marre, 2023
             }
             //      autonomous based transitions
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
-                using SpawnElectrons_Autonomous = picongpu::particles::atomicPhysics2::kernel
-                    ::SpawnIonizationMacroElectronsKernel<
+                using SpawnElectrons_Autonomous
+                    = picongpu::particles::atomicPhysics2::kernel ::SpawnIonizationMacroElectronsKernel<
                         procClass::ProcessClassGroup::autonomousBased>;
 
                 RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
                 // spawn ionization electrons for autonomous based processes
-                PMACC_LOCKSTEP_KERNEL(
-                    SpawnElectrons_Autonomous(),
-                    workerCfg)
+                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_Autonomous(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
                     ions.getDeviceParticlesBox(),
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getAutonomousTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>(),
+                    atomicData
+                        .template getAutonomousTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>(),
                     rngFactory,
                     atomicData.template getChargeStateDataDataBox<false>());
             }

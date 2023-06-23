@@ -64,9 +64,7 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             // macro for call of kernel on every superCell, see pull request #4321
             PMACC_LOCKSTEP_KERNEL(DumpToConsole(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                particles.getDeviceParticlesBox());
+            (mapper.getGridDim())(mapper, particles.getDeviceParticlesBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

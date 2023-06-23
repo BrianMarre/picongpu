@@ -25,12 +25,13 @@
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
+
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRateCacheField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/RateCache.hpp"
 #include "picongpu/particles/traits/GetNumberAtomicStates.hpp"
 
-#include <pmacc/traits/Resolve.hpp>
 #include <pmacc/Environment.hpp>
+#include <pmacc/traits/Resolve.hpp>
 
 #include <string>
 
@@ -52,15 +53,14 @@ namespace picongpu::particles::atomicPhysics2::stage
         {
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localRateCacheField = *dc.get<particles::atomicPhysics2::localHelperFields::
-                LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                    IonSpecies::FrameType::getName() + "_localRateCacheField");
+            auto& localRateCacheField = *dc.get<
+                particles::atomicPhysics2::localHelperFields::LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_localRateCacheField");
 
             // rate cache inits to all zeros
             localRateCacheField.getDeviceBuffer().setValue(
                 picongpu::particles::atomicPhysics2::localHelperFields::RateCache<
                     picongpu::traits::GetNumberAtomicStates<IonSpecies>::value>());
         }
-
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

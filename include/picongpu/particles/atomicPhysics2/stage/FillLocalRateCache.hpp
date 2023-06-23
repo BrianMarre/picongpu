@@ -31,24 +31,21 @@
 #include "picongpu/simulation_defines.hpp"
 // need atomicPhysics2.param, type of histogram
 
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRateCacheField.hpp"
-#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
-
-#include "picongpu/particles/traits/GetAtomicDataType.hpp"
-#include "picongpu/particles/traits/GetNumberAtomicStates.hpp"
-
+#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/FillLocalRateCache_Autonomous.kernel"
 #include "picongpu/particles/atomicPhysics2/kernel/FillLocalRateCache_BoundBound.kernel"
 #include "picongpu/particles/atomicPhysics2/kernel/FillLocalRateCache_BoundFree.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/FillLocalRateCache_Autonomous.kernel"
-
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRateCacheField.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
+#include "picongpu/particles/traits/GetAtomicDataType.hpp"
+#include "picongpu/particles/traits/GetNumberAtomicStates.hpp"
 
 #include <pmacc/Environment.hpp>
 #include <pmacc/lockstep/ForEach.hpp>
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2::stage
 {
@@ -77,19 +74,20 @@ namespace picongpu::particles::atomicPhysics2::stage
             pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg(MappingDesc::SuperCellSize{});
 
             auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
-                LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                    IonSpecies::FrameType::getName() + "_localRateCacheField");
+                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_localRateCacheField");
 
             auto& localElectronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics2::electronDistribution::
-                    LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
-                        "Electron_localHistogramField");
+                              LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
+                    "Electron_localHistogramField");
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
             auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
 
             constexpr uint8_t n_max = AtomicDataType::ConfigNumber::numberLevels;
-            constexpr uint32_t numberAtomicStatesOfSpecies = picongpu::traits::GetNumberAtomicStates<IonSpecies>::value;
+            constexpr uint32_t numberAtomicStatesOfSpecies
+                = picongpu::traits::GetNumberAtomicStates<IonSpecies>::value;
             constexpr uint32_t numberBins = picongpu::atomicPhysics2::ElectronHistogram::numberBins;
 
             // filling local rate cache
@@ -113,14 +111,13 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
                     atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>()
-                );
+                    atomicData.template getBoundBoundTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byLowerState>());
             }
 
             //    downward bound-bound transition rates
-            if constexpr(
-                AtomicDataType::switchElectronicDeexcitation
-                || AtomicDataType::switchSpontaneousDeexcitation)
+            if constexpr(AtomicDataType::switchElectronicDeexcitation || AtomicDataType::switchSpontaneousDeexcitation)
             {
                 using FillLocalRateCacheDownWardBoundBound = kernel::FillLocalRateCacheKernel_BoundBound<
                     n_max,
@@ -139,8 +136,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
                     atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>()
-                );
+                    atomicData.template getBoundBoundTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byUpperState>());
             }
 
             //    upward bound-free transition rates
@@ -162,8 +160,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundFreeStartIndexBlockDataBox<false>(),
                     atomicData.template getBoundFreeNumberTransitionsDataBox<false>(),
-                    atomicData.template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>()
-                );
+                    atomicData
+                        .template getBoundFreeTransitionDataBox<false, procClass::TransitionOrdering::byLowerState>());
             }
 
             //    downward autonomous transition rates
@@ -180,8 +178,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localRateCacheField.getDeviceDataBox(),
                     atomicData.template getAutonomousStartIndexBlockDataBox<false>(),
                     atomicData.template getAutonomousNumberTransitionsDataBox<false>(),
-                    atomicData.template getAutonomousTransitionDataBox<false, procClass::TransitionOrdering::byUpperState>()
-                );
+                    atomicData.template getAutonomousTransitionDataBox<
+                        false,
+                        procClass::TransitionOrdering::byUpperState>());
             }
         }
     };

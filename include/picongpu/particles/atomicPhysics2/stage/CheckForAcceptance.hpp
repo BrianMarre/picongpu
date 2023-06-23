@@ -1,17 +1,17 @@
 /* Copyright 2023 Brian Marre
- * 
+ *
  * This file is part of PIConGPU.
- * 
+ *
  * PIConGPU is free software you can redistribute it andor modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with PIConGPU.
  * If not, see <http://www.gnu.org/licenses/>.
@@ -28,8 +28,8 @@
 
 #include "picongpu/particles/atomicPhysics2/kernel/CheckForAcceptance.kernel"
 
-#include <string>
 #include <cstdint>
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2::stage
 {
@@ -54,19 +54,14 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            auto& localAllIonsAcceptedField =
-                *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
-                    LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
-                        "LocalAllMacroIonsAcceptedField");
+            auto& localAllIonsAcceptedField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
+                              LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
+                    "LocalAllMacroIonsAcceptedField");
 
             // call kernel for each superCell
-            PMACC_LOCKSTEP_KERNEL(
-                picongpu::particles::atomicPhysics2::kernel::CheckForAcceptanceKernel(),
-                workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                ions.getDeviceParticlesBox(),
-                localAllIonsAcceptedField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::CheckForAcceptanceKernel(), workerCfg)
+            (mapper.getGridDim())(mapper, ions.getDeviceParticlesBox(), localAllIonsAcceptedField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

@@ -17,49 +17,83 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file helper function for getting deltaEnergy of transition
+//! @file implements function for getting deltaEnergy of transition
 
 #pragma once
 
 // need atomicPhysics_Debug.param
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
+#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
+
+#include <pmacc/static_assert.hpp>
+
+#include <cstdint>
+
 namespace picongpu::particles::atomicPhysics2
 {
+    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+
     struct DeltaEnergyTransition
     {
-        /** ionizationEnergy between two arbitrary ionization States
+
+        /** actual implementation of ionization energy calculation
          *
-         * @attention in debug compile returns -1. if upperStateChargeState < lowerStateChargeState
-         * @return unit: eV
+         * @attention arguments must fullfill lowerChargeState <= upperChargeState, otherwise wrong result
          */
         template<typename T_ChargeStateDataBox>
-        HDINLINE static float_X ionizationEnergy(
+        HDINLINE static float_X ionizationEnergyHelper(
             uint8_t const lowerChargeState,
             uint8_t const upperChargeState,
             T_ChargeStateDataBox const chargeStateDataBox)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG)
             {
-                if(lowerChargeState < upperChargeState)
-                {
-                    printf("atomicPhysics ERROR:  chargeState inverted in ionizationEnergy() call\n");
-                    return -1._X; // eV
-                }
+                if(lowerChargeState > upperChargeState)
+                    printf("atomicPhysics ERROR: lowerChargeState > upperChargeState in ionizationEnergy call()");
+                return 0._X;
             }
 
-            float_X sumIonizationEnergies = 0._X; // eV
+            // eV
+            float_X sumIonizationEnergies = 0._X;
             for(uint8_t k = lowerChargeState; k < upperChargeState; k++)
             {
-                sumIonizationEnergies += chargeStateDataBox.ionizationEnergy(k); // eV
+                // eV
+                sumIonizationEnergies += chargeStateDataBox.ionizationEnergy(k);
             }
 
-            return sumIonizationEnergies; // eV
+            // eV
+            return sumIonizationEnergies;
         }
 
-        /** get energy difference between upper and lower state of a transition
+        /** ionizationEnergy from lowerState- to upperState- chargeState
          *
-         * @tparam T_isIonizing whether transition is ionizing
+         * @return unit: eV
+         */
+        template<procClass::ProcessClassGroup T_ProcessClassGroup, typename T_ChargeStateDataBox>
+        HDINLINE static float_X ionizationEnergy(
+            uint8_t const lowerStateChargeState,
+            uint8_t const upperStateChargeState,
+            T_ChargeStateDataBox const chargeStateDataBox)
+        {
+            if constexpr (u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
+                return ionizationEnergyHelper<T_ChargeStateDataBox>(
+                    lowerStateChargeState, upperStateChargeState, chargeStateDataBox);
+            if constexpr (u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
+                return ionizationEnergyHelper<T_ChargeStateDataBox>(
+                    upperStateChargeState, lowerStateChargeState, chargeStateDataBox);
+            else
+            {
+                PMACC_CASSERT_MSG(atomicPhyiscs_unknown_transition_typ, false);
+            }
+            return 0._X;
+        }
+
+        /** get deltaEnergy of transition
+         *
+         * DeltaEnergy is defined as energy(UpperState) - energy(lowerState) [+ ionizationEnergy],
+         *  with lower and upper state as given in charge state box
          *
          * @param atomicStateBox deviceDataBox giving access to atomic state property data
          * @param transitionBox deviceDataBox giving access to transition property data,
@@ -69,7 +103,6 @@ namespace picongpu::particles::atomicPhysics2
          * @return unit: eV
          */
         template<
-            bool T_isIonizing,
             typename T_AtomicStateDataBox,
             typename T_TransitionDataBox,
             typename... T_ChargeStateDataBox>
@@ -80,8 +113,7 @@ namespace picongpu::particles::atomicPhysics2
             T_ChargeStateDataBox... chargeStateDataBox)
         {
             using CollectionIdx = typename T_TransitionDataBox::S_TransitionDataBox::Idx;
-            using ConfigNumberIdx = typename T_AtomicStateDataBox::Idx;
-            using ConfigNumber = typename T_AtomicStateDataBox::ConfigNumber;
+            constexpr procClass::ProcessClassGroup = T_TransitionDataBox::processClassGroup;
 
             CollectionIdx const lowerStateCollectionIndex
                 = transitionDataBox.lowerStateCollectionIndex(transitionIndex);
@@ -89,11 +121,19 @@ namespace picongpu::particles::atomicPhysics2
                 = transitionDataBox.upperStateCollectionIndex(transitionIndex);
 
             // difference initial and final excitation energy
+            // eV
             float_X deltaEnergy = atomicStateDataBox.energy(upperStateCollectionIndex)
-                - atomicStateDataBox.energy(lowerStateCollectionIndex); // eV
+                - atomicStateDataBox.energy(lowerStateCollectionIndex);
 
-            if constexpr(T_isIonizing)
+            constexpr procClass::ProcessClassGroup processClassGroup = T_TransitionDataBox::processClassGroup;
+            constexpr bool isIonizing = (
+                (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
+                || (u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased)));
+            if constexpr(isIonizing)
             {
+                using ConfigNumberIdx = typename T_AtomicStateDataBox::Idx;
+                using ConfigNumber = typename T_AtomicStateDataBox::ConfigNumber;
+
                 // ionizing electronic interactive processClassGroup
                 ConfigNumberIdx const lowerStateConfigNumber
                     = atomicStateDataBox.configNumber(lowerStateCollectionIndex);
@@ -103,36 +143,17 @@ namespace picongpu::particles::atomicPhysics2
                 uint8_t const lowerStateChargeState = ConfigNumber::getChargeState(lowerStateConfigNumber);
                 uint8_t const upperStateChargeState = ConfigNumber::getChargeState(upperStateConfigNumber);
 
-                // + ionization energy
-                if (lowerStateChargeState < upperStateChargeState)
-                {
-                    // eV
-                    deltaEnergy += DeltaEnergyTransition::ionizationEnergy<T_ChargeStateDataBox...>(
+                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased)
+                    deltaEnergy += DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,
                         upperStateChargeState,
                         chargeStateDataBox...);
-                }
-                else
-                {
-                    // eV
-                    deltaEnergy += DeltaEnergyTransition::ionizationEnergy<T_ChargeStateDataBox...>(
-                        upperStateChargeState,
+                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased)
+                    deltaEnergy -= DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,
+                        upperStateChargeState,
                         chargeStateDataBox...);
-                }
             }
-
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG)
-                if(deltaEnergy < 0._X)
-                    printf(
-                        "atomicPhysics ERROR: negative energy in DeltaEnergyTransition::get(...) call\n"
-                        "\t processClassGroup %u, transitionIndex: %u, lowerStateClctIdx: %u, upperStateClctIdx: %u,"
-                        " deltaEnergy[eV]:  %.8f \n",
-                        static_cast<uint32_t>(T_TransitionDataBox::processClassGroup),
-                        transitionIndex,
-                        lowerStateCollectionIndex,
-                        upperStateCollectionIndex,
-                        deltaEnergy);
             return deltaEnergy;
         }
     };

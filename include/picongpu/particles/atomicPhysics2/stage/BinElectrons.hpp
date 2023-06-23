@@ -39,8 +39,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/kernel/BinElectrons.kernel"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/BinElectrons.kernel"
 
 #include <pmacc/Environment.hpp>
 #include <pmacc/mappings/kernel/AreaMapping.hpp>

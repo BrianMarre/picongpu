@@ -19,12 +19,10 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/kernel/RollForOverSubscription.kernel"
-
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
-
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/RollForOverSubscription.kernel"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
 
 #include <cstdint>
 
@@ -53,9 +51,7 @@ namespace picongpu::particles::atomicPhysics2::stage
         using RngFactoryFloat = particles::functor::misc::Rng<DistributionFloat>;
 
         //! call of kernel for every superCell
-        HINLINE void operator()(
-            picongpu::MappingDesc const mappingDesc,
-            uint32_t const currentStep) const
+        HINLINE void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
@@ -70,20 +66,19 @@ namespace picongpu::particles::atomicPhysics2::stage
                     "Electron_localHistogramField");
 
             auto& localRejectionProbabilityCacheField
-                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
-                    LocalRejectionProbabilityCacheField<picongpu::MappingDesc>>(
-                    "LocalRejectionProbabilityCacheField");
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalRejectionProbabilityCacheField<
+                    picongpu::MappingDesc>>("LocalRejectionProbabilityCacheField");
 
-            auto& localElectronHistogramOverSubscribedField =
-                *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
-                    LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
-                        "LocalElectronHistogramOverSubscribedField");
+            auto& localElectronHistogramOverSubscribedField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
+                              LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
+                    "LocalElectronHistogramOverSubscribedField");
 
             RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
             // macro for call of kernel for every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel
-                ::RollForOverSubscriptionKernel<
+            PMACC_LOCKSTEP_KERNEL(
+                picongpu::particles::atomicPhysics2::kernel ::RollForOverSubscriptionKernel<
                     picongpu::atomicPhysics2::ElectronHistogram>(),
                 workerCfg)
             (mapper.getGridDim())(
@@ -92,8 +87,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                 localElectronHistogramOverSubscribedField.getDeviceDataBox(),
                 ions.getDeviceParticlesBox(),
                 localRejectionProbabilityCacheField.getDeviceDataBox(),
-                localElectronHistogramField.getDeviceDataBox()
-            );
+                localElectronHistogramField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

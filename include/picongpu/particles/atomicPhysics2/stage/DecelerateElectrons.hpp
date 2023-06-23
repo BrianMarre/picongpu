@@ -27,8 +27,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/kernel/DecelerateElectrons.kernel"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/DecelerateElectrons.kernel"
 
 #include <pmacc/Environment.hpp>
 #include <pmacc/mappings/kernel/AreaMapping.hpp>
@@ -72,8 +72,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                               LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
                     "Electron_localHistogramField");
 
-            using DecelerateElectrons = picongpu::particles::atomicPhysics2::kernel
-                ::DecelerateElectronsKernel<T_ElectronSpecies, picongpu::atomicPhysics2::ElectronHistogram>;
+            using DecelerateElectrons = picongpu::particles::atomicPhysics2::kernel ::
+                DecelerateElectronsKernel<T_ElectronSpecies, picongpu::atomicPhysics2::ElectronHistogram>;
 
             // macro for call of kernel on every superCell, see pull request #4321
             PMACC_LOCKSTEP_KERNEL(DecelerateElectrons(), workerCfg)

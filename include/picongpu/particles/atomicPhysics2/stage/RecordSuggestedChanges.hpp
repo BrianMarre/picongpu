@@ -19,13 +19,12 @@
 
 //! @file record all accepted transition's suggested changes
 
-# pragma once
+#pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/kernel/RecordUsedElectronHistogramWeight.kernel"
-
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/RecordUsedElectronHistogramWeight.kernel"
 
 #include <cstdint>
 #include <string>
@@ -72,14 +71,12 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             // electronic collisional transition channel active
             if constexpr(
-                AtomicDataType::switchElectronicExcitation
-                || AtomicDataType::switchElectronicDeexcitation
+                AtomicDataType::switchElectronicExcitation || AtomicDataType::switchElectronicDeexcitation
                 || AtomicDataType::switchElectronicIonization)
             {
                 PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel
-                        ::RecordUsedElectronHistogramWeightKernel<
-                            picongpu::atomicPhysics2::ElectronHistogram>(),
+                    picongpu::particles::atomicPhysics2::kernel ::RecordUsedElectronHistogramWeightKernel<
+                        picongpu::atomicPhysics2::ElectronHistogram>(),
                     workerCfg)
                 (mapper.getGridDim())(
                     mapper,
