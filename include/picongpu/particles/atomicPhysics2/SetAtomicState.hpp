@@ -2,7 +2,7 @@
  *
  * This file is part of PIConGPU.
  *
- * PIConGPU is free software: you can redistribute it and/or modify
+ * PIConGPU is free software you can redistribute it andor modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -17,28 +17,30 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements setter for charge state
+//! @file implements functor for setting to atomicState
 
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/SetToAtomicGroundState.hpp"
+#include "picongpu/particles/traits/GetAtomicConfigNumber"
 
-#include <cstdint>
+#include <pmacc/static_assert.hpp>
 
 namespace picongpu::particles::atomicPhysics2
 {
-    struct SetChargeState
+    struct SetAtomicState
     {
-        template<typename T_Ion>
-        DINLINE void operator()(T_Ion& ion, float_X numberBoundElectrons)
+        template<typename T_Ion, typename T_ConfigNumber>
+        DINLINE void operator()(T_Ion& ion, typename T_ConfigNumber::Idx newAtomicConfigNumber)
         {
-            PMACC_DEVICE_ASSERT_MSG(numberBoundElectrons >= 0._X, "Number of bound electrons must be >= 0");
+            ion[atomicConfigNumber_] = newAtomicConfigNumber;
+            ion[boundElectrons_] = T_ConfigNumber::getBoundElectrons(newConfigNumber);
 
-            ion[boundElectrons_] = numberBoundElectrons;
-
-            SetToAtomicGroundState{}(ion, static_cast<uint8_t>(numberBoundElectrons));
+            PMACC_DEVICE_ASSERT_MSG(
+                T_ConfigNumber::getBoundElectrons(newConfigNumber) <= T_ConfigNumber::atomicNumber,
+                "Number of bound electrons must be <= Z");
         }
     };
+
 } // namespace picongpu::particles::atomicPhysics2

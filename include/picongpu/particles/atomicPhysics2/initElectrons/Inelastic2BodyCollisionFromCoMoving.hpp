@@ -132,12 +132,8 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                             "atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0,  %.8f !\n",
                             deltaEnergy);
 
-#pragma unroll
-                for(uint8_t i = 0u; i < picongpu::simDim; i++)
-                {
-                    electron[momentum_][i] = 0._X;
-                    ion[momentum_][i] = 0._X;
-                }
+                electron[momentum_] = floatD_X::create(0._X);
+                ion[momentum_][i] = floatD_X::create(0._X);
             }
 
             //      get electron/ion, momentum/Lorentz factor in IonSystem after ionization

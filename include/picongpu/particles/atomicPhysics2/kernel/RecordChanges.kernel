@@ -22,6 +22,7 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
+#include "picongpu/particles/atomicPhysics2/SetAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
@@ -146,8 +147,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             = atomicStateBox.configNumber(transitionBox.lowerStateCollectionIndex(transitionIndex));
                     }
 
-                    ion[atomicConfigNumber_] = newConfigNumber;
-                    ion[boundElectrons_] = T_AtomicStateDataBox::ConfigNumber::getBoundElectrons(newConfigNumber);
+                    SetAtomicState{}(ion, newConfigNumber);
 
                     // record used energy
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(

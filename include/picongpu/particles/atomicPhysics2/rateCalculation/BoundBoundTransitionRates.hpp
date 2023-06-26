@@ -30,6 +30,8 @@
 #include "picongpu/particles/atomicPhysics2/rateCalculation/CollisionalRate.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/Multiplicities.hpp"
 
+#include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
+
 #include <pmacc/algorithms/math.hpp>
 
 #include <cmath>
@@ -205,8 +207,12 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             uint32_t const lowerStateClctIdx
                 = boundBoundTransitionDataBox.lowerStateCollectionIndex(transitionCollectionIndex);
 
-            float_X const energyDifference = static_cast<float_X>(
-                atomicStateDataBox.energy(upperStateClctIdx) - atomicStateDataBox.energy(lowerStateClctIdx)); // [eV]
+            // eV
+            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
+                ::get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
+                    transitionCollectionIndex,
+                    atomicStateDataBox,
+                    boundBoundTransitionDataBox);
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
                 if(energyDifference < 0._X)

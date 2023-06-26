@@ -115,13 +115,6 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                     autonomousTransitionDataBox,
                     chargeStateDataBox);
 
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_AUTONOMOUS_IONIZATION_INIT_HOT_DEBUG)
-            {
-
-            }
-
-
-
             Inelastic2BodyCollisionFromCoMoving::init<T_IonParticle, T_ElectronParticle>(
                 ion,
                 electron,

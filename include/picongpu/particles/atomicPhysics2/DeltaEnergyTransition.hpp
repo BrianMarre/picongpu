@@ -60,7 +60,7 @@ namespace picongpu::particles::atomicPhysics2
             for(uint8_t k = lowerChargeState; k < upperChargeState; k++)
             {
                 // eV
-                sumIonizationEnergies += chargeStateDataBox.ionizationEnergy(k);
+                sumIonizationEnergies += static_cast<float_X>(chargeStateDataBox.ionizationEnergy(k));
             }
 
             // eV
@@ -121,8 +121,8 @@ namespace picongpu::particles::atomicPhysics2
 
             // difference initial and final excitation energy
             // eV
-            float_X deltaEnergy = atomicStateDataBox.energy(upperStateCollectionIndex)
-                - atomicStateDataBox.energy(lowerStateCollectionIndex);
+            float_X deltaEnergy = static_cast<float_X>(atomicStateDataBox.energy(upperStateCollectionIndex)
+                - atomicStateDataBox.energy(lowerStateCollectionIndex));
 
             constexpr procClass::ProcessClassGroup processClassGroup = T_TransitionDataBox::processClassGroup;
             constexpr bool isIonizing = (
