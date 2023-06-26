@@ -19,7 +19,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file deceleration/heating of electrons at end of atomicPhysics sub step according to
+/** @file energy feedback to the free electron spectrum at end of atomicPhysics sub step according to
  *    their histogram bin deltaEnergy
  */
 
@@ -126,7 +126,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // case: too much energy removed
                     if(newEnergyElectron < 0._X)
-                        newEnergyElectron = 0._X; // extract as much as possible, rest should be negligible
+                        newEnergyElectron = 0._X; // extract as much as possible, rest is hopefully negligible
 
                     constexpr float_X c_internal
                         = static_cast<float_X>(picongpu::SI::SPEED_OF_LIGHT_SI * UNIT_TIME / UNIT_LENGTH);
@@ -147,17 +147,17 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     //  = UNIT_MASS * UNIT_LENGTH/UNIT_TIME
                     // internal units, not weighted
 
-                    float_X previousMomentumVectorLength2 = pmacc::math::l2norm2(electron[momentum_]);
+                    float_X previousMomentumVectorLength = pmacc::math::l2norm(electron[momentum_]);
                     // internal units, scaled
 
                     // case: not moving electron, --> no need to resize vector
-                    if(previousMomentumVectorLength2 == 0._X)
-                        previousMomentumVectorLength2 = 1._X;
+                    if(previousMomentumVectorLength == 0._X)
+                        previousMomentumVectorLength = 1._X;
 
                     // if previous momentum == 0, discards electron
                     // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
                     electron[momentum_]
-                        *= newElectronMomentum * electron[weighting_] * 1._X / previousMomentumVectorLength2;
+                        *= newElectronMomentum * electron[weighting_] * 1._X / previousMomentumVectorLength;
                 });
         }
     };

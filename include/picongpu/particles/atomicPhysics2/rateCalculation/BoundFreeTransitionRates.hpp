@@ -139,8 +139,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 lowerStateLevelVector - upperStateLevelVector);
 
             // eV
-            float_X const energyDifference = picongpu::particles::atomicPhysics2 ::DeltaEnergyTransition::
-                get<true, T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
+            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
+                ::get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
                     transitionCollectionIndex,
                     atomicStateDataBox,
                     boundFreeTransitionDataBox,

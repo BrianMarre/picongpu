@@ -117,10 +117,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     {
                         // electronic collisional process
                         deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get<
-                            procClass::IsProcess<procClass::ProcessClassGroup::ionizing>::check(u8(T_ProcessClass)),
-                            T_AtomicStateDataBox,
-                            T_TransitionDataBox,
-                            T_ChargeStateBox...>(transitionIndex, atomicStateBox, transitionBox, chargeStateBox...);
+                                T_AtomicStateDataBox,
+                                T_TransitionDataBox,
+                                T_ChargeStateBox...>(
+                            transitionIndex,
+                            atomicStateBox,
+                            transitionBox,
+                            chargeStateBox...);
                     }
 
                     typename T_AtomicStateDataBox::Idx newConfigNumber;
@@ -132,11 +135,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                          u8(T_ProcessClass)))
                             deltaEnergy = -deltaEnergy;
 
+                        // new state is upper state of transition
                         newConfigNumber
                             = atomicStateBox.configNumber(transitionBox.upperStateCollectionIndex(transitionIndex));
                     }
                     else
                     {
+                        // downward process, new state is lower state of transition
                         newConfigNumber
                             = atomicStateBox.configNumber(transitionBox.lowerStateCollectionIndex(transitionIndex));
                     }

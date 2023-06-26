@@ -85,7 +85,7 @@ namespace picongpu::particles::atomicPhysics2
                     upperStateChargeState, lowerStateChargeState, chargeStateDataBox);
             else
             {
-                PMACC_CASSERT_MSG(atomicPhyiscs_unknown_transition_typ, false);
+                printf("atomicPhysics ERROR: unknonwn transition type");
             }
             return 0._X;
         }
@@ -113,7 +113,6 @@ namespace picongpu::particles::atomicPhysics2
             T_ChargeStateDataBox... chargeStateDataBox)
         {
             using CollectionIdx = typename T_TransitionDataBox::S_TransitionDataBox::Idx;
-            constexpr procClass::ProcessClassGroup = T_TransitionDataBox::processClassGroup;
 
             CollectionIdx const lowerStateCollectionIndex
                 = transitionDataBox.lowerStateCollectionIndex(transitionIndex);
@@ -143,12 +142,12 @@ namespace picongpu::particles::atomicPhysics2
                 uint8_t const lowerStateChargeState = ConfigNumber::getChargeState(lowerStateConfigNumber);
                 uint8_t const upperStateChargeState = ConfigNumber::getChargeState(upperStateConfigNumber);
 
-                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased)
+                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
                     deltaEnergy += DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,
                         upperStateChargeState,
                         chargeStateDataBox...);
-                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased)
+                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
                     deltaEnergy -= DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,
                         upperStateChargeState,

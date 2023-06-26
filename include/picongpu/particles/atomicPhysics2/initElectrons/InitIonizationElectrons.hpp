@@ -75,7 +75,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         }
     };
 
-    //! specialisation for autonmousIonization
+    //! specialisation for autonomousIonization
     template<>
     struct InitIonizationElectron<
         picongpu::particles::atomicPhysics2::processClass ::ProcessClass::autonomousIonization>
@@ -108,12 +108,19 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
-            float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::
-                get<true, T_AtomicStateDataBox, T_AutonomousTransitionDataBox, T_ChargeStateDataBox>(
+            float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
+                ::get<T_AtomicStateDataBox, T_AutonomousTransitionDataBox, T_ChargeStateDataBox>(
                     transitionIndex,
                     atomicStateDataBox,
                     autonomousTransitionDataBox,
                     chargeStateDataBox);
+
+            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_AUTONOMOUS_IONIZATION_INIT_HOT_DEBUG)
+            {
+
+            }
+
+
 
             Inelastic2BodyCollisionFromCoMoving::init<T_IonParticle, T_ElectronParticle>(
                 ion,

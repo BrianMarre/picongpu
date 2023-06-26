@@ -26,9 +26,6 @@
  *                 [no assumption of energy ordering of lowerState and upperState]
  *  [autonomous] : chargeState(upperState) < chargeState(lowerState) [consistent with autonomous ionization)]
  *                 and (Energy(upperState) > Energy(lowerState))
- *
- * only the chargeState requirements are checked for a transition tuple, the energy requirements are checked in a
- *  separate atomic data method.
  */
 
 #pragma once

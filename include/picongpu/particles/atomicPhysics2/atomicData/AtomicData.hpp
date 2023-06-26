@@ -22,6 +22,7 @@
 #include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
 
 #include <pmacc/dataManagement/ISimulationData.hpp>
+#include <pmacc/static_assert.hpp>
 
 // charge state data
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateData.hpp"
@@ -700,9 +701,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             for(; iter != transitionList.end(); iter++)
             {
                 currentTransitionTuple = *iter;
+
+                // check transition tuple for internal consistency, charge states only
                 checkTransitionTuple<ConfigNumber>(currentTransitionTuple);
 
-                // check for (lastTransitionTuple >= currentTransitionTuple)
+                // check ordering, (lastTransitionTuple >= currentTransitionTuple)
                 if(CompareTransitionTupel<TypeValue, ConfigNumber, /*order by Lower state*/ true>{}(
                        currentTransitionTuple,
                        lastTransitionTuple))
@@ -733,13 +736,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<typename T_TransitionHostBox>
         ALPAKA_FN_HOST void checkTransitionsForEnergyInversion(T_TransitionHostBox transitionHostBox)
         {
+            // for bound-free transitions upper- and lower-State are defined by charge state only!
+            PMACC_CASSERT_MSG(wrong_or_unknown_transitionType_in_Energy_InversionCheck,
+                ((u8(T_TransitionHostBox::processClassGroup) == u8(procClass::ProcessClassGroup::boundBoundBased))
+                || (u8(T_TransitionHostBox::processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))));
+
             uint32_t const numberTransitions = transitionHostBox.getNumberOfTransitionsTotal();
 
             for(uint32_t collectionIndex = static_cast<uint32_t>(0u); collectionIndex < numberTransitions;
                 collectionIndex++)
             {
                 float_X const deltaEnergy
-                    = picongpu::particles::atomicPhysics2 ::DeltaEnergyTransition::get</*ionizing*/ true>(
+                    = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
                         collectionIndex,
                         this->getAtomicStateDataDataBox<true>(),
                         transitionHostBox,

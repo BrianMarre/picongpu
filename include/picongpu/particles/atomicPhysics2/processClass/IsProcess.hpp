@@ -106,7 +106,7 @@ namespace picongpu::particles::atomicPhysics2::processClass
         }
     };
 
-    //! processClass describing transition with initial state lowerState of transition
+    //! processClass describing physical transition with initial state being the lowerState of transition
     template<>
     struct IsProcess<ProcessClassGroup::upward>
     {
@@ -120,7 +120,7 @@ namespace picongpu::particles::atomicPhysics2::processClass
         }
     };
 
-    //! processClass describing interaction with initial state upperState of transition
+    //! processClass describing physical transition with initial state being the upperState of transition
     template<>
     struct IsProcess<ProcessClassGroup::downward>
     {
