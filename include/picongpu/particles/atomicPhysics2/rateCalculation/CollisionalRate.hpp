@@ -74,5 +74,4 @@ namespace picongpu::particles2::atomicPhysics2::rateCalculation
         // = UNIT_LENGTH^3/UNIT_LENGTH^3 * 1/UNIT_TIME = 1/UNIT_TIME
         // [1/UNIT_TIME]
     }
-
 } // namespace picongpu::particles2::atomicPhysics2::rateCalculation

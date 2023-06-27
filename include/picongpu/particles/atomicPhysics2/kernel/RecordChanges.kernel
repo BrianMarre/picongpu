@@ -147,7 +147,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             = atomicStateBox.configNumber(transitionBox.lowerStateCollectionIndex(transitionIndex));
                     }
 
-                    picongpu::particles::atomicPhysics2::SetAtomicState::op<T_AtomicStateDataBox::ConfigNumber>(ion, newConfigNumber);
+                    picongpu::particles::atomicPhysics2::SetAtomicState::op<
+                        typename T_AtomicStateDataBox::ConfigNumber>(ion, newConfigNumber);
 
                     // record used energy
                     if constexpr(procClass::IsProcess<procClass::ProcessClassGroup::electronicCollisional>::check(
@@ -157,6 +158,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
         }
     };
 
+    // no change physical transition never changes anything
     template<typename T_Histogram>
     struct RecordChangesKernel<picongpu::particles::atomicPhysics2::processClass::ProcessClass::noChange, T_Histogram>;
 } // namespace picongpu::particles::atomicPhysics2::kernel

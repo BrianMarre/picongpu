@@ -29,8 +29,8 @@ namespace picongpu::particles::atomicPhysics2
 {
     struct SetAtomicState
     {
-        template<typename T_Ion, typename T_ConfigNumber>
-        static DINLINE void op(T_Ion& ion, typename T_ConfigNumber::Idx newAtomicConfigNumber)
+        template<typename T_ConfigNumber, typename T_Ion>
+        static DINLINE void op(T_Ion& ion, typename T_ConfigNumber::DataType newAtomicConfigNumber)
         {
             PMACC_DEVICE_ASSERT_MSG(
                 T_ConfigNumber::getBoundElectrons(newAtomicConfigNumber) <= T_ConfigNumber::atomicNumber,
@@ -40,5 +40,4 @@ namespace picongpu::particles::atomicPhysics2
             ion[boundElectrons_] = T_ConfigNumber::getBoundElectrons(newAtomicConfigNumber);
         }
     };
-
 } // namespace picongpu::particles::atomicPhysics2
