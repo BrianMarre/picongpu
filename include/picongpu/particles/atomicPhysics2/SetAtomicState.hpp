@@ -2,7 +2,7 @@
  *
  * This file is part of PIConGPU.
  *
- * PIConGPU is free software you can redistribute it andor modify
+ * PIConGPU is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -23,8 +23,6 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/traits/GetAtomicConfigNumber"
-
 #include <pmacc/static_assert.hpp>
 
 namespace picongpu::particles::atomicPhysics2
@@ -32,14 +30,14 @@ namespace picongpu::particles::atomicPhysics2
     struct SetAtomicState
     {
         template<typename T_Ion, typename T_ConfigNumber>
-        DINLINE void operator()(T_Ion& ion, typename T_ConfigNumber::Idx newAtomicConfigNumber)
+        static DINLINE void op(T_Ion& ion, typename T_ConfigNumber::Idx newAtomicConfigNumber)
         {
-            ion[atomicConfigNumber_] = newAtomicConfigNumber;
-            ion[boundElectrons_] = T_ConfigNumber::getBoundElectrons(newConfigNumber);
-
             PMACC_DEVICE_ASSERT_MSG(
-                T_ConfigNumber::getBoundElectrons(newConfigNumber) <= T_ConfigNumber::atomicNumber,
+                T_ConfigNumber::getBoundElectrons(newAtomicConfigNumber) <= T_ConfigNumber::atomicNumber,
                 "Number of bound electrons must be <= Z");
+
+            ion[atomicConfigNumber_] = newAtomicConfigNumber;
+            ion[boundElectrons_] = T_ConfigNumber::getBoundElectrons(newAtomicConfigNumber);
         }
     };
 

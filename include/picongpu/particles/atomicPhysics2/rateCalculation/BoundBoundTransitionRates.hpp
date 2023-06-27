@@ -209,7 +209,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
 
             // eV
             float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
-                ::get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
+                ::get<T_AtomicStateDataBox, T_BoundBoundTransitionDataBox>(
                     transitionCollectionIndex,
                     atomicStateDataBox,
                     boundBoundTransitionDataBox);

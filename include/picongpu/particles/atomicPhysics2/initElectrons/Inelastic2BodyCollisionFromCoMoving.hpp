@@ -2,7 +2,7 @@
  *
  * This file is part of PIConGPU.
  *
- * PIConGPU is free software you can redistribute it andor modify
+ * PIConGPU is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
@@ -133,7 +133,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                             deltaEnergy);
 
                 electron[momentum_] = floatD_X::create(0._X);
-                ion[momentum_][i] = floatD_X::create(0._X);
+                ion[momentum_] = floatD_X::create(0._X);
             }
 
             //      get electron/ion, momentum/Lorentz factor in IonSystem after ionization
