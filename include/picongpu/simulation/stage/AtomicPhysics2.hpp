@@ -245,12 +245,17 @@ namespace picongpu::simulation::stage
 
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
                 // timeStep = localTimeRemaining
+
                 picongpu::particles::atomicPhysics2::stage::ResetLocalTimeStepField()(mappingDesc);
                 ForEachIonSpeciesResetLocalRateCache{}();
                 // R_ii = -(sum of rates of all transitions from state i)
                 ForEachIonSpeciesFillLocalRateCache{}(mappingDesc);
+
+                // debug only
+                std::cout << "start calculate step length" << std::endl;
                 // min(1/(-R_ii)) * alpha
                 ForEachIonSpeciesCalculateStepLength{}(mappingDesc);
+                std::cout << "end calculate step length" << std::endl;
 
                 // chooseTransition loop, ends when all ion[accepted_] = true
                 while(true)
@@ -295,8 +300,12 @@ namespace picongpu::simulation::stage
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
 
-                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_IN_CHOOSE_TRANSITION)
+                    {
+                        std::cout << "choose Transition loop" << std::endl;
+
                         ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+                    }
 
                     // all Ions accepted?
                     if(static_cast<bool>(deviceLocalReduce(
@@ -313,8 +322,11 @@ namespace picongpu::simulation::stage
                 // debug only
                 counterChooseTransition = 0u;
 
-                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
+                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_AFTER_ALL_ACCEPTED)
+                {
+                    std::cout << "all accepted: current state" <<
                     ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+                }
 
                 // record changes electron spectrum
                 if constexpr(!picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)

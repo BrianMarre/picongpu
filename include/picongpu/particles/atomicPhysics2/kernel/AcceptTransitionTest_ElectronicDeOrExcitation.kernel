@@ -184,9 +184,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ACCEPTANCE_PROBABILITY_DEBUG_PRINT)
                     {
                         if constexpr(T_excitation)
-                            printf("energy: %.8f electronic excitation %.8e\n", energy, probability);
+                            printf("BinEnergy: %.8f electronic excitation %.8e\n", energy, probability);
                         else
-                            printf("energy: %.8f electronic deexcitation %.8e\n", energy, probability);
+                            printf("BinEnergy: %.8f electronic deexcitation %.8e\n", energy, probability);
                     }
 
                     // try to accept

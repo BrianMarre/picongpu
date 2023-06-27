@@ -181,13 +181,15 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData
                       ->template getBoundBoundTransitionDataBox<true, procClass::TransitionOrdering::byLowerState>();
             std::cout << "bound-bound transition" << std::endl;
-            std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+            std::cout << "index :(low, up), dE: , C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
             {
-                std::cout << i << "(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
+                std::cout << i << "\t(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundBoundTransitionDataBox.upperStateCollectionIndex(i) << ")"
-                          << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
-                          << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i) << " \"Gaunt\"( "
+                          << ",\tdE: " << DeltaEnergyTransition::get(i, atomicStateDataBox, boundBoundTransitionDataBox)
+                          << ",\tC: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
+                          << ",\tA: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
+                          << "\t\"Gaunt\"( "
                           << boundBoundTransitionDataBox.cxin1(i) << ", " << boundBoundTransitionDataBox.cxin2(i)
                           << ", " << boundBoundTransitionDataBox.cxin3(i) << ", "
                           << boundBoundTransitionDataBox.cxin4(i) << ", " << boundBoundTransitionDataBox.cxin5(i)
@@ -199,12 +201,17 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData
                       ->template getBoundFreeTransitionDataBox<true, procClass::TransitionOrdering::byLowerState>();
             std::cout << "bound-free transition" << std::endl;
-            std::cout << "index (low, up), Coeff( <1>, <2>, ...)" << std::endl;
+            std::cout << "index (low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
             {
-                std::cout << i << "(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
+                std::cout << i << "\t(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundFreeTransitionDataBox.upperStateCollectionIndex(i) << ")"
-                          << "Coeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
+                          << ",\tdE: " << DeltaEnergyTransition::get(
+                                i,
+                                atomicStateDataBox,
+                                boundFreeTransitionDataBox,
+                                chargeStateDataBox)
+                          << "\tCoeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
                           << boundFreeTransitionDataBox.cxin2(i) << ", " << boundFreeTransitionDataBox.cxin3(i) << ", "
                           << boundFreeTransitionDataBox.cxin4(i) << ", " << boundFreeTransitionDataBox.cxin5(i) << ", "
                           << boundFreeTransitionDataBox.cxin6(i) << ", " << boundFreeTransitionDataBox.cxin7(i) << ", "
@@ -217,13 +224,18 @@ namespace picongpu::particles::atomicPhysics2::debug
                       ->template getAutonomousTransitionDataBox<true, procClass::TransitionOrdering::byLowerState>();
 
             std::cout << "autonomous transitions" << std::endl;
-            std::cout << "index :(low, up), rate [1/Dt_PIC]" << std::endl;
+            std::cout << "index :(low, up), dE, rate [1/Dt_PIC]" << std::endl;
 
             for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
             {
-                std::cout << i << "(" << autonomousTransitionDataBox.lowerStateCollectionIndex(i) << ", "
-                          << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
-                          << autonomousTransitionDataBox.rate(i) << std::endl;
+                std::cout << i << "\t(" << autonomousTransitionDataBox.lowerStateCollectionIndex(i)
+                    << ", " << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
+                    << ",\tdE: " << DeltaEnergyTransition::get(
+                        i,
+                        atomicStateDataBox,
+                        autonomousTransitionDataBox,
+                        chargeStateDataBox)
+                    << ",\trate: "<< autonomousTransitionDataBox.rate(i) << std::endl;
             }
             std::cout << std::endl;
         }
@@ -239,10 +251,12 @@ namespace picongpu::particles::atomicPhysics2::debug
             std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
             {
-                std::cout << i << "(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
+                std::cout << i << "\t(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundBoundTransitionDataBox.upperStateCollectionIndex(i) << ")"
-                          << ", C: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
-                          << ", A: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i) << " \"Gaunt\"("
+                          << ",\tdE: " << DeltaEnergyTransition::get(i, atomicStateDataBox, boundBoundTransitionDataBox)
+                          << ",\tC: " << boundBoundTransitionDataBox.collisionalOscillatorStrength(i)
+                          << ",\tA: " << boundBoundTransitionDataBox.absorptionOscillatorStrength(i)
+                          << "\t\"Gaunt\"("
                           << boundBoundTransitionDataBox.cxin1(i) << ", " << boundBoundTransitionDataBox.cxin2(i)
                           << ", " << boundBoundTransitionDataBox.cxin3(i) << ", "
                           << boundBoundTransitionDataBox.cxin4(i) << ", " << boundBoundTransitionDataBox.cxin5(i)
@@ -257,9 +271,14 @@ namespace picongpu::particles::atomicPhysics2::debug
             std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
             {
-                std::cout << i << "(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
+                std::cout << i << "\t(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundFreeTransitionDataBox.upperStateCollectionIndex(i) << ")"
-                          << "Coeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
+                          << ",\tdE: " << DeltaEnergyTransition::get(
+                            i,
+                            atomicStateDataBox,
+                            boundFreeTransitionDataBox,
+                            chargeStateDataBox)
+                          << "\tCoeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
                           << boundFreeTransitionDataBox.cxin2(i) << ", " << boundFreeTransitionDataBox.cxin3(i) << ", "
                           << boundFreeTransitionDataBox.cxin4(i) << ", " << boundFreeTransitionDataBox.cxin5(i) << ", "
                           << boundFreeTransitionDataBox.cxin6(i) << ", " << boundFreeTransitionDataBox.cxin7(i) << ", "
@@ -276,9 +295,14 @@ namespace picongpu::particles::atomicPhysics2::debug
 
             for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
             {
-                std::cout << i << "(" << autonomousTransitionDataBox.lowerStateCollectionIndex(i) << ", "
+                std::cout << i << "\t(" << autonomousTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
-                          << autonomousTransitionDataBox.rate(i) << std::endl;
+                          << ", dE: " << DeltaEnergyTransition::get(
+                            i,
+                            atomicStateDataBox,
+                            autonomousTransitionDataBox,
+                            chargeStateDataBox)
+                          << ", rate: " << autonomousTransitionDataBox.rate(i) << std::endl;
             }
             std::cout << std::endl;
         }
