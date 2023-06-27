@@ -18,16 +18,18 @@
  */
 
 //! @file implements setter for charge state
-
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "pciongpu/particles/traits/GetAtomicNumbers.hpp"
 #include "picongpu/particles/atomicPhysics2/SetToAtomicGroundState.hpp"
+
+#include <pmacc/assert.hpp>
 
 #include <cstdint>
 
-namespace picongpu::particles::atomicPhysics2
+namespace picongpu::particles::atomicPhysics
 {
     struct SetChargeState
     {
@@ -35,10 +37,13 @@ namespace picongpu::particles::atomicPhysics2
         DINLINE void operator()(T_Ion& ion, float_X numberBoundElectrons)
         {
             PMACC_DEVICE_ASSERT_MSG(numberBoundElectrons >= 0._X, "Number of bound electrons must be >= 0");
+            PMACC_DEVICE_ASSERT_MSG(
+                numberBoundElectrons <= GetAtomicNumbers<T_Ion>::type::numberOfProtons,
+                "Number of bound electrons must be <= numberOfProtons species");
 
             ion[boundElectrons_] = numberBoundElectrons;
 
             SetToAtomicGroundState{}(ion, static_cast<uint8_t>(numberBoundElectrons));
         }
     };
-} // namespace picongpu::particles::atomicPhysics2
+} // namespace picongpu::particles::atomicPhysics
