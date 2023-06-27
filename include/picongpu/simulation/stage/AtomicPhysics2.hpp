@@ -300,7 +300,8 @@ namespace picongpu::simulation::stage
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
 
-                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_IN_CHOOSE_TRANSITION)
+                    if constexpr(picongpu::atomicPhysics2::
+                                     ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_IN_CHOOSE_TRANSITION)
                     {
                         std::cout << "choose Transition loop" << std::endl;
 
@@ -324,8 +325,7 @@ namespace picongpu::simulation::stage
 
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_AFTER_ALL_ACCEPTED)
                 {
-                    std::cout << "all accepted: current state" <<
-                    ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+                    std::cout << "all accepted: current state" << ForEachIonSpeciesDumpToConsole{}(mappingDesc);
                 }
 
                 // record changes electron spectrum

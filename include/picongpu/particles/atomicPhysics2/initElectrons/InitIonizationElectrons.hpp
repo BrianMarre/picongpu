@@ -108,8 +108,8 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
-            float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
-                ::get<T_AtomicStateDataBox, T_AutonomousTransitionDataBox, T_ChargeStateDataBox>(
+            float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition ::
+                get<T_AtomicStateDataBox, T_AutonomousTransitionDataBox, T_ChargeStateDataBox>(
                     transitionIndex,
                     atomicStateDataBox,
                     autonomousTransitionDataBox,

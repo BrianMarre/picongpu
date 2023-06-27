@@ -119,7 +119,6 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             T_AtomicStateDataBox const atomicStateDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
-
             /// @todo provide as constexpr with one of the dataBoxes?, Brian Marre, 2023
             using S_ConfigNumber = typename T_AtomicStateDataBox::ConfigNumber;
             using LevelVector = pmacc::math::Vector<uint8_t, T_numberLevels>;
@@ -140,8 +139,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 lowerStateLevelVector - upperStateLevelVector);
 
             // eV
-            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
-                ::get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
+            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition ::
+                get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
                     transitionCollectionIndex,
                     atomicStateDataBox,
                     boundFreeTransitionDataBox,
@@ -149,7 +148,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
                 if(S_ConfigNumber::getChargeState(upperStateConfigNumber)
-                    < S_ConfigNumber::getChargeState(lowerStateConfigNumber))
+                   < S_ConfigNumber::getChargeState(lowerStateConfigNumber))
                 {
                     printf("atomicPhysics ERROR: upper and lower state inverted in "
                            "collisionalIonizationCrossSection() call\n");

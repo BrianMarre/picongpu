@@ -737,21 +737,22 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         ALPAKA_FN_HOST void checkTransitionsForEnergyInversion(T_TransitionHostBox transitionHostBox)
         {
             // for bound-free transitions upper- and lower-State are defined by charge state only!
-            PMACC_CASSERT_MSG(wrong_or_unknown_transitionType_in_Energy_InversionCheck,
+            PMACC_CASSERT_MSG(
+                wrong_or_unknown_transitionType_in_Energy_InversionCheck,
                 ((u8(T_TransitionHostBox::processClassGroup) == u8(procClass::ProcessClassGroup::boundBoundBased))
-                || (u8(T_TransitionHostBox::processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))));
+                 || (u8(T_TransitionHostBox::processClassGroup)
+                     == u8(procClass::ProcessClassGroup::autonomousBased))));
 
             uint32_t const numberTransitions = transitionHostBox.getNumberOfTransitionsTotal();
 
             for(uint32_t collectionIndex = static_cast<uint32_t>(0u); collectionIndex < numberTransitions;
                 collectionIndex++)
             {
-                float_X const deltaEnergy
-                    = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
-                        collectionIndex,
-                        this->getAtomicStateDataDataBox<true>(),
-                        transitionHostBox,
-                        this->getChargeStateDataDataBox<true>());
+                float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                    collectionIndex,
+                    this->getAtomicStateDataDataBox<true>(),
+                    transitionHostBox,
+                    this->getChargeStateDataDataBox<true>());
 
                 if(deltaEnergy < 0._X)
                     throw std::runtime_error(

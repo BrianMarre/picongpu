@@ -78,12 +78,16 @@ namespace picongpu::particles::atomicPhysics2
             uint8_t const upperStateChargeState,
             T_ChargeStateDataBox const chargeStateDataBox)
         {
-            if constexpr (u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
+            if constexpr(u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
                 return ionizationEnergyHelper<T_ChargeStateDataBox>(
-                    lowerStateChargeState, upperStateChargeState, chargeStateDataBox);
-            if constexpr (u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
+                    lowerStateChargeState,
+                    upperStateChargeState,
+                    chargeStateDataBox);
+            if constexpr(u8(T_ProcessClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
                 return ionizationEnergyHelper<T_ChargeStateDataBox>(
-                    upperStateChargeState, lowerStateChargeState, chargeStateDataBox);
+                    upperStateChargeState,
+                    lowerStateChargeState,
+                    chargeStateDataBox);
             else
             {
                 printf("atomicPhysics ERROR: unknonwn transition type");
@@ -103,10 +107,7 @@ namespace picongpu::particles::atomicPhysics2
          *
          * @return unit: eV
          */
-        template<
-            typename T_AtomicStateDataBox,
-            typename T_TransitionDataBox,
-            typename... T_ChargeStateDataBox>
+        template<typename T_AtomicStateDataBox, typename T_TransitionDataBox, typename... T_ChargeStateDataBox>
         HDINLINE static float_X get(
             uint32_t const transitionCollectionIndex,
             T_AtomicStateDataBox const atomicStateDataBox,
@@ -122,13 +123,14 @@ namespace picongpu::particles::atomicPhysics2
 
             // difference initial and final excitation energy
             // eV
-            float_X deltaEnergy = static_cast<float_X>(atomicStateDataBox.energy(upperStateCollectionIndex)
+            float_X deltaEnergy = static_cast<float_X>(
+                atomicStateDataBox.energy(upperStateCollectionIndex)
                 - atomicStateDataBox.energy(lowerStateCollectionIndex));
 
             constexpr procClass::ProcessClassGroup processClassGroup = T_TransitionDataBox::processClassGroup;
-            constexpr bool isIonizing = (
-                (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
-                || (u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased)));
+            constexpr bool isIonizing
+                = ((u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
+                   || (u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased)));
 
             if constexpr(isIonizing)
             {
@@ -144,12 +146,12 @@ namespace picongpu::particles::atomicPhysics2
                 uint8_t const lowerStateChargeState = ConfigNumber::getChargeState(lowerStateConfigNumber);
                 uint8_t const upperStateChargeState = ConfigNumber::getChargeState(upperStateConfigNumber);
 
-                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
+                if constexpr(u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
                     deltaEnergy += DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,
                         upperStateChargeState,
                         chargeStateDataBox...);
-                if constexpr (u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
+                if constexpr(u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased))
                     deltaEnergy -= DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,
                         upperStateChargeState,

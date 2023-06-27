@@ -26,11 +26,10 @@
  *  - unit.param                      unit of time for normalization
  */
 
+#include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/CollisionalRate.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/Multiplicities.hpp"
-
-#include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
 
 #include <pmacc/algorithms/math.hpp>
 
@@ -208,8 +207,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 = boundBoundTransitionDataBox.lowerStateCollectionIndex(transitionCollectionIndex);
 
             // eV
-            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition
-                ::get<T_AtomicStateDataBox, T_BoundBoundTransitionDataBox>(
+            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition ::
+                get<T_AtomicStateDataBox, T_BoundBoundTransitionDataBox>(
                     transitionCollectionIndex,
                     atomicStateDataBox,
                     boundBoundTransitionDataBox);
