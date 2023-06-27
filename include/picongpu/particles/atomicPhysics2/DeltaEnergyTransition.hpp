@@ -31,13 +31,15 @@
 
 #include <cstdint>
 
+// debug only
+#include <iostream>
+
 namespace picongpu::particles::atomicPhysics2
 {
     namespace procClass = picongpu::particles::atomicPhysics2::processClass;
 
     struct DeltaEnergyTransition
     {
-
         /** actual implementation of ionization energy calculation
          *
          * @attention arguments must fullfill lowerChargeState <= upperChargeState, otherwise wrong result
@@ -107,7 +109,7 @@ namespace picongpu::particles::atomicPhysics2
             typename T_TransitionDataBox,
             typename... T_ChargeStateDataBox>
         HDINLINE static float_X get(
-            uint32_t const transitionIndex,
+            uint32_t const transitionCollectionIndex,
             T_AtomicStateDataBox const atomicStateDataBox,
             T_TransitionDataBox const transitionDataBox,
             T_ChargeStateDataBox... chargeStateDataBox)
@@ -115,9 +117,9 @@ namespace picongpu::particles::atomicPhysics2
             using CollectionIdx = typename T_TransitionDataBox::S_TransitionDataBox::Idx;
 
             CollectionIdx const lowerStateCollectionIndex
-                = transitionDataBox.lowerStateCollectionIndex(transitionIndex);
+                = transitionDataBox.lowerStateCollectionIndex(transitionCollectionIndex);
             CollectionIdx const upperStateCollectionIndex
-                = transitionDataBox.upperStateCollectionIndex(transitionIndex);
+                = transitionDataBox.upperStateCollectionIndex(transitionCollectionIndex);
 
             // difference initial and final excitation energy
             // eV
@@ -128,6 +130,11 @@ namespace picongpu::particles::atomicPhysics2
             constexpr bool isIonizing = (
                 (u8(processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased))
                 || (u8(processClassGroup) == u8(procClass::ProcessClassGroup::autonomousBased)));
+
+            // debug only
+            std::cout << "debug DeltaEnergy: processClass: " << enumToString<processClassGroup>() << " transitionIndex: " << transitionCollectionIndex << " isIonizing: "
+                << ((isIonizing) ? "true ": "false ") << " deltaExcitations " << deltaEnergy;
+
             if constexpr(isIonizing)
             {
                 using ConfigNumberIdx = typename T_AtomicStateDataBox::Idx;
@@ -152,7 +159,21 @@ namespace picongpu::particles::atomicPhysics2
                         lowerStateChargeState,
                         upperStateChargeState,
                         chargeStateDataBox...);
+
+                // debug only
+                std::cout << " lowerStateChargeState: " << static_cast<uint16_t>(lowerStateChargeState)
+                    << " upperStateChargeState: " << static_cast<uint16_t>(upperStateChargeState)
+                    << " ionizationEnergy: " << DeltaEnergyTransition::ionizationEnergy<
+                            processClassGroup, T_ChargeStateDataBox...>(
+                        lowerStateChargeState,
+                        upperStateChargeState,
+                        chargeStateDataBox...)
+                    << " deltaEnergyTotal: " << deltaEnergy;
             }
+
+            // debug only
+            std::cout << std::endl;
+
             return deltaEnergy;
         }
     };

@@ -29,7 +29,7 @@
 
 #include <cstdint>
 
-namespace picongpu::particles::atomicPhysics
+namespace picongpu::particles::atomicPhysics2
 {
     struct SetChargeState
     {
@@ -46,4 +46,4 @@ namespace picongpu::particles::atomicPhysics
             SetToAtomicGroundState{}(ion, static_cast<uint8_t>(numberBoundElectrons));
         }
     };
-} // namespace picongpu::particles::atomicPhysics
+} // namespace picongpu::particles::atomicPhysics2

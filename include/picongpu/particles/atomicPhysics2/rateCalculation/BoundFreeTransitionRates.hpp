@@ -30,6 +30,9 @@
 
 #include <cstdint>
 
+// debug only
+#include <iostream>
+
 /** @file implements calculation of rates for bound-free atomic physics transitions
  *
  * this includes ionization due to:
@@ -119,6 +122,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             T_AtomicStateDataBox const atomicStateDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
+
             /// @todo provide as constexpr with one of the dataBoxes?, Brian Marre, 2023
             using S_ConfigNumber = typename T_AtomicStateDataBox::ConfigNumber;
             using LevelVector = pmacc::math::Vector<uint8_t, T_numberLevels>;
@@ -145,6 +149,9 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                     atomicStateDataBox,
                     boundFreeTransitionDataBox,
                     chargeStateDataBox);
+
+            // debug only
+            std::cout << "debug bound-free: transition: " << transitionCollectionIndex << " energyDifference: " << energyDifference << std::endl;
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
                 if(S_ConfigNumber::getChargeState(upperStateConfigNumber)

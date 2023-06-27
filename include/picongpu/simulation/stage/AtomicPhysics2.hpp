@@ -223,6 +223,7 @@ namespace picongpu::simulation::stage
             setTimeRemaining(); // = (Delta t)_PIC
 
             uint16_t counterSubStep = 0u;
+            uint16_t counterChooseTransition = 0u;
 
             // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
@@ -254,14 +255,14 @@ namespace picongpu::simulation::stage
                 // chooseTransition loop, ends when all ion[accepted_] = true
                 while(true)
                 {
+                    // debug only
+                    std::cout << "chooseTransition loop: " << counterChooseTransition << std::endl;
+
                     // randomly roll transition for each not yet accepted macro ion
                     ForEachIonSpeciesChooseTransition{}(mappingDesc, currentStep);
                     ForEachIonSpeciesExtractTransitionCollectionIndex{}(mappingDesc, currentStep);
                     ForEachIonSpeciesDoAcceptTransitionTest{}(mappingDesc, currentStep);
                     ForEachIonSpeciesRecordSuggestedChanges{}(mappingDesc);
-
-                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
-                        ForEachIonSpeciesDumpToConsole{}(mappingDesc);
 
                     // reject overSubscription loop, ends when no histogram bin oversubscribed
                     while(true)
@@ -294,6 +295,9 @@ namespace picongpu::simulation::stage
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
 
+                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
+                        ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+
                     // all Ions accepted?
                     if(static_cast<bool>(deviceLocalReduce(
                            pmacc::math::operation::And(),
@@ -302,7 +306,12 @@ namespace picongpu::simulation::stage
                     {
                         break;
                     }
+                    // debug only
+                    counterChooseTransition++;
                 } // end chooseTransition loop
+
+                // debug only
+                counterChooseTransition = 0u;
 
                 if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE)
                     ForEachIonSpeciesDumpToConsole{}(mappingDesc);
