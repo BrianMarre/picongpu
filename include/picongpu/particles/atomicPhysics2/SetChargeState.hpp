@@ -22,7 +22,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "pciongpu/particles/traits/GetAtomicNumbers.hpp"
+#include "picongpu/particles/traits/GetAtomicNumbers.hpp"
 #include "picongpu/particles/atomicPhysics2/SetToAtomicGroundState.hpp"
 
 #include <pmacc/assert.hpp>
