@@ -147,7 +147,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                     chargeStateDataBox);
 
             if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
-                if(energyDifference < 0._X)
+                if(S_ConfigNumber::getChargeState(upperStateConfigNumber)
+                    < S_ConfigNumber::getChargeState(lowerStateConfigNumber))
                 {
                     printf("atomicPhysics ERROR: upper and lower state inverted in "
                            "collisionalIonizationCrossSection() call\n");
