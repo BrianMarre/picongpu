@@ -1,4 +1,4 @@
-/* Copyright 2021 Brian Marre, Sergei Bastrakov
+/* Copyright 2021-2023 Brian Marre, Sergei Bastrakov
  *
  * This file is part of PIConGPU.
  *
@@ -18,6 +18,8 @@
  */
 
 #pragma once
+
+#include "picongpu/simulation_defines.hpp"
 
 #include <pmacc/traits/HasFlag.hpp>
 
