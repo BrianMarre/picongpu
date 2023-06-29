@@ -240,7 +240,7 @@ namespace picongpu::simulation::stage
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
                 resetHistograms();
 
-                if constexpr(picongpu::atomicPhysics2::debug::kernel::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
+                if constexpr(picongpu::atomicPhysics2::debug::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesSetTemperature{}(currentStep);
                 }
@@ -330,7 +330,7 @@ namespace picongpu::simulation::stage
                 }
 
                 // record changes electron spectrum
-                if constexpr(!picongpu::atomicPhysics2::debug::kernel::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
+                if constexpr(!picongpu::atomicPhysics2::debug::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 }
