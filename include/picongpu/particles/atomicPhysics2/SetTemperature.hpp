@@ -22,6 +22,7 @@
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
+// need atomicPhysics2_Debug.param
 
 #include "picongpu/particles/manipulators/manipulators.def"
 #include "picongpu/particles/manipulators/manipulators.hpp"
@@ -30,6 +31,6 @@
 
 namespace picongpu::particles::atomicPhysics2
 {
-    using SetTemperature = picongpu::particles::manipulators::unary::Temperature<TemperatureParam, pmacc::math::operation::Assign>;
+    using SetTemperature = picongpu::particles::manipulators::unary::Temperature<picongpu::atomicPhysics2::debug::scFlyComparison::TemperatureParam, pmacc::math::operation::Assign>;
 
 } // namespace picongpu::particles::atomicPhysics2
