@@ -326,7 +326,8 @@ namespace picongpu::simulation::stage
 
                 if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED)
                 {
-                    std::cout << "all accepted: current state" << ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+                    std::cout << "all accepted: current state" << std::endl;
+                    ForEachIonSpeciesDumpToConsole{}(mappingDesc);
                 }
 
                 // record changes electron spectrum
