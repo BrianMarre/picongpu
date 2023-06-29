@@ -116,7 +116,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             // no need to call fillAllGaps, since we do not leave any gaps
 
             // debug call
-            if constexpr(picongpu::atomicPhysics2::debug::kernel::spawnIonizationElectrons::CHECK_DELTA_ENERGY_INIT_FROM_COMOVING_POSITIVE)
+            if constexpr(picongpu::atomicPhysics2::debug::kernel::spawnIonizationElectrons::ELECTRON_PARTICLE_BOX_FILL_GAPS)
                 electrons.fillAllGaps();
         }
     };

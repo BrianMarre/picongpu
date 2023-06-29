@@ -78,7 +78,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         lossRateState = rateCacheEntry;
                     }
 
-                    if constexpr(picongpu::atomicPhysics2::debug::kernel::calculateTimeStep)
+                    if constexpr(picongpu::atomicPhysics2::debug::kernel::calculateTimeStep::CHECK_ALL_RATE_CACHE_ENTRIES_NEGATIVE)
                         if(lossRateState < 0._X)
                         {
                             printf("atomicPhysics ERROR: encountered negative loss rate in "

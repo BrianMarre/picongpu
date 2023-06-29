@@ -46,7 +46,7 @@
 #include "picongpu/particles/atomicPhysics2/stage/SpawnIonizationElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.hpp"
 
-#include "picongpu/particles/atomicPhysics2"
+#include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
 
 #include <pmacc/device/Reduce.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
