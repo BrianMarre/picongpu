@@ -26,71 +26,104 @@
 
 #pragma once
 
-namespace picongpu::atomicPhysics2
+namespace picongpu::atomicPhysics2::debug
 {
-    // debug compile settings
-    //! activate more performance relevant debug checks
-    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG = true;
-    //! activate less performance relevant debug checks
-    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG = true;
-    //! activate debug print of atomic data to console
-    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT = false;
+    namespace atomicData
+    {
+        constexpr bool PRINT_TO_CONSOLE = false;
+        //! @attention performance relevant, uncaught error will lead to invalid memory access
+        constexpr bool RANGE_CHECKS_IN_DATA_QUERIES = false;
+        //! range check in store calls to individual data boxes, only once upon initial loading of atomic input data
+        constexpr bool RANGE_CHECKS_IN_DATA_LOAD = true;
+        //! @attention will not catch members missing from hostToDevice() method,
+        constexpr bool DEBUG_SYNC_BUFFERS_TO_HOST = false;
+    } // namespace  atomicData
 
-    /** activate bin index/energy range checks in histogram methods,
-     *
-     * @attention setting is performance relevant,
-     *  if disabled, uncaught error will lead to invalid memory access
-     */
-    constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG = true;
-    //! print histogram content to console, @attention only useful if building serial and cpu-only
-    constexpr bool ATOMIC_PHYSICS_HISTOGRAM_DEBUG_PRINT = false;
 
-    //! check for inverted/wrong transitions in DeltaEnergy, @attention performance relevant
-    constexpr bool ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG = true;
+    namespace electronHistogram
+    {
+        //! @attention performance relevant, uncaught error will lead to invalid memory access
+        constexpr bool RANGE_CHECK_BIN_INDEX = false;
+        //! @attention performance relevant, uncaught error will lead to invalid memory access
+        constexpr bool RANGE_CHECKS_ENERGY = false;
+        //! @attention only useful if building serial and cpu-only
+        constexpr bool PRINT_TO_CONSOLE = false;
+    } // namespace electronHistogram
 
-    //! range checks in rate calculation, @attention performance relevant
-    constexpr bool ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG = true;
-    //! debug unit tests for rate calculation
-    constexpr bool ATOMIC_PHYSICS_RATE_CALCULATION_UNIT_TESTS = false;
 
-    //! range checks in rate cache, @attention performance relevant
-    constexpr bool ATOMIC_PHYSICS_RATE_CACHE_HOT_DEBUG = true;
+    namespace rateCalculation
+    {
+        //! @attention performance relevant
+        constexpr bool DEBUG_CHECKS = false;
+        constexpr bool RUN_UNIT_TESTS = false;
+    } // namespace rateCalculation
 
-    //! range check for calculated time step, @attention performance relevant
-    constexpr bool ATOMIC_PHYSICS_CALCULATE_TIME_STEP_HOT_DEBUG = true;
-    //! range checks in rejection probability cache, @attention performance relevant
-    constexpr bool ATOMIC_PHYSICS_REJECTION_PROBABILITY_CACHE_HOT_DEBUG = true;
 
-    //! check for invalid processID in ExtractTransitionCollectionIndex_*.kernel calls
-    constexpr bool ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG = true;
-    //! sanity check for match between initial ionizing transition state of ion and ion transition
-    constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_HOT_DEBUG = true;
+    namespace deltaEnergyTransition
+    {
+        //! @attention performance relevant
+        constexpr bool IONIZATION_ENERGY_INVERSION_CHECK = false;
+    } // namespace deltaEnergyTransition
 
-    /** debug print of console of all tested transitions acceptance probabilities,
-     *
-     * @attention only viable serial and cpu only compile
-     */
-    constexpr bool ATOMIC_PHYSICS_ACCEPTANCE_PROBABILITY_DEBUG_PRINT = false;
-    //! debug print of ions to console
-    constexpr bool ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE = false;
 
-    /** fix electron temperature for atomicPhysics
-     *
-     *  @attention resamples electron momentum every atomicPhysics steps
-     *  creating unphysical currents, do not use outside debug!
-     */
-    constexpr bool ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE = false;
+    namespace rateCache
+    {
+        //! range checks in rate cache, @attention performance relevant
+        constexpr bool COLLECTION_INDEX_RANGE_CHECKS = false;
+    } // namespace rateCache
 
-    /** activate debug sync of all atomic data members
-     *
-     * @attention will not catch members missing from hostToDevice() method
-     */
-    constexpr bool ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST = false;
 
-    /** activate debug fill_all gaps for SpawnIonizationElectrons.stage
-     *
-     * if assumptions of particleBoyes are broken by the SpawnIonizationElectrons.kernel
-     *  this will fix that
-     */
-    constexpr bool ATOMIC_PHYSICS_SPAWN_IONIZATION_ELECTRONS_DEBUG_FILL_GAPS = false;
-} // namespace picongpu::atomicPhysics2
+    namespace rejectionProbabilityCache
+    {
+        //! @attention performance relevant
+        constexpr bool BIN_INDEX_RANGE_CHECK = false;
+    } // namespace rejectionProbabilityCache
+
+
+    namespace initIonizationElectrons
+    {
+        //! @attention performance relevant
+        constexpr bool CHECK_DELTA_ENERGY_INIT_FROM_COMOVING_POSITIVE = false;
+    }
+
+    namespace scFlyComparison
+    {
+        /** @attention resamples electron momentum every atomicPhysics steps creating unphysical currents,
+         *  **do not use outside debug!**
+         */
+        constexpr bool FORCE_CONSTANT_ELECTRON_TEMPERATURE = false;
+    } // namespace scFlyComparison
+
+
+    namespace kernel
+    {
+        namespace calculateTimeStep
+        {
+            //! @attention performance relevant
+            constexpr bool CHECK_ALL_RATE_CACHE_ENTRIES_NEGATIVE = false;
+        } // namespace calculateTimeStep
+
+        namespace extractTransition
+        {
+            //! @attention performance relevant
+            constexpr bool CHECK_FOR_INVALID_PROCESS_ID = false;
+        } // namespace extractTransition
+
+        namespace acceptanceTest
+        {
+            //! @attention only viable serial and cpu only compile
+            constexpr bool PRINT_ACCEPTANCE_PROBABILITY_TO_CONSOLE = false;
+
+            //! @attention only viable serial and cpu only compile
+            constexpr bool DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED = false;
+            //! @attention only viable serial and cpu only compile
+            constexpr bool DUMP_ION_DATA_TO_CONSOLE_EACH_TRY = false;
+        } // namespace acceptanceTest
+
+        namespace spawnIonizationElectrons
+        {
+            //! @attention performance relevant
+            constexpr bool PARTICLE_BOXES_FILL_GAPS = false;
+        } // namespace spawnIonizationElectrons
+    } // namespace kernel
+} // namespace picongpu::atomicPhysics2::debug

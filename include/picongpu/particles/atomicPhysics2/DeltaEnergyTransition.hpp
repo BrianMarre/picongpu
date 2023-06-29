@@ -47,7 +47,7 @@ namespace picongpu::particles::atomicPhysics2
             uint8_t const upperChargeState,
             T_ChargeStateDataBox const chargeStateDataBox)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DELTA_ENERGY_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::deltaEnergyTransition::IONIZATION_ENERGY_INVERSION_CHECK)
             {
                 if(lowerChargeState > upperChargeState)
                 {

@@ -99,7 +99,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                 AutonomousFileName::str(),
                 FrameType::getName()); // name of species
 
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_PRINT)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::PRINT_TO_CONSOLE)
                 // debug print of atomic data summary to stdout
                 atomicData = particles::atomicPhysics2::debug::printAtomicDataToConsole<
                     AtomicDataType,

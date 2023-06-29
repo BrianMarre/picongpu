@@ -19,7 +19,7 @@
 
 /** @file unit tests for the rate cross section calculation
  *
- * test are activated by the global debug switch ATOMIC_PHYSICS_RATE_CALCULATION_UNIT_TESTS
+ * test are activated by the global debug switch debug::rateCalculation::RUN_UNIT_TESTS
  *  in atomicPhysics2_Debug.param
  *
  * for updating the tests see the python [rate calculator tool](

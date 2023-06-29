@@ -213,7 +213,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                     atomicStateDataBox,
                     boundBoundTransitionDataBox);
 
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
                 if(energyDifference < 0._X)
                 {
                     printf("atomicPhysics ERROR: upper and lower state inverted in "
@@ -286,7 +286,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                     multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(lowerStateClctIdx))
                     / multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(upperStateClctIdx)));
 
-                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+                if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
                     debugChecksMultiplicity(ratio, lowerStateClctIdx, upperStateClctIdx, atomicStateDataBox);
 
                 U = (energyElectron + energyDifference) / energyDifference;
@@ -409,7 +409,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                 multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(lowerStateClctIdx))
                 / multiplicityConfigNumber<S_ConfigNumber>(atomicStateDataBox.configNumber(upperStateClctIdx)));
 
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
                 debugChecksMultiplicity(ratio, lowerStateClctIdx, upperStateClctIdx, atomicStateDataBox);
 
             // (2 * pi * e^2)/(eps_0 * m_e * c^3 * s/UNIT_TIME) = (2 * pi * e^2 * mue_0) / (m_e * c * s/UNIT_TIME)

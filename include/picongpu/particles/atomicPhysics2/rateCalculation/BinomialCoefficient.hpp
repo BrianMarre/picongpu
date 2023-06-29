@@ -33,7 +33,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
     HDINLINE float_64 binomialCoefficient(uint8_t n, uint8_t k)
     {
         // check for limits, no check for < 0 necessary, since uint
-        if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+        if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
             if(n < k)
             {
                 printf("invalid call binomial(n,k), n < k\n");

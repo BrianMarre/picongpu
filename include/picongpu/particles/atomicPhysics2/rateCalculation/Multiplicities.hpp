@@ -71,7 +71,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
         float_64 combinatorialFactor = 1.;
         for(uint8_t i = 0u; i < T_LevelVector::dim; i++)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
                 if(lowerState[i] < removedElectrons[i])
                 {
                     printf("atomicPhysics ERROR: in multiplicityBoundFreeTransition lowerState[i] < "

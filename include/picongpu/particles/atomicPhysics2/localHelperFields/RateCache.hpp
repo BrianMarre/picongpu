@@ -52,7 +52,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
         template<typename T_Worker>
         HDINLINE void add(T_Worker const& worker, uint32_t const collectionIndex, float_X rate)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CACHE_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
                 if(collectionIndex >= numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of range in add() call on RateCache\n");
@@ -73,7 +73,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          */
         HDINLINE void add(uint32_t const collectionIndex, float_X rate)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CACHE_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
                 if(collectionIndex >= numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of range in add() call on RateCache\n");
@@ -93,7 +93,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          */
         HDINLINE float_X rate(uint32_t const collectionIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CACHE_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
                 if(collectionIndex >= numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of range in rate() call on rateCache\n");

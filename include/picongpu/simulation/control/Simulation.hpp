@@ -339,7 +339,7 @@ namespace picongpu
             particleBoundaries.init();
 
             // debug only, test rate calculation
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_UNIT_TESTS)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::RUN_UNIT_TESTS)
             {
                 auto test = particles::atomicPhysics2::rateCalculation::debug::TestRateCalculation<10u>();
                 std::cout << "TestRateCalculation:" << std::endl;

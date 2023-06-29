@@ -118,7 +118,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             S_AutonomousTransitionTuple& tuple,
             T_StateHostBox const stateHostBox)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_LOAD)
                 if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                 {
                     throw std::runtime_error("atomicPhysics ERROR: out of range store");
@@ -146,7 +146,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_TransitionDataBox::S_DataBox::TypeValue rate(uint32_t const collectionIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                 {
                     printf("atomicPhysics ERROR: out of range getTransitionRate() call\n");

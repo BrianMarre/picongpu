@@ -92,7 +92,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             Idx lowerStateCollectionIndex,
             Idx upperStateCollectionIndex)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_LOAD)
                 if(transitionCollectionIndex >= m_numberTransitions)
                 {
                     throw std::runtime_error(
@@ -145,7 +145,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE Idx upperStateCollectionIndex(uint32_t const collectionIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(collectionIndex >= m_numberTransitions)
                 {
                     printf(
@@ -165,7 +165,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE Idx lowerStateCollectionIndex(uint32_t const collectionIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(collectionIndex >= m_numberTransitions)
                 {
                     printf(

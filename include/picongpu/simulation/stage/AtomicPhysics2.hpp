@@ -46,6 +46,8 @@
 #include "picongpu/particles/atomicPhysics2/stage/SpawnIonizationElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.hpp"
 
+#include "picongpu/particles/atomicPhysics2"
+
 #include <pmacc/device/Reduce.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
 #include <pmacc/math/operation.hpp>
@@ -198,6 +200,9 @@ namespace picongpu::simulation::stage
             using ForEachIonSpeciesDumpToConsole = pmacc::meta::ForEach<
                 SpeciesRepresentingIons,
                 particles::atomicPhysics2::stage::DumpAllIonsToConsole<boost::mpl::_1>>;
+            using ForEachElectronSpeciesSetTemperature = pmacc::meta::ForEach<
+                SpeciesRepresentingElectrons,
+                picongpu::particles::Manipulate<picongpu::particles::atomicPhysics2::SetTemperature, boost::mpl::_1>>;
 
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
@@ -235,12 +240,9 @@ namespace picongpu::simulation::stage
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
                 resetHistograms();
 
-                // setting the electron temperature to hard values
-                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
-                    ForEachElectronSpeciesSetMomentumToZero{}(mappingDesc);
-                    picongpu::particles::
-                        Manipulate<picongpu::particles::manipulators::AddTemperature, BulkElectrons>{}(currentStep);
+                    ForEachElectronSpeciesSetTemperature{}(currentStep);
                 }
 
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
@@ -300,8 +302,7 @@ namespace picongpu::simulation::stage
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
 
-                    if constexpr(picongpu::atomicPhysics2::
-                                     ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_IN_CHOOSE_TRANSITION)
+                    if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::DUMP_ION_DATA_TO_CONSOLE_EACH_TRY)
                     {
                         std::cout << "choose Transition loop" << std::endl;
 
@@ -323,13 +324,13 @@ namespace picongpu::simulation::stage
                 // debug only
                 counterChooseTransition = 0u;
 
-                if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_DUMP_ION_DATA_TO_CONSOLE_AFTER_ALL_ACCEPTED)
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED)
                 {
                     std::cout << "all accepted: current state" << ForEachIonSpeciesDumpToConsole{}(mappingDesc);
                 }
 
                 // record changes electron spectrum
-                if constexpr(!picongpu::atomicPhysics2::ATOMIC_PHYSICS_DEBUG_CONST_ELECTRON_TEMPERATURE)
+                if constexpr(!picongpu::atomicPhysics2::debug::kernel::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 }

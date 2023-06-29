@@ -50,7 +50,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          */
         HDINLINE void set(uint32_t const binIndex, float_X rejectionProbability)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_REJECTION_PROBABILITY_CACHE_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rejectionProbabilityCache::BIN_INDEX_RANGE_CHECK)
                 if(binIndex >= T_numberBins)
                 {
                     printf("atomicPhysics ERROR: out of range in set() call on RejectionProbabilityCache\n");
@@ -70,7 +70,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          */
         HDINLINE float_X rejectionProbability(uint32_t const binIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_REJECTION_PROBABILITY_CACHE_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rejectionProbabilityCache::BIN_INDEX_RANGE_CHECK)
                 if(binIndex >= T_numberBins)
                 {
                     printf("atomicPhysics ERROR: out of range in rejectionProbability() call\n");

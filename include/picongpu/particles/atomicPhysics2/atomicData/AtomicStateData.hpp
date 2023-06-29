@@ -107,7 +107,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HINLINE void store(uint32_t const collectionIndex, S_AtomicStateTuple& tuple)
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_COLD_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_LOAD)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
                     throw std::runtime_error("atomicPhysics ERROR: out of bounds atomic state store call");
@@ -195,7 +195,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE Idx configNumber(uint32_t const collectionIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of bounds atomic state configNumber call\n");
@@ -217,7 +217,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          */
         HDINLINE typename S_DataBox::TypeValue energy(uint32_t const collectionIndex) const
         {
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(collectionIndex >= m_numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of bounds atomic state energy call\n");

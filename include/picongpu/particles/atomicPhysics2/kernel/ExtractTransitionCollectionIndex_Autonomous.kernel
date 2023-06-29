@@ -177,7 +177,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     uint32_t const processID = (ion[transitionIndex_] - offset) % factorDown;
 
                     // debug check
-                    if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_EXTRACT_COLLECTION_IDX_HOT_DEBUG)
+                    if constexpr(picongpu::atomicPhysics2::debug::kernels::extractTransition::CHECK_FOR_INVALID_PROCESS_ID)
                     {
                         checkProcessClass(S_ProcessIDConversion::getProcessClassAutonomous_Down(processID));
                     }

@@ -1447,7 +1447,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 T_autonomousIonization,
                 T_fieldIonization>();
 
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_ATOMIC_DATA_DEBUG_SYNC_TO_HOST)
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::DEBUG_SYNC_BUFFERS_TO_HOST)
                 this->hostToDevice();
         }
 

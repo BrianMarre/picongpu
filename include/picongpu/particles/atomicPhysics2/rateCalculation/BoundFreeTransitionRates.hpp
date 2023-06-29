@@ -146,7 +146,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
                     boundFreeTransitionDataBox,
                     chargeStateDataBox);
 
-            if constexpr(picongpu::atomicPhysics2::ATOMIC_PHYSICS_RATE_CALCULATION_HOT_DEBUG)
+            if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
                 if(S_ConfigNumber::getChargeState(upperStateConfigNumber)
                    < S_ConfigNumber::getChargeState(lowerStateConfigNumber))
                 {

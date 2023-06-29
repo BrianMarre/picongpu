@@ -325,7 +325,7 @@ namespace picongpu::particles::atomicPhysics2::debug
         }
     }
 
-    //! print vector to console, simDim version
+    //! print vector to console, simDim version, @attention serial and cpu build only
     template<typename T_Vector>
     std::string linearize(T_Vector const& vector)
     {
@@ -359,6 +359,7 @@ namespace picongpu::particles::atomicPhysics2::debug
         std::cout << "\t\t - boundElectrons: " << ion[boundElectrons_] << std::endl;
     }
 
+    //! debug only. write transiton tuple to console, @attention serial and cpu buidl only
     template<typename T_Tuple, typename T_Idx, typename T_Value, typename T_ConfigNumber>
     void printTransitionTupleToConsole(T_Tuple const& tuple)
     {
