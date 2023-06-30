@@ -199,9 +199,9 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             floatD_64 directionVector;
             if constexpr(picongpu::simDim == 2u)
-                directionVector = floatD_64(cosPhi, sinTheta);
+                directionVector = float2_64(cosPhi, sinTheta);
             if constexpr(picongpu::simDim == 3u)
-                directionVector = floatD_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
+                directionVector = float3_64(sinTheta * cosPhi, sinTheta * sinPhi, cosTheta);
 
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
             auto momentumStarElectron_IonSystem = MatrixVector(normMomentumStarElectron_IonSystem * directionVector);
