@@ -270,7 +270,7 @@ namespace picongpu
                 const InCellOffset_OneSuperCellPosition_t inCellOffset;
 
                 //! spawnCell index, @attention must be within superCell extent!
-                using spawnCellIdx = mCT::shrinkTo<mCT::Uint32<0u, 0u, 0u>, picongpu::simDim>::type;
+                using spawnCellIdx = mCT::shrinkTo<mCT::UInt32<0u, 0u, 0u>, picongpu::simDim>::type;
             };
             using OneSuperCellPosition = OneSuperCellPositionImpl<OneSuperCellPositionParameter>;
         } // namespace startPosition
