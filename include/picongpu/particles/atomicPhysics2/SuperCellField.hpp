@@ -84,7 +84,7 @@ namespace picongpu::particles::atomicPhysics2
         }
 
         // required by ISimulationData
-        virtual override std::string getUniqueId() = 0;
+        virtual std::string getUniqueId() override = 0;
 
         // required by ISimulationData
         //! == deviceToHost
