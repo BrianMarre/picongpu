@@ -181,7 +181,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData
                       ->template getBoundBoundTransitionDataBox<true, procClass::TransitionOrdering::byLowerState>();
             std::cout << "bound-bound transition" << std::endl;
-            std::cout << "index :(low, up), dE: , C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+            std::cout << "index :(low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
             {
                 std::cout << i << "\t(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
@@ -250,7 +250,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData
                       ->template getBoundBoundTransitionDataBox<true, procClass::TransitionOrdering::byUpperState>();
             std::cout << "inverse bound-bound transition" << std::endl;
-            std::cout << "index :(low, up), C: , A: \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+            std::cout << "index :(low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
             {
                 std::cout << i << "\t(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
@@ -270,7 +270,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData
                       ->template getBoundFreeTransitionDataBox<true, procClass::TransitionOrdering::byUpperState>();
             std::cout << "inverse bound-free transition" << std::endl;
-            std::cout << "index :(low, up), Coeff( <1>, <2>, ...)" << std::endl;
+            std::cout << "index :(low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
             {
                 std::cout << i << "\t(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
@@ -294,7 +294,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                       ->template getAutonomousTransitionDataBox<true, procClass::TransitionOrdering::byUpperState>();
 
             std::cout << "inverse autonomous transitions" << std::endl;
-            std::cout << "index :(low, up), rate" << std::endl;
+            std::cout << "index :(low, up), dE, rate" << std::endl;
 
             for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
             {

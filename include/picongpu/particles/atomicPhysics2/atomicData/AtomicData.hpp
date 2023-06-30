@@ -668,7 +668,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                         throw std::runtime_error("atomicPhysics ERROR: wrong primary ordering of atomic state, "
                             "(ascending in chargeState), "
                             + std::to_string(currentChargeState) + " < "
-                            + std::to_string(lastCHargeState));
+                            + std::to_string(lastChargeState));
                 }
 
                 // completely ionized atomic state is allowed as upper state
