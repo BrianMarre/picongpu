@@ -84,7 +84,7 @@ namespace picongpu::atomicPhysics2::debug
     {
         //! @attention performance relevant
         constexpr bool CHECK_DELTA_ENERGY_INIT_FROM_COMOVING_POSITIVE = false;
-    }
+    } // namespace initIonizationElectrons
 
     namespace scFlyComparison
     {

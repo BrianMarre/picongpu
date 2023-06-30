@@ -24,6 +24,7 @@
 //  and picongpu/param/atomicPhysics2_debug.param
 
 #include "picongpu/particles/InitFunctors.hpp"
+#include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/AcceptTransitionTest.hpp"
@@ -45,8 +46,6 @@
 #include "picongpu/particles/atomicPhysics2/stage/SetMomentumToZero.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/SpawnIonizationElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.hpp"
-
-#include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
 
 #include <pmacc/device/Reduce.hpp>
 #include <pmacc/dimensions/DataSpace.hpp>
@@ -193,10 +192,6 @@ namespace picongpu::simulation::stage
                 particles::atomicPhysics2::stage::SpawnIonizationElectrons<boost::mpl::_1>>;
 
             // debug only
-            //! set momentum of all macro electrons to zero
-            using ForEachElectronSpeciesSetMomentumToZero = pmacc::meta::ForEach<
-                SpeciesRepresentingElectrons,
-                particles::atomicPhysics2::stage::SetMomentumToZero<boost::mpl::_1>>;
             using ForEachIonSpeciesDumpToConsole = pmacc::meta::ForEach<
                 SpeciesRepresentingIons,
                 particles::atomicPhysics2::stage::DumpAllIonsToConsole<boost::mpl::_1>>;
@@ -302,7 +297,8 @@ namespace picongpu::simulation::stage
                         localAllIonsAcceptedField.getDeviceDataBox(),
                         fieldGridLayoutAllIonsAccepted);
 
-                    if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::DUMP_ION_DATA_TO_CONSOLE_EACH_TRY)
+                    if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::
+                                     DUMP_ION_DATA_TO_CONSOLE_EACH_TRY)
                     {
                         std::cout << "choose Transition loop" << std::endl;
 
@@ -324,7 +320,8 @@ namespace picongpu::simulation::stage
                 // debug only
                 counterChooseTransition = 0u;
 
-                if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED)
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::acceptanceTest::
+                                 DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED)
                 {
                     std::cout << "all accepted: current state" << std::endl;
                     ForEachIonSpeciesDumpToConsole{}(mappingDesc);

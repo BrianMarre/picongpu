@@ -126,7 +126,8 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             if(deltaEnergy <= 0._X)
             {
                 /// @todo generalize the error message,  Brian Marre, 2023
-                if constexpr(picongpu::atomicPhysics2::debug::initIonizationElectrons::CHECK_DELTA_ENERGY_INIT_FROM_COMOVING_POSITIVE)
+                if constexpr(picongpu::atomicPhysics2::debug::initIonizationElectrons::
+                                 CHECK_DELTA_ENERGY_INIT_FROM_COMOVING_POSITIVE)
                     if(deltaEnergy < 0._X)
                         printf(
                             "atomicPhysics ERROR: inelastic ionization with deltaEnergy Ionization < 0,  %.8f !\n",

@@ -216,7 +216,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         uint32_t const processID = (ion[transitionIndex_] - offset) % factorUp;
 
                         // check for unknown/wrong processID
-                        if constexpr(picongpu::atomicPhysics2::debug::kernel::extractTransition::CHECK_FOR_INVALID_PROCESS_ID)
+                        if constexpr(picongpu::atomicPhysics2::debug::kernel::extractTransition::
+                                         CHECK_FOR_INVALID_PROCESS_ID)
                         {
                             checkProcessClass<true>(S_ProcessIDConversion::getProcessClassBoundBound_Up(processID));
                         }
@@ -233,7 +234,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         uint32_t const processID = (ion[transitionIndex_] - offset) % factorDown;
 
                         // debug check, for not found processClass
-                        if constexpr(picongpu::atomicPhysics2::debug::kernel::extractTransition::CHECK_FOR_INVALID_PROCESS_ID)
+                        if constexpr(picongpu::atomicPhysics2::debug::kernel::extractTransition::
+                                         CHECK_FOR_INVALID_PROCESS_ID)
                         {
                             checkProcessClass<false>(S_ProcessIDConversion::getProcessClassBoundBound_Up(processID));
                         }
