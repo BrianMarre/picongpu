@@ -656,13 +656,19 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 {
                     // same block
                     if(currentAtomicStateConfigNumber < lastAtomicStateConfigNumber)
-                        throw std::runtime_error("atomicPhysics ERROR: wrong secondary ordering of atomic states");
+                        throw std::runtime_error("atomicPhysics ERROR: wrong secondary ordering of atomic states "
+                            "(ascending in atomicConfigNumber), "
+                            + std::to_string(currentAtomicStateConfigNumber) + " < "
+                            + std::to_string(lastAtomicStateConfigNumber));
                 }
                 else
                 {
                     // next block
-                    if(currentChargeState > lastChargeState)
-                        throw std::runtime_error("atomicPhysics ERROR: wrong primary ordering of atomic state");
+                    if(currentChargeState < lastChargeState)
+                        throw std::runtime_error("atomicPhysics ERROR: wrong primary ordering of atomic state, "
+                            "(ascending in chargeState), "
+                            + std::to_string(currentChargeState) + " < "
+                            + std::to_string(lastCHargeState));
                 }
 
                 // completely ionized atomic state is allowed as upper state
