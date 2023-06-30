@@ -29,8 +29,6 @@
 
 #include <pmacc/assert.hpp>
 
-#include <pmacc/assert.hpp>
-
 #include <cstdint>
 
 namespace picongpu::particles::atomicPhysics
