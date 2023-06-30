@@ -96,9 +96,7 @@ namespace picongpu::atomicPhysics2::debug
         //! fixed temperature setting
         struct TemperatureParam
         {
-            /** Initial temperature
-                *  unit: keV
-                */
+            //! Initial temperature, [keV]
             static constexpr float_64 temperature = 1.;
         };
     } // namespace scFlyComparison
