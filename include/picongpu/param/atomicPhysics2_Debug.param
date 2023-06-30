@@ -132,7 +132,7 @@ namespace picongpu::atomicPhysics2::debug
         namespace spawnIonizationElectrons
         {
             //! @attention performance relevant
-            constexpr bool PARTICLE_BOXES_FILL_GAPS = false;
+            constexpr bool ELECTRON_PARTICLE_BOX_FILL_GAPS = false;
         } // namespace spawnIonizationElectrons
     } // namespace kernel
 } // namespace picongpu::atomicPhysics2::debug
