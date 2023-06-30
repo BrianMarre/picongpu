@@ -21,7 +21,7 @@
  * configuration file for debug settings of atomicPhysics
  *
  * needs to be a separate file to avoid circular imports in
- *  picongpu/particles/atomicPhysics2/atomicData/*
+ *  "picongpu/particles/atomicPhysics2/atomicData/"
  */
 
 #pragma once
@@ -43,7 +43,7 @@ namespace picongpu::atomicPhysics2::debug
     namespace electronHistogram
     {
         //! @attention performance relevant, uncaught error will lead to invalid memory access
-        constexpr bool RANGE_CHECK_BIN_INDEX = false;
+        constexpr bool RANGE_CHECKS_BIN_INDEX = false;
         //! @attention performance relevant, uncaught error will lead to invalid memory access
         constexpr bool RANGE_CHECKS_ENERGY = false;
         //! @attention only useful if building serial and cpu-only
@@ -92,6 +92,15 @@ namespace picongpu::atomicPhysics2::debug
          *  **do not use outside debug!**
          */
         constexpr bool FORCE_CONSTANT_ELECTRON_TEMPERATURE = false;
+
+        //! fixed temperature setting
+        struct TemperatureParam
+        {
+            /** Initial temperature
+                *  unit: keV
+                */
+            static constexpr float_64 temperature = 1.;
+        };
     } // namespace scFlyComparison
 
 
