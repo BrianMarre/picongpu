@@ -37,12 +37,17 @@
 #include "picongpu/particles/InitFunctors.hpp"
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/ParticlesFunctors.hpp"
+#include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.param" /// @todo move to atomicPhysics2.param, Brian Marre, 2024
+#include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
+#include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
 #include "picongpu/particles/manipulators/manipulators.hpp"
 #include "picongpu/random/seed/ISeed.hpp"
 #include "picongpu/simulation/control/DomainAdjuster.hpp"
 #include "picongpu/simulation/control/MovingWindow.hpp"
+#include "picongpu/simulation/stage/AtomicPhysics2.hpp"
 #include "picongpu/simulation/stage/Collision.hpp"
 #include "picongpu/simulation/stage/CurrentBackground.hpp"
 #include "picongpu/simulation/stage/CurrentDeposition.hpp"
@@ -91,6 +96,11 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+
+// debug only
+#include "picongpu/particles/atomicPhysics2/rateCalculation/DebugHelperRateCalculation.hpp"
+
+#include <iostream>
 
 namespace picongpu
 {
@@ -339,6 +349,8 @@ namespace picongpu
             synchrotronRadiation = std::make_shared<simulation::stage::SynchrotronRadiation>(*cellDescription);
 
             initFields(dc);
+            loadAtomicInputData(dc); // load atomicPhysics state and transition data
+            initAtomicPhysicsSuperCellFields(dc); // init atomicPhyiscs superCell local fields
 
             myFieldSolver = std::make_shared<fields::Solver>(*cellDescription);
             dc.share(myFieldSolver);
@@ -349,6 +361,14 @@ namespace picongpu
 
             // initialize particle boundaries
             particleBoundaries.init();
+
+            // debug only, test rate calculation
+            if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::RUN_UNIT_TESTS)
+            {
+                auto test = particles::atomicPhysics2::rateCalculation::debug::TestRateCalculation<10u>();
+                std::cout << "TestRateCalculation:" << std::endl;
+                test.testAll();
+            }
 
             // initialize runtime density file paths
             runtimeDensityFile.init();
@@ -503,6 +523,14 @@ namespace picongpu
                     particles::RemoveOuterParticlesAllSpecies removeOuterParticlesAllSpecies;
                     removeOuterParticlesAllSpecies(step);
 
+                    // fix mismatches between boundElectrons and atomicStateCollectionIndex attributes
+                    using SpeciesRepresentingAtomicPhysicsIons =
+                        typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
+                    using ForEachIonSpeciesFixAtomicState = pmacc::meta::ForEach<
+                        SpeciesRepresentingAtomicPhysicsIons,
+                        particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
+                    ForEachIonSpeciesFixAtomicState{}(*cellDescription);
+
                     // Check Debye resolution
                     particles::debyeLength::check(*cellDescription);
                 }
@@ -542,6 +570,7 @@ namespace picongpu
             CurrentReset{}(currentStep);
             Collision{deviceHeap}(currentStep);
             ParticleIonization{*cellDescription}(currentStep);
+            AtomicPhysics2{}(*cellDescription, currentStep);
             (*synchrotronRadiation)(currentStep);
             EventTask commEvent;
             ParticlePush{}(currentStep, commEvent);
@@ -588,6 +617,7 @@ namespace picongpu
             resetFields(currentStep);
             meta::ForEach<VectorAllSpecies, particles::CallReset<boost::mpl::_1>> resetParticles;
             resetParticles(currentStep);
+            /// @todo need to add atomicPhysics super cell fields?, Brian Marre, 2022
         }
 
         void slide(uint32_t currentStep)
@@ -762,6 +792,36 @@ namespace picongpu
             }
         }
 
+        //! create superCell fields required by atomicPhysics
+        void initAtomicPhysicsSuperCellFields(DataConnector& dataConnector)
+        {
+            // core algorithm helper fields
+            picongpu::particles::atomicPhysics2::AtomicPhysicsSuperCellFields::create(dataConnector, *cellDescription);
+            picongpu::atomicPhysics2::IPDModel::createHelperFields(dataConnector, *cellDescription);
+        }
+
+        /** load the atomic input files, for each create an atomicData data base object
+         *    and store them in the data connector
+         *
+         * necessary for each species for atomicPhysics step
+         *
+         * @todo allow reuse of atomicData dataBase objects in between species, Brian Marre, 2022
+         */
+        void loadAtomicInputData(DataConnector& dataConnector)
+        {
+            using SpeciesWithAtomicPhysicsInputData =
+                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
+
+            //! load atomic input data in pre-stage call for each species with atomic Input data
+            pmacc::meta::ForEach<
+                SpeciesWithAtomicPhysicsInputData,
+                particles::atomicPhysics2::stage::LoadAtomicInputData<boost::mpl::_1>>
+                ForEachIonSpeciesLoadAtomicInputData;
+
+            ForEachIonSpeciesLoadAtomicInputData(dataConnector);
+        }
+
+
         /** Reset all fields
          *
          * @param currentStep iteration number of the current step
@@ -781,10 +841,25 @@ namespace picongpu
                 }
             };
 
-            /* @todo for now the list of fields is hardcoded here, a more generic
+            /** @todo for now the list of fields is hardcoded here, a more generic
              * solution would require changes to design of DataConnector.
-             * FieldJ and FieldTmp are effectively cleared each time iteration and
-             * so do not need a reset.
+             *
+             * following fields are effectively cleared each iteration and so do not need a reset.
+             *
+             * [standard PIC:]
+             * - FieldJ
+             * - FieldTmp
+             * [atomicPhysics2:]
+             * - LocalTimeRemainingField
+             * - LocalTimeStepLengthField
+             * - LocalHistogramField
+             * - LocalRateCacheField
+             * - LocalElectronHistogramOverSubscribedField
+             * - LocalRejectionProbabilityCacheField
+             * - LocalFoundUnboundIonField
+             * [IPD:]
+             * - LocalIPDSupportField(s)
+             * - LocalIPDInputField(s)
              */
             std::array<std::string, 4> const fieldNames{
                 {FieldE::getName(),
