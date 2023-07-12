@@ -81,7 +81,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-
             auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
             bool const histogramOverSubscribed
                 = static_cast<bool>(localElectronHistogramOverSubscribedBox(superCellFieldIdx));

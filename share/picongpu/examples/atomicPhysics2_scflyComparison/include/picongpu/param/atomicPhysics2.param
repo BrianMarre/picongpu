@@ -34,7 +34,6 @@
 
 #include <cstdint>
 
-
 namespace picongpu::atomicPhysics2
 {
     struct MaxEnergyParam

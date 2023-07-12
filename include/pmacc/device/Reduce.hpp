@@ -265,12 +265,12 @@ namespace pmacc
                 return getThreadsPerBlock(std::min(sharedBorder, n));
             }
 
-            /*buffer size limit in bytes on gpu*/
+            //! buffer size limit in bytes on gpu
             uint32_t byte;
-            /*shared memory limit in byte for one block*/
+            //! shared memory limit in byte for one block
             uint32_t sharedMemByte = defaultSharedMmemSize;
 
-            /*global gpu buffer for reduce steps*/
+            //! global gpu buffer for reduce steps
             std::unique_ptr<GridBuffer<char, DIM1>> reduceBuffer;
         };
 

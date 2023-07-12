@@ -84,6 +84,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             (mapper.getGridDim())(
                 mapper,
                 rngFactory,
+
                 localTimeRemainingField.getDeviceDataBox(),
                 localElectronHistogramOverSubscribedField.getDeviceDataBox(),
                 ions.getDeviceParticlesBox(),

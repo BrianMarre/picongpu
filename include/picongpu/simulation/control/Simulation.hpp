@@ -96,6 +96,7 @@
 #include <vector>
 
 #include <nlohmann/json.hpp>
+
 // debug only
 #include "picongpu/particles/atomicPhysics2/rateCalculation/DebugHelperRateCalculation.hpp"
 
@@ -694,6 +695,16 @@ namespace picongpu
         bool skipSimulation{false};
 
     private:
+        /** list of all species of macro particles with atomicPhysics input data
+         *
+         * as defined in species.param, is list of types
+         * @todo use different Flag?, Brian Marre, 2022
+         */
+        using SpeciesWithAtomicPhysicsInputData =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
+        using AtomicPhysicsSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
+
         /** Get available memory on device
          *
          * @attention This method is using MPI collectives and must be called from all MPI processes collectively.

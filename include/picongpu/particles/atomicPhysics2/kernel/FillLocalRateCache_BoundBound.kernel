@@ -119,6 +119,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 transition_dataBox_not_boud_bound_based,
                 u8(T_BoundBoundTransitionDataBox::processClassGroup)
                     == u8(s_enums::ProcessClassGroup::boundBoundBased));
+
             // check ordering of transition dataBox
             PMACC_CASSERT_MSG(
                 wrong_ordering_of_DataBox,

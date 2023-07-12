@@ -33,7 +33,6 @@
 
 //! @file implements the storage of atomic state property data
 
-
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
     /** data box storing state property data

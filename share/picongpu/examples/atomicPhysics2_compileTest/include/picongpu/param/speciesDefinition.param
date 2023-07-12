@@ -59,7 +59,6 @@ namespace picongpu
 
     /*--------------------------- electrons --------------------------------------*/
     /* thermal bulk electrons: */
-
     /* ratio relative to BASE_CHARGE and BASE_MASS */
     value_identifier_constexpr(float_X, MassRatioElectrons, 1.0);
     value_identifier(float_X, ChargeRatioElectrons, 1.0);

@@ -35,38 +35,18 @@ namespace picongpu::particles
      *      be created / will be deleted
      *  unit: none
      */
-    constexpr float_X MIN_WEIGHTING = 1.0;
+    constexpr float_X MIN_WEIGHTING = 0.1_X;
 
     namespace startPosition
     {
-        struct RandomParameter10ppc
+        struct RandomParameter
         {
             /** Count of particles per cell at initial state
              *  unit: none
              */
-            static constexpr uint32_t numParticlesPerCell = 10u;
+            static constexpr uint32_t numParticlesPerCell = 18u;
         };
-
-        // sit directly in lower corner of the cell
-        CONST_VECTOR(
-            float_X,
-            3,
-            InCellOffset,
-            // each x, y, z in-cell position component in range [0.0, 1.0)
-            0.0,
-            0.0,
-            0.0);
-        struct OnePositionParameter
-        {
-            /** Count of particles per cell at initial state
-             *  unit: none
-             */
-            static constexpr uint32_t numParticlesPerCell = 1u;
-
-            const InCellOffset_t inCellOffset;
-        };
-        using OnePosition = OnePositionImpl<OnePositionParameter>;
-        using Random10ppc = RandomImpl<RandomParameter10ppc>;
+        using Random = RandomImpl<RandomParameter>;
 
     } // namespace startPosition
 
@@ -74,19 +54,10 @@ namespace picongpu::particles
      *  number of particles per cell for normalization of weighted
      *  particle attributes.
      */
-    constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter10ppc::numParticlesPerCell;
+    constexpr uint32_t TYPICAL_PARTICLES_PER_CELL = startPosition::RandomParameter::numParticlesPerCell;
 
     namespace manipulators
     {
-        // define a drift in X equal to 200 keV for electrons
-        CONST_VECTOR(float_X, 3, DriftParam_direction, 1.0, 0.0, 0.0);
-        struct Drift200keVParam
-        {
-            static constexpr float_64 gamma = 1.39139;
-            const DriftParam_direction_t direction;
-        };
-        using Assign200keVDrift = unary::Drift<Drift200keVParam, pmacc::math::operation::Assign>;
-
         struct TemperatureParam
         {
             /** Initial temperature

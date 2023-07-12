@@ -206,6 +206,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_PressureIonizationStateDataBuffer = PressureIonizationStateDataBuffer<CollectionIdx>;
 
         template<s_enums::TransitionOrdering T_TransitionOrdering>
+
         using S_BoundBoundTransitionDataBuffer = BoundBoundTransitionDataBuffer<
             TypeNumber,
             TypeValue,
@@ -253,6 +254,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_PressureIonizationStateDataBox = PressureIonizationStateDataBox<CollectionIdx>;
 
         template<s_enums::TransitionOrdering T_TransitionOrdering>
+
         using S_BoundBoundTransitionDataBox = BoundBoundTransitionDataBox<
             TypeNumber,
             TypeValue,
@@ -275,6 +277,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
         //@}
+
     private:
         // pointers to storage
         // charge state data
@@ -1185,7 +1188,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             chargeStateOrgaDataBuffer->hostToDevice();
         }
-
 
         /** fill the upward atomic state orga buffers for a transition group
          *

@@ -153,6 +153,7 @@ namespace picongpu::particles::atomicPhysics2
                         lowerStateChargeState,
                         upperStateChargeState,
                         chargeStateDataBox...);
+
                 if constexpr(u8(processClassGroup) == u8(s_enums::ProcessClassGroup::autonomousBased))
                     deltaEnergy -= DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
                         lowerStateChargeState,

@@ -78,7 +78,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                               LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
                     "Electron_localHistogramField");
 
-            using DecelerateElectrons = picongpu::particles::atomicPhysics2::kernel ::
+            using DecelerateElectrons = picongpu::particles::atomicPhysics2::kernel::
                 DecelerateElectronsKernel<ElectronSpecies, picongpu::atomicPhysics2::ElectronHistogram>;
 
             // macro for call of kernel on every superCell, see pull request #4321

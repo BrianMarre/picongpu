@@ -69,6 +69,5 @@ namespace picongpu::particles
 
         // definition of set initial ionization
         using SetChargeState = unary::ChargeState<2u>;
-
     } // namespace manipulators
 } // namespace picongpu::particles

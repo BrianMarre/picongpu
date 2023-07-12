@@ -118,7 +118,6 @@ namespace picongpu::simulation::stage
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             auto& localTimeRemainingField = *dc.get<S_TimeRemainingField>("LocalTimeRemainingField");
-
             localTimeRemainingField.getDeviceBuffer().setValue(picongpu::DELTA_T); // UNIT_TIME
         }
 
@@ -293,6 +292,7 @@ namespace picongpu::simulation::stage
             ForEachIonSpeciesFixAtomicState{}(mappingDesc);
 
             uint16_t counterSubStep = 0u;
+
             // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
             {
@@ -411,6 +411,7 @@ namespace picongpu::simulation::stage
                         picongpu::particles::atomicPhysics2::stage::ResetDeltaWeightElectronHistogram{}(mappingDesc);
                         // record all shared resources usage by accepted transitions
                         ForEachIonSpeciesRecordSuggestedChanges{}(mappingDesc);
+
                         // check bins for over subscription --> localElectronHistogramOverSubscribedField
                         picongpu::particles::atomicPhysics2::stage::CheckForOverSubscription()(mappingDesc);
 

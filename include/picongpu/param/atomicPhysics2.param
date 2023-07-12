@@ -26,6 +26,7 @@
 #include "picongpu/particles/atomicPhyscis2/ionizationPotentialDepression/ClassicalTemperatureFunctor.hpp"
 #include "picongpu/particles/atomicPhyscis2/ionizationPotentialDepression/RelativisticTemperatureFunctor.hpp"
 #include "picongpu/particles/atomicPhyscis2/ionizationPotentialDepression/StewartPyattIPD.hpp"
+
 #include "picongpu/particles/atomicPhysics2/ExponentialApproximationProbability.hpp"
 #include "picongpu/particles/atomicPhysics2/LinearApproximationProbability.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
