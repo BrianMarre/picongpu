@@ -56,7 +56,7 @@ namespace pmacc
             {
             }
 
-            /* Reduce elements in global gpu memory
+            /** Reduce elements in global gpu memory
              *
              * @param func binary functor for reduce which takes two arguments, first argument is the source and
              * get the new reduced value. Functor must specialize the function getMPI_Op.
@@ -157,7 +157,8 @@ namespace pmacc
             }
 
         private:
-            /* calculate number of threads per block
+            /** calculate number of threads per block
+             *
              * @param threads maximal number of threads per block
              * @return number of threads per block
              */
@@ -191,7 +192,7 @@ namespace pmacc
             }
 
 
-            /* start the reduce kernel
+            /** start the reduce kernel
              *
              * The minimal number of elements reduced within a CUDA block is chosen at
              * compile time.
@@ -262,7 +263,8 @@ namespace pmacc
             }
 
 
-            /*calculate optimal number of threads per block with respect to shared memory limitations
+            /** calculate optimal number of threads per block with respect to shared memory limitations
+             *
              * @param n number of elements to reduce
              * @param sizePerElement size in bytes per elements
              * @return optimal count of threads per block to solve the problem
@@ -273,12 +275,12 @@ namespace pmacc
                 return getThreadsPerBlock(std::min(sharedBorder, n));
             }
 
-            /*buffer size limit in bytes on gpu*/
+            //! buffer size limit in bytes on gpu
             uint32_t byte;
-            /*shared memory limit in byte for one block*/
+            //! shared memory limit in byte for one block
             uint32_t sharedMemByte = defaultSharedMmemSize;
 
-            /*global gpu buffer for reduce steps*/
+            //! global gpu buffer for reduce steps
             std::unique_ptr<GridBuffer<char, DIM1>> reduceBuffer;
         };
 
