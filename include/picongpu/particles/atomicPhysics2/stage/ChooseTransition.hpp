@@ -23,6 +23,9 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition.kernel"
+#include "picongpu/particles/traits/GetAtomicDataType.hpp"
+
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_Autonomous.kernel"

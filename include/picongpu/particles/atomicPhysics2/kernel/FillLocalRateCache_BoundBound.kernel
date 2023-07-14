@@ -146,7 +146,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto& rateCache = localRateCacheBox(superCellFieldIdx);
             auto& histogram = localElectronHistogramDataBox(superCellFieldIdx);
 
-
             // UNIT_LENGTH^3
             constexpr float_X volumeScalingFactor
                 = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;

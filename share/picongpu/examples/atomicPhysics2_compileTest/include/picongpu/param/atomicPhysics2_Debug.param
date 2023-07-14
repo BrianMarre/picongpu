@@ -17,7 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file configurations for compile time debug options of atomicPhysics
+/** @file
+ * configurations for compile time debug options of atomicPhysics
  *
  * needs to be a separate file to avoid circular imports in
  *  "picongpu/particles/atomicPhysics2/atomicData/"

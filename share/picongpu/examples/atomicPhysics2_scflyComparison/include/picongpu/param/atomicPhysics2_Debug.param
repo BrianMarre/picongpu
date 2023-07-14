@@ -17,7 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file configurations for compile time debug options of atomicPhysics
+/** @file
+ * configurations for compile time debug options of atomicPhysics
  *
  *
  * needs to be a separate file to avoid circular imports in
@@ -31,12 +32,13 @@ namespace picongpu::atomicPhysics2::debug
     namespace atomicData
     {
         constexpr bool PRINT_TO_CONSOLE = false;
+
         //! @attention performance relevant, uncaught error will lead to invalid memory access
         constexpr bool RANGE_CHECKS_IN_DATA_QUERIES = false;
         //! range check in store calls to individual data boxes, only once upon initial loading of atomic input data
         constexpr bool RANGE_CHECKS_IN_DATA_LOAD = false;
         //! @attention will not catch members missing from hostToDevice() method,
-        constexpr bool DEBUG_SYNC_BUFFERS_TO_HOST = true;
+        constexpr bool DEBUG_SYNC_BUFFERS_TO_HOST = false;
     } // namespace  atomicData
 
 
@@ -149,11 +151,6 @@ namespace picongpu::atomicPhysics2::debug
         //! @attention only viable serial and cpu only compile
         constexpr bool DUMP_ION_DATA_TO_CONSOLE_EACH_TRY = false;
     } // namespace kernel::acceptanceTest
-
-    namespace kernel::rollForOverSubscription
-    {
-        constexpr bool PRINT_DEBUG_TO_CONSOLE = false;
-    } // namespace kernel::rollForOverSubscription
 
     namespace kernel::spawnIonizationElectrons
     {

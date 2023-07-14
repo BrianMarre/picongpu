@@ -17,7 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file configurations for compile time debug options of atomicPhysics
+/** @file
+ * configurations for compile time debug options of atomicPhysics
  *
  *
  * needs to be a separate file to avoid circular imports in
@@ -145,16 +146,14 @@ namespace picongpu::atomicPhysics2::debug
         //! @attention performance relevant
         constexpr bool CHECK_RATE_LIMIT = true;
 
+        //! @attention performance relevant
+        constexpr bool CHECK_RATE_LIMIT = true;
+
         //! @attention only viable serial and cpu only compile
         constexpr bool DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED = false;
         //! @attention only viable serial and cpu only compile
-        constexpr bool DUMP_ION_DATA_TO_CONSOLE_EACH_TRY = false;
+        constexpr bool DUMP_ION_DATA_TO_CONSOLE_EACH_TRY = true;
     } // namespace kernel::acceptanceTest
-
-    namespace kernel::rollForOverSubscription
-    {
-        constexpr bool PRINT_DEBUG_TO_CONSOLE = true;
-    } // namespace kernel::rollForOverSubscription
 
     namespace kernel::spawnIonizationElectrons
     {
