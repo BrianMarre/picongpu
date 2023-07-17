@@ -174,7 +174,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
                     return;
                 }
 
-            cupla::atomicExch(worker.getAcc(), &(this->m_present[collectionIndex]), static_cast<uint8_t>(status));
+            cupla::atomicExch(worker.getAcc(), &(this->m_present[collectionIndex]), static_cast<uint32_t>(status));
             return;
         }
 
