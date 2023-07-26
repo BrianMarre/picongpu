@@ -71,6 +71,7 @@ namespace picongpu::atomicPhysics2::debug
     {
         //! @attention only useful if building serial and cpu-only
         constexpr bool PRINT_TO_CONSOLE = false;
+
         //! range checks in rate cache for atomic state collection index, @attention performance relevant
         constexpr bool COLLECTION_INDEX_RANGE_CHECKS = false;
         //! range checks in rate cache for transition data set collection index, @attention performance relevant

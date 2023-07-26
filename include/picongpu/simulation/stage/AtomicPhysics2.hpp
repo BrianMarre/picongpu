@@ -292,7 +292,6 @@ namespace picongpu::simulation::stage
             ForEachIonSpeciesFixAtomicState{}(mappingDesc);
 
             uint16_t counterSubStep = 0u;
-
             // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
             {
@@ -334,6 +333,9 @@ namespace picongpu::simulation::stage
                 // reject overSubscription loop, ends when no histogram bin oversubscribed
                 while(true)
                 {
+                    std::cout << "\t chooseTransition iteration: " << counterChooseTransition << std::endl;
+                    ++counterChooseTransition;
+
                     // randomly roll transition for each not yet accepted macro ion
                     ForEachIonSpeciesChooseTransitionType{}(mappingDesc, currentStep);
                     ForEachIonSpeciesChooseTransition{}(mappingDesc, currentStep);
@@ -418,6 +420,12 @@ namespace picongpu::simulation::stage
                         auto linearizedOverSubscribedBox = S_LinearizedBox<S_OverSubscribedField>(
                             localElectronHistogramOverSubscribedField.getDeviceDataBox(),
                             fieldGridLayoutOverSubscription);
+
+                        // debug only
+                        std::cout << "\t\t histogram oversubscribed?: " << ((static_cast<bool>(deviceLocalReduce(
+                               pmacc::math::operation::Or(),
+                               linearizedOverSubscribedBox,
+                               fieldGridLayoutOverSubscription.productOfComponents())))? "true" : "false") << std::endl;
 
                         if(!static_cast<bool>(deviceLocalReduce(
                                pmacc::math::operation::Or(),

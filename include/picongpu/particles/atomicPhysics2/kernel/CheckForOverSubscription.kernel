@@ -87,7 +87,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             picongpu::particles::atomicPhysics2::localHelperFields::RejectionProbabilityCache<T_Histogram::numberBins>&
                 rejectionProbabilityCache
-                = localRejectionProbabilityCacheBox(superCellFieldIdx);
+                    = localRejectionProbabilityCacheBox(superCellFieldIdx);
 
             // reset to initial value
             onlyMaster([&histogramOverSubscribed]() { histogramOverSubscribed = static_cast<uint32_t>(false); });

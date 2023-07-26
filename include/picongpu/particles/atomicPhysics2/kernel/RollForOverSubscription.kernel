@@ -93,7 +93,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             picongpu::particles::atomicPhysics2::localHelperFields::RejectionProbabilityCache<T_Histogram::numberBins>&
                 rejectionProbabilityCache
-                = localRejectionProbabilityCacheBox(superCellFieldIdx);
+                    = localRejectionProbabilityCacheBox(superCellFieldIdx);
 
             auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
