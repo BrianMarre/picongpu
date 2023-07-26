@@ -422,10 +422,14 @@ namespace picongpu::simulation::stage
                             fieldGridLayoutOverSubscription);
 
                         // debug only
-                        std::cout << "\t\t histogram oversubscribed?: " << ((static_cast<bool>(deviceLocalReduce(
-                               pmacc::math::operation::Or(),
-                               linearizedOverSubscribedBox,
-                               fieldGridLayoutOverSubscription.productOfComponents())))? "true" : "false") << std::endl;
+                        std::cout << "\t\t histogram oversubscribed?: "
+                                  << ((static_cast<bool>(deviceLocalReduce(
+                                          pmacc::math::operation::Or(),
+                                          linearizedOverSubscribedBox,
+                                          fieldGridLayoutOverSubscription.productOfComponents())))
+                                          ? "true"
+                                          : "false")
+                                  << std::endl;
 
                         if(!static_cast<bool>(deviceLocalReduce(
                                pmacc::math::operation::Or(),
