@@ -146,13 +146,10 @@ namespace picongpu::atomicPhysics2::debug
         //! @attention performance relevant
         constexpr bool CHECK_RATE_LIMIT = true;
 
-        //! @attention performance relevant
-        constexpr bool CHECK_RATE_LIMIT = true;
-
         //! @attention only viable serial and cpu only compile
         constexpr bool DUMP_ION_DATA_TO_CONSOLE_ALL_ACCEPTED = false;
         //! @attention only viable serial and cpu only compile
-        constexpr bool DUMP_ION_DATA_TO_CONSOLE_EACH_TRY = true;
+        constexpr bool DUMP_ION_DATA_TO_CONSOLE_EACH_TRY = false;
     } // namespace kernel::acceptanceTest
 
     namespace kernel::spawnIonizationElectrons
