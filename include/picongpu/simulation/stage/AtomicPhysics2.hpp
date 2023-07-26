@@ -421,13 +421,17 @@ namespace picongpu::simulation::stage
                             fieldGridLayoutOverSubscription);
 
                         // debug only
-                        if (counterOverSubscription > 10u)
+                        if(counterOverSubscription > 10u)
                         {
-                            std::cout << "\t\t histogram oversubscribed?: " << ((static_cast<bool>(deviceLocalReduce(
-                                pmacc::math::operation::Or(),
-                                linearizedOverSubscribedBox,
-                                fieldGridLayoutOverSubscription.productOfComponents())))? "true" : "false") << std::endl;
-                            //ForEachIonSpeciesDumpToConsole{}(mappingDesc);
+                            std::cout << "\t\t histogram oversubscribed?: "
+                                      << ((static_cast<bool>(deviceLocalReduce(
+                                              pmacc::math::operation::Or(),
+                                              linearizedOverSubscribedBox,
+                                              fieldGridLayoutOverSubscription.productOfComponents())))
+                                              ? "true"
+                                              : "false")
+                                      << std::endl;
+                            // ForEachIonSpeciesDumpToConsole{}(mappingDesc);
 
                             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole{}(mappingDesc);
                         }
