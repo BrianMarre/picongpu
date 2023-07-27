@@ -25,6 +25,8 @@
 #include <pmacc/dimensions/DataSpace.hpp>
 #include <pmacc/math/Vector.hpp>
 
+#include <pmacc/dimensions/DataSpace.hpp>
+
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -276,7 +278,6 @@ namespace picongpu::particles::atomicPhysics2::debug
     {
         std::cout << "ID: " << ion[particleId_] << std::endl;
         std::cout << "\t - weighting: " << ion[weighting_] << std::endl;
-
         std::cout << "\t - momentum: (" << ion[momentum_].toString(",", "") << ")" << std::endl;
         std::cout << "\t - position: (" << ion[position_].toString(",", "") << ")" << std::endl;
         std::cout << "\t - atomicPhysicsData:" << std::endl;

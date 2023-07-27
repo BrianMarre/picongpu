@@ -24,6 +24,8 @@
 #include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
 #include "picongpu/particles/atomicPhysics2/SuperCellField.hpp"
 
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+
 #include <cstdint>
 #include <string>
 

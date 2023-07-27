@@ -25,12 +25,16 @@
 
 #include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
 #include "picongpu/particles/atomicPhysics2/SuperCellField.hpp"
+#include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"
+
+#include <pmacc/dimensions/DataSpace.hpp>
 
 #include <pmacc/dimensions/DataSpace.hpp>
 
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <iostream>
 
 namespace picongpu::particles::atomicPhysics2::electronDistribution
 {
