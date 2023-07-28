@@ -44,6 +44,7 @@
 #include "picongpu/particles/atomicPhysics2/stage/ResetDeltaWeightElectronHistogram.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ResetLocalRateCache.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ResetLocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics2/stage/ResetDeltaWeightElectronHistogram.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/RollForOverSubscription.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/SpawnIonizationElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/UpdateTimeRemaining.hpp"
@@ -328,7 +329,7 @@ namespace picongpu::simulation::stage
                 // reject overSubscription loop, ends when no histogram bin oversubscribed
                 while(true)
                 {
-                    // std::cout << "\t chooseTransition iteration: " << counterChooseTransition << std::endl;
+                    std::cout << "\t chooseTransition iteration: " << counterChooseTransition << std::endl;
                     ++counterChooseTransition;
 
                     // randomly roll transition for each not yet accepted macro ion
@@ -435,20 +436,20 @@ namespace picongpu::simulation::stage
                                 picongpu::particles::atomicPhysics2::localHelperFields
                                     ::PrintOverSubcriptionFieldToConsole>
                                 {}(mappingDesc, "LocalElectronHistogramOverSubscribedField");
-
                             // print rejectionProbabilityCache
                             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                                 picongpu::particles::atomicPhysics2::localHelperFields
                                     ::LocalRejectionProbabilityCacheField<picongpu::MappingDesc>,
                                 picongpu::particles::atomicPhysics2::localHelperFields
-                                    ::PrintRejectionProbabilityCacheToConsole>
+                                    ::PrintRejectionProbabilityCacheToConsole<true>>
                                 {}(mappingDesc, "LocalRejectionProbabilityCacheField");
 
                             // print histogram
                             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                                 picongpu::particles::atomicPhysics2::electronDistribution::LocalHistogramField<
                                     picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>,
-                                picongpu::particles::atomicPhysics2::electronDistribution::PrintHistogramToConsole>
+                                picongpu::particles::atomicPhysics2::electronDistribution
+                                    ::PrintHistogramToConsole<true>>
                                 {}(mappingDesc, "Electron_localHistogramField");
                         }
 
