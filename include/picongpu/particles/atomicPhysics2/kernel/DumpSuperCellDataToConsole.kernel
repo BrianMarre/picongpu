@@ -28,7 +28,6 @@
 
 #include <pmacc/dimensions/DataSpace.hpp>
 #include <pmacc/particles/algorithm/ForEach.hpp>
-#include <pmacc/dimensions/DataSpace.hpp>
 
 #include <cstdint>
 #include <iostream>
