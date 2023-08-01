@@ -149,6 +149,11 @@ namespace picongpu::atomicPhysics2::debug
         constexpr bool PRINT_DEBUG_TO_CONSOLE = false;
     } // namespace kernel::rollForOverSubscription
 
+    namespace kernel::rollForOverSubscription
+    {
+        constexpr bool PRINT_DEBUG_TO_CONSOLE = true;
+    } // namespace kernel::rollForOverSubscription
+
     namespace kernel::spawnIonizationElectrons
     {
         //! @attention performance relevant
