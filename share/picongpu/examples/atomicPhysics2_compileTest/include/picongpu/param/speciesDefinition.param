@@ -59,6 +59,7 @@ namespace picongpu
 
     /*--------------------------- electrons --------------------------------------*/
     /* thermal bulk electrons: */
+
     /* ratio relative to BASE_CHARGE and BASE_MASS */
     value_identifier_constexpr(float_X, MassRatioElectrons, 1.0);
     value_identifier(float_X, ChargeRatioElectrons, 1.0);
@@ -79,7 +80,10 @@ namespace picongpu
         isAtomicPhysicsElectron<>>;
 
     /* thermal bulk electrons */
-    using BulkElectrons = Particles<PMACC_CSTRING("eth"), ParticleFlagsElectrons, DefaultParticleAttributes>;
+    using BulkElectrons = Particles<
+        PMACC_CSTRING("eth"),
+        ParticleFlagsElectrons,
+        DefaultParticleAttributes>;
 
     /*--------------------------- ions Argon ------------------------------------*/
 
