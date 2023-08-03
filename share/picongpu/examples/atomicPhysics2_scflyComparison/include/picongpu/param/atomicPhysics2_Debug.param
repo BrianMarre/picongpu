@@ -82,7 +82,7 @@ namespace picongpu::atomicPhysics2::debug
     namespace rejectionProbabilityCache
     {
         //! @attention only useful if building serial and cpu-only
-        constexpr bool PRINT_TO_CONSOLE = true;
+        constexpr bool PRINT_TO_CONSOLE = false;
 
         //! @attention performance relevant
         constexpr bool BIN_INDEX_RANGE_CHECK = false;
@@ -154,7 +154,7 @@ namespace picongpu::atomicPhysics2::debug
 
     namespace kernel::rollForOverSubscription
     {
-        constexpr bool PRINT_DEBUG_TO_CONSOLE = true;
+        constexpr bool PRINT_DEBUG_TO_CONSOLE = false;
     } // namespace kernel::rollForOverSubscription
 
     namespace kernel::spawnIonizationElectrons
