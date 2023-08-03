@@ -80,10 +80,7 @@ namespace picongpu
         isAtomicPhysicsElectron<>>;
 
     /* thermal bulk electrons */
-    using BulkElectrons = Particles<
-        PMACC_CSTRING("eth"),
-        ParticleFlagsElectrons,
-        DefaultParticleAttributes>;
+    using BulkElectrons = Particles<PMACC_CSTRING("eth"), ParticleFlagsElectrons, DefaultParticleAttributes>;
 
     /*--------------------------- ions Argon ------------------------------------*/
 
