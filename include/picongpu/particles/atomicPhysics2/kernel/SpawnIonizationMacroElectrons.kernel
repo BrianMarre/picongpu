@@ -116,6 +116,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
+            pmacc::DataSpace<simDim> const superCellIdx
+                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
+            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+            //  -> must subtract guard to get correct superCellFieldIdx
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
+                = superCellIdx - areaMapping.getGuardingSuperCells();
+
             auto forEachFrameSlot = pmacc::lockstep::makeForEach<frameSize, T_Worker>(worker);
             auto forEachFrameMaster = pmacc::lockstep::makeForEach<2u, T_Worker>(worker);
             auto onlyMaster = pmacc::lockstep::makeMaster(worker);

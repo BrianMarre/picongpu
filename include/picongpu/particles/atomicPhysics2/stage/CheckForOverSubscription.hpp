@@ -59,6 +59,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
 
+            auto& localTimeRemainingField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
+                    picongpu::MappingDesc>>("LocalTimeRemainingField");
+
             auto& localElectronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics2::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(

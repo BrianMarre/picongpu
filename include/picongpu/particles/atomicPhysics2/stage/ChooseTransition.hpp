@@ -24,6 +24,7 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition.kernel"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/traits/GetAtomicDataType.hpp"
 
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
@@ -77,6 +78,10 @@ namespace picongpu::particles::atomicPhysics2::stage
             auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
                                                     LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
                 IonSpecies::FrameType::getName() + "_localRateCacheField");
+
+            auto& localTimeRemainingField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
+                    picongpu::MappingDesc>>("LocalTimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
             RngFactoryFloat rngFactoryFloat = RngFactoryFloat{currentStep};

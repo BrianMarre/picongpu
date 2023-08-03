@@ -51,6 +51,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
 
+            auto& localTimeRemainingField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
+                    picongpu::MappingDesc>>("LocalTimeRemainingField");
+
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
             PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::ResetAcceptedStatusKernel(), workerCfg)

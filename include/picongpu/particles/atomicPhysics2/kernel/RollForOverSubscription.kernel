@@ -97,8 +97,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             auto rngGenerator = rngFactory(worker, superCellFieldIdx);
 
-            auto rngGenerator = rngFactory(worker, superCellFieldIdx);
-
             // try to reject each accepted macro-ion, which takes from an oversubscribed bin
             forEachLocalIonBoxEntry(
                 [&](T_Worker const& worker, auto& ion)

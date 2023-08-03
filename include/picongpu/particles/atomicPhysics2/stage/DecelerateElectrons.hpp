@@ -70,6 +70,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
 
+            auto& localTimeRemainingField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
+                    picongpu::MappingDesc>>("LocalTimeRemainingField");
+
             // pointer to memory, we will only work on device, no sync required
             // init pointer to electrons and localElectronHistogramField
             auto& electrons = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName());

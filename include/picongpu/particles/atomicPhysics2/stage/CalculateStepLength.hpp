@@ -59,6 +59,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
 
+            auto& localTimeRemainingField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
+                    picongpu::MappingDesc>>("LocalTimeRemainingField");
+
             // pointers to memory, we will only work on device, no sync required
             //      pointer to localRateCache
             auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
