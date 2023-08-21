@@ -480,11 +480,11 @@ namespace picongpu::simulation::stage
                 if constexpr(picongpu::atomicPhysics2::debug::timeStep::PRINT_TO_CONSOLE)
                     printTimeStepToConsole(mappingDesc);
 
-
                 /** update atomic state and accumulate delta energy for delta energy histogram
                  *
                  * @note may already update the atomic state since the following kernels DecelerateElectrons and
                  * SpawnIonizationElectrons only use the transitionIndex particle attribute */
+
                 ForEachIonSpeciesRecordChanges{}(mappingDesc);
                 /** @note DecelerateElectrons must be called before SpawnIonizationElectrons such that we only change
                  * electrons that actually contributed to the histogram*/
