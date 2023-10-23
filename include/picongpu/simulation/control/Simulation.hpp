@@ -41,6 +41,7 @@
 #include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.hpp"
+#include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
 #include "picongpu/particles/manipulators/manipulators.hpp"
@@ -531,6 +532,7 @@ namespace picongpu
                     using ForEachIonSpeciesFixAtomicState = pmacc::meta::ForEach<
                         SpeciesRepresentingAtomicPhysicsIons,
                         particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
+
                     ForEachIonSpeciesFixAtomicState{}(*cellDescription);
 
                     // Check Debye resolution

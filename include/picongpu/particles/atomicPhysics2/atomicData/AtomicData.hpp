@@ -82,6 +82,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     } // namespace detail
 
     namespace s_enums = picongpu::particles::atomicPhysics2::enums;
+
     using ProcClassGroup = picongpu::particles::atomicPhysics2::enums::ProcessClassGroup;
 
     /** gathering of all atomicPhyiscs input data
@@ -206,7 +207,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_PressureIonizationStateDataBuffer = PressureIonizationStateDataBuffer<CollectionIdx>;
 
         template<s_enums::TransitionOrdering T_TransitionOrdering>
-
         using S_BoundBoundTransitionDataBuffer = BoundBoundTransitionDataBuffer<
             TypeNumber,
             TypeValue,
@@ -254,7 +254,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_PressureIonizationStateDataBox = PressureIonizationStateDataBox<CollectionIdx>;
 
         template<s_enums::TransitionOrdering T_TransitionOrdering>
-
         using S_BoundBoundTransitionDataBox = BoundBoundTransitionDataBox<
             TypeNumber,
             TypeValue,

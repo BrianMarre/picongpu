@@ -24,7 +24,6 @@
 
 #include <pmacc/dimensions/DataSpace.hpp>
 #include <pmacc/math/Vector.hpp>
-
 #include <pmacc/dimensions/DataSpace.hpp>
 
 #include <cstdint>
@@ -144,6 +143,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             // bound-bound transitions
             auto boundBoundTransitionDataBox
                 = atomicData->template getBoundBoundTransitionDataBox<true, enums::TransitionOrdering::byLowerState>();
+
             std::cout << "bound-bound transition" << std::endl;
             std::cout << "index :(low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
@@ -163,6 +163,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             // bound-free transitions
             auto boundFreeTransitionDataBox
                 = atomicData->template getBoundFreeTransitionDataBox<true, enums::TransitionOrdering::byLowerState>();
+
             std::cout << "bound-free transition" << std::endl;
             std::cout << "index (low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
@@ -210,6 +211,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             // bound-bound transitions
             auto boundBoundTransitionDataBox
                 = atomicData->template getBoundBoundTransitionDataBox<true, enums::TransitionOrdering::byUpperState>();
+
             std::cout << "inverse bound-bound transition" << std::endl;
             std::cout << "index :(low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
@@ -229,6 +231,7 @@ namespace picongpu::particles::atomicPhysics2::debug
             // bound-free transitions
             auto boundFreeTransitionDataBox
                 = atomicData->template getBoundFreeTransitionDataBox<true, enums::TransitionOrdering::byUpperState>();
+
             std::cout << "inverse bound-free transition" << std::endl;
             std::cout << "index :(low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
             for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)

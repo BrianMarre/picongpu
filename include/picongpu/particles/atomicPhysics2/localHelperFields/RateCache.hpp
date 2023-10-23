@@ -43,7 +43,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
      * @attention invalidated every time the local electron spectrum changes
      */
     template<uint32_t T_numberAtomicStates>
-    class RateCache
+    class TransitionMapCache
     {
     public:
         static constexpr uint32_t numberAtomicStates = T_numberAtomicStates;
@@ -97,7 +97,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
             if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
                 if(collectionIndex >= numberAtomicStates)
                 {
-                    printf("atomicPhysics ERROR: out of range in add() call on RateCache\n");
+                    printf("atomicPhysics ERROR: out of range in addBoundBound_Upward() call on RateCache\n");
                     return;
                 }
 
