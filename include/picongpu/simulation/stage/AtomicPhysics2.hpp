@@ -27,6 +27,15 @@
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
 #include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
+<<<<<<< HEAD
+=======
+#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics2/stage/AcceptTransitionTest.hpp"
+>>>>>>> 89435c350 (clangFormat)
 #include "picongpu/particles/atomicPhysics2/stage/BinElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CalculateStepLength.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CheckForOverSubscription.hpp"
@@ -204,7 +213,11 @@ namespace picongpu::simulation::stage
         {
             //! fix mismatches between boundElectrons and atomicStateCollectionIndex attributes
             using ForEachIonSpeciesFixAtomicState = pmacc::meta::
+<<<<<<< HEAD
                 ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
+=======
+                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
+>>>>>>> 89435c350 (clangFormat)
             //! reset macro particle attribute accepted to false for each ion species
             using ForEachIonSpeciesResetAcceptedStatus = pmacc::meta::ForEach<
                 AtomicPhysicsIonSpecies,

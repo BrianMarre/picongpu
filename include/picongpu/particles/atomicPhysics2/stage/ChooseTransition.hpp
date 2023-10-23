@@ -88,6 +88,7 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             // no-change transitions are already accepted by chooseTransitionTypeKernel
 
+<<<<<<< HEAD
             // bound-bound(upward) transitions
             if constexpr(AtomicDataType::switchElectronicExcitation)
             {
@@ -182,6 +183,15 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localRateCacheField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox());
             }
+=======
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::ChooseTransitionKernel(), workerCfg)
+            (mapper.getGridDim())(
+                mapper,
+                rngFactory,
+                localTimeRemainingField.getDeviceDataBox(),
+                ions.getDeviceParticlesBox(),
+                atomicData.template getTransitionSelectionDataBox<false>());
+>>>>>>> 89435c350 (clangFormat)
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

@@ -193,11 +193,21 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                         T_ChargeStateDataDataBox,
                                         T_AtomicStateDataDataBox,
                                         T_BoundFreeTransitionDataBox>(
+<<<<<<< HEAD
                                         energy,
                                         binWidth,
                                         density,
                                         // transitionCollectionIndex
                                         offset + transitionID,
+=======
+                                        histogram.getBinEnergy(binIndex),
+                                        histogram.getBinWidth(binIndex),
+                                        // 1/(UNIT_LENGTH^3*eV)
+                                        histogram.getBinWeight0(binIndex) / volumeScalingFactor
+                                            / histogram.getBinWidth(binIndex),
+                                        // transitionCollectionIndex
+                                        offset + i,
+>>>>>>> 89435c350 (clangFormat)
                                         chargeStateDataDataBox,
                                         atomicStateDataDataBox,
                                         boundFreeTransitionDataBox));
