@@ -17,26 +17,35 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements shorthand conversion function for enum to uint8_t
- *
- *  @attention do not use for enums with value ranges larger than uint8_t
- */
+//! @file implements enum of process directions
 
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2
 {
-    template<typename T_Enum>
-    constexpr uint8_t u8(T_Enum const enumInstance)
+    namespace enums
     {
-        return static_cast<uint8_t>(enumInstance);
-    }
+        //! predefined transitionOrderings
+        enum struct TransitionOrdering : uint8_t
+        {
+            byLowerState = 0u,
+            byUpperState = 1u
+        };
+    } // namespace enums
 
-    template<typename T_Enum>
-    constexpr uint32_t u32(T_Enum const enumInstance)
+    template<enums::TransitionOrdering T_TransitionOrdering>
+    ALPAKA_FN_HOST std::string enumToString()
     {
-        return static_cast<uint32_t>(enumInstance);
+        if constexpr(
+            static_cast<uint8_t>(T_TransitionOrdering)
+            == static_cast<uint8_t>(enums::TransitionOrdering::byLowerState))
+            return "byLowerState";
+        if constexpr(
+            static_cast<uint8_t>(T_TransitionOrdering)
+            == static_cast<uint8_t>(enums::TransitionOrdering::byUpperState))
+            return "byUpperState";
     }
 } // namespace picongpu::particles::atomicPhysics2

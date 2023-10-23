@@ -17,35 +17,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements enum of process directions
-
 #pragma once
 
+#include "picongpu/simulation_defines.hpp"
+
 #include <cstdint>
-#include <string>
 
 namespace picongpu::particles::atomicPhysics2
 {
-    namespace processClass
+    //! check if TransitionType previously assigned by chooseTransitionType is valid
+    template<typename T_Ion>
+    HDINLINE void checkForInvalidTransitionType(T_Ion const ion)
     {
-        //! predefined transitionOrderings
-        enum struct TransitionOrdering : uint8_t
+        if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::
+            CHECK_FOR_INVALID_TRANSITION_TYPE)
         {
-            byLowerState = 0u,
-            byUpperState = 1u
-        };
-    } // namespace processClass
+            constexpr uint32_t maxValueTransitionTypeIndex = picongpu::particles::atomicPhysics2::enums::
+                numberTransitionDataSets;
 
-    template<processClass::TransitionOrdering T_TransitionOrdering>
-    ALPAKA_FN_HOST std::string enumToString()
-    {
-        if constexpr(
-            static_cast<uint8_t>(T_TransitionOrdering)
-            == static_cast<uint8_t>(processClass::TransitionOrdering::byLowerState))
-            return "byLowerState";
-        if constexpr(
-            static_cast<uint8_t>(T_TransitionOrdering)
-            == static_cast<uint8_t>(processClass::TransitionOrdering::byUpperState))
-            return "byUpperState";
+            if(!ion[accepted_] && (ion[transitionIndex_] >= maxValueTransitionTypeIndex))
+                printf("atomicPhyiscs ERROR: detected invalid transitionType\n");
+        }
     }
 } // namespace picongpu::particles::atomicPhysics2

@@ -23,8 +23,8 @@
 // need unit.param, UNIT_LENGTH for normalisation
 
 #include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
-#include "picongpu/particles/atomicPhysics2/processClass/ProcessClassGroup.hpp"
-#include "picongpu/particles/atomicPhysics2/processClass/TransitionOrdering.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
 
 #include <pmacc/algorithms/math/PowerFunction.hpp>
@@ -35,7 +35,7 @@
 
 namespace picongpu::particles::atomicPhysics2::kernel
 {
-    namespace procClass = picongpu::particles::atomicPhysics2::processClass;
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
 
     /** fill rate cache kernel
      *
@@ -63,7 +63,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
         uint32_t T_numberAtomicStates,
         uint32_t T_numberBins,
         bool T_electronicIonization,
-        procClass::TransitionOrdering T_TransitionOrdering>
+        s_enums::TransitionOrdering T_TransitionOrdering>
     struct FillLocalRateCacheKernel_BoundFree
     {
         /** call operator
@@ -72,6 +72,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
+         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super cells
          * @param localRateCacheBox deviceDataBox giving access to the local rate cache of
          *  all local superCells
          * @param localElectronHistogramDataBox giving access to the local electron histograms
@@ -113,14 +114,14 @@ namespace picongpu::particles::atomicPhysics2::kernel
             PMACC_CASSERT_MSG(
                 number_transitions_dataBox_not_bound_free_based,
                 u8(T_AtomicStateNumberTransitionsBox::processClassGroup)
-                    == u8(procClass::ProcessClassGroup::boundFreeBased));
+                    == u8(s_enums::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT_MSG(
                 startIndex_dataBox_not_bound_free_based,
-                u8(T_AtomicStateStartIndexBox::processClassGroup) == u8(procClass::ProcessClassGroup::boundFreeBased));
+                u8(T_AtomicStateStartIndexBox::processClassGroup) == u8(s_enums::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT_MSG(
                 transition_dataBox_not_boud_free_based,
                 u8(T_BoundFreeTransitionDataBox::processClassGroup)
-                    == u8(procClass::ProcessClassGroup::boundFreeBased));
+                    == u8(s_enums::ProcessClassGroup::boundFreeBased));
             // check ordering of transition dataBox
             PMACC_CASSERT_MSG(
                 wrong_ordering_of_DataBox,
@@ -170,29 +171,29 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     constexpr float_X volumeScalingFactor
                         = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
 
-                    for(uint32_t i = static_cast<uint32_t>(0u); i < numberTransitionsUp; i++)
+                    for(uint32_t transitionID = static_cast<uint32_t>(0u); transitionID < numberTransitionsUp; ++transitionID)
                     {
                         if constexpr(T_electronicIonization)
                         {
-                            rateCache.add(
+                            rateCache.template add<T_Worker, s_enums::TransitionDataSet::boundFreeUpward>(
                                 worker,
                                 atomicStateCollectionIndex,
-                                -picongpu::particles::atomicPhysics2::rateCalculation::BoundFreeTransitionRates<
+                                picongpu::particles::atomicPhysics2::rateCalculation::BoundFreeTransitionRates<
                                     T_numberLevels>::
                                     template rateCollisionalIonizationTransition<
                                         T_ChargeStateDataDataBox,
                                         T_AtomicStateDataDataBox,
                                         T_BoundFreeTransitionDataBox>(
-                                        histogram.getBinEnergy(binIndex),
-                                        histogram.getBinWidth(binIndex),
-                                        // 1/(UNIT_LENGTH^3*eV)
-                                        histogram.getBinWeight0(binIndex) / volumeScalingFactor
-                                            / histogram.getBinWidth(binIndex),
-                                        // transitionCollectionIndex
-                                        offset + i,
-                                        chargeStateDataDataBox,
-                                        atomicStateDataDataBox,
-                                        boundFreeTransitionDataBox));
+                                            histogram.getBinEnergy(binIndex),
+                                            histogram.getBinWidth(binIndex),
+                                            // 1/(UNIT_LENGTH^3*eV)
+                                            histogram.getBinWeight0(binIndex) / volumeScalingFactor
+                                                / histogram.getBinWidth(binIndex),
+                                            // transitionCollectionIndex
+                                            offset + transitionID,
+                                            chargeStateDataDataBox,
+                                            atomicStateDataDataBox,
+                                            boundFreeTransitionDataBox));
                         }
                     }
                 });

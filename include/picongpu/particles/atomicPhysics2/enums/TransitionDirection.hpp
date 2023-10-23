@@ -17,26 +17,33 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements shorthand conversion function for enum to uint8_t
- *
- *  @attention do not use for enums with value ranges larger than uint8_t
- */
+//! @file transitionType enum, enum of transition data storage groups
 
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2
 {
-    template<typename T_Enum>
-    constexpr uint8_t u8(T_Enum const enumInstance)
+    namespace enums
     {
-        return static_cast<uint8_t>(enumInstance);
-    }
+        enum struct TransitionDirection : uint8_t
+        {
+            upward = 0u,
+            downward = 1u,
+        };
+    } // namespace enums
 
-    template<typename T_Enum>
-    constexpr uint32_t u32(T_Enum const enumInstance)
+    template<enums::TransitionDirection T_TransitionDirection>
+    ALPAKA_FN_HOST std::string enumToString()
     {
-        return static_cast<uint32_t>(enumInstance);
+        if constexpr(
+            static_cast<uint8_t>(T_TransitionDirection) == static_cast<uint8_t>(enums::TransitionDirection::upward))
+            return "upward";
+        if constexpr(
+            static_cast<uint8_t>(T_TransitionDirection) == static_cast<uint8_t>(enums::TransitionDirection::downward))
+            return "downward";
+        return "unknown";
     }
-} // namespace picongpu::particles::atomicPhysics2
+} // namespace picongpu::particles::atomicPhysics2T
