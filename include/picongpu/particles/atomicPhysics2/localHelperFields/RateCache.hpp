@@ -43,7 +43,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
      * @attention invalidated every time the local electron spectrum changes
      */
     template<uint32_t T_numberAtomicStates>
-    class TransitionMapCache
+    class RateCache
     {
     public:
         static constexpr uint32_t numberAtomicStates = T_numberAtomicStates;
@@ -78,6 +78,9 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
     public:
         /** add to cache entry, using atomics
          *
+         * @tparam T_TransitionType type of transition
+         * @tparam T_TransitionDirection direction of transition
+         *
          * @param worker object containing the device and block information
          * @param collectionIndex collection Index of atomic state to add rate to
          * @param rate rate of transition, [1/UNIT_TIME]
@@ -97,7 +100,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
             if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
                 if(collectionIndex >= numberAtomicStates)
                 {
-                    printf("atomicPhysics ERROR: out of range in addBoundBound_Upward() call on RateCache\n");
+                    printf("atomicPhysics ERROR: out of range in add() call on RateCache\n");
                     return;
                 }
 
@@ -166,7 +169,6 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          *
          * @attention no range checks outside a debug compile, invalid memory write on failure
          */
-        template<typename T_Worker>
         HDINLINE void setPresent(T_Worker const& worker, uint32_t const collectionIndex, bool const status)
         {
             if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
@@ -184,6 +186,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          *
          * @param transitionDataSetIndex collectionIndex of transitionDataSet to get rate for
          * @param collectionIndex collection index of atomic state to get rate for
+         *
          * @return rate of transition, [1/UNIT_TIME], 0 if unknown T_TransitionType T_TransitionDirection combination
          *
          * @attention no range checks outside a debug compile, invalid memory access on failure
@@ -298,12 +301,18 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
         //! debug only, write content of rate cache to console, @attention serial and cpu build only
         HINLINE void printToConsole(pmacc::DataSpace<picongpu::simDim> superCellFieldIdx) const
         {
-            std::cout << "rateCache: " << superCellFieldIdx.toString(",", "[]") << std::endl;
+            std::cout << "rateCache" << superCellFieldIdx.toString(",", "[]")
+                << " atomicStateCollectionIndex [bb(up), bb(down), bf(up), a(down)]" << std::endl;
             for(uint16_t i = 0u; i < numberAtomicStates; i++)
             {
                 if(this->present(i))
                 {
-                    std::cout << "\t" << i << "[" << this->rate(i) << "]" << std::endl;
+                    std::cout << "\t" << i << "["
+                        << this->rateBoundBoundUpward[i] << ", "
+                        << this->rateBoundBoundDownward[i] << ", "
+                        << this->rateBoundFreeUpward[i] << ", "
+                        << this->rateAutonomousDownward[i] << ", "
+                        << "]" << std::endl;
                 }
             }
         }
