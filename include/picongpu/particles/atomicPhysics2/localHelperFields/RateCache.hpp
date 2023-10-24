@@ -30,8 +30,6 @@
 #include <pmacc/dimensions/DataSpace.hpp>
 #include <pmacc/static_assert.hpp>
 
-#include <pmacc/dimensions/DataSpace.hpp>
-
 #include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2::localHelperFields
@@ -52,23 +50,9 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
             = particles::atomicPhysics2::enums::numberTransitionDataSets - 1u;
 
     private:
-<<<<<<< HEAD
         // partial sums of rates for each atomic state, one for each TransitionDataSet except noChange
         // 1/UNIT_TIME
         float_X rateEntries[T_numberAtomicStates * numberStoredDataSets] = {0};
-=======
-        // partial sums of rates for each atomic state
-        // 1/UNIT_TIME
-        float_X rateBoundBoundUpward[T_numberAtomicStates] = {0};
-        // 1/UNIT_TIME
-        float_X rateBoundBoundDownward[T_numberAtomicStates] = {0};
-        // 1/UNIT_TIME
-        float_X rateBoundFreeUpward[T_numberAtomicStates] = {0};
-        // 1/UNIT_TIME
-        float_X rateAutonomousDownward[T_numberAtomicStates] = {0};
-        /// @todo add rate_boundFree_Downward for recombination, Brian Marre, 2023
-
->>>>>>> 6de350203 (update fillLocalRateCacheKernels)
         uint32_t m_present[T_numberAtomicStates] = {static_cast<uint32_t>(false)}; // unitless
 
         /** get linear storage index
@@ -92,8 +76,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
     public:
         /** add to cache entry, using atomics
          *
-         * @tparam T_TransitionType type of transition
-         * @tparam T_TransitionDirection direction of transition
+         * @tparam T_TransitionDataSet TransitionDataSet to add rate to
          *
          * @param worker object containing the device and block information
          * @param collectionIndex collection Index of atomic state to add rate to
@@ -185,14 +168,10 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
          */
         HDINLINE void setPresent(T_Worker const& worker, uint32_t const collectionIndex, bool const status)
         {
-            if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
-                if(collectionIndex >= numberAtomicStates)
-                {
-                    printf("atomicPhysics ERROR: out of range in add() call on RateCache\n");
-                    return;
-                }
-
-            cupla::atomicExch(worker.getAcc(), &(this->m_present[collectionIndex]), static_cast<uint32_t>(status));
+            cupla::atomicExch(
+                worker.getAcc(),
+                &(this->m_present[linearIndex(collectionIndex, u32(T_TransitionDataSet))]),
+                static_cast<uint32_t>(status));
             return;
         }
 
@@ -293,7 +272,7 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
             }
         }
 
-        /** get chached total loss rate for an atomic state
+        /** get cached total loss rate for an atomic state
          *
          * @param collectionIndex collection Index of atomic state
          * @return rate of transition, [1/UNIT_TIME], by convention >0
@@ -309,10 +288,13 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
                     printf("atomicPhysics ERROR: out of range in totalLossRate() call on rateCache\n");
                     return 0._X;
                 }
-            return rateBoundBoundUpward[collectionIndex]
-                + rateBoundBoundDownward[collectionIndex]
-                + rateBoundFreeUpward[collectionIndex]
-                + rateAutonomousDownward[collectionIndex];
+
+            float_X totalLossRate = 0._X;
+            for (uint8_t i=0u; i < numberDataSets; ++i)
+            {
+                totalLossRate += rateEntries[linearIndex(collectionIndex, u32(T_TransitionDataSet))]
+            }
+            return totalLossRate;
         }
 
         /** get presence status for an atomic state
@@ -343,12 +325,13 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
             {
                 if(this->present(i))
                 {
-                    std::cout << "\t" << i << "["
-                        << this->rateBoundBoundUpward[i] << ", "
-                        << this->rateBoundBoundDownward[i] << ", "
-                        << this->rateBoundFreeUpward[i] << ", "
-                        << this->rateAutonomousDownward[i] << ", "
-                        << "]" << std::endl;
+                    std::cout << "\t" << i << "[";
+                    for (uint8_t i=0u; i < (numberDataSets-1u); ++i)
+                    {
+                        std::cout << rateEntries[linearIndex(collectionIndex, i)] << ", ";
+                    }
+                    // last dataSet
+                    std::cout << rateEntries[linearIndex(collectionIndex, numberDataSets-1u)] << "]" << std::endl;
                 }
             }
         }

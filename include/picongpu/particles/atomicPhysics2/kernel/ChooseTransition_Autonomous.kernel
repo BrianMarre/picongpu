@@ -61,8 +61,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          *  atomic states block of transitions
          * @param transitionDataBox deviceDataBox giving access to autonomous
          *  transition property data
-         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super
-         * cells
+         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super cells
          * @param localRateCacheBox deviceDataBox giving access the local rate cache of all local super cells
          * @param ionBox deviceDataBox giving access to the species particle frames of all local super cells
          */
@@ -108,6 +107,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
+
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
