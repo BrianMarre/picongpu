@@ -158,7 +158,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X const r = rngGeneratorFloat();
 
                     // compare to cumulative sum of normalized transition rates to find choosen transition
-
                     float_X cumSum = 0._X;
                     for(uint32_t transitionID = 0u; transitionID < numberTransitionsDown; ++transitionID)
                     {

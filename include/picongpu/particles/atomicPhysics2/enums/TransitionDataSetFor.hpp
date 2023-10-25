@@ -66,6 +66,7 @@ namespace picongpu::particles::atomicPhysics2::enums
     {
         static constexpr TransitionDataSet dataSet = TransitionDataSet::noChange;
     };
+
     template<>
     struct TransitionDataSetFor<TransitionType::noChange, TransitionDirection::downward>
     {
