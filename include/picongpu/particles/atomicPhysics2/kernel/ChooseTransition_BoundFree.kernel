@@ -27,6 +27,8 @@
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDataSet.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionOrderingFor.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
@@ -46,10 +48,16 @@ namespace picongpu::particles::atomicPhysics2::kernel
      *
      * @tparam T_Histogram type of the histogram
      * @tparam T_n_max number of levels of atomic states in input
+     * @tparam T_IPDModel ionization potential depression model to use
      * @tparam T_electronicIonization is channel active?
      * @tparam T_fieldIonization is channel active?
      */
-    template<typename T_Histogram, uint8_t T_n_max, bool T_electronicIonization, bool T_fieldIonization>
+    template<
+        typename T_Histogram,
+        uint8_t T_n_max,
+        typename T_IPDModel,
+        bool T_electronicIonization,
+        bool T_fieldIonization>
     struct ChooseTransitionKernel_BoundFree
     {
         template<typename T_Ion>
@@ -91,7 +99,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
             typename T_LocalTimeRemainingBox,
             typename T_LocalElectronHistogramDataBox,
             typename T_LocalRateCacheBox,
-            typename T_IonBox>
+            typename T_IonBox,
+            typename... T_IPDInput>
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
@@ -104,7 +113,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_LocalTimeRemainingBox const localTimeRemainingBox,
             T_LocalElectronHistogramDataBox localElectronHistogramDataBox,
             T_LocalRateCacheBox localRateCacheBox,
-            T_IonBox ionBox) const
+            T_IonBox ionBox,
+            T_IPDInput const... ipdInput) const
         {
             // check that correct databoxes are given
             PMACC_CASSERT_MSG(
@@ -148,9 +158,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
             PMACC_SMEM(worker, cachedHistogram, CachedHistogram<T_Histogram::numberBins>);
             cachedHistogram.fill(worker, electronHistogram, volumeScalingFactor);
 
+            float_X const ionizationPotentialDepression
+                = T_IPDModel::template calculateIPD<T_ChargeStateDataDataBox::atomicNumber>(
+                    superCellFieldIdx,
+                    ipdInput...);
 
             // check whether bound-free transition and if yes,
-            //      extract transition and roll random bin
+            //      roll specific transition and bin
             forEachLocalIonBoxEntry(
                 [&rngGeneratorFloat,
                  &chargeStateDataDataBox,
@@ -159,7 +173,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &startIndexBox,
                  &transitionDataBox,
                  &cachedHistogram,
-                 &rateCache](T_Worker const& worker, auto& ion)
+                 &rateCache,
+                 &ionizationPotentialDepression](T_Worker const& worker, auto& ion)
                 {
                     // debug
                     checkForInvalidTransitionType(ion);
@@ -211,6 +226,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                         cachedHistogram.energy[binIndex],
                                         cachedHistogram.binWidth[binIndex],
                                         cachedHistogram.density[binIndex],
+                                        ionizationPotentialDepression,
                                         transitionID + startIndexTransitionBlock,
                                         chargeStateDataDataBox,
                                         atomicStateDataDataBox,
@@ -247,6 +263,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::electronicIonization),
                         startIndexTransitionBlock + numberTransitions - 1u,
                         numberBins - 1u);
+
+                    // debug
+                    printAcceptedTransitionToConsole(ion);
                 });
         }
 

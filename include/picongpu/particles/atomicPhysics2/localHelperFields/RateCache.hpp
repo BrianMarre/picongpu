@@ -76,8 +76,6 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
     public:
         /** add to cache entry, using atomics
          *
-         * @tparam T_TransitionDataSet TransitionDataSet to add rate to
-         *
          * @param worker object containing the device and block information
          * @param collectionIndex collection Index of atomic state to add rate to
          * @param rate rate of transition, [1/UNIT_TIME]
@@ -161,16 +159,17 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
         /** set indicator if atomic state is present
          *
          * @param worker object containing the device and block information
-         * @param collectionIndex collection Index of atomic state
+         * @param collectionIndex collection index of atomic state to set present for
          * @param status presence status to set, true =^= present, false =^= not present
          *
          * @attention no range checks outside a debug compile, invalid memory write on failure
          */
+        template<typename T_Worker>
         HDINLINE void setPresent(T_Worker const& worker, uint32_t const collectionIndex, bool const status)
         {
             cupla::atomicExch(
                 worker.getAcc(),
-                &(this->m_present[linearIndex(collectionIndex, u32(T_TransitionDataSet))]),
+                &(this->m_present[collectionIndex]),
                 static_cast<uint32_t>(status));
             return;
         }
@@ -290,9 +289,10 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
                 }
 
             float_X totalLossRate = 0._X;
-            for (uint8_t i=0u; i < numberDataSets; ++i)
+            for (uint32_t transitionDataSetIndex = 0u; transitionDataSetIndex < numberStoredDataSets;
+                 ++transitionDataSetIndex)
             {
-                totalLossRate += rateEntries[linearIndex(collectionIndex, u32(T_TransitionDataSet))]
+                totalLossRate += rateEntries[linearIndex(collectionIndex, transitionDataSetIndex)];
             }
             return totalLossRate;
         }
@@ -309,8 +309,8 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
             if constexpr(picongpu::atomicPhysics2::debug::rateCache::COLLECTION_INDEX_RANGE_CHECKS)
                 if(collectionIndex >= numberAtomicStates)
                 {
-                    printf("atomicPhysics ERROR: out of range in rate() call on rateCache\n");
-                    return 0._X;
+                    printf("atomicPhysics ERROR: out of range in present() call on rateCache\n");
+                    return false;
                 }
 
             return m_present[collectionIndex];
@@ -320,18 +320,20 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
         HINLINE void printToConsole(pmacc::DataSpace<picongpu::simDim> superCellFieldIdx) const
         {
             std::cout << "rateCache" << superCellFieldIdx.toString(",", "[]")
-                << " atomicStateCollectionIndex [bb(up), bb(down), bf(up), a(down)]" << std::endl;
-            for(uint16_t i = 0u; i < numberAtomicStates; i++)
+                      << " atomicStateCollectionIndex [bb(up), bb(down), bf(up), a(down)]" << std::endl;
+            for(uint16_t collectionIndex = 0u; collectionIndex < numberAtomicStates; ++collectionIndex)
             {
-                if(this->present(i))
+                if(this->present(collectionIndex))
                 {
-                    std::cout << "\t" << i << "[";
-                    for (uint8_t i=0u; i < (numberDataSets-1u); ++i)
+                    std::cout << "\t" << collectionIndex << "[";
+                    for(uint32_t transitionDataSetIndex = 0u; transitionDataSetIndex < (numberStoredDataSets - 1u);
+                        ++transitionDataSetIndex)
                     {
-                        std::cout << rateEntries[linearIndex(collectionIndex, i)] << ", ";
+                        std::cout << rateEntries[linearIndex(collectionIndex, transitionDataSetIndex)] << ", ";
                     }
                     // last dataSet
-                    std::cout << rateEntries[linearIndex(collectionIndex, numberDataSets-1u)] << "]" << std::endl;
+                    std::cout << rateEntries[linearIndex(collectionIndex, numberStoredDataSets - 1u)] << "]"
+                              << std::endl;
                 }
             }
         }

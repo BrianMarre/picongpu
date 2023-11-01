@@ -21,10 +21,13 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/SetAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/initElectrons/InitIonizationElectrons.hpp"
 #include "picongpu/particles/creation/SpawnFromSourceSpecies.kernel"
 #include "picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp"
+
+#include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
 {
@@ -119,10 +122,12 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             auto const currentAtomicStateConfigNumber = atomicStateBox.configNumber(currentAtomicStateClctIdx);
             float_X const atomicStateEnergy = atomicStateBox.energy(currentAtomicStateClctIdx);
 
+            uint32_t& foundUnbound = localAllIonsInBoundStateBox(superCellFieldIndex);
+
             // fully ionized state has no pressure ionization state --> currentChargeState < T_atomicNumber
             uint8_t const currentChargeState
                 = T_AtomicStateDataBox::ConfigNumber::getChargeState(currentAtomicStateConfigNumber);
-            uint8_t const chargeStatePressureIonizationState = T_AtomicStateDataBox::ConfigNumber::getChargeState(
+            uint8_t const pressureIonizationStateChargeState = T_AtomicStateDataBox::ConfigNumber::getChargeState(
                 atomicStateBox.configNumber(pressureIonizationStateClctIdx));
 
             // eV
@@ -135,11 +140,14 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
 
             if(ipdIonizationEnergy < 0._X)
             {
-                // update ion atomic state
-                ion[atomicStateCollectionIndex_] = pressureIonizationStateClctIdx;
+                // update ion
+                SetAtomicState::hard(
+                    ion,
+                    T_ChargeStateDataBox::atomicNumber - pressureIonizationStateChargeState,
+                    pressureIonizationStateClctIdx);
 
                 // get number of electrons to spawn
-                numberIonizationElectrons = chargeStatePressureIonizationState - currentChargeState;
+                numberIonizationElectrons = pressureIonizationStateChargeState - currentChargeState;
 
                 // set flag that at least one ions was in unbound state
                 alpaka::atomicExch(

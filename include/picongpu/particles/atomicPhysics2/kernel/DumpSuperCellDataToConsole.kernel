@@ -77,9 +77,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 - areaMapping.getGuardingSuperCells();
 
             // get histogram for current superCell
-            auto const& fieldValue = superCellFieldBox(superCellFieldIdx);
+            [[maybe_unused]] auto const& fieldValue = superCellFieldBox(superCellFieldIdx);
 
-            T_PrintFunctor{}(fieldValue, superCellFieldIdx);
+            //! @todo add compile guard to remove code on device, Brian Marre, 2023
+            // T_PrintFunctor{}(fieldValue, superCellFieldIdx);
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

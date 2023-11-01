@@ -56,6 +56,8 @@ namespace picongpu::particles::atomicPhysics2::stage
         using DistributionFloat = pmacc::random::distributions::Uniform<float_X>;
         using RngFactoryFloat = particles::functor::misc::Rng<DistributionFloat>;
 
+        using IPDModel = picongpu::atomicPhysics2::IPDModel;
+
         //! call of kernel for every superCell
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc, uint32_t currentStep) const
         {
@@ -77,9 +79,8 @@ namespace picongpu::particles::atomicPhysics2::stage
             //      bound-free based transitions
             if constexpr(AtomicDataType::switchElectronicIonization || AtomicDataType::switchFieldIonization)
             {
-                using SpawnElectrons_BoundFree
-                    = picongpu::particles::atomicPhysics2::kernel::SpawnIonizationMacroElectronsKernel<
-                        enums::ProcessClassGroup::boundFreeBased>;
+                using SpawnElectrons_BoundFree = picongpu::particles::atomicPhysics2::kernel::
+                    SpawnIonizationMacroElectronsKernel<IPDModel, enums::ProcessClassGroup::boundFreeBased>;
 
                 // spawn ionization electrons for bound-free based processes
                 PMACC_LOCKSTEP_KERNEL(SpawnElectrons_BoundFree(), workerCfg)
@@ -97,15 +98,14 @@ namespace picongpu::particles::atomicPhysics2::stage
             //      autonomous based transitions
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
-                using SpawnElectrons_Autonomous
-                    = picongpu::particles::atomicPhysics2::kernel::SpawnIonizationMacroElectronsKernel<
-                        enums::ProcessClassGroup::autonomousBased>;
+                using SpawnElectrons_Autonomous = picongpu::particles::atomicPhysics2::kernel::
+                    SpawnIonizationMacroElectronsKernel<IPDModel, enums::ProcessClassGroup::autonomousBased>;
 
                 RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
-                // spawn ionization electrons for autonomous based processes
-                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_Autonomous(), workerCfg)
-                (mapper.getGridDim())(
+                IPDModel::template callKernelWithIPDInput<SpawnElectrons_Autonomous>(
+                    dc,
+                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),

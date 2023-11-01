@@ -38,10 +38,9 @@
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/ParticlesFunctors.hpp"
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
-#include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.param" /// @todo move to atomicPhysics2.param, Brian Marre, 2024
 #include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.hpp"
-#include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
 #include "picongpu/particles/filter/filter.hpp"
 #include "picongpu/particles/manipulators/manipulators.hpp"
@@ -697,16 +696,6 @@ namespace picongpu
         bool skipSimulation{false};
 
     private:
-        /** list of all species of macro particles with atomicPhysics input data
-         *
-         * as defined in species.param, is list of types
-         * @todo use different Flag?, Brian Marre, 2022
-         */
-        using SpeciesWithAtomicPhysicsInputData =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
-        using AtomicPhysicsSpecies =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
-
         /** Get available memory on device
          *
          * @attention This method is using MPI collectives and must be called from all MPI processes collectively.

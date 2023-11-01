@@ -69,6 +69,18 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         }
     };
 
+    //! specialisation for pressureIonization
+    template<>
+    struct InitIonizationElectron<s_enums::ProcessClass::pressureIonization>
+    {
+        //! call operator
+        template<typename T_IonParticle, typename T_ElectronParticle>
+        HDINLINE void operator()(T_IonParticle& ion, T_ElectronParticle& electron) const
+        {
+            CoMoving::initElectron<T_IonParticle, T_ElectronParticle>(ion, electron);
+        }
+    };
+
     /** specialisation for electronicIonization
      *
      * @attention not momentum conserving! We do not model a three body inelastic
@@ -105,6 +117,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             typename T_ChargeStateDataBox>
         HDINLINE void operator()(
             T_Worker const& worker,
+            float_X const ionizationPotentialDepression,
             T_IonParticle& ion,
             T_ElectronParticle& electron,
             T_AtomicStateDataBox const atomicStateDataBox,
@@ -121,12 +134,12 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
             auto rngGenerator = rngFactory(worker, superCellLocalOffset);
 
-            float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition ::
-                get<T_AtomicStateDataBox, T_AutonomousTransitionDataBox, T_ChargeStateDataBox>(
-                    transitionIndex,
-                    atomicStateDataBox,
-                    autonomousTransitionDataBox,
-                    chargeStateDataBox);
+            float_X const deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                transitionIndex,
+                atomicStateDataBox,
+                autonomousTransitionDataBox,
+                ionizationPotentialDepression,
+                chargeStateDataBox);
 
             Inelastic2BodyCollisionFromCoMoving::initElectron<T_IonParticle, T_ElectronParticle>(
                 ion,

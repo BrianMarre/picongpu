@@ -111,9 +111,10 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             constexpr float_64 mass
                 = static_cast<float_64>(picongpu::traits::frame::getMass<typename T_IonParticle::FrameType>());
 
-            // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
-            constexpr float_64 m2c2
-                = pmacc::math::cPow(mass * picongpu::SI::SPEED_OF_LIGHT_SI / (UNIT_LENGTH / UNIT_TIME), 2u);
+            // ((UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted)
+            //  / (UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted)) + unitless
+            // unitless, not weighted
+            float_64 const gamma = math::sqrt(momentumSquared_Lab / m2c2 + 1.0);
 
             // (UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted) / weighting
             //      / sqrt( (UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted)

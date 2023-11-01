@@ -66,6 +66,9 @@ namespace picongpu::particles::atomicPhysics2::stage
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
+        // ionization potential depression model to use
+        using IPDModel = picongpu::atomicPhysics2::IPDModel;
+
         //! call of kernel for every superCell
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
         {
@@ -150,14 +153,16 @@ namespace picongpu::particles::atomicPhysics2::stage
             if constexpr(AtomicDataType::switchElectronicIonization)
             {
                 using FillLocalRateCacheUpWardBoundFree = kernel::FillLocalRateCacheKernel_BoundFree<
+                    IPDModel,
                     n_max,
                     numberAtomicStatesOfSpecies,
                     numberBins,
                     AtomicDataType::switchElectronicIonization,
                     enums::TransitionOrdering::byLowerState>;
 
-                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheUpWardBoundFree(), workerCfg)
-                (mapper.getGridDim())(
+                IPDModel::template callKernelWithIPDInput<FillLocalRateCacheUpWardBoundFree>(
+                    dc,
+                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     localRateCacheField.getDeviceDataBox(),

@@ -279,7 +279,10 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation::debug
             float_X const correctCrossSection = 8.051678880120e-01; // 1e6b
             float_X const crossSection
                 = rateCalculation::BoundFreeTransitionRates<T_n_max, true>::collisionalIonizationCrossSection(
-                    energyElectron, // eV
+                    // eV
+                    energyElectron,
+                    // ionization potential depression, eV
+                    0._X,
                     0u,
                     chargeStateBuffer->getHostDataBox(),
                     atomicStateBuffer->getHostDataBox(),
@@ -303,8 +306,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation::debug
                           template rateCollisionalBoundBoundTransition<S_AtomicStateBox, S_BoundBoundBox, true>(
                               energyElectron,
                               energyElectronBinWidth,
-                              static_cast<float_X>(densityElectrons * pmacc::math::cPow(picongpu::UNIT_LENGTH, 3u)),
                               // 1/(eV*m^3) * (m/UNIT_LENGTH)^3 = = 1/(eV * UNIT_LENGTH^3)
+                              static_cast<float_X>(densityElectrons * pmacc::math::cPow(picongpu::UNIT_LENGTH, 3u)),
                               0u,
                               atomicStateBuffer->getHostDataBox(),
                               boundBoundBuffer->getHostDataBox()))
@@ -357,6 +360,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation::debug
                           energyElectron,
                           energyElectronBinWidth,
                           static_cast<float_X>(densityElectrons * pmacc::math::cPow(picongpu::UNIT_LENGTH, 3u)),
+                          // ionization potential depression
+                          0._X,
                           0u,
                           chargeStateBuffer->getHostDataBox(),
                           atomicStateBuffer->getHostDataBox(),

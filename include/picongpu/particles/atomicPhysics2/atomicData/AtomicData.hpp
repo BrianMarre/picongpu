@@ -82,7 +82,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     } // namespace detail
 
     namespace s_enums = picongpu::particles::atomicPhysics2::enums;
-
     using ProcClassGroup = picongpu::particles::atomicPhysics2::enums::ProcessClassGroup;
 
     /** gathering of all atomicPhyiscs input data
@@ -276,7 +275,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
         //@}
-
     private:
         // pointers to storage
         // charge state data
@@ -878,6 +876,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     collectionIndex,
                     this->getAtomicStateDataDataBox<true>(),
                     transitionHostBox,
+                    // ionization potential depression
+                    0._X,
                     this->getChargeStateDataDataBox<true>());
 
                 if(deltaEnergy < 0._X)
@@ -1012,6 +1012,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                             startIndexBlock,
                             atomicStateHostBox,
                             transitionHostBox,
+                            // ionization potential depression
+                            0._X,
                             chargeStateHostBox));
                     CollectionIdx index = 0u;
 
@@ -1024,6 +1026,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                                 startIndexBlock + i,
                                 atomicStateHostBox,
                                 transitionHostBox,
+                                // ionization potential depression
+                                0._X,
                                 chargeStateHostBox));
 
                         if(deltaEnergy < lowestAbsoluteDeltaEnergy)
@@ -1187,6 +1191,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             chargeStateOrgaDataBuffer->hostToDevice();
         }
+
 
         /** fill the upward atomic state orga buffers for a transition group
          *

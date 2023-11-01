@@ -61,7 +61,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
          *  atomic states block of transitions
          * @param transitionDataBox deviceDataBox giving access to autonomous
          *  transition property data
-         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super cells
+         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
          * @param localRateCacheBox deviceDataBox giving access the local rate cache of all local super cells
          * @param ionBox deviceDataBox giving access to the species particle frames of all local super cells
          */
@@ -107,7 +108,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
-
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -158,6 +158,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X const r = rngGeneratorFloat();
 
                     // compare to cumulative sum of normalized transition rates to find choosen transition
+
                     float_X cumSum = 0._X;
                     for(uint32_t transitionID = 0u; transitionID < numberTransitionsDown; ++transitionID)
                     {
@@ -176,6 +177,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             return;
                         }
                     }
+
+                    // select last resort, choose last possible transition
+                    updateIon(
+                        ion,
+                        u8(s_enums::ProcessClass::autonomousIonization),
+                        startIndexTransitionBlock + numberTransitionsDown - 1u);
 
                     // select last resort, choose last possible transition
                     updateIon(

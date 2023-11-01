@@ -25,13 +25,12 @@
 
 #include "picongpu/particles/InitFunctors.hpp"
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
-#include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.param"
 #include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/BinElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CalculateStepLength.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CheckForOverSubscription.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CheckPresence.hpp"
-#include "picongpu/particles/atomicPhysics2/stage/ChooseTransitionType.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ChooseTransition.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ChooseTransitionType.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/DecelerateElectrons.hpp"
@@ -41,6 +40,7 @@
 #include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/RecordChanges.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/RecordSuggestedChanges.hpp"
+#include "picongpu/particles/atomicPhysics2/stage/ResetAcceptedStatus.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ResetDeltaWeightElectronHistogram.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ResetLocalRateCache.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/ResetLocalTimeStepField.hpp"
@@ -287,7 +287,7 @@ namespace picongpu::simulation::stage
             static pmacc::device::Reduce deviceLocalReduce = pmacc::device::Reduce(static_cast<uint32_t>(1200u));
 
             setTimeRemaining(); // = (Delta t)_PIC
-            // atomic state and charge state inconsistency
+            // fix atomic state and charge state inconsistency
             ForEachIonSpeciesFixAtomicState{}(mappingDesc);
 
             uint16_t counterSubStep = 0u;
@@ -300,11 +300,18 @@ namespace picongpu::simulation::stage
                 // particle[accepted_] = false, in each macro ion
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
                 resetHistograms();
+
                 if constexpr(picongpu::atomicPhysics2::debug::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesSetTemperature{}(currentStep);
                 }
+
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
+
+                // calculate ionization potential depression parameters for every superCell
+                picongpu::atomicPhysics2::IPDModel::template calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
+                    mappingDesc,
+                    currentStep);
 
                 if constexpr(picongpu::atomicPhysics2::debug::electronHistogram::PRINT_TO_CONSOLE)
                 {
@@ -317,8 +324,10 @@ namespace picongpu::simulation::stage
                 ForEachIonSpeciesCheckPresenceOfAtomicStates{}(mappingDesc);
                 // R_ii = -(sum of rates of all transitions from state i to some other state j)
                 ForEachIonSpeciesFillLocalRateCache{}(mappingDesc);
+
                 if constexpr(picongpu::atomicPhysics2::debug::rateCache::PRINT_TO_CONSOLE)
                     ForEachIonSpeciesDumpRateCacheToConsole{}(mappingDesc);
+
                 // min(1/(-R_ii)) * alpha
                 ForEachIonSpeciesCalculateStepLength{}(mappingDesc);
 
@@ -530,12 +539,4 @@ namespace picongpu::simulation::stage
                        fieldGridLayoutTimeRemaining.productOfComponents())
                    <= 0._X)
                 {
-                    break;
-                }
-
-                // debug only
-                counterSubStep++;
-            } // end atomicPhysics sub-stepping loop
-        }
-    };
-} // namespace picongpu::simulation::stage
+           

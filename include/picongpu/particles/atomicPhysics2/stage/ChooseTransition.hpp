@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -21,13 +21,12 @@
 
 #pragma once
 
+#include "picongpu/simulation_defines.hpp"
+
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_Autonomous.kernel"
 #include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_BoundBound.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_BoundFree.kernel"
-
-#include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
-#include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
-
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 
 namespace picongpu::particles::atomicPhysics2::stage
@@ -42,11 +41,14 @@ namespace picongpu::particles::atomicPhysics2::stage
      * @tparam T_IonSpecies ion species type
      */
     template<typename T_IonSpecies>
-    struct Choose Transition
+    struct ChooseTransition
     {
         // might be alias, from here on out no more
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
+
+        // ionization potential depression model to use
+        using IPDModel = picongpu::atomicPhysics2::IPDModel;
 
         using DistributionFloat = pmacc::random::distributions::Uniform<float_X>;
         using RngFactoryFloat = particles::functor::misc::Rng<DistributionFloat>;
@@ -55,10 +57,9 @@ namespace picongpu::particles::atomicPhysics2::stage
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
             // full local domain, no guards
-            pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
+            pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<T_IonSpecies::FrameType::frameSize>();
+            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
             auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
@@ -70,13 +71,14 @@ namespace picongpu::particles::atomicPhysics2::stage
                 = *dc.get<picongpu::particles::atomicPhysics2::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>>(
                     "Electron_localHistogramField");
-            using RateCache = picongpu::particles::atomicPhysics2::localHelperFields::
+            using RateCache = typename picongpu::particles::atomicPhysics2::localHelperFields::
                 LocalRateCacheField<picongpu::MappingDesc, IonSpecies>::entryType;
             auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::
-                LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                    IonSpecies::FrameType::getName() + "_localRateCacheField");
+                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_localRateCacheField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
+
             RngFactoryFloat rngFactoryFloat = RngFactoryFloat{currentStep};
 
             // no-change transitions are already accepted by chooseTransitionTypeKernel
@@ -99,7 +101,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
                     atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, s_enums:TransitionOrdering::byLowerState>,
+                    atomicData
+                        .template getBoundBoundTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
                     localTimeRemainingField.getDeviceDataBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     localRateCacheField.getDeviceDataBox(),
@@ -124,7 +127,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
                     atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, s_enums:TransitionOrdering::byUpperState>,
+                    atomicData
+                        .template getBoundBoundTransitionDataBox<false, s_enums::TransitionOrdering::byUpperState>(),
                     localTimeRemainingField.getDeviceDataBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     localRateCacheField.getDeviceDataBox(),
@@ -134,21 +138,25 @@ namespace picongpu::particles::atomicPhysics2::stage
             // bound-free(upward) transitions
             if constexpr(AtomicDataType::switchElectronicIonization || AtomicDataType::switchFieldIonization)
             {
-                PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel::ChooseTransitionKernel_BoundFree<
+                using ChooseTransitionKernel_BoundFree
+                    = picongpu::particles::atomicPhysics2::kernel::ChooseTransitionKernel_BoundFree<
                         picongpu::atomicPhysics2::ElectronHistogram,
                         AtomicDataType::ConfigNumber::numberLevels,
+                        IPDModel,
                         AtomicDataType::switchElectronicIonization,
-                        AtomicDataType::switchFieldIonization>(),
-                    workerCfg)
-                (mapper.getGridDim())(
+                        AtomicDataType::switchFieldIonization>;
+
+                IPDModel::template callKernelWithIPDInput<ChooseTransitionKernel_BoundFree>(
+                    dc,
+                    workerCfg,
                     mapper,
                     rngFactoryFloat,
                     atomicData.template getChargeStateDataDataBox<false>(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData.template getBoundFreeNumberTransitionsDataBox<false>(),
-                    atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
-                    atomicData.template getBoundBoundTransitionDataBox<false, s_enums:TransitionOrdering::byLowerState>,
+                    atomicData.template getBoundFreeStartIndexBlockDataBox<false>(),
+                    atomicData
+                        .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
                     localTimeRemainingField.getDeviceDataBox(),
                     localElectronHistogramField.getDeviceDataBox(),
                     localRateCacheField.getDeviceDataBox(),
@@ -166,7 +174,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                     rngFactoryFloat,
                     atomicData.template getAutonomousNumberTransitionsDataBox<false>(),
                     atomicData.template getAutonomousStartIndexBlockDataBox<false>(),
-                    atomicData.template getAutonomousTransitionDataBox<false, s_enums::TransitionOrdering::byUpperState>
+                    atomicData
+                        .template getAutonomousTransitionDataBox<false, s_enums::TransitionOrdering::byUpperState>(),
                     localTimeRemainingField.getDeviceDataBox(),
                     localRateCacheField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox());

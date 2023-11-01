@@ -145,7 +145,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
-
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -174,8 +173,20 @@ namespace picongpu::particles::atomicPhysics2::kernel
             if(electronicChannelActive)
                 cachedHistogram.fill(worker, electronHistogram, volumeScalingFactor);
 
+            // UNIT_LENGTH^3
+            constexpr float_X volumeScalingFactor
+                = pmacc::math::CT::volume<SuperCellSize>::type::value * picongpu::CELL_VOLUME;
+
+            PMACC_SMEM(
+                worker,
+                cachedHistogram,
+                CachedHistogram < electronicChannelActive ? T_Histogram::numberBins : 0 >);
+            // no need to fill the histogram cache if we do not use the histogram
+            if(electronicChannelActive)
+                cachedHistogram.fill(worker, electronHistogram, volumeScalingFactor);
+
             // check whether bound-bound transition and if yes,
-            //      extract transition and roll random bin
+            //      roll specific transition and bin
             forEachLocalIonBoxEntry(
                 [&rngGeneratorFloat,
                  &atomicStateDataDataBox,
@@ -236,6 +247,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             for(int binIndex = 0; binIndex < static_cast<int>(T_Histogram::numberBins); ++binIndex)
                             {
                                 float_X const density = cachedHistogram.density[binIndex];
+
                                 // 1/UNIT_TIME
                                 float_X const rateTransition = picongpu::particles::atomicPhysics2::rateCalculation::
                                     BoundBoundTransitionRates<T_n_max>::template rateCollisionalBoundBoundTransition<
@@ -251,6 +263,27 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                                 cumSum += rateTransition
                                     / rateCache.rate(u32(transitionDataSet), atomicStateCollectionIndex);
+
+                                // debug only
+                                if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::
+                                                 CHECK_FOR_OVERFLOWS_IN_ACCUMULATON)
+                                {
+                                    if(cumSum - 1._X > 1.e-5)
+                                    {
+                                        printf("atomicPhyiscs ERROR: cumSum overflow in chooseTranstion_BoundBound "
+                                               "collisional\n");
+                                        printf("    dataSet = %u\n", u32(transitionDataSet));
+                                        printf("    stateIndex = %u\n", atomicStateCollectionIndex);
+                                        printf("    transitionID = %u\n", transitionID);
+                                        printf("    rateTransition = %f\n", rateTransition);
+                                        printf("        binIndex = %i\n", binIndex);
+                                        printf("        density = %f\n", density);
+                                        printf(
+                                            "    rateCache.rate = %.8e\n",
+                                            rateCache.rate(u32(transitionDataSet), atomicStateCollectionIndex));
+                                        printf("    (cumSum-1)*1e6 = %f\n", (cumSum - 1._X) * 1.e6);
+                                    }
+                                }
 
                                 // debug only
                                 if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::
@@ -322,6 +355,25 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                 }
                             }
 
+                            // debug only
+                            if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::
+                                CHECK_FOR_OVERFLOWS_IN_ACCUMULATON)
+                            {
+                                if(cumSum - 1 > 1.e5)
+                                {
+                                    printf("atomicPhyiscs ERROR: cumSum overflow in chooseTranstion_BoundBound "
+                                           "spontaneous\n");
+                                    printf("    dataSet = %u\n", u32(transitionDataSet));
+                                    printf("    stateIndex = %u\n", atomicStateCollectionIndex);
+                                    printf("    transitionID = %u\n", transitionID);
+                                    printf("    rateTransition = %f\n", rateTransition);
+                                    printf(
+                                        "    rateCache.rate = %f\n",
+                                        rateCache.rate(u32(transitionDataSet), atomicStateCollectionIndex));
+                                    printf("    (cumSum-1)*1e6 = %.8e\n", (cumSum - 1._X) * 1.e6);
+                                }
+                            }
+
                             // inclusive limit, to make sure that r==1 is assigned a transition
                             if(r <= cumSum)
                             {
@@ -332,6 +384,42 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                     transitionID + startIndexTransitionBlock);
                                 return;
                             }
+
+                            // inclusive limit, to make sure that r==1 is assigned a transition
+                            if(r <= cumSum)
+                            {
+                                // found chosen transition
+                                updateIon(
+                                    ion,
+                                    u8(s_enums::ProcessClass::spontaneousDeexcitation),
+                                    transitionID + startIndexTransitionBlock);
+                                return;
+                            }
+                        }
+
+                        /* due to different order of summation the sum of rates calculated here and the precomputed sum
+                         *  from the rate cache may differ slightly. leading to a final cumSum > 1 or < 1
+                         * The case > 1 is no problem since r is limited, the case cumSum < 1 requires a last resort
+                         *  option
+                         */
+                        // last resort, choose last possible transition
+                        if constexpr(!isUpward && T_spontaneousDeexcitation)
+                        {
+                            ion[processClass_] = u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::
+                                spontaneousDeexcitation);
+                            ion[transitionIndex_] = startIndexTransitionBlock + numberTransitions - 1u;
+                            ion[accepted_] = true;
+                        }
+                        else
+                        {
+                            if constexpr(isUpward)
+                                ion[processClass_] = u8(picongpu::particles::atomicPhysics2::enums::
+                                    ProcessClass::electronicExcitation);
+                            else
+                                ion[processClass_] = u8(picongpu::particles::atomicPhysics2::enums::
+                                    ProcessClass::electronicDeexcitation);
+                            ion[transitionIndex_] = startIndexTransitionBlock + numberTransitions - 1u;
+                            ion[accepted_] = true;
                         }
                     }
 

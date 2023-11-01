@@ -74,27 +74,50 @@ namespace picongpu::particles::atomicPhysics2
          *
          * @return unit: eV
          */
-        template<s_enums::ProcessClassGroup T_ProcessClassGroup, typename T_ChargeStateDataBox>
+        template<
+            s_enums::ProcessClassGroup T_ProcessClassGroup,
+            typename,
+            typename T_ChargeStateDataBox,
+            typename... T_AddStuff>
         HDINLINE static float_X ionizationEnergy(
             uint8_t const lowerStateChargeState,
             uint8_t const upperStateChargeState,
-            T_ChargeStateDataBox const chargeStateDataBox)
+            float_X const ionizationPotentialDepression,
+            T_ChargeStateDataBox const chargeStateDataBox,
+            T_AddStuff const...)
         {
-            if constexpr(u8(T_ProcessClassGroup) == u8(s_enums::ProcessClassGroup::boundFreeBased))
-                return ionizationEnergyHelper<T_ChargeStateDataBox>(
+            constexpr bool isAutonomousBased
+                = (u8(T_ProcessClassGroup) == u8(s_enums::ProcessClassGroup::autonomousBased));
+            constexpr bool isBoundFreeBased
+                = (u8(T_ProcessClassGroup) == u8(s_enums::ProcessClassGroup::boundFreeBased));
+
+            [[maybe_unused]] float_X ionizationEnergy = 0._X;
+
+            // defintion of lower and upper state depend on transition type
+            if constexpr(isBoundFreeBased)
+                ionizationEnergy = ionizationEnergyHelper<T_ChargeStateDataBox>(
                     lowerStateChargeState,
                     upperStateChargeState,
-                    chargeStateDataBox);
-            if constexpr(u8(T_ProcessClassGroup) == u8(s_enums::ProcessClassGroup::autonomousBased))
-                return ionizationEnergyHelper<T_ChargeStateDataBox>(
-                    upperStateChargeState,
-                    lowerStateChargeState,
                     chargeStateDataBox);
             else
             {
-                printf("atomicPhysics ERROR: unknonwn transition type");
-                return 0._X;
+                // for autonomousBased transitions the charge(upperState) < charge(lowerState), therefore the summation
+                //  over ionization energies must be done in reverse and the switch in direction accounted for by
+                //  negation
+                if constexpr(isAutonomousBased)
+                {
+                    ionizationEnergy = -ionizationEnergyHelper<T_ChargeStateDataBox>(
+                        upperStateChargeState,
+                        lowerStateChargeState,
+                        chargeStateDataBox);
+                }
+                else
+                {
+                    printf("atomicPhysics ERROR: unknonwn transition type, %u", u32(T_ProcessClassGroup));
+                }
             }
+
+            return ionizationEnergy - ionizationPotentialDepression;
         }
 
         /** get deltaEnergy of transition
@@ -104,17 +127,17 @@ namespace picongpu::particles::atomicPhysics2
          *
          * @param atomicStateBox deviceDataBox giving access to atomic state property data
          * @param transitionBox deviceDataBox giving access to transition property data,
-         * @param chargeStateBox optional deviceDataBox giving access to charge state property data
-         *  required if T_ProcessClassGroup is ionizing
+         * @param ipdAndChargeStateDataBoxAndAddStuff optional, ionizationPotentialDepression:float_X and deviceDataBox
+         * giving access to charge state property data, required if T_ProcessClassGroup is ionizing
          *
          * @return unit: eV
          */
-        template<typename T_AtomicStateDataBox, typename T_TransitionDataBox, typename... T_ChargeStateDataBox>
+        template<typename T_AtomicStateDataBox, typename T_TransitionDataBox, typename... T_IPDAndChargeStateDataBox>
         HDINLINE static float_X get(
             uint32_t const transitionCollectionIndex,
             T_AtomicStateDataBox const atomicStateDataBox,
             T_TransitionDataBox const transitionDataBox,
-            T_ChargeStateDataBox... chargeStateDataBox)
+            T_IPDAndChargeStateDataBox... ipdAndChargeStateDataBoxAndAddStuff)
         {
             using CollectionIdx = typename T_TransitionDataBox::S_TransitionDataBox::Idx;
 
@@ -148,17 +171,12 @@ namespace picongpu::particles::atomicPhysics2
                 uint8_t const lowerStateChargeState = ConfigNumber::getChargeState(lowerStateConfigNumber);
                 uint8_t const upperStateChargeState = ConfigNumber::getChargeState(upperStateConfigNumber);
 
-                if constexpr(u8(processClassGroup) == u8(s_enums::ProcessClassGroup::boundFreeBased))
-                    deltaEnergy += DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
+                // eV
+                deltaEnergy
+                    += DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_IPDAndChargeStateDataBox...>(
                         lowerStateChargeState,
                         upperStateChargeState,
-                        chargeStateDataBox...);
-
-                if constexpr(u8(processClassGroup) == u8(s_enums::ProcessClassGroup::autonomousBased))
-                    deltaEnergy -= DeltaEnergyTransition::ionizationEnergy<processClassGroup, T_ChargeStateDataBox...>(
-                        lowerStateChargeState,
-                        upperStateChargeState,
-                        chargeStateDataBox...);
+                        ipdAndChargeStateDataBoxAndAddStuff...);
             }
             return deltaEnergy;
         }
