@@ -37,8 +37,6 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundFreeTransitionData.hpp"
-// precomputed cache for chooseTransition kernel
-#include "picongpu/particles/atomicPhysics2/atomicData/TransitionSelectionData.hpp"
 
 // tuple definitions
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
@@ -213,8 +211,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
 
-        using S_TransitionSelectionDataBuffer = TransitionSelectionDataBuffer<TypeNumber, TypeValue>;
-
         // dataBoxes: S_* for shortened name
         using S_ChargeStateDataBox = ChargeStateDataBox<TypeNumber, TypeValue, T_ConfigNumber::atomicNumber>;
         using S_ChargeStateOrgaDataBox = ChargeStateOrgaDataBox<TypeNumber, TypeValue, T_ConfigNumber::atomicNumber>;
@@ -259,8 +255,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             T_CollectionIndex,
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
-
-        using S_TransitionSelectionDataBox = TransitionSelectionDataBox<TypeNumber, TypeValue>;
         //@}
     private:
         // pointers to storage
@@ -299,9 +293,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             inverseBoundFreeTransitionDataBuffer;
         std::unique_ptr<S_AutonomousTransitionDataBuffer<enums::TransitionOrdering::byUpperState>>
             inverseAutonomousTransitionDataBuffer;
-
-        // transition selection data
-        std::unique_ptr<S_TransitionSelectionDataBuffer> transitionSelectionDataBuffer;
 
         uint32_t m_numberAtomicStates = 0u;
 
@@ -829,9 +820,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             inverseAutonomousTransitionDataBuffer.reset(
                 new S_AutonomousTransitionDataBuffer<enums::TransitionOrdering::byUpperState>(
                     m_numberAutonomousTransitions));
-
-            // transition selection data
-            transitionSelectionDataBuffer.reset(new S_TransitionSelectionDataBuffer(m_numberAtomicStates));
         }
 
         /** fill pure state property data storage buffer from list
@@ -1180,84 +1168,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             lastStartIndex = i;
         }
 
-        /** fill the transition selectionBuffer
-         *
-         * @tparam electronicExcitation is channel active?
-         * @tparam electronicDeexcitation is channel active?
-         * @tparam spontaneousDeexcitation is channel active?
-         * @tparam autonomousIonization is channel active?
-         * @tparam electonicIonization is channel active?
-         * @tparam fieldIonization is channel active?
-         */
-        template<
-            bool electronicExcitation,
-            bool electronicDeexcitation,
-            bool spontaneousDeexcitation,
-            bool electronicIonization,
-            bool autonomousIonization,
-            bool fieldIonization>
-        ALPAKA_FN_HOST void fillTransitionSelectionDataBufferAndSetOffsets()
-        {
-            S_TransitionSelectionDataBox transitionSelectionDataHostBox
-                = transitionSelectionDataBuffer->getHostDataBox();
-
-            S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundBoundBased> hostBoxNumberBoundBound
-                = atomicStateNumberOfTransitionsDataBuffer_BoundBound->getHostDataBox();
-            S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundFreeBased> hostBoxNumberBoundFree
-                = atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox();
-            S_AtomicStateNumberOfTransitionsDataBox_Down<ProcClassGroup::autonomousBased> hostBoxNumberAutonomous
-                = atomicStateNumberOfTransitionsDataBuffer_Autonomous->getHostDataBox();
-
-            using S_NumberPhysicalTransitions = picongpu::particles::atomicPhysics2::enums::NumberPhysicalTransitions<
-                electronicExcitation,
-                electronicDeexcitation,
-                spontaneousDeexcitation,
-                electronicIonization,
-                autonomousIonization,
-                fieldIonization>;
-
-            TypeNumber numberPhysicalTransitionsTotal;
-
-            for(uint32_t i = 0u; i < m_numberAtomicStates; i++)
-            {
-                // no-change transition
-                numberPhysicalTransitionsTotal = static_cast<TypeNumber>(1u);
-
-                // bound-bound transitions
-                hostBoxNumberBoundBound.storeOffset(i, static_cast<TypeNumber>(1u));
-                //      downward
-                numberPhysicalTransitionsTotal += S_NumberPhysicalTransitions::getFactorBoundBoundDown()
-                    * hostBoxNumberBoundBound.numberOfTransitionsDown(i);
-                //      upward
-                numberPhysicalTransitionsTotal += S_NumberPhysicalTransitions::getFactorBoundBoundUp()
-                    * hostBoxNumberBoundBound.numberOfTransitionsUp(i);
-
-                // bound-free transitions
-                hostBoxNumberBoundFree.storeOffset(i, numberPhysicalTransitionsTotal);
-                //      upward
-                numberPhysicalTransitionsTotal += S_NumberPhysicalTransitions::getFactorBoundFreeUp()
-                    * hostBoxNumberBoundFree.numberOfTransitionsUp(i);
-
-                /// recombination missing, @todo implement recombination, Brian Marre
-
-                // autonomousTransitions
-                hostBoxNumberAutonomous.storeOffset(i, numberPhysicalTransitionsTotal);
-
-                numberPhysicalTransitionsTotal += S_NumberPhysicalTransitions::getFactorAutonomous()
-                    * hostBoxNumberAutonomous.numberOfTransitionsDown(i);
-
-                transitionSelectionDataHostBox.store(i, numberPhysicalTransitionsTotal);
-            }
-
-            // sync offsets
-            atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
-            atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
-
-            // sync transition selection data
-            transitionSelectionDataBuffer->hostToDevice();
-        }
-
     public:
         /** read input files and create/fill data boxes
          *
@@ -1450,15 +1360,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
             atomicStateStartIndexBlockDataBuffer_Autonomous->hostToDevice();
 
-            // fill transitionSelectionBuffer
-            fillTransitionSelectionDataBufferAndSetOffsets<
-                T_electronicExcitation,
-                T_electronicDeexcitation,
-                T_spontaneousDeexcitation,
-                T_electronicIonization,
-                T_autonomousIonization,
-                T_fieldIonization>();
-
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::DEBUG_SYNC_BUFFERS_TO_HOST)
                 this->hostToDevice();
         }
@@ -1488,8 +1389,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             inverseBoundBoundTransitionDataBuffer->hostToDevice();
             inverseBoundFreeTransitionDataBuffer->hostToDevice();
             inverseAutonomousTransitionDataBuffer->hostToDevice();
-
-            transitionSelectionDataBuffer->hostToDevice();
         }
 
         void deviceToHost()
@@ -1517,8 +1416,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             inverseBoundBoundTransitionDataBuffer->deviceToHost();
             inverseBoundFreeTransitionDataBuffer->deviceToHost();
             inverseAutonomousTransitionDataBuffer->deviceToHost();
-
-            transitionSelectionDataBuffer->deviceToHost();
         }
 
         // charge states
@@ -1721,19 +1618,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     return inverseAutonomousTransitionDataBuffer->getDeviceDataBox();
             }
             ALPAKA_UNREACHABLE(S_AutonomousTransitionDataBuffer<T_TransitionOrdering>(0u).getHostDataBox());
-        }
-
-        // transition selection data
-        //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
-        template<bool hostData>
-        S_TransitionSelectionDataBox getTransitionSelectionDataBox()
-        {
-            if constexpr(hostData)
-                return transitionSelectionDataBuffer->getHostDataBox();
-            else
-                return transitionSelectionDataBuffer->getDeviceDataBox();
-
-            ALPAKA_UNREACHABLE(transitionSelectionDataBuffer->getHostDataBox());
         }
 
         // debug queries

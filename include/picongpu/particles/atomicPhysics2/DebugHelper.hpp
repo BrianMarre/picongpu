@@ -98,17 +98,14 @@ namespace picongpu::particles::atomicPhysics2::debug
         auto boundFreeNumberTransitionsBox = atomicData->template getBoundFreeNumberTransitionsDataBox<true>();
         auto autonomousNumberTransitionsBox = atomicData->template getAutonomousNumberTransitionsDataBox<true>();
 
-        auto transitionSelectionBox = atomicData->template getTransitionSelectionDataBox<true>();
-
         using S_ConfigNumber = stateRepresentation::
             ConfigNumber<uint64_t, T_AtomicData::ConfigNumber::numberLevels, T_AtomicData::ConfigNumber::atomicNumber>;
 
         // state data
         std::cout << "AtomicState Data" << std::endl;
         std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround" << std::endl;
-        std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown (offset)"
+        std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown"
                   << std::endl;
-        std::cout << "\t transitionSelectionData: #physical transitions" << std::endl;
         for(uint32_t i = 0u; i < numberAtomicStates; i++)
         {
             uint64_t stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(i));
@@ -128,17 +125,13 @@ namespace picongpu::particles::atomicPhysics2::debug
             std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
                       << boundBoundNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
                       << boundBoundStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
-                      << boundBoundStartIndexBox.startIndexBlockTransitionsDown(i) << " ("
-                      << boundBoundNumberTransitionsBox.offset(i) << ")" << std::endl;
+                      << boundBoundStartIndexBox.startIndexBlockTransitionsDown(i) << std::endl;
             std::cout << "\t\t f: " << boundFreeNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
                       << boundFreeNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
                       << boundFreeStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
-                      << boundFreeStartIndexBox.startIndexBlockTransitionsDown(i) << " ("
-                      << boundFreeNumberTransitionsBox.offset(i) << ")" << std::endl;
+                      << boundFreeStartIndexBox.startIndexBlockTransitionsDown(i) << std::endl;
             std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
-                      << autonomousStartIndexBox.startIndexBlockTransitionsDown(i) << " ("
-                      << autonomousNumberTransitionsBox.offset(i) << ")" << std::endl;
-            std::cout << "\t\t physical transitions: " << transitionSelectionBox.numberTransitions(i) << std::endl;
+                      << autonomousStartIndexBox.startIndexBlockTransitionsDown(i) << std::endl;
         }
 
         // transitionData
