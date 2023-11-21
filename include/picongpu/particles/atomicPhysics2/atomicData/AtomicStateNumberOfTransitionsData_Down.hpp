@@ -56,8 +56,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * from the atomic state in the collection of autonomous transitions
          */
         typename S_DataBox::BoxNumber m_boxNumberOfTransitions;
-        //! offset of transition type in chooseTransition selection
-        typename S_DataBox::BoxNumber m_boxOffset;
 
         /// @todo transitions from configNumber 0u?
 
@@ -68,13 +66,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *  and secondary ascending by configNumber.
          *
          * @param boxNumberTransitions number of transitions from the atomic state
-         * @param boxOffset offset of transition type in chooseTransition selection
          */
         AtomicStateNumberOfTransitionsDataBox_Down(
-            typename S_DataBox::BoxNumber boxNumberOfTransitions,
-            typename S_DataBox::BoxNumber boxOffset)
+            typename S_DataBox::BoxNumber boxNumberOfTransitions)
             : m_boxNumberOfTransitions(boxNumberOfTransitions)
-            , m_boxOffset(boxOffset)
         {
         }
 
@@ -82,12 +77,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         ALPAKA_FN_HOST void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const numberDown)
         {
             m_boxNumberOfTransitions[collectionIndex] = numberDown;
-        }
-
-        //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        ALPAKA_FN_HOST void storeOffset(uint32_t const collectionIndex, typename S_DataBox::TypeNumber const offset)
-        {
-            m_boxOffset[collectionIndex] = offset;
         }
 
         /** get number of transitions from atomic state
@@ -100,18 +89,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HDINLINE typename S_DataBox::TypeNumber numberOfTransitionsDown(uint32_t const collectionIndex) const
         {
             return m_boxNumberOfTransitions(collectionIndex);
-        }
-
-        /** get offset of transition type for the atomic state
-         *
-         * @param collectionIndex atomic state collection index
-         *
-         * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
-         * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-         */
-        HDINLINE typename S_DataBox::TypeNumber offset(uint32_t const collectionIndex) const
-        {
-            return m_boxOffset(collectionIndex);
         }
     };
 
@@ -133,7 +110,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
     private:
         std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferNumberOfTransitionsBlockTransitionsDown;
-        std::unique_ptr<typename S_DataBuffer::BufferNumber> bufferOffset;
 
     public:
         HINLINE AtomicStateNumberOfTransitionsDataBuffer_Down(uint32_t numberAtomicStates)
@@ -144,33 +120,28 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             bufferNumberOfTransitionsBlockTransitionsDown.reset(
                 new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
-            bufferOffset.reset(new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
         }
 
         HINLINE DataBoxType getHostDataBox()
         {
             return DataBoxType(
-                bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox(),
-                bufferOffset->getHostBuffer().getDataBox());
+                bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox());
         }
 
         HINLINE DataBoxType getDeviceDataBox()
         {
             return DataBoxType(
-                bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox(),
-                bufferOffset->getHostBuffer().getDataBox());
+                bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox());
         }
 
         HINLINE void hostToDevice()
         {
             bufferNumberOfTransitionsBlockTransitionsDown->hostToDevice();
-            bufferOffset->hostToDevice();
         }
 
         HINLINE void deviceToHost()
         {
             bufferNumberOfTransitionsBlockTransitionsDown->deviceToHost();
-            bufferOffset->deviceToHost();
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::atomicData
