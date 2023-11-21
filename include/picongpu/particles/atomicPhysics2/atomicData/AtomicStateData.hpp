@@ -44,8 +44,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 {
     /** data box storing state property data
      *
-     * for use on device.
-     *
      * @tparam T_Number dataType used for number storage, typically uint32_t
      * @tparam T_Value dataType used for value storage, typically float_X
      * @tparam T_ConfigNumber dataType used for storage of configNumber of atomic states
@@ -91,6 +89,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param boxConfigNumber dataBox of atomic state configNumber(fancy index)
          * @param boxStateEnergy dataBox of energy respective to ground state of ionization state [eV]
+         * @param boxMultiplicity dataBox of number of physical states associated with state
          * @param numberAtomicStates number of atomic states
          */
         AtomicStateDataBox(
