@@ -232,7 +232,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         if constexpr(electronicChannelActive)
                         {
                             // test for each bin separately
-                            for(int binIndex = 0; binIndex < T_Histogram::numberBins; ++binIndex)
+                            for(int binIndex = 0; binIndex < static_cast<int>(T_Histogram::numberBins); ++binIndex)
                             {
                                 float_X const density = cachedHistogram.density[binIndex];
                                 // 1/UNIT_TIME
