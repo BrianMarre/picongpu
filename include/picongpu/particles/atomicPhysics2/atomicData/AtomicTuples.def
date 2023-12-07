@@ -39,6 +39,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         T_Idx, // configNumber
         T_Value>; // energy over ground [eV]
 
+    template<typename T_Idx>
+    PressureIonizationStateTuple
+    using AtomicStateTuple = std::tuple<
+        T_Idx, // state configNumber
+        T_Idx>; // pressure ionization state configNumber
+
     template<typename T_Value, typename T_Idx>
     using BoundBoundTransitionTuple = std::tuple<
         T_Value, // collisional oscillator strength, #0

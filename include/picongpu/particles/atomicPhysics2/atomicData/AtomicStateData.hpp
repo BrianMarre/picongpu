@@ -19,7 +19,6 @@
 
 #pragma once
 
-
 #include "picongpu/simulation_defines.hpp" // need: picongpu/param/atomicPhysics2_Debug.param
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
@@ -32,13 +31,8 @@
 #include <stdexcept>
 #include <tuple>
 
-/** @file implements the storage of atomic state property data
- *
- * @attention ConfigNumber specifies the number of a state as defined by the configNumber
- *      class, while index always refers to a collection index.
- *      The configNumber of a given state is always the same, its collection index depends
- *      on input file,it should therefore only be used internally!
- */
+//! @file implements the storage of atomic state property data
+
 
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
@@ -174,13 +168,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * excitation energies
          * @attention assumes range contains at least one atomic state
          *
-         *
          * @param startIndexBlock start index for search,
          *  is available from chargeStateOrgaDataBox.startIndexBlockAtomicStates(chargeState)
          *  with chargeState available from ConfigNumber::getIonizationState(configNumber)
-         * @param numberAtomicStatesForChargeState ... number of atomic states in model with charge state
-         *  of configNumber
-         *  is available from chargeStateOrgaDataBox.numberAtomicStates(chargeState).
+         * @param numberAtomicStatesForChargeState number of atomic states in model with charge state
+         *  of configNumber, is available from chargeStateOrgaDataBox.numberAtomicStates(chargeState).
          *  with chargeState available from ConfigNumber::getIonizatioState(configNumber)
          */
         HDINLINE uint32_t
