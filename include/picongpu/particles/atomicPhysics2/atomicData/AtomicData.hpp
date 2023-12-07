@@ -27,12 +27,15 @@
 // charge state data
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/ChargeStateOrgaData.hpp"
+
 // atomic state data
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_Down.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_UpDown.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_Down.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_UpDown.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/PressureIonizationData.hpp"
+
 // transition data
 #include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionData.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/BoundBoundTransitionData.hpp"
@@ -68,9 +71,10 @@
 #include <tuple>
 
 //! @file gathers atomic data storage implementations and implements filling them on runtime
+
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
-    namespace enums = picongpu::particles::atomicPhysics2::enums;
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
     using ProcClassGroup = picongpu::particles::atomicPhysics2::enums::ProcessClassGroup;
 
     /** gathering of all atomicPhyiscs input data
@@ -78,7 +82,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_Number dataType used for number storage, typically uint32_t
      * @tparam T_Value dataType used for value storage, typically float_X
      * @tparam T_CollectionIndex dataType used for collection index, typically uint32_t
-     * @tparam T_ConfigNumber dataType used for storage of configNumber
+     * @tparam T_ConfigNumber type holding definition of atomicConfigNumber for species
+     *  see picongpu/particles/atomicPhysics2/stateRepresentation/ConfigNumber.hpp
      * @tparam T_Multiplicities dataType used for storage of T_Multiplicities, typically float64
      *
      * @tparam T_electronicExcitation is channel active?
@@ -90,32 +95,34 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *
      * The atomicPhysics step relies on a model of atomic states and transitions for each
      * atomicPhysics ion species.
-     * These model's parameters are provided by the user as a .txt file of specified format
-     * (see documentation) at runtime.
+     * These model's parameters are provided by the user in .txt files of specified format
+     * (see documentation, @todo coming soon) at runtime.
      *
      *  PIConGPU itself only includes charge state data, for ADK-, Thomas-Fermi- and BSI-ionization.
-     *  All other atomic state data is kept separate from PIConGPU itself, due to license requirements.
+     *  All other atomic state data is kept separate from PIConGPU itself, due to licensing requirements.
      *
-     * This file is read at the start of the simulation and stored distributed over the following:
-     *  - charge state property data [ChargeStateDataBox.hpp]
+     * These files is read at the start of the simulation and stored distributed over the following:
+     *  - charge state property data [ChargeStateData.hpp]
      *      * ionization energy
      *      * screened charge
-     *  - charge state orga data [ChargeStateOrgaDataBox.hpp]
+     *  - charge state orga data [ChargeStateOrgaData.hpp]
      *      * number of atomic states for each charge state
      *      * start index block for charge state in list of atomic states
-     * - atomic state property data [AtomicStateDataBox.hpp]
+     * - atomic state property data [AtomicStateData.hpp]
      *      * configNumber
      *      * state energy, above ground state of charge state
      * - atomic state orga data
-     *      [AtomicStateNumberOfTransitionsDataBox_Down, AtomicStateNumberOfTransitionsDataBox_UpDown]
+     *      [AtomicStateNumberOfTransitionsData_Down.hpp, AtomicStateNumberOfTransitionsData_UpDown.hpp]
      *       * number of transitions (up-/)down for each atomic state,
      *          by type of transition(bound-bound/bound-free/autonomous)
      *       * offset in transition selection ordering for each atomic state
-     *      [AtomicStateStartIndexBlockDataBox_Down, AtomicStateStartIndexBlockDataBox_UpDown]
+     *      [AtomicStateStartIndexBlockData_Down.hpp, AtomicStateStartIndexBlockData_UpDown.hpp]
      *       * start index of block in transition collection index for atomic state,
      *          by type of transition(bound-bound/bound-free/autonomous)
-     * - transition property data[BoundBoundTransitionDataBox, BoundFreeTransitionDataBox,
-     *      AutonomousTransitionDataBox]
+     * - pressure ionization data [PressureIonizationData.hpp]
+     *      * pressure ionization state collectionIndex
+     * - transition property data[BoundBoundTransitionData.hpp, BoundFreeTransitionData.hpp,
+     *      AutonomousTransitionData.hpp]
      *      * parameters for cross section calculation for each modelled transition
      *
      * (orga data describes the structure of the property data for faster lookups, lookups are
@@ -165,6 +172,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         // tuples: S_* for shortened name
         using S_ChargeStateTuple = ChargeStateTuple<TypeValue>;
         using S_AtomicStateTuple = AtomicStateTuple<TypeValue, Idx>;
+        using S_PressureIonizationStateTuple = PressureIonizationStateTuple<Idx>;
         using S_BoundBoundTransitionTuple = BoundBoundTransitionTuple<TypeValue, Idx>;
         using S_BoundFreeTransitionTuple = BoundFreeTransitionTuple<TypeValue, Idx>;
         using S_AutonomousTransitionTuple = AutonomousTransitionTuple<Idx>;
@@ -188,14 +196,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_AtomicStateNumberOfTransitionsDataBuffer_Down
             = AtomicStateNumberOfTransitionsDataBuffer_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
-        template<enums::TransitionOrdering T_TransitionOrdering>
+        using S_PressureIonizationDataBuffer = PressureIonizationDataBuffer<TypeCollectionIndex>;
+
+        template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_BoundBoundTransitionDataBuffer = BoundBoundTransitionDataBuffer<
             TypeNumber,
             TypeValue,
             T_CollectionIndex,
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
-        template<enums::TransitionOrdering T_TransitionOrdering>
+        template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_BoundFreeTransitionDataBuffer = BoundFreeTransitionDataBuffer<
             TypeNumber,
             TypeValue,
@@ -203,7 +213,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             T_ConfigNumber,
             T_Multiplicities,
             T_TransitionOrdering>;
-        template<enums::TransitionOrdering T_TransitionOrdering>
+        template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_AutonomousTransitionDataBuffer = AutonomousTransitionDataBuffer<
             TypeNumber,
             TypeValue,
@@ -233,14 +243,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_AtomicStateNumberOfTransitionsDataBox_Down
             = AtomicStateNumberOfTransitionsDataBox_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
-        template<picongpu::particles::atomicPhysics2::enums::TransitionOrdering T_TransitionOrdering>
+        using S_PressureIonizationDataBox = PressureIonizationDataBox<TypeCollectionIndex>;
+
+        template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_BoundBoundTransitionDataBox = BoundBoundTransitionDataBox<
             TypeNumber,
             TypeValue,
             T_CollectionIndex,
             typename T_ConfigNumber::DataType,
             T_TransitionOrdering>;
-        template<picongpu::particles::atomicPhysics2::enums::TransitionOrdering T_TransitionOrdering>
+        template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_BoundFreeTransitionDataBox = BoundFreeTransitionDataBox<
             TypeNumber,
             TypeValue,
@@ -248,7 +260,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             T_ConfigNumber,
             T_Multiplicities,
             T_TransitionOrdering>;
-        template<picongpu::particles::atomicPhysics2::enums::TransitionOrdering T_TransitionOrdering>
+        template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_AutonomousTransitionDataBox = AutonomousTransitionDataBox<
             TypeNumber,
             TypeValue,
@@ -278,20 +290,22 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_Down<ProcClassGroup::autonomousBased>>
             atomicStateNumberOfTransitionsDataBuffer_Autonomous;
 
+        std::unique<S_PressureIonizationDataBuffer> pressureIonizationDataBuffer;
+
         // transition data, normal, sorted by lower state
-        std::unique_ptr<S_BoundBoundTransitionDataBuffer<enums::TransitionOrdering::byLowerState>>
+        std::unique_ptr<S_BoundBoundTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>>
             boundBoundTransitionDataBuffer;
-        std::unique_ptr<S_BoundFreeTransitionDataBuffer<enums::TransitionOrdering::byLowerState>>
+        std::unique_ptr<S_BoundFreeTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>>
             boundFreeTransitionDataBuffer;
-        std::unique_ptr<S_AutonomousTransitionDataBuffer<enums::TransitionOrdering::byLowerState>>
+        std::unique_ptr<S_AutonomousTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>>
             autonomousTransitionDataBuffer;
 
         // transition data, inverted,sorted by upper state
-        std::unique_ptr<S_BoundBoundTransitionDataBuffer<enums::TransitionOrdering::byUpperState>>
+        std::unique_ptr<S_BoundBoundTransitionDataBuffer<s_enums::TransitionOrdering::byUpperState>>
             inverseBoundBoundTransitionDataBuffer;
-        std::unique_ptr<S_BoundFreeTransitionDataBuffer<enums::TransitionOrdering::byUpperState>>
+        std::unique_ptr<S_BoundFreeTransitionDataBuffer<s_enums::TransitionOrdering::byUpperState>>
             inverseBoundFreeTransitionDataBuffer;
-        std::unique_ptr<S_AutonomousTransitionDataBuffer<enums::TransitionOrdering::byUpperState>>
+        std::unique_ptr<S_AutonomousTransitionDataBuffer<s_enums::TransitionOrdering::byUpperState>>
             inverseAutonomousTransitionDataBuffer;
 
         uint32_t m_numberAtomicStates = 0u;
@@ -322,7 +336,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *   - charge state data is sorted ascending by charge
          *   - the completely ionized state is left out
          *
-         * @return returns empty list if file not found/accessible
+         * @throws runtime error if file not found/accessible
+         * @returns empty list if file not found/accessible
          */
         ALPAKA_FN_HOST std::list<S_ChargeStateTuple> readChargeStates(std::string const fileName)
         {
@@ -330,7 +345,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if(!file)
                 return std::list<S_ChargeStateTuple>{};
 
-            std::list<S_ChargeStateTuple> chargeStateList;
+            std::list<S_ChargeStateTuple> chargeStateList{};
 
             TypeValue ionizationEnergy;
             TypeValue screenedCharge;
@@ -352,10 +367,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
                 chargeStateList.push_back(item);
 
-                numberChargeStates++;
+                ++numberChargeStates;
             }
 
-            if(numberChargeStates > T_ConfigNumber::atomicNumber)
+            if(numberChargeStates != T_ConfigNumber::atomicNumber)
                 throw std::runtime_error(
                     "atomicPhysics ERROR: too many charge states, num > Z: "
                     + std::to_string(T_ConfigNumber::atomicNumber));
@@ -369,7 +384,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *   - atomic state data is sorted block wise by charge state and secondary by ascending
          * configNumber
          *
-         * @return returns empty list if file not found/accessible
+         * @throws runtime error if file not found/accessible
+         * @returns empty list if file not found/accessible
          */
         ALPAKA_FN_HOST std::list<S_AtomicStateTuple> readAtomicStates(std::string const fileName)
         {
@@ -377,7 +393,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if(!file)
                 return std::list<S_AtomicStateTuple>{};
 
-            std::list<S_AtomicStateTuple> atomicStateList;
+            std::list<S_AtomicStateTuple> atomicStateList{};
 
             /// @todo maybe use uint64_t instead?, Brian Marre, 2023
             double stateConfigNumber;
@@ -391,10 +407,50 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
                 atomicStateList.push_back(item);
 
-                m_numberAtomicStates++;
+                ++m_numberAtomicStates;
             }
 
             return atomicStateList;
+        }
+
+        /** read pressure ionization data file
+         *
+         * @attention assumes pressure ionization data to use same order as atomic state data
+         *
+         * @throws runtime error if file not found/accessible
+         * @returns empty list if file not found/accessible or fileName is empty string
+         */
+        ALPAKA_FN_HOST std::list<S_PressureIonizationStateTuple> readPressureIonizationStates(
+            std::string const fileName)
+        {
+            bool const notSpecfied = std::empty(fileName)
+            if (notSpecified)
+                return std::list<S_PressureIonizationStateTuple>{};
+
+            std::ifstream file = openFile(fileName, "atomic state data");
+            if(!file)
+                return std::list<S_PressureIonizationStateTuple>{};
+
+            std::list<S_PressureIonizationStateTuple> pressureIonizationStateList{};
+            uint32_t numberAtomicStates = 0u;
+
+            double stateConfigNumber;
+            double pressureIonizationStateConfigNumber;
+
+            while(file >> stateConfigNumber >> pressureIonizationStateConfigNumber)
+            {
+                S_PressureIonizationStateTuple item = std::make_tuple(
+                    static_cast<Idx>(stateConfigNumber), // unitless
+                    static_cast<Idx>(pressureIonizationStateConfigNumber)); // unitless
+
+                pressureIonizationStateList.push_back(item);
+
+                ++numberAtomicStates;
+            }
+
+            if (numberAtomicStates != m_numberAtomicStates)
+                throw std::runtime_error("number of pressure ionization states does not match number of atomic states")
+            return pressureIonizationStateList;
         }
 
         /** read bound-bound transitions data file
@@ -681,7 +737,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param transitionList
          *
-         * @attention assumes that chargeStateList and atomicStateList fulfil all ordering assumptions
+         * @attention assumes that chargeStateList and atomicStateList fulfill all ordering assumptions
          * @return passes silently if correct
          * @throws runtime error if transition order broken, as defined by CompareTransitionTupel.hpp,
          *  or the transition tuple is not internally consistent(for its transition type),
@@ -744,8 +800,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // for bound-free transitions upper- and lower-State are defined by charge state only!
             PMACC_CASSERT_MSG(
                 wrong_or_unknown_transitionType_in_Energy_InversionCheck,
-                ((u8(T_TransitionHostBox::processClassGroup) == u8(enums::ProcessClassGroup::boundBoundBased))
-                 || (u8(T_TransitionHostBox::processClassGroup) == u8(enums::ProcessClassGroup::autonomousBased))));
+                ((u8(T_TransitionHostBox::processClassGroup) == u8(s_enums::ProcessClassGroup::boundBoundBased))
+                 || (u8(T_TransitionHostBox::processClassGroup) == u8(s_enums::ProcessClassGroup::autonomousBased))));
 
             uint32_t const numberTransitions = transitionHostBox.getNumberOfTransitionsTotal();
 
@@ -800,38 +856,45 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 new S_AtomicStateNumberOfTransitionsDataBuffer_Down<ProcClassGroup::autonomousBased>(
                     m_numberAtomicStates));
 
-            // transition data
+            pressureIonizationDataBuffer.reset(
+                new S_PressureIonizationDataBuffer<TypeCollectionIndex>(m_numberAtomicStates));
+
+            // transition data, by lower state
             boundBoundTransitionDataBuffer.reset(
-                new S_BoundBoundTransitionDataBuffer<enums::TransitionOrdering::byLowerState>(
+                new S_BoundBoundTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>(
                     m_numberBoundBoundTransitions));
             boundFreeTransitionDataBuffer.reset(
-                new S_BoundFreeTransitionDataBuffer<enums::TransitionOrdering::byLowerState>(
+                new S_BoundFreeTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>(
                     m_numberBoundFreeTransitions));
             autonomousTransitionDataBuffer.reset(
-                new S_AutonomousTransitionDataBuffer<enums::TransitionOrdering::byLowerState>(
+                new S_AutonomousTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>(
                     m_numberAutonomousTransitions));
 
+            // by upper state
             inverseBoundBoundTransitionDataBuffer.reset(
-                new S_BoundBoundTransitionDataBuffer<enums::TransitionOrdering::byUpperState>(
+                new S_BoundBoundTransitionDataBuffer<s_enums::TransitionOrdering::byUpperState>(
                     m_numberBoundBoundTransitions));
             inverseBoundFreeTransitionDataBuffer.reset(
-                new S_BoundFreeTransitionDataBuffer<enums::TransitionOrdering::byUpperState>(
+                new S_BoundFreeTransitionDataBuffer<s_enums::TransitionOrdering::byUpperState>(
                     m_numberBoundFreeTransitions));
             inverseAutonomousTransitionDataBuffer.reset(
-                new S_AutonomousTransitionDataBuffer<enums::TransitionOrdering::byUpperState>(
+                new S_AutonomousTransitionDataBuffer<s_enums::TransitionOrdering::byUpperState>(
                     m_numberAutonomousTransitions));
         }
 
-        /** fill pure state property data storage buffer from list
+        /** fill storage buffer directly from list
          *
          * @tparam T_Tuple type of tuple
          * @tparam T_DataBox type of dataBox
+         * @tparam T_AdditionalData tpye of additional data for use in store call to dataBox
          *
          * @param list correctly ordered list of data tuples to store
+         * @param additionalData additional reference data, passed to store() call in host box
+         *
          * @attention does not sync to device, must be synced externally explicitly
          */
-        template<typename T_Tuple, typename T_DataBox>
-        ALPAKA_FN_HOST void storeStateData(std::list<T_Tuple>& list, T_DataBox hostBox)
+        template<typename T_Tuple, typename T_DataBox, typename T_AdditionalData...>
+        ALPAKA_FN_HOST void storeListToBuffer(std::list<T_Tuple>& list, T_DataBox hostBox, T_AdditionalData... const additionalData)
         {
             typename std::list<T_Tuple>::iterator iter = list.begin();
 
@@ -839,38 +902,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             for(; iter != list.end(); iter++)
             {
-                hostBox.store(i, *iter);
+                hostBox.store(i, *iter, additionalData...);
                 i++;
             }
         }
 
-        /** fill pure transition property data storage buffer from list
-         *
-         * @tparam T_Tuple type of tuple
-         * @tparam T_DataBox type of dataBox
-         * @tparam T_StateDataBox type of atomicState property dataox
-         *
-         * @param list correctly ordered list of data tuples to store
-         * @attention does not sync to device, must be synced externally explicitly
-         */
-        template<typename T_Tuple, typename T_DataBox, typename T_StateDataBox>
-        ALPAKA_FN_HOST void storeTransitionData(
-            std::list<T_Tuple>& list,
-            T_DataBox hostBox,
-            T_StateDataBox const stateHostBox)
-        {
-            typename std::list<T_Tuple>::iterator iter = list.begin();
-
-            uint32_t i = 0u;
-
-            for(; iter != list.end(); iter++)
-            {
-                hostBox.store(i, *iter, stateHostBox);
-                i++;
-            }
-        }
-
-        /** fill the charge orga data buffer
+        /** fill the charge state orga data buffer
          *
          * @attention assumes that the atomic states are sorted block wise by charge state
          *
@@ -888,7 +925,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if(iter == atomicStateList.end())
                 return;
 
-            // read first entry as first last entry
+            // read first entry to init lastChargeState
             uint8_t lastChargeState = ConfigNumber::getChargeState(std::get<0>(*iter));
 
             TypeNumber numberStates = 1u;
@@ -923,7 +960,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             chargeStateOrgaDataBuffer->hostToDevice();
         }
 
-        /** fill the upward atomic state orga buffers for a transition groups
+        /** fill the upward atomic state orga buffers for a transition group
          *
          * i.e. number of transitions and start index, up, for each atomic state
          *  for a transition group(either bound-bound or bound-free)
@@ -939,16 +976,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *  up direction exist in the transition list
          *
          * @details implemented as a block accumulator iteration with two support points.
-         *  The transition list is assumed to consist of strict-totally ordered(by lower state)
-         *  blocks of transitions with each block of transitions sharing the same lower state.
+         *  The transition list is assumed to consist of strict-totally ordered blocks of transitions
+         *  with each block of transitions sharing the same lower state.
          *
-         *  The first support points stores the current open transition blocks lower state,
-         *  while the second support point advances element-wise over the transition list
-         *  until it finds a transition with lower state that is not equal to the current
-         *  transition. This signifies the end of the open transition block.
+         *  The first support points stores the current open transition blocks first transition, while the second
+         *  support point advances element-wise over the transition list until it finds a transition with a lower state
+         *  not equal to the first support point's lower state, i.e. the start of a new block.
+         *
          *  We then note down the accumulated values for the open block, close it, and
          *  open a new block, by setting the first support point to the second support point
-         *  and continue as before until we reach the end of the transition list.
+         *  and continue as before until we reach the end of the transition list and close the last open block.
          */
         template<typename T_Tuple, ProcClassGroup T_ProcessClassGroup>
         ALPAKA_FN_HOST void fill_UpTransition_OrgaData(
@@ -1173,6 +1210,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param fileChargeData path to file containing charge state data
          * @param fileAtomicStateData path to file containing atomic state data
+         * @param filePressureIonizationData path to file containing pressure ionization data
          * @param fileBoundBoundTransitionData path to file containing bound-bound transition data
          * @param fileBoundFreeTransitionData path to file containing bound-free transition data
          * @param fileAutonomousTransitionData path to file containing autonomous transition data
@@ -1180,6 +1218,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         AtomicData(
             std::string fileChargeStateData,
             std::string fileAtomicStateData,
+            std::string filePressureIonizationData,
             std::string fileBoundBoundTransitionData,
             std::string fileBoundFreeTransitionData,
             std::string fileAutonomousTransitionData,
@@ -1190,6 +1229,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             //      state data
             std::list<S_ChargeStateTuple> chargeStates = readChargeStates(fileChargeStateData);
             std::list<S_AtomicStateTuple> atomicStates = readAtomicStates(fileAtomicStateData);
+            std::list<S_PressureIonizationStateTuple> pressureIonizationStates = readPressureIonizationStates(
+                filePressureIonizationData);
 
             //      transition data
             std::list<S_BoundBoundTransitionTuple> boundBoundTransitions
@@ -1200,9 +1241,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 = readAutonomousTransitions(fileAutonomousTransitionData);
 
             //      sort by lower state of transition, optional since input files already sorted
-            // boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
-            // boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
-            // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx,true>());
+            // boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
+            // boundFreeTransitions.sort( CompareTransitionTupel<TypeValue, Idx, true>());
+            // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
 
             // check assumptions
             checkChargeStateList(chargeStates);
@@ -1215,39 +1256,40 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             initBuffers();
 
             // fill data buffers
-            //      states
-            storeStateData<S_ChargeStateTuple, S_ChargeStateDataBox>(
+            //      charge states
+            storeListToBuffer<S_ChargeStateTuple, S_ChargeStateDataBox>(
                 chargeStates,
                 chargeStateDataBuffer->getHostDataBox());
             chargeStateDataBuffer->hostToDevice();
 
-            storeStateData<S_AtomicStateTuple, S_AtomicStateDataBox>(
+            //      atomic states
+            storeListToBuffer<S_AtomicStateTuple, S_AtomicStateDataBox>(
                 atomicStates,
                 atomicStateDataBuffer->getHostDataBox());
             atomicStateDataBuffer->hostToDevice();
 
             //      transitions
-            storeTransitionData<
+            storeListToBuffer<
                 S_BoundBoundTransitionTuple,
-                S_BoundBoundTransitionDataBox<enums::TransitionOrdering::byLowerState>,
+                S_BoundBoundTransitionDataBox<s_enums::TransitionOrdering::byLowerState>,
                 S_AtomicStateDataBox>(
                 boundBoundTransitions,
                 boundBoundTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             boundBoundTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
+            storeListToBuffer<
                 S_BoundFreeTransitionTuple,
-                S_BoundFreeTransitionDataBox<enums::TransitionOrdering::byLowerState>,
+                S_BoundFreeTransitionDataBox<s_enums::TransitionOrdering::byLowerState>,
                 S_AtomicStateDataBox>(
                 boundFreeTransitions,
                 boundFreeTransitionDataBuffer->getHostDataBox(),
                 atomicStateDataBuffer->getHostDataBox());
             boundFreeTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
+            storeListToBuffer<
                 S_AutonomousTransitionTuple,
-                S_AutonomousTransitionDataBox<enums::TransitionOrdering::byLowerState>,
+                S_AutonomousTransitionDataBox<s_enums::TransitionOrdering::byLowerState>,
                 S_AtomicStateDataBox>(
                 autonomousTransitions,
                 autonomousTransitionDataBuffer->getHostDataBox(),
@@ -1257,11 +1299,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // check for inversions in upper lower state of transitions
             checkTransitionsForEnergyInversion(this->getBoundBoundTransitionDataBox<
                                                /*host*/ true,
-                                               enums::TransitionOrdering::byLowerState>());
+                                               s_enums::TransitionOrdering::byLowerState>());
             // no check for bound-free, since bound-free transitions may reduce overall energy
             checkTransitionsForEnergyInversion(this->getAutonomousTransitionDataBox<
                                                /*host*/ true,
-                                               enums::TransitionOrdering::byLowerState>());
+                                               s_enums::TransitionOrdering::byLowerState>());
+
+            // fill pressureIonizationDataBuffer
 
             // fill orga data buffers 1,)
             //          charge state
@@ -1294,7 +1338,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // store transition data in inverse order
             storeTransitionData<
                 S_BoundBoundTransitionTuple,
-                S_BoundBoundTransitionDataBox<enums::TransitionOrdering::byUpperState>,
+                S_BoundBoundTransitionDataBox<s_enums::TransitionOrdering::byUpperState>,
                 S_AtomicStateDataBox>(
                 boundBoundTransitions,
                 inverseBoundBoundTransitionDataBuffer->getHostDataBox(),
@@ -1303,7 +1347,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             storeTransitionData<
                 S_BoundFreeTransitionTuple,
-                S_BoundFreeTransitionDataBox<enums::TransitionOrdering::byUpperState>,
+                S_BoundFreeTransitionDataBox<s_enums::TransitionOrdering::byUpperState>,
                 S_AtomicStateDataBox>(
                 boundFreeTransitions,
                 inverseBoundFreeTransitionDataBuffer->getHostDataBox(),
@@ -1312,7 +1356,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             storeTransitionData<
                 S_AutonomousTransitionTuple,
-                S_AutonomousTransitionDataBox<enums::TransitionOrdering::byUpperState>,
+                S_AutonomousTransitionDataBox<s_enums::TransitionOrdering::byUpperState>,
                 S_AtomicStateDataBox>(
                 autonomousTransitions,
                 inverseAutonomousTransitionDataBuffer->getHostDataBox(),
@@ -1542,10 +1586,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @tparam T_TransitionOrdering, get data box ordered by lower or upper state,
          *  ordering defined by CompareTransitionTupel implementation
          */
-        template<bool hostData, enums::TransitionOrdering T_TransitionOrdering>
+        template<bool hostData, s_enums::TransitionOrdering T_TransitionOrdering>
         S_BoundBoundTransitionDataBox<T_TransitionOrdering> getBoundBoundTransitionDataBox()
         {
-            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(enums::TransitionOrdering::byLowerState));
+            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(s_enums::TransitionOrdering::byLowerState));
 
             if constexpr(byLowerState)
             {
@@ -1570,10 +1614,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @tparam T_TransitionOrdering, get data box ordered by lower or upper state,
          *  ordering defined by CompareTransitionTupel implementation
          */
-        template<bool hostData, enums::TransitionOrdering T_TransitionOrdering>
+        template<bool hostData, s_enums::TransitionOrdering T_TransitionOrdering>
         S_BoundFreeTransitionDataBox<T_TransitionOrdering> getBoundFreeTransitionDataBox()
         {
-            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(enums::TransitionOrdering::byLowerState));
+            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(s_enums::TransitionOrdering::byLowerState));
 
             if constexpr(byLowerState)
             {
@@ -1598,10 +1642,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @tparam T_TransitionOrdering, get data box ordered by lower or upper state,
          *  ordering defined by CompareTransitionTupel implementation
          */
-        template<bool hostData, enums::TransitionOrdering T_TransitionOrdering>
+        template<bool hostData, s_enums::TransitionOrdering T_TransitionOrdering>
         S_AutonomousTransitionDataBox<T_TransitionOrdering> getAutonomousTransitionDataBox()
         {
-            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(enums::TransitionOrdering::byLowerState));
+            constexpr bool byLowerState = (u8(T_TransitionOrdering) == u8(s_enums::TransitionOrdering::byLowerState));
 
             if constexpr(byLowerState)
             {
