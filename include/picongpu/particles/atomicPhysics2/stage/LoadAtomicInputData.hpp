@@ -70,6 +70,13 @@ namespace picongpu::particles::atomicPhysics2::stage
             using AliasAtomicStatesFileName = typename GetFlagType<FrameType, atomicStatesFileName<>>::type;
             using AtomicStatesFileName = typename pmacc::traits::Resolve<AliasAtomicStatesFileName>::type;
 
+            //      get pressureIonization input file name
+            PMACC_CASSERT_MSG(
+                Species_missing_pressure_ionization_file_name_flag,
+                HasFlag<FrameType, pressureIonizationStatesFileName<>>::type::value == true);
+            using AliasPressureIonizationFileName = typename GetFlagType<FrameType, pressureIonizationStatesFileName<>>::type;
+            using PressureIonizationFileName = typename pmacc::traits::Resolve<AliasPressureIonizationFileName>::type;
+
             //      get bound-bound transitions input file name
             PMACC_CASSERT_MSG(
                 Species_missing_bound_bound_transitions_file_name_flag,
@@ -94,6 +101,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             auto atomicData = std::make_unique<AtomicDataType>(
                 ChargeStatesFileName::str(),
                 AtomicStatesFileName::str(),
+                PressureIonizationFileName::str(),
                 BoundBoundFileName::str(),
                 BoundFreeFileName::str(),
                 AutonomousFileName::str(),

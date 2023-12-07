@@ -154,21 +154,51 @@ namespace picongpu
      *
      * file gives parameter of atomic physics states for ion species
      * - must follow PIConGPU specific formatting
+     *      @todo write specification, Brian Marre, 2023
      * - files are not shipped with PIConGPU, see documentation for creation and sources
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
     alias(chargeStatesFileName);
 
-    /** path to file containing atomic state input data for atomicPhysics,,
+    /** path to file containing atomic state input data for atomicPhysics,
      *
      * file gives parameter of atomic physics states for ion species
      * - must follow PIConGPU specific formatting
+     *      @todo write specification, Brian Marre, 2023
      * - files are not shipped with PIConGPU, see documentation for creation and sources
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
      */
     alias(atomicStatesFileName);
+
+    /** path to file containing pressure ionization input data for atomicPhysics,
+     *
+     * optional, set to empty string if not provided
+     *
+     * if no file with pressure ionization input data provided, atomicPhysics will use one of the following options
+     *  to find a pressure ionization path for each atomic state, descending in priority:
+     *      1.) direct pressure ionization state, if present in atomic state input data.
+     *          i.e. for the state with the shell occupation number vector n_0 = (n_1, n_2, ..., n_k, 0, ...),
+     *           with k the index of the last occupied shell, and n_k the occupation number of the k-th shell
+     *           the corresponding pressure ionization state is n_PI  = (n_1, n_2, ..., n_k - 1, 0, ...).
+     *      2.) closest in energy final state of upward bound-free transition(ionizing transition) from the state,
+     *       if at least one upward bound free transition exists.
+     *          i.e. the final state reachable by a defined upward bound-free transition from the current state
+     *           with energy closest to the initial state.
+     *      3.) disable pressure ionization for this state.
+     *
+     * further notes:
+     * - setting an atomic states the pressure ionization state equal to the state disables pressure ionization
+     *      for this states
+     * - file must follow PIConGPU specific formatting
+     *      @todo write specification, Brian Marre, 2023
+     * - pressure ionization state must be specified in the same order as in the atomic state input file
+     * - files are not shipped with PIConGPU, see documentation for creation and sources
+     *      @todo create documentation, Brian Marre, 2022
+     * - all paths are either relative to the simOutput folder, or absolute
+     */
+    alias(pressureIonizationStatesFileName);
 
     //! alias for particle flag, number of atomic states in the atomic state input data, see
     //! atomicPhysicsAtomicStatesFileName
