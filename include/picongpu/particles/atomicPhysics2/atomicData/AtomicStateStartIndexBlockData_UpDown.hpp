@@ -79,13 +79,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        ALPAKA_FN_HOST void storeDown(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexDown)
+        ALPAKA_FN_HOST void storeDown(T_CollectionIndex const collectionIndex, typename S_DataBox::TypeNumber startIndexDown)
         {
             m_boxStartIndexBlockTransitionsDown[collectionIndex] = startIndexDown;
         }
 
         //! @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
-        ALPAKA_FN_HOST void storeUp(uint32_t const collectionIndex, typename S_DataBox::TypeNumber startIndexUp)
+        ALPAKA_FN_HOST void storeUp(T_CollectionIndex const collectionIndex, typename S_DataBox::TypeNumber startIndexUp)
         {
             m_boxStartIndexBlockTransitionsUp[collectionIndex] = startIndexUp;
         }
@@ -97,7 +97,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsDown(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsDown(T_CollectionIndex const collectionIndex) const
         {
             return m_boxStartIndexBlockTransitionsDown(collectionIndex);
         }
@@ -109,7 +109,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * get collectionIndex from atomicStateDataBox.findStateCollectionIndex(configNumber)
          * @attention no range check, invalid memory access if collectionIndex >= numberAtomicStates
          */
-        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsUp(uint32_t const collectionIndex) const
+        HDINLINE typename S_DataBox::TypeNumber startIndexBlockTransitionsUp(T_CollectionIndex const collectionIndex) const
         {
             return m_boxStartIndexBlockTransitionsUp(collectionIndex);
         }
