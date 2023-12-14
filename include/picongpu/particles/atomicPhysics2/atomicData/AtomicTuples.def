@@ -40,8 +40,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         T_Value>; // energy over ground [eV]
 
     template<typename T_Idx>
-    PressureIonizationStateTuple
-    using AtomicStateTuple = std::tuple<
+    using PressureIonizationStateTuple = std::tuple<
         T_Idx, // state configNumber
         T_Idx>; // pressure ionization state configNumber
 
