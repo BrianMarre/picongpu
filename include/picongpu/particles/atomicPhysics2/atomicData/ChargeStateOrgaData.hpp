@@ -111,7 +111,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(chargeState > static_cast<uint32_t>(T_atomicNumber))
                 {
-                    printf("atomicPhysics ERROR: out of range numberAtomicStates() call\n");
+                    printf("atomicPhysics ERROR: out of range chargeStateOrgaData.numberAtomicStates() call\n");
                     return static_cast<T_Number>(0._X);
                 }
 
@@ -124,7 +124,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(chargeState > static_cast<uint32_t>(T_atomicNumber))
                 {
-                    printf("atomicPhysics ERROR: out of range startIndexBlockAtomicStates() call\n");
+                    printf("atomicPhysics ERROR: out of range chargeStateOrgaData.startIndexBlockAtomicStates() call\n");
                     return static_cast<T_Number>(0._X);
                 }
 

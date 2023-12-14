@@ -956,8 +956,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundFreeBased> numberTransitionsHostBox = getBoundFreeNumberTransitionsDataBox<true>();
             S_AtomicStateStartIndexBlockDataBox_UpDown<ProcClassGroup::boundFreeBased> startIndexBlockHostBox = getBoundFreeStartIndexBlockDataBox<true>();
 
-            S_BoundFreeTransitionDataBox transitionHostBox
-                = getBoundBoundTransitionDataBox<true, s_enums::TransitionOrdering::byLowerState>();
+            S_BoundFreeTransitionDataBox<s_enums::TransitionOrdering::byLowerState> transitionHostBox
+                = getBoundFreeTransitionDataBox<true, s_enums::TransitionOrdering::byLowerState>();
 
             S_PressureIonizationStateDataBox pressureIonizationHostBox = getPressureIonizationStateDataBox<true>();
 
@@ -966,13 +966,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             {
                 Idx const configNumber = atomicStateHostBox.configNumber(collectionIndexAtomicState);
 
-                Idx const directPIStateConfigNumber = ConfigNumber::getDirectPressureIonizationStategetDirectPressureIonizationState(configNumber);
-                uint8_t const chargeState = ConfigNumber::getChargeState(directPIStateConfigNumber);
+                Idx const directPIStateConfigNumber = ConfigNumber::getDirectPressureIonizationState(configNumber);
+                uint8_t const PIchargeState = ConfigNumber::getChargeState(directPIStateConfigNumber);
 
                 CollectionIdx collectionIndexDirectPIState = atomicStateHostBox.findStateCollectionIndex(
                     directPIStateConfigNumber,
-                    chargeStateOrgaHostBox.numberAtomicStates(chargeState),
-                    chargeStateOrgaHostBox.startIndexBlockAtomicStates(chargeState));
+                    chargeStateOrgaHostBox.numberAtomicStates(PIchargeState),
+                    chargeStateOrgaHostBox.startIndexBlockAtomicStates(PIchargeState));
 
                 bool const stateExists = (collectionIndexDirectPIState < m_numberAtomicStates);
 
@@ -985,7 +985,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 else if (numberBoundFreeTransitions > 0)
                 {
                     // else if at least on upward bound-free transition, use lowest delta energy transition
-                    CollectionIdx const startIndexBlock = startIndexBlockHostBox.startIndexBlockTransitionsUp();
+                    CollectionIdx const startIndexBlock = startIndexBlockHostBox.startIndexBlockTransitionsUp(
+                        collectionIndexAtomicState);
 
                     // init with first transition
                     TypeValue lowestAbsoluteDeltaEnergy = math::abs(picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
@@ -1431,8 +1432,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             //      state data
             std::list<S_ChargeStateTuple> chargeStates = readChargeStates(fileChargeStateData);
             std::list<S_AtomicStateTuple> atomicStates = readAtomicStates(fileAtomicStateData);
-            std::list<S_PressureIonizationStateTuple> pressureIonizationStates = readPressureIonizationStates(
-                filePressureIonizationData);
 
             //      transition data
             std::list<S_BoundBoundTransitionTuple> boundBoundTransitions
@@ -1634,6 +1633,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // fill pressureIonizationStateDataBuffer
             if (filePressureIonizationData.empty())
             {
+                std::cout << "no user provided presssure ioniation state file, using automatic pressure ionization states" << std::endl;
                 fillPressureIonizationDataAuto();
             }
             else
