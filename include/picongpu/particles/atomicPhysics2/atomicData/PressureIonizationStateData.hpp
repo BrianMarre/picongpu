@@ -38,7 +38,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_CollectionIndexType dataType used for atomicState collectionIndex
      */
     template<typename T_CollectionIndexType>
-    struct PressureIonizationDataBox
+    struct PressureIonizationStateDataBox
     {
         using CollectionIdx = T_CollectionIndexType;
         using BoxCollectionIndex = pmacc::DataBox<pmacc::PitchedBox<T_CollectionIndexType, 1u>>;
@@ -98,7 +98,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      * @tparam T_CollectionIndexType dataType used for atomicState collectionIndex
      */
     template<typename T_CollectionIndexType>
-    struct PressureIonizationDataBuffer
+    struct PressureIonizationStateDataBuffer
     {
         using CollectionIdx = T_CollectionIndexType;
         using BufferCollectionIndex = pmacc::HostDeviceBuffer<typename CollectionIdx, 1u>;
