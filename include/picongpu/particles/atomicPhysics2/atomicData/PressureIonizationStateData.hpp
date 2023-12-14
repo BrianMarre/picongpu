@@ -51,8 +51,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         /** constructor
          *
          * @param boxCollectionIndex dataBox of pressure ionization state collection index
+         * @param numberAtomicStates number of atomic states
          */
-        AtomicStateDataBox(BoxCollectionIndex boxCollectionIndex, int32_t numberAtomicStates)
+        PressureIonizationStateDataBox(BoxCollectionIndex boxCollectionIndex, uint32_t numberAtomicStates)
             : m_boxCollectionIndex(boxCollectionIndex), m_numberAtomicStates(numberAtomicStates)
         {
         }
@@ -101,13 +102,13 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     struct PressureIonizationStateDataBuffer
     {
         using CollectionIdx = T_CollectionIndexType;
-        using BufferCollectionIndex = pmacc::HostDeviceBuffer<typename CollectionIdx, 1u>;
+        using BufferCollectionIndex = pmacc::HostDeviceBuffer<CollectionIdx, 1u>;
     private:
         std::unique_ptr<BufferCollectionIndex> bufferCollectionIndex;
         uint32_t m_numberAtomicStates;
 
     public:
-        HINLINE PressureIonizationDataBuffer(uint32_t numberAtomicStates) : m_numberAtomicStates(numberAtomicStates)
+        HINLINE PressureIonizationStateDataBuffer(uint32_t numberAtomicStates) : m_numberAtomicStates(numberAtomicStates)
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
             auto const layoutAtomicStates
@@ -115,16 +116,16 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             bufferCollectionIndex.reset(new BufferCollectionIndex(layoutAtomicStates, false));
         }
 
-        HINLINE PressureIonizationDataBox<CollectionIdx> getHostDataBox()
+        HINLINE PressureIonizationStateDataBox<CollectionIdx> getHostDataBox()
         {
-            return PressureIonizationDataBox<CollectionIdx>(
+            return PressureIonizationStateDataBox<CollectionIdx>(
                 bufferCollectionIndex->getHostBuffer().getDataBox(),
                 m_numberAtomicStates);
         }
 
-        HINLINE PressureIonizationDataBox<CollectionIdx> getDeviceDataBox()
+        HINLINE PressureIonizationStateDataBox<CollectionIdx> getDeviceDataBox()
         {
-            return PressureIonizationDataBox<CollectionIdx>(
+            return PressureIonizationStateDataBox<CollectionIdx>(
                 bufferCollectionIndex->getDeviceBuffer().getDataBox(),
                 m_numberAtomicStates);
         }
