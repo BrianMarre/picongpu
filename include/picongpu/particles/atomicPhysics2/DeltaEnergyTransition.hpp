@@ -37,6 +37,7 @@ namespace picongpu::particles::atomicPhysics2
 
     struct DeltaEnergyTransition
     {
+    private:
         /** actual implementation of ionization energy calculation
          *
          * @attention arguments must fullfill lowerChargeState <= upperChargeState, otherwise wrong result
@@ -68,6 +69,7 @@ namespace picongpu::particles::atomicPhysics2
             return sumIonizationEnergies;
         }
 
+    public:
         /** ionizationEnergy from lowerState- to upperState- chargeState
          *
          * @return unit: eV
