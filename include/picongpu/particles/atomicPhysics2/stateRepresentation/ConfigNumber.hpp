@@ -65,6 +65,8 @@
 #include <pmacc/algorithms/math.hpp>
 #include <pmacc/math/Vector.hpp>
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
+
 #include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2::stateRepresentation
@@ -295,7 +297,7 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
          *      n_i being the occupation number of the i-th shell and k being the highest occupied shell
          * the atomicConfigNumber corresponding to n_PI = (n_1, ..., n_k - 1, 0, ...)
          */
-        HDINLINE static DataType getDirectPressureIonizationState(DataType configNumber)
+        HDINLINE static DataType getDirectPressureIonizationState(DataType const configNumber)
         {
             pmacc::math::Vector<uint8_t, numberLevels> levelVector = getLevelVector(configNumber);
 
@@ -303,14 +305,15 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
             uint8_t highestOccupiedShell = numberLevels - 1u;
             for (uint8_t k = numberLevels; k >= 1u; --k)
             {
+                highestOccupiedShell = k - 1u;
                 if (levelVector[k - 1u] > 0u)
                     break;
-                highestOccupiedShell = k - 1u;
             }
 
             // find direct pressure ionization state level vector
-            levelVector[highestOccupiedShell] -= 1u;
-
+            if (levelVector[highestOccupiedShell] != 0u)
+                // not completely ionized state
+                levelVector[highestOccupiedShell] -= 1u;
             return getAtomicConfigNumber(levelVector);
         }
     };
