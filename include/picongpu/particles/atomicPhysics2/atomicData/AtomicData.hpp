@@ -34,7 +34,7 @@
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateNumberOfTransitionsData_UpDown.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_Down.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicStateStartIndexBlockData_UpDown.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/PressureIonizationData.hpp"
+#include "picongpu/particles/atomicPhysics2/atomicData/PressureIonizationStateData.hpp"
 
 // transition data
 #include "picongpu/particles/atomicPhysics2/atomicData/AutonomousTransitionData.hpp"
@@ -74,6 +74,16 @@
 
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
+    namespace detail
+    {
+        enum struct StorageDirectionSwitch : uint8_t
+        {
+            none,
+            upward,
+            downward,
+        };
+    } // namespace detail
+
     namespace s_enums = picongpu::particles::atomicPhysics2::enums;
     using ProcClassGroup = picongpu::particles::atomicPhysics2::enums::ProcessClassGroup;
 
@@ -156,7 +166,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
     public:
         using TypeNumber = T_Number;
         using TypeValue = T_Value;
-        using TypeCollectionIndex = T_CollectionIndex;
+        using CollectionIdx = T_CollectionIndex;
         using Idx = typename T_ConfigNumber::DataType;
         using ConfigNumber = T_ConfigNumber;
 
@@ -185,10 +195,10 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateStartIndexBlockDataBuffer_UpDown
-            = AtomicStateStartIndexBlockDataBuffer_UpDown<TypeCollectionIndex, TypeValue, T_ProcessClassGroup>;
+            = AtomicStateStartIndexBlockDataBuffer_UpDown<CollectionIdx, TypeValue, T_ProcessClassGroup>;
         template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateStartIndexBlockDataBuffer_Down
-            = AtomicStateStartIndexBlockDataBuffer_Down<TypeCollectionIndex, TypeValue, T_ProcessClassGroup>;
+            = AtomicStateStartIndexBlockDataBuffer_Down<CollectionIdx, TypeValue, T_ProcessClassGroup>;
         template<ProcClassGroup T_ProcessClassGroup>
         using S_AtomicStateNumberOfTransitionsDataBuffer_UpDown
             = AtomicStateNumberOfTransitionsDataBuffer_UpDown<TypeNumber, TypeValue, T_ProcessClassGroup>;
@@ -196,7 +206,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_AtomicStateNumberOfTransitionsDataBuffer_Down
             = AtomicStateNumberOfTransitionsDataBuffer_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
-        using S_PressureIonizationDataBuffer = PressureIonizationDataBuffer<TypeCollectionIndex>;
+        using S_PressureIonizationStateDataBuffer = PressureIonizationStateDataBuffer<CollectionIdx>;
 
         template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_BoundBoundTransitionDataBuffer = BoundBoundTransitionDataBuffer<
@@ -243,7 +253,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using S_AtomicStateNumberOfTransitionsDataBox_Down
             = AtomicStateNumberOfTransitionsDataBox_Down<TypeNumber, TypeValue, T_ProcessClassGroup>;
 
-        using S_PressureIonizationDataBox = PressureIonizationDataBox<TypeCollectionIndex>;
+        using S_PressureIonizationStateDataBox = PressureIonizationStateDataBox<CollectionIdx>;
 
         template<s_enums::TransitionOrdering T_TransitionOrdering>
         using S_BoundBoundTransitionDataBox = BoundBoundTransitionDataBox<
@@ -290,7 +300,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         std::unique_ptr<S_AtomicStateNumberOfTransitionsDataBuffer_Down<ProcClassGroup::autonomousBased>>
             atomicStateNumberOfTransitionsDataBuffer_Autonomous;
 
-        std::unique<S_PressureIonizationDataBuffer> pressureIonizationDataBuffer;
+        std::unique<S_PressureIonizationStateDataBuffer> pressureIonizationStateDataBuffer;
 
         // transition data, normal, sorted by lower state
         std::unique_ptr<S_BoundBoundTransitionDataBuffer<s_enums::TransitionOrdering::byLowerState>>
@@ -414,8 +424,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         /** read pressure ionization data file
          *
-         * @attention assumes that readAtomicStates(.) has been called previously
-         * @attention assumes pressure ionization data to use same order as atomic state data
+         * @attention assumes pressure ionization state list to be ordered ascending by collectionIndex of atomic state
          *
          * @throws runtime error if file not found/accessible
          * @returns empty list if fileName is empty string or file not found/accessible
@@ -724,135 +733,68 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
         }
 
-        /** fill pressureIonizationData buffer from List
+        /** check pressure ionization state list
+         *
+         * @return passes silently if correct
          *
          * @attention assumes previous fill of atomic state data buffer and charge state orga data buffer
          *
-         * @throws runtime error if:
-         *  - atomic state list atomicConfigNumber column does not match pressure ionization list atomicState column
-         *  - pressure ionization state is not present in atomic state input.
+         * @throws runtime error if list not ordered by atomic state collectionIndex, pressure ionization state
+         *  missing from atomic state input, or atomic state from atomic state input is missing in list.
          */
-        ALPAKA_FN_HOST void fillPressureIonizationDataFromList(
-            std::list<S_PressureIonizationStateTuple>& pressureIonizationList)
+        ALPAKA_FN_HOST checkPressureIonizationList(
+            std::list<S_PressureIonizationStateTuple>& pressureIonizationStateList)
         {
             // check correct number of entries
-            if (pressureIonizationList.size() != m_numberAtomicStates)
-                throw std::runtime_error("number of pressure ionization states does not match number of atomic states")
+            if (pressureIonizationStateList.size() != m_numberAtomicStates)
+                throw std::runtime_error("atomicPhysics ERROR: number of pressure ionization states does not match "
+                    "number of atomic states");
 
             typename std::list<S_PressureIonizationStateTuple>::iterator iter = pressureIonizationStateList.begin();
 
             S_AtomicStateDataBox atomicStateDataHostBox = this->getAtomicStateDataDataBox<true>();
             S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox = this->getChargeStateOrgaDataBox<true>();
-            S_PressureIonizationDataBox pressureIonizationHostDataBox = this->getPressureIonizationDataBox<true>();
 
-            TypeCollectionIndex collectionIndexAtomicState = 0u;
-            // check columns are element wise equal
-            for(; iterPressureIonizationList != pressureIonizationStateList.end(); iterPressureIonizationList++)
+
+            for(CollectionIdx collectionIndexState = 0u; collectionIndexState < m_numberAtomicStates;
+                ++collectionIndexState)
             {
+                //! check order
+                //@{
+                //      always valid since, number elements in list == m_numberAtomicStates
                 S_PressureIonizationStateTuple tuplePressureIonization = *iterPressureIonizationList;
 
-                Idx atomicConfigNumber= static_cast<Idx>(std::get<0>(tuplePressureIonization));
+                Idx stateConfigNumber = static_cast<Idx>(std::get<0>(tuplePressureIonization));
 
-                if (atomicConfigNumber != atomicStateDataHostBox.configNumber(collectionIndexAtomicState))
+                if (stateConfigNumber != atomicStateDataHostBox.configNumber(collectionIndexAtomicState))
                 {
-                    std::string errorMessage = "mismatch between atomic state columns of atomic state input and"
-                        + " pressure ionization input in entry "
+                    std::string errorMessage = "atomicPhysics ERROR: mismatch between atomic state columns of atomic "
+                        "state input and pressure ionization input in element "
                         + std::to_string(collectionIndex);
                     throw std::runtime_error(errorMessage);
                 }
+                //@}
 
-                // get pressure ionization state collection index
-                Idx const configNumber = static_cast<Idx>(std::get<1>(tuplePressureIonization));
-                uint8_t const chargeState = ConfigNumber::getChargeState(configNumber);
+                //! check pressure ionization state exists
+                //! @note PI ... pressureIonizationState
+                //@{
+                //      get pressure ionization state collection index
+                Idx const PIconfigNumber = static_cast<Idx>(std::get<1>(tuplePressureIonization));
+                uint8_t const PIchargeState = ConfigNumber::getChargeState(PIconfigNumber);
 
-                TypeCollectionIndex collectionIndexPressureIonizationState =
-                    atomicStateDataHostBox.findStateCollectionIndex(
-                        configNumber,
-                        chargeStateOrgaDataHostBox.numberAtomicStates(chargeState),
-                        chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(chargeState));
+                CollectionIdx collectionIndexPIState = atomicStateDataHostBox.findStateCollectionIndex(
+                        PIconfigNumber,
+                        chargeStateOrgaDataHostBox.numberAtomicStates(PIchargeState),
+                        chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(PIchargeState));
 
-                // heck pressure ionization state exists
                 bool const configNumberNotFound = (collectionIndexPressureIonizationState == m_numberAtomicStates);
                 if (configNumberNotFound)
-                    throw std::runtime_error(
-                        "pressure ionization state of state "
+                    throw std::runtime_error( "atomicPhysics ERROR: pressure ionization state of state "
                         + std::to_string(atomicStateDataHostBox.configNumber(collectionIndexAtomicState))
                         + " not found in input atomic state data");
+                //@}
 
-                pressureIonizationHostDataBox.store(
-                    collectionIndexAtomicState, collectionIndexPressureIonizationState);
-
-                ++collectionIndexAtomicState;
-            }
-        }
-
-        /** fill pressureIonizationData buffer automatically
-         *
-         * @attention assumes previous full previous fill of
-         */
-        ALPAKA_FN_HOST void fillPressureIonizationDataFromEmpty()
-        {
-            S_AtomicStateDataBox stateHostBox = getAtomicStateDataDataBox<true>();
-            S_ChargeStateOrgaDataBox chargeStateOrgaHostBox = getChargeStateOrgaDataBox<true>();
-
-            S_AtomicStateNumberOfTransitionsDataBox_UpDown numberTransitionsHostBox
-                = getBoundFreeNumberTransitionsDataBox<true>();
-            S_AtomicStateStartIndexBlockDataBox_UpDown startIndexBlockHostBox = getBoundFreeStartIndexBlockDataBox<true>();
-
-            S_BoundFreeTransitionDataBox transitionHostBox
-                = getBoundBoundTransitionDataBox<true, s_enums::TransitionOrdering::byLowerState>();
-
-            // PI ... Pressure Ionization
-            S_PressureIonizationDataBox pressureIonizationHostBox = getPressureIonizationDataBox<true>();
-
-             TypeCollectionIndex collectionIndexAtomicState = 0u;
-            for(; iterPressureIonizationList != pressureIonizationStateList.end(); iterPressureIonizationList++)
-            {
-                Idx const configNumber = stateHostBox.configNumber(collectionIndexAtomicState);
-
-                Idx const directPIStateConfigNumber =
-                    ConfigNumber::getDirectPressureIonizationStategetDirectPressureIonizationState(configNumber);
-
-                // check direct pressure ionization state exists
-                uint8_t const chargeState = ConfigNumber::getChargeState(directPIStateConfigNumber);
-
-                TypeCollectionIndex collectionIndexPIState =
-                    atomicStateDataHostBox.findStateCollectionIndex(
-                        directPIStateConfigNumber,
-                        chargeStateOrgaDataHostBox.numberAtomicStates(chargeState),
-                        chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(chargeState));
-
-                bool const configNumberFound = (collectionIndexPIState < m_numberAtomicStates);
-                if (configNumberFound)
-                    // use direct pressure ionization state
-                    pressureIonizationHostBox.store(
-                        collectionIndexAtomicState, collectionIndexPIState);
-                else
-                {
-                    TypeNumber const numberBoundFreeTransitions = numberTransitionsHostDataBox.numberOfTransitionsUp(
-                        collectionIndex);
-
-                    if (numberBoundFreeTransitions > 0)
-                    {
-                        TypeCollectionIndex const startIndexBlock
-                            = startIndexBlockHostBox.startIndexBlockTransitionsUp();
-
-                        TypeCollectionIndex collectionIndexPIState
-                            = transitionHostBox.upperStateCollectionIndex(startIndexBlock);
-
-                        // search for upper state with energy closest to current state
-                        for (TypeNumber i = 1u; i < numberBoundFreeTransitions; ++i)
-                        {
-                            // compare energy
-                        }
-                    }
-                    else
-                        // disable pressure ionization
-                        pressureIonizationHostDataBox.store(
-                            collectionIndexAtomicState, collectionIndexAtomicState);
-                }
-
-                ++collectionIndexAtomicState;
+                iterPressureIonizationList++;
             }
         }
 
@@ -946,6 +888,137 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             }
         }
 
+        /** fill pressureIonizationData buffer from existing list
+         *
+         * Takes a list of pressure ionization states for each atomic state in the input, looks up the collection index
+         * of the pressure ionization states and stores for each atomic states, by collectionIndex, it's pressure
+         * ionization state's collectionIndex.
+         *
+         * @param pressureIonizationStateList list of tuples(atomicConfigNumber of atomic state,
+         *  atomicConfigNumber pressureIonization state)
+         *
+         * @attention assumes previous fill of atomic state data buffer and charge state orga data buffer
+         * @attention assumes pressureIonizationStateList to be ordered ascending by collectionIndex of the atomic state
+         * @attention assumes that every atomic state in the atomic state input has exactly one associated pressure
+         *  ionization state that exists in the atomic input data set
+         */
+        ALPAKA_FN_HOST void fillPressureIonizationDataFromList(
+            std::list<S_PressureIonizationStateTuple>& pressureIonizationStateList)
+        {
+            typename std::list<S_PressureIonizationStateTuple>::iterator iter = pressureIonizationStateList.begin();
+
+            S_AtomicStateDataBox atomicStateDataHostBox = this->getAtomicStateDataDataBox<true>();
+            S_ChargeStateOrgaDataBox chargeStateOrgaDataHostBox = this->getChargeStateOrgaDataBox<true>();
+            S_PressureIonizationStateDataBox pressureIonizationHostDataBox = this->getPressureIonizationDataBox<true>();
+
+            CollectionIdx collectionIndexAtomicState = 0u;
+            for(; iterPressureIonizationList != pressureIonizationStateList.end(); iterPressureIonizationList++)
+            {
+                S_PressureIonizationStateTuple tuplePressureIonization = *iterPressureIonizationList;
+
+                // get pressure ionization state collection index
+                Idx const configNumber = static_cast<Idx>(std::get<1>(tuplePressureIonization));
+                uint8_t const chargeState = ConfigNumber::getChargeState(configNumber);
+
+                CollectionIdx collectionIndexPressureIonizationState =
+                    atomicStateDataHostBox.findStateCollectionIndex(
+                        configNumber,
+                        chargeStateOrgaDataHostBox.numberAtomicStates(chargeState),
+                        chargeStateOrgaDataHostBox.startIndexBlockAtomicStates(chargeState));
+
+                pressureIonizationHostDataBox.store(
+                    collectionIndexAtomicState, collectionIndexPressureIonizationState);
+
+                ++collectionIndexAtomicState;
+            }
+        }
+
+        /** fill pressureIonizationData buffer by automatically determining pressure ionization state
+         *
+         * chooses for each atomic state a pressure ionization state as, in descending priority:
+         * 1.) direct pressure ionization state, if present in atomic state input
+         * 2.) upper state of an upward bound-free transition starting from the state closest in energy to the lower
+         *  state, if at least one boundfree transition exists
+         * 3.) disable pressure ionization for the state
+         *
+         * @attention assumes previous fill of atomic state data buffer, charge state orga data buffer, the bound-free
+         *  number transitions buffer, the bound-free startIndexBlock buffer and the bound-free transition buffer
+         *
+         * @note PI ... Pressure Ionization
+         */
+        ALPAKA_FN_HOST void fillPressureIonizationDataAuto()
+        {
+            S_AtomicStateDataBox atomicStateHostBox = getAtomicStateDataDataBox<true>();
+            S_ChargeStateDataBox chargeStateHostBox = getChargeStateDataDataBox<true>();
+            S_ChargeStateOrgaDataBox chargeStateOrgaHostBox = getChargeStateOrgaDataBox<true>();
+
+            S_AtomicStateNumberOfTransitionsDataBox_UpDown numberTransitionsHostBox
+                = getBoundFreeNumberTransitionsDataBox<true>();
+            S_AtomicStateStartIndexBlockDataBox_UpDown startIndexBlockHostBox = getBoundFreeStartIndexBlockDataBox<true>();
+
+            S_BoundFreeTransitionDataBox transitionHostBox
+                = getBoundBoundTransitionDataBox<true, s_enums::TransitionOrdering::byLowerState>();
+
+            S_PressureIonizationStateDataBox pressureIonizationHostBox = getPressureIonizationDataBox<true>();
+
+            for(CollectionIdx collectionIndexAtomicState = 0u; collectionIndexAtomicState < m_numberAtomicStates;
+                ++collectionIndexAtomicState)
+            {
+                Idx const configNumber = atomicStateHostBox.configNumber(collectionIndexAtomicState);
+
+                Idx const directPIStateConfigNumber = ConfigNumber::getDirectPressureIonizationStategetDirectPressureIonizationState(configNumber);
+                uint8_t const chargeState = ConfigNumber::getChargeState(directPIStateConfigNumber);
+
+                CollectionIdx collectionIndexDirectPIState = atomicStateDataHostBox.findStateCollectionIndex(
+                    directPIStateConfigNumber,
+                    chargeStateOrgaHostBox.numberAtomicStates(chargeState),
+                    chargeStateOrgaHostBox.startIndexBlockAtomicStates(chargeState));
+
+                bool const stateExists = (collectionIndexPIState < m_numberAtomicStates);
+
+                TypeNumber const numberBoundFreeTransitions = numberTransitionsHostDataBox.numberOfTransitionsUp(
+                    collectionIndexAtomicState);
+
+                if (stateExists)
+                    // if exists, use direct pressure ionization state
+                    pressureIonizationHostBox.store(collectionIndexAtomicState, collectionIndexDirectPIState);
+                else if (numberBoundFreeTransitions > 0)
+                {
+                    // else if at least on upward bound-free transition, use lowest delta energy transition
+                    CollectionIdx const startIndexBlock = startIndexBlockHostBox.startIndexBlockTransitionsUp();
+
+                    // init with first transition
+                    TypeValue lowestAbsoluteDeltaEnergy = math::abs(picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                            startIndexBlock,
+                            atomicStateHostBox,
+                            transitionHostBox,
+                            chargeStateHostBox));
+                    CollectionIdx index = 0u;
+
+                    // search for upper state with energy closest to current state
+                    for (CollectionIdx i = 1u; i < static_cast<CollectionIdx>(numberBoundFreeTransitions); ++i)
+                    {
+                        // no guarantee that delta Energy > 0, therefore we search for lowest abs(DeltaEnergy)
+                        TypeValue deltaEnergy = math::abs(picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                            startIndexBlock + i,
+                            atomicStateHostBox,
+                            transitionHostBox,
+                            chargeStateHostBox));
+
+                        if (deltaEnergy < lowestAbsoluteDeltaEnergy)
+                        {
+                            lowestAbsoluteDeltaEnergy = deltaEnergy;
+                            index = i;
+                        }
+                    }
+                    pressureIonizationHostBox.store(collectionIndexAtomicState, startIndexBlock + index);
+                }
+                else
+                    // disable pressure ionization
+                    pressureIonizationHostDataBox.store(collectionIndexAtomicState, collectionIndexAtomicState);
+            }
+        }
+
         /** init buffers,
          *
          * @attention all readMethods must have been executed exactly once before calling this method!,
@@ -979,8 +1052,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 new S_AtomicStateNumberOfTransitionsDataBuffer_Down<ProcClassGroup::autonomousBased>(
                     m_numberAtomicStates));
 
-            pressureIonizationDataBuffer.reset(
-                new S_PressureIonizationDataBuffer<TypeCollectionIndex>(m_numberAtomicStates));
+            pressureIonizationStateDataBuffer.reset(
+                new S_PressureIonizationStateDataBuffer<CollectionIdx>(m_numberAtomicStates));
 
             // transition data, by lower state
             boundBoundTransitionDataBuffer.reset(
@@ -1007,6 +1080,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         /** fill storage buffer directly from list
          *
+         * @tparam storageDirection for which direction to store the list data, use none for non directional data
          * @tparam T_Tuple type of tuple
          * @tparam T_DataBox type of dataBox
          * @tparam T_AdditionalData tpye of additional data for use in store call to dataBox
@@ -1016,17 +1090,21 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @attention does not sync to device, must be synced externally explicitly
          */
-        template<typename T_Tuple, typename T_DataBox, typename T_AdditionalData...>
+        template<detail::StorageDirectionSwitch storageDirection, typename T_Tuple, typename T_DataBox, typename T_AdditionalData...>
         ALPAKA_FN_HOST void storeListToBuffer(std::list<T_Tuple>& list, T_DataBox hostBox, T_AdditionalData... const additionalData)
         {
             typename std::list<T_Tuple>::iterator iter = list.begin();
 
             uint32_t i = 0u;
-
             for(; iter != list.end(); iter++)
             {
-                hostBox.store(i, *iter, additionalData...);
-                i++;
+                if constexpr(u8(storageDirection) == u8(detail::StorageDirectionSwitch::none))
+                    hostBox.store(i, *iter, additionalData...);
+                else if constexpr(u8(storageDirection == u8(detail::StorageDirectionSwitch::upward)))
+                    hostBox.storeUp(i, *iter, additionalData...);
+                else if constexpr(u8(storageDirection == u8(detail::StorageDirectionSwitch::downward)))
+                    hostBox.storeDown(i, *iter, additionalData...);
+                ++i;
             }
         }
 
@@ -1369,7 +1447,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             // boundFreeTransitions.sort( CompareTransitionTupel<TypeValue, Idx, true>());
             // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
 
-            // check assumptions
+            // check user input fulfills ordering assumptions
             checkChargeStateList(chargeStates);
             checkAtomicStateList(atomicStates);
             checkTransitionList<S_BoundBoundTransitionTuple>(boundBoundTransitions);
@@ -1380,29 +1458,38 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             initBuffers();
 
             // fill data buffers
+            //@{
             //      charge states
-            storeListToBuffer<S_ChargeStateTuple, S_ChargeStateDataBox>(
-                chargeStates,
-                chargeStateDataBuffer->getHostDataBox());
+            storeListToBuffer<
+                detail::StorageDirectionSwitch::none,
+                S_ChargeStateTuple,
+                S_ChargeStateDataBox>(
+                    chargeStates,
+                    chargeStateDataBuffer->getHostDataBox());
             chargeStateDataBuffer->hostToDevice();
 
             //      atomic states
-            storeListToBuffer<S_AtomicStateTuple, S_AtomicStateDataBox>(
-                atomicStates,
-                atomicStateDataBuffer->getHostDataBox());
+            storeListToBuffer<
+                detail::StorageDirectionSwitch::none,
+                S_AtomicStateTuple,
+                S_AtomicStateDataBox>(
+                    atomicStates,
+                    atomicStateDataBuffer->getHostDataBox());
             atomicStateDataBuffer->hostToDevice();
 
             //      transitions
             storeListToBuffer<
+                detail::StorageDirectionSwitch::upward,
                 S_BoundBoundTransitionTuple,
                 S_BoundBoundTransitionDataBox<s_enums::TransitionOrdering::byLowerState>,
                 S_AtomicStateDataBox>(
-                boundBoundTransitions,
-                boundBoundTransitionDataBuffer->getHostDataBox(),
-                atomicStateDataBuffer->getHostDataBox());
+                    boundBoundTransitions,
+                    boundBoundTransitionDataBuffer->getHostDataBox(),
+                    atomicStateDataBuffer->getHostDataBox());
             boundBoundTransitionDataBuffer->hostToDevice();
 
             storeListToBuffer<
+                detail::StorageDirectionSwitch::upward,
                 S_BoundFreeTransitionTuple,
                 S_BoundFreeTransitionDataBox<s_enums::TransitionOrdering::byLowerState>,
                 S_AtomicStateDataBox>(
@@ -1412,15 +1499,18 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             boundFreeTransitionDataBuffer->hostToDevice();
 
             storeListToBuffer<
+                detail::StorageDirectionSwitch::upward,
                 S_AutonomousTransitionTuple,
                 S_AutonomousTransitionDataBox<s_enums::TransitionOrdering::byLowerState>,
                 S_AtomicStateDataBox>(
-                autonomousTransitions,
-                autonomousTransitionDataBuffer->getHostDataBox(),
-                atomicStateDataBuffer->getHostDataBox());
+                    autonomousTransitions,
+                    autonomousTransitionDataBuffer->getHostDataBox(),
+                    atomicStateDataBuffer->getHostDataBox());
             autonomousTransitionDataBuffer->hostToDevice();
+            //@}
 
-            // check for inversions in upper lower state of transitions
+            // do integrity checks on user input data
+            //      check for inversions in upper lower state of transitions
             checkTransitionsForEnergyInversion(this->getBoundBoundTransitionDataBox<
                                                /*host*/ true,
                                                s_enums::TransitionOrdering::byLowerState>());
@@ -1428,10 +1518,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             checkTransitionsForEnergyInversion(this->getAutonomousTransitionDataBox<
                                                /*host*/ true,
                                                s_enums::TransitionOrdering::byLowerState>());
+            //      check all upper and lower states of transitions exist
+            /// implement check, @todo Brian Marre, 2023
 
-            // fill pressureIonizationDataBuffer
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::DEBUG_SYNC_BUFFERS_TO_HOST)
+                this->hostToDevice();
 
-            // fill orga data buffers 1,)
+            // fill orga data buffers, upward
+            //@{
             //          charge state, does sync internally
             fillChargeStateOrgaData(atomicStates);
 
@@ -1453,23 +1547,27 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
 
             // autonomous transitions are always only downward
+            //@}
 
             // re-sort by upper state of transition
             boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
             boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
             autonomousTransitions.sort(CompareTransitionTupel<TypeValue, T_ConfigNumber, false>());
 
-            // store transition data in inverse order
-            storeTransitionData<
+            // fill data data buffers, downward
+            //@{
+            storeListToBuffer<
+                detail::StorageDirectionSwitch::downward,
                 S_BoundBoundTransitionTuple,
                 S_BoundBoundTransitionDataBox<s_enums::TransitionOrdering::byUpperState>,
                 S_AtomicStateDataBox>(
-                boundBoundTransitions,
-                inverseBoundBoundTransitionDataBuffer->getHostDataBox(),
-                atomicStateDataBuffer->getHostDataBox());
+                    boundBoundTransitions,
+                    inverseBoundBoundTransitionDataBuffer->getHostDataBox(),
+                    atomicStateDataBuffer->getHostDataBox());
             inverseBoundBoundTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
+            storeListToBuffer<
+                detail::StorageDirectionSwitch::downward,
                 S_BoundFreeTransitionTuple,
                 S_BoundFreeTransitionDataBox<s_enums::TransitionOrdering::byUpperState>,
                 S_AtomicStateDataBox>(
@@ -1478,7 +1576,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 atomicStateDataBuffer->getHostDataBox());
             inverseBoundFreeTransitionDataBuffer->hostToDevice();
 
-            storeTransitionData<
+            storeListToBuffer<
+                detail::StorageDirectionSwitch::downward,
                 S_AutonomousTransitionTuple,
                 S_AutonomousTransitionDataBox<s_enums::TransitionOrdering::byUpperState>,
                 S_AtomicStateDataBox>(
@@ -1487,8 +1586,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 atomicStateDataBuffer->getHostDataBox());
             inverseAutonomousTransitionDataBuffer->hostToDevice();
 
-            // fill orga data buffers 2.)
-            //      atomic states, down direction
+            // fill orga buffers, downward
+            //@{
             //      bound-bound
             fill_DownTransition_OrgaData<
                 S_BoundBoundTransitionTuple,
@@ -1508,9 +1607,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 S_AtomicStateNumberOfTransitionsDataBox_UpDown<ProcClassGroup::boundFreeBased>,
                 S_AtomicStateStartIndexBlockDataBox_UpDown<ProcClassGroup::boundFreeBased>,
                 ProcClassGroup::boundFreeBased>(
-                boundFreeTransitions,
-                atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
-                atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
+                    boundFreeTransitions,
+                    atomicStateNumberOfTransitionsDataBuffer_BoundFree->getHostDataBox(),
+                    atomicStateStartIndexBlockDataBuffer_BoundFree->getHostDataBox());
             //          sync to device
             atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
             atomicStateStartIndexBlockDataBuffer_BoundFree->hostToDevice();
@@ -1527,6 +1626,28 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             //          sync to device
             atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
             atomicStateStartIndexBlockDataBuffer_Autonomous->hostToDevice();
+            //@}
+
+            if constexpr(picongpu::atomicPhysics2::debug::atomicData::DEBUG_SYNC_BUFFERS_TO_HOST)
+                this->hostToDevice();
+
+            // fill pressureIonizationStateDataBuffer
+            if (filePressureIonizationData.empty())
+            {
+                fillPressureIonizationDataAuto();
+            }
+            else
+            {
+                // read in user provided file
+                std::list<S_PressureIonizationStateTuple> presssureIonizationStateList
+                    = readPressureIonizationStates(filePressureIonizationData);
+
+                // check ordering assumptions and run integrity checks
+                checkPressureIonizationList(presssureIonizationStateList);
+                fillPressureIonizationDataFromList(pressureIonizationStateList);
+            }
+            //      sync to device
+            pressureIonizationStateDataBuffer->hostToDevice();
 
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::DEBUG_SYNC_BUFFERS_TO_HOST)
                 this->hostToDevice();
@@ -1547,6 +1668,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateNumberOfTransitionsDataBuffer_BoundBound->hostToDevice();
             atomicStateNumberOfTransitionsDataBuffer_BoundFree->hostToDevice();
             atomicStateNumberOfTransitionsDataBuffer_Autonomous->hostToDevice();
+
+            // pressureIonizationState data
+            pressureIonizationStateDataBuffer->hostToDevice();
 
             // transition data
             boundBoundTransitionDataBuffer->hostToDevice();
@@ -1574,6 +1698,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             atomicStateNumberOfTransitionsDataBuffer_BoundBound->deviceToHost();
             atomicStateNumberOfTransitionsDataBuffer_BoundFree->deviceToHost();
             atomicStateNumberOfTransitionsDataBuffer_Autonomous->deviceToHost();
+
+            // pressureIonizationState data
+            pressureIonizationStateDataBuffer->deviceToHost();
 
             // transition data
             boundBoundTransitionDataBuffer->deviceToHost();
@@ -1627,14 +1754,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         //! @tparam hostData true: get hostDataBox, false: get DeviceDataBox
         template<bool hostData>
-        S_PressureIonizationDataBox getPressureIonizationDataBox()
+        S_PressureIonizationStateDataBox getPressureIonizationStateDataBox()
         {
             if constexpr(hostData)
-                return pressureIonizationDataBuffer->getHostDataBox();
+                return pressureIonizationStateDataBuffer->getHostDataBox();
             else
-                return pressureIonizationDataBuffer->getDeviceDataBox();
+                return pressureIonizationStateDataBuffer->getDeviceDataBox();
 
-            ALPAKA_UNREACHABLE(pressureIonizationDataBuffer->getHostDataBox());
+            ALPAKA_UNREACHABLE(pressureIonizationStateDataBuffer->getHostDataBox());
         }
 
         //      start index orga data

@@ -89,6 +89,7 @@ namespace picongpu::particles::atomicPhysics2::debug
 
         // AtomicState data
         auto atomicStateDataBox = atomicData->template getAtomicStateDataDataBox<true>(); // true: get hostDataBox
+        auto pressureIonizationStateDataBox = atomicData->template getPressureIonizationStateDataBox<true>();
 
         auto boundBoundStartIndexBox = atomicData->template getBoundBoundStartIndexBlockDataBox<true>();
         auto boundFreeStartIndexBox = atomicData->template getBoundFreeStartIndexBlockDataBox<true>();
@@ -103,7 +104,7 @@ namespace picongpu::particles::atomicPhysics2::debug
 
         // state data
         std::cout << "AtomicState Data" << std::endl;
-        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround" << std::endl;
+        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, PressureIonizationState" << std::endl;
         std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown"
                   << std::endl;
         for(uint32_t i = 0u; i < numberAtomicStates; i++)
@@ -121,7 +122,9 @@ namespace picongpu::particles::atomicPhysics2::debug
             }
             std::cout << ")";
 
-            std::cout << "]: " << atomicStateDataBox.energy(i) << std::endl;
+            std::cout << "]: " << atomicStateDataBox.energy(i);
+            std::cout << ", " << atomicStateDataBox.configNumber(
+                pressureIonizationStateDataBox.pressureIonizationState(i)) << std::endl;
             std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
                       << boundBoundNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
                       << boundBoundStartIndexBox.startIndexBlockTransitionsUp(i) << "/"

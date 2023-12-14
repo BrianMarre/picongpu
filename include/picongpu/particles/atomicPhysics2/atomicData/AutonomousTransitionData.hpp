@@ -120,7 +120,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_LOAD)
                 if(collectionIndex >= S_TransitionDataBox::m_numberTransitions)
                 {
-                    throw std::runtime_error("atomicPhysics ERROR: out of range store");
+                    throw std::runtime_error("atomicPhysics ERROR: out of range store() call");
                     return;
                 }
 

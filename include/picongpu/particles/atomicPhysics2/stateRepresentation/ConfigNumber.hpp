@@ -289,21 +289,27 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
             return atomicNumber - getBoundElectrons(configNumber);
         }
 
-        HDINLINE static constexpr DataType getDirectPressureIonizationState(DataType configNumber)
+        /** get the direct pressure ionization state's atomicConfigNumber
+         *
+         * @returns for the atomicConfigNumber corresponding to the level vector n = (n_1, ..., n_k, 0, ...),
+         *      n_i being the occupation number of the i-th shell and k being the highest occupied shell
+         * the atomicConfigNumber corresponding to n_PI = (n_1, ..., n_k - 1, 0, ...)
+         */
+        HDINLINE static DataType getDirectPressureIonizationState(DataType configNumber)
         {
             pmacc::math::Vector<uint8_t, numberLevels> levelVector = getLevelVector(configNumber);
 
             // find highest occupied shell
-            uint8_t highestOccupiedShell;
-            for (uint8_t k = numberLevels; k >= 1; --k)
+            uint8_t highestOccupiedShell = numberLevels - 1u;
+            for (uint8_t k = numberLevels; k >= 1u; --k)
             {
-                if (levelVector[k-1] > 0u)
+                if (levelVector[k - 1u] > 0u)
                     break;
-                highestOccupiedShell = k;
+                highestOccupiedShell = k - 1u;
             }
 
             // find direct pressure ionization state level vector
-            levelVector[highestOccupiedShell - 1u] -= 1u;
+            levelVector[highestOccupiedShell] -= 1u;
 
             return getAtomicConfigNumber(levelVector);
         }
