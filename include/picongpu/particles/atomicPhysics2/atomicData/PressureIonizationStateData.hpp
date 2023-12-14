@@ -73,7 +73,6 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 if(state >= m_numberAtomicStates)
                 {
                     printf("atomicPhysics ERROR: out of bounds in store() call on PressureIonizationData\n");
-                    return static_cast<CollectionIdx>(0u);
                 }
             m_boxCollectionIndex[state] = pressureIonizationState;
         }

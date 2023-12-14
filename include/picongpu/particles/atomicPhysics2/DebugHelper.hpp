@@ -64,7 +64,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                   << numberAtomicStates << ", #b " << numberBoundBoundTransitions << ", #f "
                   << numberBoundFreeTransitions << ", #a " << numberAutonomousTransitions << ")" << std::endl;
 
-        // ChargeState data
+        // chargeState data
         auto chargeStateDataBox = atomicData->template getChargeStateDataDataBox<true>(); // true: get hostDataBox
         auto chargeStateOrgaBox = atomicData->template getChargeStateOrgaDataBox<true>();
 
