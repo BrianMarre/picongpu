@@ -43,20 +43,6 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation::debug
     using TestExample = std::pair<DataType, LevelVector>;
 
     template<uint8_t T_numberLevels>
-    std::string levelVectorToString(LevelVector levelVector)
-    {
-        std::string result = "( " + std::to_string(levelVector[0]);
-
-        for(uint8_t i = 1u; i < T_numberLevels; i++)
-        {
-            result += ", " + std::to_string(levelVector[i]);
-        }
-        result += " )";
-
-        return result;
-    }
-
-    template<uint8_t T_numberLevels>
     void convertToLevelVector(LevelVector& levelVector, pmaccVector vector)
     {
         uint8_t temp;
@@ -78,17 +64,6 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation::debug
     template<bool T_ConsoleOutput = true>
     bool testConfigNumberConversionMethods()
     {
-        // config options
-        using DataType = uint64_t;
-        constexpr uint8_t numberLevels = 10u;
-        constexpr uint8_t atomicNumber = 18u;
-
-        using Config = ConfigNumber<DataType, numberLevels, atomicNumber>;
-        using LevelVector = std::array<uint8_t, numberLevels>;
-        using pmaccVector = pmacc::math::Vector<uint8_t, numberLevels>;
-
-        using TestExample = std::pair<DataType, LevelVector>;
-
         // testCases, see piconpguAtomicPhysicsTools repo, ConfigNumberConversionReference for new examples
         std::list<TestExample> testExamples = {// configNumber            levelVector
                                                // standard examples
@@ -119,7 +94,7 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation::debug
             if constexpr(T_ConsoleOutput)
             {
                 std::cout << "Test: (" << knownConfigNumber << ", ";
-                std::cout << levelVectorToString<numberLevels>(knownLevelVector) << ")" << std::endl;
+                std::cout << knownLevelVector.toString(",", "()")) << ")" << std::endl;
             }
 
             // getLevelVector()
@@ -129,7 +104,7 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation::debug
             if constexpr(T_ConsoleOutput)
             {
                 std::cout << "\t getLevelVector(): ";
-                std::cout << levelVectorToString<numberLevels>(levelVector);
+                std::cout << levelVector.toString(",", "()"));
                 std::cout << std::endl;
             }
 

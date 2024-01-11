@@ -23,6 +23,7 @@
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 
 #include <pmacc/dimensions/DataSpace.hpp>
+#include <pmacc/math/Vector.hpp>
 
 #include <cstdint>
 #include <iostream>
@@ -107,34 +108,31 @@ namespace picongpu::particles::atomicPhysics2::debug
         std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, PressureIonizationState" << std::endl;
         std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown"
                   << std::endl;
-        for(uint32_t i = 0u; i < numberAtomicStates; i++)
+        for(uint32_t stateCollectionIndex = 0u; stateCollectionIndex < numberAtomicStates; stateCollectionIndex++)
         {
-            uint64_t stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(i));
+            uint64_t const stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(stateCollectionIndex));
+            auto const stateLevelVector = S_ConfigNumber::getLevelVector(stateConfigNumber);
+            auto const pressureIonizationStateCollectionIndex
+                = pressureIonizationStateDataBox.pressureIonizationState(stateCollectionIndex);
+            auto const levelVectorPressureIonizationState = S_ConfigNumber::getLevelVector(
+                atomicStateDataBox.configNumber(pressureIonizationStateCollectionIndex));
 
-            std::cout << "\t" << i << " : [" << stateConfigNumber << ", "
-                      << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", ";
-
-            auto levelVector = S_ConfigNumber::getLevelVector(stateConfigNumber);
-            std::cout << "(" << static_cast<uint16_t>(levelVector[0u]);
-            for(uint8_t j = 1u; j < T_AtomicData::ConfigNumber::numberLevels; j++)
-            {
-                std::cout << ", " << static_cast<uint16_t>(levelVector[j]);
-            }
-            std::cout << ")";
-
-            std::cout << "]: " << atomicStateDataBox.energy(i);
-            std::cout << ", " << atomicStateDataBox.configNumber(
-                pressureIonizationStateDataBox.pressureIonizationState(i)) << std::endl;
-            std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
-                      << boundBoundNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
-                      << boundBoundStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
-                      << boundBoundStartIndexBox.startIndexBlockTransitionsDown(i) << std::endl;
-            std::cout << "\t\t f: " << boundFreeNumberTransitionsBox.numberOfTransitionsUp(i) << "/"
-                      << boundFreeNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
-                      << boundFreeStartIndexBox.startIndexBlockTransitionsUp(i) << "/"
-                      << boundFreeStartIndexBox.startIndexBlockTransitionsDown(i) << std::endl;
-            std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitionsDown(i) << ", "
-                      << autonomousStartIndexBox.startIndexBlockTransitionsDown(i) << std::endl;
+            std::cout << "\t" << stateCollectionIndex << " : [" << stateConfigNumber << ", "
+                      << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", "
+                      << precisionCast<uint16_t>(stateLevelVector).toString(",", "()") << "]: "
+                      << atomicStateDataBox.energy(stateCollectionIndex)
+                      << ",\t" << precisionCast<uint16_t>(levelVectorPressureIonizationState).toString(",", "()")
+                      << std::endl;
+            std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(stateCollectionIndex) << "/"
+                      << boundBoundNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
+                      << boundBoundStartIndexBox.startIndexBlockTransitionsUp(stateCollectionIndex) << "/"
+                      << boundBoundStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex) << std::endl;
+            std::cout << "\t\t f: " << boundFreeNumberTransitionsBox.numberOfTransitionsUp(stateCollectionIndex) << "/"
+                      << boundFreeNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
+                      << boundFreeStartIndexBox.startIndexBlockTransitionsUp(stateCollectionIndex) << "/"
+                      << boundFreeStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex) << std::endl;
+            std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
+                      << autonomousStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex) << std::endl;
         }
 
         // transitionData
