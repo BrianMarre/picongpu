@@ -53,7 +53,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param electronBox deviceDataBox giving access to the ion species particle frames
+         * @param electronBox deviceDataBox giving access to the electron species particle frames
          *   of all local superCells
          * @param localElectronHistogramDataBox deviceDataBox giving access to the
          *  local electron histograms of all local superCells
