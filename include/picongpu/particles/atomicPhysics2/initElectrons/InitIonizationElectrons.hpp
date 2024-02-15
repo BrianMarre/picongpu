@@ -34,8 +34,11 @@
 
 namespace picongpu::particles::atomicPhysics2::initElectrons
 {
-    //! initialization of spawned ionization electrons, generic interface
-    template<picongpu::particles::atomicPhysics2::enums::ProcessClass processClass>
+    // define shortened form
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums::ProcessClass;
+
+    //! generic interface for initialization of spawned ionization electrons
+    template<s_enums::ProcessClass processClass>
     struct InitIonizationElectron
     {
         /** call operator
@@ -56,27 +59,27 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
 
     /** specialisation for electronicIonization
      *
-     * @attention not momentum conserving! We do not model as three body inelastic
-     *  collisions, since interacting free electron momentum vector is unknown without
+     * @attention not momentum conserving! We do not model a three body inelastic
+     *  collision, since interacting free electron momentum vector is unknown without
      *  binary pairing
      *
      * @todo implement three body inelastic collision, Brian Marre, 2023
      */
     template<>
-    struct InitIonizationElectron<picongpu::particles::atomicPhysics2::enums ::ProcessClass::electronicIonization>
+    struct InitIonizationElectron<s_enums::ProcessClass::electronicIonization>
     {
         //! call operator
         template<typename T_IonParticle, typename T_ElectronParticle>
         HDINLINE void operator()(T_IonParticle& ion, T_ElectronParticle& electron) const
         {
             /// @todo sample three body inelastic collision for ionization for ionization, Brian Marre, 2023
-            CoMoving::init<T_IonParticle, T_ElectronParticle>(ion, electron);
+            CoMoving::initElectron<T_IonParticle, T_ElectronParticle>(ion, electron);
         }
     };
 
     //! specialisation for autonomousIonization
     template<>
-    struct InitIonizationElectron<picongpu::particles::atomicPhysics2::enums ::ProcessClass::autonomousIonization>
+    struct InitIonizationElectron<s_enums::ProcessClass::autonomousIonization>
     {
         //! call operator
         template<
@@ -113,7 +116,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
                     autonomousTransitionDataBox,
                     chargeStateDataBox);
 
-            Inelastic2BodyCollisionFromCoMoving::init<T_IonParticle, T_ElectronParticle>(
+            Inelastic2BodyCollisionFromCoMoving::initElectron<T_IonParticle, T_ElectronParticle>(
                 ion,
                 electron,
                 deltaEnergy,
