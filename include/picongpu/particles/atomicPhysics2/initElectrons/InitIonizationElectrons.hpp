@@ -35,7 +35,7 @@
 namespace picongpu::particles::atomicPhysics2::initElectrons
 {
     // define shortened form
-    namespace s_enums = picongpu::particles::atomicPhysics2::enums::ProcessClass;
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
 
     //! generic interface for initialization of spawned ionization electrons
     template<s_enums::ProcessClass processClass>
