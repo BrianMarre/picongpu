@@ -99,13 +99,13 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         template<typename T_IonParticle>
         HDINLINE static detail::LorentzBoost getLorentzBoostFromIonToLab(T_IonParticle& ion)
         {
+            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, **weighted**
+            float3_64 const momentum_Lab = static_cast<float3_64>(ion[momentum_]);
             // unitless
-            float_64 const weighting = precisionCast<float_64>(ion[weighting_]);
-            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, not weighted
-            float3_64 const momentum_Lab = precisionCast<float3_64>(ion[momentum_]) / weighting;
+            float_64 const weighting = static_cast<float_64>(ion[weighting_]);
 
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
-            float_64 const momentumSquared_Lab = pmacc::math::l2norm2(momentum_Lab);
+            float_64 const momentumSquared_Lab = pmacc::math::l2norm2(momentum_Lab) / (weighting * weighting);
 
             // UNIT_MASS, not weighted
             constexpr float_64 mass
@@ -121,7 +121,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             // unitless, not weighted
             auto const beta = MatrixVector(
                 /* inverse direction in ion system */ (-1.) * momentum_Lab
-                / pmacc::math::sqrt(momentumSquared_Lab + m2c2));
+                / (weighting * math::sqrt(momentumSquared_Lab + m2c2)));
 
             // ((UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted)
             //  / (UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted)) + unitless
@@ -131,12 +131,11 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             // (UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted)
             //  / ((UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted) * (unitless, not weighted)^2)
             // unitless, not weighted
-            float_64 const normBetaSquared = momentumSquared_Lab
-                / (m2c2 * gamma * gamma)
+            float_64 const normBetaSquared = momentumSquared_Lab / (m2c2 * gamma * gamma);
 
-                // lower 3x3 block of Lorentz boost matrix for transformation from Ion-System to Lab-System
-                // unitless
-                return detail::LorentzBoost(gamma, beta, fillLorentzMatrix(beta, gamma, normBetaSquared));
+            // lower 3x3 block of Lorentz boost matrix for transformation from Ion-System to Lab-System
+            // unitless
+            return detail::LorentzBoost(gamma, beta, fillLorentzMatrix(beta, gamma, normBetaSquared));
         }
 
     public:
