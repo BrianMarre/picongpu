@@ -112,8 +112,8 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
             float_64 gamma = 1.0;
             float_64 normBetaSquared = 0.0;
 
-            bool const isParMoving = momentumSquared != 0.;
-            if(isParMoving)
+            bool const isParticleMoving = (momentumSquared != 0.);
+            if(isParticleMoving)
             {
                 // UNIT_MASS, not weighted
                 constexpr float_X mass = picongpu::traits::frame::getMass<typename T_IonParticle::FrameType>();
@@ -164,7 +164,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
          * - *Star* ... after inelastic collision, otherwise before
          */
         template<typename T_IonParticle, typename T_ElectronParticle, typename T_RngGeneratorFloat>
-        HDINLINE static void init(
+        HDINLINE static void initElectron(
             T_IonParticle& ion,
             T_ElectronParticle& electron,
             // eV

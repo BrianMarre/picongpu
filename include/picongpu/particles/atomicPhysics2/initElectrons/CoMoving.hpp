@@ -30,7 +30,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
     struct CoMoving
     {
         template<typename T_IonParticle, typename T_ElectronParticle>
-        HDINLINE static void init(T_IonParticle& ion, T_ElectronParticle& electron)
+        HDINLINE static void initElectron(T_IonParticle& ion, T_ElectronParticle& electron)
         {
             CloneAdditionalAttributes::init<T_IonParticle, T_ElectronParticle>(ion, electron);
 
