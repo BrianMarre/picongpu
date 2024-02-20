@@ -287,7 +287,7 @@ namespace picongpu
      * @attention It is **almost** never a good idea to use this flag instead of isAtomicPhysicsElectron!
      * An electron always contributes to both the electron spectrum in the atomicPhyiscs step **and** the IPD
      * calculation. Marking an electron species as onlyIPD unphysically removes part of the electron spectrum for
-     * little gain, as the atomicPhysics step scales primarily with the number of ion macro particle number.
+     * little gain, as the atomicPhysics step scales primarily with the number of ion macro particles.
      *
      * @attention Do not combine with isAtomicPhysicsElectron flag! Doing so will lead to this species being counted
      * twice in the IPD calculation!

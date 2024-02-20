@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "picongpu/simulation_defines.hpp"
+
 #include "picongpu/particles/atomicPhysics2/SuperCellField.hpp"
 
 #include <cstdint>
