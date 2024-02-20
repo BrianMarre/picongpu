@@ -40,8 +40,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
      *
      * @attention assumes that the histogram has been reset previously
      *
-     * called by binElectrons sub-stage, bins all macro particles of the species
-     * T_ElectronSpecies in the given superCell into the given histogram
+     * called by binElectrons sub-stage, bins all macro particles in the given electron histograms for each superCell
      */
     template<typename T_Histogram>
     struct BinElectronsKernel
@@ -53,7 +52,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param electronBox deviceDataBox giving access to the electron species particle frames
+         * @param localTimeRemainingBox deviceDataBox giving access to the atomic Physics step time remaining of all
+         *  local superCells
+         * @param electronBox deviceDataBox giving access to the electron specie's particle frames
          *   of all local superCells
          * @param localElectronHistogramDataBox deviceDataBox giving access to the
          *  local electron histograms of all local superCells

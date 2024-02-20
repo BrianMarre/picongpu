@@ -17,13 +17,14 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements filling of all sum fields for a species
+/** @file implements filling of all sum fields for a species
+ *
+ * Sum fields are used in the calculation of ionization potential depression(IPD) input parameters.
+ */
 
 #pragma once
 
-
 #include "picongpu/simulation_defines.hpp"
-// need: picongpu/param/atomicPhysics2.param
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
@@ -31,11 +32,65 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    /**
+    /** fillSumFields kernel
      *
      * @attention assumes that the sumFields have been reset previously
      *
-     * called by IPD calculation functional, bins all macro particles of the species
-     * T_ElectronSpecies in the given superCell into the given histogram
+     * called by IPD calculation stage, adds contribution for all macro particles to all sim fields
      */
-} // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
+    template<bool recordZStarContributions>
+    struct FillSumFieldsKernel
+    {
+        /** call operator variant recordZStarContributions = False
+         *
+         * called by FillSumFields atomic physics sub-stage
+         *
+         * @param worker object containing the device and block
+         *  information, passed by PMACC_KERNEL call
+         * @param areMapping mapping of blockIndex to block superCell index
+         * @param localTimeRemainingBox deviceDataBox giving access to the atomic Physics step time remaining of all
+         *  local superCells
+         * @param particleBox deviceDataBox giving access to the specie's particle frames of all local superCells
+         * @param  deviceDataBox giving access to the local electron histograms of all local superCells
+         */
+        template<
+            typename T_Worker,
+            typename T_AreaMapping,
+            typename T_LocalTimeRemainingBox,
+            typename T_ParticleBox,
+            typename T_SumWeightFieldDataBox,
+            typename T_SumTemperatureFunctionalFieldDataBox,
+            typename T_SumWeightElectronsFieldDataBox>
+        HDINLINE void operator()(
+            T_Worker const& worker,
+            T_AreaMapping const areaMapping,
+            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_ParticleBox const particleBox,
+            T_SumWeightFieldDataBox localSumWeightFieldBox,
+            T_SumTemperatureFunctionalFieldDataBox localSumTemperatureFunctionalFieldBox,
+            T_SumWeightElectronsFieldBox localSumElectronWeightsFieldBox) const
+        {
+            // check that correct version is called for given template parameter recordZStarContributions
+            PMACC_CASSERT_MSG(
+                wrong_number_of_arguments_for_recordZStarContributions_is_True,
+                recordZStarContributions);
+
+            pmacc::DataSpace<simDim> const superCellIdx(
+                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+
+            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+            //  -> must subtract guard to get correct superCellFieldIdx
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
+                = superCellIdx - areaMapping.getGuardingSuperCells();
+
+            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto forEachLocalParticleBoxEntry
+                = pmacc::particles::algorithm::acc::makeForEach(worker, particleBox, superCellIdx);
+
+            // end kernel if superCell already finished or if contains no particles
+            if((timeRemaining <= 0._X) || (!forEachLocalParticleBoxEntry.hasParticles()))
+                return;
+
+            auto sumWeight = sumWeightFieldBox(superCellIdx);
+        };
+    } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
