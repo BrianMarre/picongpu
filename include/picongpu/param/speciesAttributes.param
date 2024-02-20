@@ -147,12 +147,15 @@ namespace picongpu
      */
     alias(effectiveNuclearCharge);
 
-    //! alias for particle flag, specifies atomic data storage class type to use for this species
+    /** alias for particle flag, specifies atomic data type to use for this species
+     *
+     * The atomic data type specifies data types used in storage and active atomicPhysics paths
+     */
     alias(atomicDataType);
 
-    /** path to file containing charge state input data for atomicPhysics,
+    /** path to file containing charge state input data for atomicPhysics for an ion species
      *
-     * file gives parameter of atomic physics states for ion species
+     * file gives parameter of atomic physics charge states for ion species
      * - must follow PIConGPU specific formatting
      *      @todo write specification, Brian Marre, 2023
      * - files are not shipped with PIConGPU, see documentation for creation and sources
@@ -161,18 +164,19 @@ namespace picongpu
      */
     alias(chargeStatesFileName);
 
-    /** path to file containing atomic state input data for atomicPhysics,
+    /** path to file containing atomic state input data for atomicPhysics for an ion species
      *
-     * file gives parameter of atomic physics states for ion species
+     * file gives parameter of atomic physics atomic states for ion species
      * - must follow PIConGPU specific formatting
      *      @todo write specification, Brian Marre, 2023
      * - files are not shipped with PIConGPU, see documentation for creation and sources
      *      @todo create documentation, Brian Marre, 2022
      * - all paths are either relative to the simOutput folder, or absolute
+     * - the number of atomic states must be equal to the value of the numberAtomicStates flag
      */
     alias(atomicStatesFileName);
 
-    /** path to file containing pressure ionization input data for atomicPhysics,
+    /** path to file containing pressure ionization input data for atomicPhysics for an ion species
      *
      * optional, set to empty string if not provided
      *
@@ -200,8 +204,11 @@ namespace picongpu
      */
     alias(pressureIonizationStatesFileName);
 
-    //! alias for particle flag, number of atomic states in the atomic state input data, see
-    //! atomicPhysicsAtomicStatesFileName
+    /** alias for particle flag, number of atomic states in the atomic state input data,
+     *
+     * see atomicPhysicsAtomicStatesFileName particle flag
+     * - must be equal to the number of atomic states in the atomic state input file
+     */
     alias(numberAtomicStates);
 
     /** path to file containing bound-bound transitions input data for atomicPhysics,
@@ -234,14 +241,58 @@ namespace picongpu
      */
     alias(autonomousTransitionsFileName);
 
-    //! alias for particle flag setting electron species to spawn upon atomicPhysics ionization
+    //! alias for particle flag, setting electron species to spawn upon atomicPhysics ionization
     alias(ionizationElectronSpecies);
 
-    //! alias for particle flag describing atomicPhysics solver
+    /** alias for particle flag, indicates species represents an ion and will participate in atomicPhysics step and
+     * ionization potential depression calculation
+     *
+     * any species participating as an ion in the atomicPhysics step. requires atomic input data, specified via
+     * the particle flags:
+     * - atomicDataType
+     * - chargeStatesFileName
+     * - atomicStatesFileName
+     * - boundBoundTransitionsFileName
+     * - boundFreeTransitionsFileName
+     * - autonomousTransitionsFileName
+     * - numberAtomicStates
+     * - ionizationElectronSpecies
+     *
+     * and the particle attributes:
+     * - atomicStateCollectionIndex
+     * - processClass
+     * - transitionIndex
+     * - binIndex
+     * - accepted
+     */
     alias(isAtomicPhysicsIon);
 
-    //! alias for particle flag, notes that a species is representing Electrons
+    /** alias for particle flag, indicates species represents an ion in the ionization potential depression calculation
+     * (IPD), but does not partake in the atomicPhysics step. (in contrast to flag isAtomicPhysicsIon)
+     *
+     * @attention Do not combine with isAtomicPhysicsIon flag! Doing so will lead to this species being counted twice
+     * in the IPD calculation"
+     */
+    alias(isOnlyIPDIon);
+
+    /** alias for particle flag, indicates species represents electrons and will participate in the atomicPhysics step
+     * and the ionization potential depression(IPD) calculation
+     */
     alias(isAtomicPhysicsElectron);
+
+    /** alias for particle flag, indicates species represents electrons in the ionization potential depression
+     * calculation(IPD), but does not partake in binning of electrons for the atomicPhysics step.
+     * (in contrast to flag isAtomicPhysicsElectron)
+     *
+     * @attention It is **almost** never a good idea to use this flag instead of isAtomicPhysicsElectron!
+     * An electron always contributes to both the electron spectrum in the atomicPhyiscs step **and** the IPD
+     * calculation. Marking an electron species as onlyIPD unphysically removes part of the electron spectrum for
+     * little gain, as the atomicPhysics step scales primarily with the number of ion macro particle number.
+     *
+     * @attention Do not combine with isAtomicPhysicsElectron flag! Doing so will lead to this species being counted
+     * twice in the IPD calculation!
+     */
+    alias(isOnlyIPDElectron);
 
     //! particle attribute, collectionIndex of atomic state of ions
     value_identifier(uint32_t, atomicStateCollectionIndex, 0u);
