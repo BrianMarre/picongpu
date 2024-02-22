@@ -1,4 +1,4 @@
-/* Copyright 2023 Brian Marre
+/* Copyright 2024 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -17,21 +17,24 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+/** @file implements calculation of ionization potential depression(IPD) input variables from sum fields
+ *
+ * @attention assumes that fillSumFieldKernel has been completed for all IPD ion and electron species previously!
+ */
 
-#include "picongpu/simulation_defines.hpp"
-
-#include <cstdint>
-#include <iostream>
-
-namespace picongpu::particles::atomicPhysics2::kernel
+namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    //! reduce local time remaining by local time step length
-    struct UpdateTimeRemainingKernel
+    /** calculate IPD input kernel
+     *
+     * @attention assumes that the sumFields have been reset previously
+     *
+     * called by IPD calculation stage, calcualtates local superCell temperature, debye length and
+     */
+    struct CalculateIPDInput
     {
         /** call operator
          *
-         * called by UpdateTimeRemaining atomic physics sub-stage
+         * called by calculateIPD atomic physics sub-stage
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
@@ -49,28 +52,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             T_LocalTimeRemainingBox localTimeRemainingBox,
-            T_LocalTimeStepBox const localTimeStepBox) const
-        {
-            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
-            //  -> must subtract guard to get correct superCellFieldIdx
-            pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())))
-                - areaMapping.getGuardingSuperCells();
+            T_LocalTimeStepBox const localTimeStepBox) const auto onlyMaster = lockstep::makeMaster(worker);
 
-            // UNIT_TIME
-            float_X& timeRemaining = localTimeRemainingBox(superCellFieldIdx);
-
-            // end kernel if superCell already finished
-            if(timeRemaining <= 0._X)
-                return;
-
-            // UNIT_TIME
-            float_X const timeStep = localTimeStepBox(superCellFieldIdx);
-
-            auto onlyMaster = lockstep::makeMaster(worker);
-
-            /// @todo use forEachSuperCell instead of letting workers wait, Brian Marre, 2023
-            onlyMaster([&timeStep, &timeRemaining]() { timeRemaining = timeRemaining - timeStep; });
-        }
-    };
-} // namespace picongpu::particles::atomicPhysics2::kernel
+        /// @todo use forEachSuperCell instead of letting workers wait, Brian Marre, 2023
+        onlyMaster([&timeStep, &timeRemaining]() { timeRemaining = timeRemaining - timeStep; });
+    }
+} // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
