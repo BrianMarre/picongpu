@@ -33,6 +33,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
      *
      * @attention field value only valid after fillIPDSumFields kernel has been executed for **all** electron **and**
      *  ion species.
+     * @attention normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */

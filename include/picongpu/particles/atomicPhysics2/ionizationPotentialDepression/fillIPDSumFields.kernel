@@ -58,7 +58,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
     {
         /** call operator, electron variant
          *
-         * called by FillSumFields atomic physics sub-stage
+         * called by calculateIPD atomic physics sub-stage
          *
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
@@ -119,7 +119,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             forEachLocalParticleBoxEntry(
                 [&sumWeight, &sumTemperatureFunctional, &sumElectronWeight](T_Worker const& worker, auto& particle)
                 {
-                    auto const weight = particle[weighting_];
+                    auto const weight = particle[weighting_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
 
                     sumWeight += weight;
                     sumElectronWeight += weight;
@@ -197,26 +197,25 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
                 return;
 
             // init worker partial sum
-            auto sumWeight = 0._X;
-            auto sumTemperatureFunctional = 0._X;
-            auto sumCharge = 0._X;
-            auto sumChargeSquared = 0._X;
+            float_X sumWeight = 0._X;
+            float_X sumTemperatureFunctional = 0._X;
+            float_X sumCharge = 0._X;
+            float_X sumChargeSquared = 0._X;
 
             forEachLocalParticleBoxEntry(
                 [&sumWeight, &sumTemperatureFunctional, &sumCharge, &sumChargeSquared](
                     T_Worker const& worker,
                     auto& particle)
                 {
-                    auto const weight = particle[weighting_];
+                    auto const weight = particle[weighting_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
 
                     sumWeight += weight;
                     sumTemperatureFunctional += T_TemperatureFunctional<typename T_ElectronBox::FrameType>::term(
                         precisionCast<float3_64>(particle[momentum_]),
                         precisionCast<float_64>(weight));
                     sumCharge += math::abs(picongpu::traits::attribute::getCharge(weight, particle));
-                    sumChargeSquared += math
-                        : abs(pmacc::math
-                              : cPow(picongpu::traits::attribute::getCharge(1._X, particle), 2u) * weight);
+                    sumChargeSquared += math::abs(
+                        pmacc::math::cPow(picongpu::traits::attribute::getCharge(1._X, particle), 2u) * weight);
                 });
 
             // write worker partial sums for species to superCell field
