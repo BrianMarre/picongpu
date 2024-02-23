@@ -52,7 +52,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 
     // (weight^2 * UNIT_MASS^2 * UNIT_TIME^2 / UNIT_LENGTH^2) / (weight * UNIT_MASS)
     // weight * UNIT_MASS * UNIT_TIME^2 / UNIT_LENGTH^2
-    return static_cast<float_X>(momentumSquared / (2 * mass * weight));
+    return (2._X / 3._X) * static_cast<float_X>(momentumSquared / (2 * mass * weight));
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 }
 ;
