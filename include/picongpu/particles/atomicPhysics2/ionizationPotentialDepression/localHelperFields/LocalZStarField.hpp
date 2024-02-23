@@ -28,9 +28,11 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
 {
-    /**superCell field of local z^* = <Z^2>/<z>
+    /**superCell field of local z^* = average(q^2)/average(q)   ;q ... charge number of ion
      *
-     * @details required for calculating the local ionization potential depression(IPD) and filled by
+     * @details unitless, not weighted
+     *
+     * @note required for calculating the local ionization potential depression(IPD) and filled by
      *  calculateIPDInput kernel.
      *
      * @tparam T_MappingDescription description of local mapping from device to grid

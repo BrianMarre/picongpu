@@ -28,14 +28,20 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
 {
-    /**helper superCell field of the sum of a temperature functional of all electron and ion macro particles.
+    /**helper superCell field of the sum of a weighted temperature functional A of all electron and ion macro
+     * particles.
      *
-     * @details required for calculating local temperature for ionization potential depression(IPD)
-     * @details is used to keep intermediate results between kernel calls for different species
+     * sum of kinetic particle temperature contributions A according to equipartition theorem
+     *  k_Boltzman * T = average(A)
+     *
+     * @details unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     *
+     * @note required for calculating local temperature for ionization potential depression(IPD)
+     * @note is used to keep intermediate results between kernel calls for different species
      *
      * @attention field value only valid after fillIPDSumFields kernel has been executed for **all** electron **and**
      *  ion species.
-     * @attention normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     * @attention in units of picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE!
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
