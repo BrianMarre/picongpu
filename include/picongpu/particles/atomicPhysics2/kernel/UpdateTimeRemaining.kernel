@@ -35,10 +35,10 @@ namespace picongpu::particles::atomicPhysics2::kernel
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param localTimeRemainingBox deviceDataBox containing local atomicPhysics step
-         *  time remaining for every superCell
-         * @param localTimeStepBox deviceDataBox containing local atomicPhysics time step
-         *  length for every superCell
+         * @param localTimeRemainingBox deviceDataBox giving access to the local atomicPhysics time remaining for every
+         *  superCell
+         * @param localTimeStepBox deviceDataBox giving access to local atomicPhysics time step length for every
+         *  superCell
          */
         template<
             typename T_Worker,
