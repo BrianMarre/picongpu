@@ -26,13 +26,14 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
 {
-    /**helper superCell field of sum of weights of all electron macro particles.
+    /**helper superCell field of sum of weight of all electron macro particles.
      *
-     * @details required for calculating local debye length for ionization potential depression(IPD)
-     * @details is used to keep intermediate results between kernel calls for different species
+     * @details unit: 1 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     *
+     * @note required for calculating local debye length for ionization potential depression(IPD)
+     * @note is used to keep intermediate results between kernel calls for different species
      *
      * @attention field value only valid after fillIPDSumFields kernel has been executed for **all** electron species.
-     * @attention normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */

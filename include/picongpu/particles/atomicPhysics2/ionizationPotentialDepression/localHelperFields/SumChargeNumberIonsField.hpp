@@ -28,20 +28,23 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
 {
-    /**helper superCell field of the weighted sum of (charge/e) of all macro particles of all ion species.
+    /**helper superCell field of the weighted sum of (charge/(e * weight)) of all macro particles of all ion species.
      *
-     * @details required for calculating local z^* for ionization potential depression(IPD)
-     * @details is used to keep intermediate results between kernel calls for different species
+     * @details weighted by macro particle weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     * @details unit: unitless * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     *
+     * @note required for calculating local z^* for ionization potential depression(IPD)
+     * @note is used to keep intermediate results between kernel calls for different species
      *
      * @attention field value only valid after fillIPDSumFields kernel has been executed for **all** ion species.
-     * @attention normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     * @attention in units of picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE!
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct SumChargeIonsField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
+    struct SumChargeNumberIonsField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
     {
-        SumChargeIonsField(T_MappingDescription const& mappingDesc)
+        SumChargeNumberIonsField(T_MappingDescription const& mappingDesc)
             : SuperCellField<T_Type, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }

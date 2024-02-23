@@ -27,8 +27,8 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumChargeIonsField.hpp"
-#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumChargeSquaredIonsField.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumChargeNumberIonsField.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumChargeNumberSquaredIonsField.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumTemperatureFunctionalField.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumWeightAllField.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumWeightElectrons.hpp"

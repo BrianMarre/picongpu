@@ -30,7 +30,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
 {
     /**superCell field of local debye length
      *
-     * @details required for calculating the local ionization potential depression(IPD) and filled by
+     * @details unit: UNIT_LENGTH
+     *
+     * @note required for calculating the local ionization potential depression(IPD) and filled by
      *  calculateIPDInput kernel.
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
