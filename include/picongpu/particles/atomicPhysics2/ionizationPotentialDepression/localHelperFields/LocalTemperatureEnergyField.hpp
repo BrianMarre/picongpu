@@ -28,20 +28,19 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
 {
-    /**helper superCell field of the weighted sum of (charge/e)^2 of all macro particles of all ion species.
+    /**superCell field of local temperature * k_Boltzman
      *
-     * @details required for calculating local z^* for ionization potential depression(IPD)
-     * @details is used to keep intermediate results between kernel calls for different species
+     * unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, weighted^1
      *
-     * @attention field value only valid after fillIPDSumFields kernel has been executed for **all** ion species.
-     * @attention normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     * @details required for calculating the local ionization potential depression(IPD) and filled by
+     *  calculateIPDInput kernel.
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct SumChargeSquaredIonsField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
+    struct LocalTemperatureEnergyField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
     {
-        SumChargeSquaredIonsField(T_MappingDescription const& mappingDesc)
+        LocalTemperatureField(T_MappingDescription const& mappingDesc)
             : SuperCellField<T_Type, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
@@ -49,7 +48,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "SumChargeSquaredIonsField";
+            return "LocalTemperatureEnergyField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields

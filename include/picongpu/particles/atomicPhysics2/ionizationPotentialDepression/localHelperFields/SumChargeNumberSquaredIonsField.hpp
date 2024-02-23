@@ -28,17 +28,23 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
 {
-    /**superCell field of local temperature
+    /**helper superCell field of the weighted sum of (charge/(e * weight))^2 of all macro particles of all ion species.
      *
-     * @details required for calculating the local ionization potential depression(IPD) and filled by
-     *  calculateIPDInput kernel.
+     * @details weighted by macro particle weight /TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     * @details unit: unitless * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+     *
+     * @note required for calculating local z^* for ionization potential depression(IPD)
+     * @note is used to keep intermediate results between kernel calls for different species
+     *
+     * @attention field value only valid after fillIPDSumFields kernel has been executed for **all** ion species.
+     * @attention in units of picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE!
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalTemperatureField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
+    struct SumChargeNumberSquaredIonsField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
     {
-        LocalTemperatureField(T_MappingDescription const& mappingDesc)
+        SumChargeNumberSquaredIonsField(T_MappingDescription const& mappingDesc)
             : SuperCellField<T_Type, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
@@ -46,7 +52,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalTemperatureField";
+            return "SumChargeSquaredIonsField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields
