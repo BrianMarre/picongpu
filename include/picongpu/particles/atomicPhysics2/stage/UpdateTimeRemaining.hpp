@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "picongpu/simulation_defines.hpp"
+
 #include "picongpu/particles/atomicPhysics2/kernel/UpdateTimeRemaining.kernel"
 
 #include <string>
