@@ -54,7 +54,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
      * @tparam T_TemperatureFunctor term to average for temperature calculation using equi-partition theorem
      */
     template<detail::SpeciesType T_SpeciesType, typename T_TemperatureFunctor>
-    struct FillSumFieldsKernel
+    struct FillIPDSumFieldsKernel
     {
         /** call operator, electron variant
          *
