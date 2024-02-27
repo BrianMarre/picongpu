@@ -104,7 +104,7 @@ namespace picongpu::simulation::stage
          * @todo use different Flag?, Brian Marre, 2023
          */
         using SpeciesRepresentingIons =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
 
         //! set local timeRemaining to PIC-time step
         HINLINE static void setTimeRemaining()
