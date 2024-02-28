@@ -29,7 +29,7 @@
 
 namespace picongpu::particles::atomicPhysics2::stage
 {
-    /** @class atomic physics sub-stage for reducing the local time remaining by the local
+    /** atomic physics sub-stage for reducing the local time remaining by the local
      *  atomicPhysics time step
      */
     struct UpdateTimeRemaining
