@@ -52,7 +52,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "SumChargeSquaredIonsField";
+            return "SumChargeNumberSquaredIonsField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::localHelperFields

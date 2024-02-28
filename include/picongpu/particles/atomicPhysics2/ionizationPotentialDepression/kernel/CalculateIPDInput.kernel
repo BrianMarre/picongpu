@@ -22,7 +22,7 @@
  * @attention assumes that fillSumFieldKernel has been completed for all IPD ion and electron species previously!
  */
 
-namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
+namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
 {
     /** calculate IPD input kernel
      *
@@ -30,7 +30,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
      *
      * called by IPD calculation stage, calculates local superCell temperature, debye length and
      */
-    struct CalculateIPDInput
+    struct CalculateIPDInputKernel
     {
         /** call operator
          *
@@ -58,7 +58,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             typename T_SumTemperatureFunctionalFieldDataBox,
             typename T_SumWeightElectronFieldBox,
             typename T_SumChargeNumberIonsFieldDataBox,
-            typename T_SumChargeNumberSquaredIonsFieldDataBox typename T_LocalTemperatureFieldDataBox,
+            typename T_SumChargeNumberSquaredIonsFieldDataBox,
+            typename T_LocalTemperatureFieldDataBox,
             typename T_LocalZStarFieldDataBox,
             typename T_LocaDebyeLengthFieldDataBox>
         HDINLINE void operator()(
@@ -147,5 +148,5 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
                         / (localSumChargeNumberSquared + localSumWeightElectron));
                 });
         }
-    }
-} // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
+    };
+} // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel

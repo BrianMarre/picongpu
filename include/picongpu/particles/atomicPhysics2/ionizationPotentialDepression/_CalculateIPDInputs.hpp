@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file CalculateIPDInputs sub-stage of atomicPhysics
+//! @file CalculateIPDInputs sub-stage of Stewart-Pyatt ionization potential depression(IPD) atomicPhysics
 
 #pragma once
 
@@ -39,12 +39,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
      *     isOnlyIPDElectron or isAtomicPhysicsElectron flag to five sum fields
      * 2.) calculate local temperature, debye length, and z^star as input for each super cell
      */
-    template<typename T_TemperatureFunctional>
+    template<typename T_TemperatureFunctional, typename T_ParticleSpecies>
     struct CalculateIPDInputs
     {
-        using SpeciesRepresentingAtomciPhysicsIons =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
-        using SpeciesRepresentingAtomciPhysicsIons =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
