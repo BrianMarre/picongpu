@@ -28,11 +28,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/traits/attribute/GetCharge.hpp"
-
 #include <pmacc/particles/algorithm/ForEach.hpp>
-
-#include <cstdint>
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
 {
