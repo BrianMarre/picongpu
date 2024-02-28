@@ -26,7 +26,9 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/FillIPDSumFields_Ion.kernel"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/FillIPDSumFields_Electron.kernel"
+
+#include <string>
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage
 {
@@ -69,7 +71,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                 = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion(), workerCfg)
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Electron(), workerCfg)
             (mapper.getGridDim())(
                 mapper,
                 localTimeRemainingField.getDeviceDataBox(),
