@@ -17,16 +17,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file FillIPDSumFields ionization potential depression(IPD) sub-stage or an ion species
+/** @file CalculateIPDInput ionization potential depression(IPD) sub-stage
  *
- * implements filling of IPD sum fields from reduction of all macro particles of the specified **ion** species
+ * implements calculation of IPD input parameters from the local sumField values
  */
 
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/FillIPDSumFields_Ion.kernel"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/CalculateIPDInput.kernel"
 
 #include <string>
 
@@ -35,17 +35,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
     //! short hand for IPD namespace
     namespace s_IPD = picongpu::particles::atomicPhysics2::ionizationPotentialDepression;
 
-    /** IPD sub-stage for filling the sum fields required for calculating the IPD inputs for an ion species
-     *
-     * @tparam T_IonSpecies ion species to fill into sum fields
-     */
-    template<typename T_IonSpecies>
-    struct FillIPDSumFields
+    //! IPD sub-stage for calculating IPD input from sumFields, required for calculating IPD
+    struct CalculateIPDInput
     {
-        // might be alias, from here on out no more
-        //! resolved type of alias T_ParticleSpecies
-        using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
-
         //! call of kernel for every superCell
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
         {
@@ -59,30 +51,37 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
 
-            // pointer to memory, we will only work on device, no sync required
-            // init pointer to particles and localSumFields
-            auto& ions = *dc.get<ParticleSpecies>(IonSpecies::FrameType::getName());
-
             auto& localSumWeightAllField = *dc.get<s_IPD::localHelperFields::SumWeightAllField>("SumWeightAllField");
             auto& localSumTemperatureFunctionalField
                 = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField>("SumTemperatureFunctionalField");
 
+            auto& localSumWeightElectronField
+                = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
             auto& localSumChargeNumberIonsField
                 = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField>("SumChargeNumberIonsField");
             auto& localSumChargeNumberSquaredIonsField
                 = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField>(
                     "SumChargeNumberSquaredIonsField");
 
-            // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion(), workerCfg)
+            auto& localTemperatureEnergyField
+                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField>("LocalTemperatureEnergyField");
+            auto& localZStarField = *dc.get<s_IPD::localHelperFields::LocalZStarField>("LocalZStarField");
+            auto& localDebyeLengthField
+                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField>("LocalDebyeLengthField");
+
+            // macro for kernel call
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::CalculateIPDInputKernel(), workerCfg)
             (mapper.getGridDim())(
                 mapper,
                 localTimeRemainingField.getDeviceDataBox(),
-                ions.getDeviceParticlesBox(),
                 localSumWeightAllField.getDeviceDataBox(),
                 localSumTemperatureFunctionalField.getDeviceDataBox(),
+                localSumWeightElectronField.getDeviceDataBox(),
                 localSumChargeNumberIonsField.getDeviceDataBox(),
-                localSumChargeNumberSquaredIonsField.getDeviceDataBox());
+                localSumChargeNumberSquaredIonsField.getDeviceDataBox(),
+                localTemperatureEnergyField.getDeviceDataBox(),
+                localZStarField.getDeviceDataBox(),
+                localDebyeLengthField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage

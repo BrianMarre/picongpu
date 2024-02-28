@@ -22,6 +22,12 @@
  * @attention assumes that fillSumFieldKernel has been completed for all IPD ion and electron species previously!
  */
 
+#pragma once
+
+#include "picongpu/simulation_defines.hpp"
+
+#include <pmacc/particles/algorithm/ForEach.hpp>
+
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
 {
     /** calculate IPD input kernel
@@ -40,13 +46,17 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
          * @param areMapping mapping of blockIndex to block superCell index
          * @param localTimeRemainingBox deviceDataBox containing local atomicPhysics step
          *  time remaining for every superCell
-         * @param localSumWeightFieldBox deviceDataBox giving access to the sum of weights of macro particles for all
+         * @param localSumWeightAllBox deviceDataBox giving access to the sum of weights of macro particles for all
          *  local superCells
-         * @param localSumTemperatureFunctionalFieldBox deviceDataBox giving access to the sum of the temperature
+         * @param localSumTemperatureFunctionalBox deviceDataBox giving access to the sum of the temperature
          *  functional of all macro particles for all local superCells
-         * @param localSumElectronWeightFieldBox deviceDataBox giving access to the sum of weights for electron macro
+         * @param localSumWeightElectronBox deviceDataBox giving access to the sum of weights of electron macro
          *  particles for all local superCells
-         * @param localTemperatureBox deviceDataBox giving access to the local temperature for every superCell
+         * @param localSumChargeNumberBox deviceDataBox giving access to the weighted sum of the charge number of ion
+         *  macro particles for all local superCells
+         * @param localSumChargeNumberSquaredBox deviceDataBox giving access to the weighted sum of the charge number
+         *  squared of ion macro particles for all local superCells
+         * @param localTemperatureEnergyBox deviceDataBox giving access to the local temperature for every superCell
          * @param localZStarBox deviceDataBox giving access to the local Z^Star value for every superCell
          * @param localDebyeLengthBox deviceDataBox giving access to the local debye length for every superCell
          */
@@ -66,14 +76,14 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             T_LocalTimeRemainingDataBox const localTimeRemainingBox,
-            T_SumWeightAllFieldDataBox const localSumWeightAllFieldBox,
-            T_SumTemperatureFunctionalFieldDataBox const localSumTemperatureFunctionalFieldBox,
-            T_SumWeightElectronFieldBox const localSumElectronWeightFieldBox,
-            T_SumChargeNumberIonsFieldDataBox const localSumChargeNumberFieldBox,
-            T_SumChargeNumberSquaredIonsFieldDataBox const localSumChargeNumberSquaredFieldBox,
-            T_LocalTemperatureFieldDataBox localTemperatureEnergyFieldBox,
-            T_LocalZStarFieldDataBox localZStarFieldBox,
-            T_LocaDebyeLengthFieldDataBox localDebyeLengthFieldBox) const
+            T_SumWeightAllFieldDataBox const localSumWeightAllBox,
+            T_SumTemperatureFunctionalFieldDataBox const localSumTemperatureFunctionalBox,
+            T_SumWeightElectronFieldBox const localSumWeightElectronBox,
+            T_SumChargeNumberIonsFieldDataBox const localSumChargeNumberBox,
+            T_SumChargeNumberSquaredIonsFieldDataBox const localSumChargeNumberSquaredBox,
+            T_LocalTemperatureFieldDataBox localTemperatureEnergyBox,
+            T_LocalZStarFieldDataBox localZStarBox,
+            T_LocaDebyeLengthFieldDataBox localDebyeLengthBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -91,26 +101,26 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             // localSumFieldValues
             //{
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME * weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
-            float_X const localSumTemperatureFunctional = localSumTemperatureFunctionalFieldBox(superCellFieldIdx);
+            float_X const localSumTemperatureFunctional = localSumTemperatureFunctionalBox(superCellFieldIdx);
             // weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
-            float_X const localSumWeightAll = localSumWeightAllFieldBox(superCellFieldIdx);
+            float_X const localSumWeightAll = localSumWeightAllBox(superCellFieldIdx);
             // weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
-            float_X const localSumWeightElectron = localSumElectronWeightFieldBox(superCellFieldIdx);
+            float_X const localSumWeightElectron = localSumWeightElectronBox(superCellFieldIdx);
 
             // unitless * weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
-            float_X const localSumChargeNumber = localSumChargeNumberFieldBox(superCellFieldIdx);
+            float_X const localSumChargeNumber = localSumChargeNumberBox(superCellFieldIdx);
             // unitless * weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
-            float_X const localSumChargeNumberSquared = localSumChargeNumberSquaredFieldBox(superCellFieldIdx);
+            float_X const localSumChargeNumberSquared = localSumChargeNumberSquaredBox(superCellFieldIdx);
             //}
 
             // IPD input parameter
             //{
             // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
-            float_X& localTemperatureTimesk_Boltzman = localTemperatureEnergyFieldBox(superCellFieldIdx);
+            float_X& localTemperatureTimesk_Boltzman = localTemperatureEnergyBox(superCellFieldIdx);
             // unitless, non weighted
-            float_X& localZStar = localZStarFieldBox(superCellFieldIdx);
+            float_X& localZStar = localZStarBox(superCellFieldIdx);
             // UNIT_LENGTH, non weighted
-            float_X& localDebyeLength = localDebyeLengthFieldBox(superCellFieldIdx);
+            float_X& localDebyeLength = localDebyeLengthBox(superCellFieldIdx);
             //}
 
             const auto onlyMaster = lockstep::makeMaster(worker);
