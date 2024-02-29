@@ -115,7 +115,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
 
             // IPD input parameter
             //{
-            // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_PARTICLES_PER_MACROPARTICLE
+            // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             float_X& localTemperatureTimesk_Boltzman = localTemperatureEnergyBox(superCellFieldIdx);
             // unitless, non weighted
             float_X& localZStar = localZStarBox(superCellFieldIdx);
