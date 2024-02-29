@@ -70,10 +70,9 @@ namespace picongpu::simulation::stage
 {
     /** atomic physics stage
      *
-     * excited atomic state and ionization dynamics
+     * models excited atomic state and ionization dynamics
      *
-     * one instance of this class is initialized and it's operator() called for every time step
-     *
+     * @note one instance of this class is initialized and it's operator() called for every time step
      */
     struct AtomicPhysics2
     {
@@ -91,17 +90,14 @@ namespace picongpu::simulation::stage
         using S_TimeRemainingField
             = particles::atomicPhysics2::localHelperFields ::LocalTimeRemainingField<picongpu::MappingDesc>;
 
-        /** list of all species of macro particles with flag isAtomicPhysicsElectron
-         *
-         * as defined in species.param, is list of types
-         */
+        //! list of all species of macro particles that partake in atomicPhysics as electrons
         using SpeciesRepresentingElectrons =
             typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsElectron<>>::type;
 
-        /** list of all species of macro particles with atomicPhysics input data
+        /** list of all species of macro particles that partake in atomicPhysics as ions
          *
-         * as defined in species.param, is list of types
-         * @todo use different Flag?, Brian Marre, 2023
+         * @attention atomicPhysics  assumes that all species with isAtomicPhysicsIon flag also have the required
+         * atomic data flags, see picongpu/param/speciesAttributes.param for details
          */
         using SpeciesRepresentingIons =
             typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
@@ -116,7 +112,7 @@ namespace picongpu::simulation::stage
             localTimeRemainingField.getDeviceBuffer().setValue(DELTA_T); // UNIT_TIME
         }
 
-        //! reset local allMacroIonsAccepted switch to ture
+        //! reset local allMacroIonsAccepted switch to true
         HINLINE static void resetAllMacroIonsAcceptedField()
         {
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
@@ -137,6 +133,58 @@ namespace picongpu::simulation::stage
                     "Electron_localHistogramField");
 
             localElectronHistogramField.getDeviceBuffer().setValue(picongpu::atomicPhysics2::ElectronHistogram());
+        }
+
+        //! print electron histogram to console
+        template<bool T_printOnlyOverSubscribed>
+        HINLINE static void printHistogramToConsole()
+        {
+            picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
+                picongpu::particles::atomicPhysics2::electronDistribution::
+                    LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>,
+                picongpu::particles::atomicPhysics2::electronDistribution::PrintHistogramToConsole<
+                    T_printOnlyOverSubscribed>>{}(mappingDesc, "Electron_localHistogramField");
+        }
+
+        //! print LocalElectronHistogramOverSubscribedField to console
+        HINLINE static void printOverSubscriptionFieldToConsole()
+        {
+            picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
+                picongpu::particles::atomicPhysics2::localHelperFields::LocalElectronHistogramOverSubscribedField<
+                    picongpu::MappingDesc>,
+                picongpu::particles::atomicPhysics2::localHelperFields::PrintOverSubcriptionFieldToConsole>{}(
+                mappingDesc,
+                "LocalElectronHistogramOverSubscribedField");
+        }
+
+        //! print rejectionProbabilityCache
+        HINLINE static void printRejectionProbabilityCacheToConsole()
+        {
+            picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
+                picongpu::particles::atomicPhysics2::localHelperFields ::LocalRejectionProbabilityCacheField<
+                    picongpu::MappingDesc>,
+                picongpu::particles::atomicPhysics2::localHelperFields ::PrintRejectionProbabilityCacheToConsole<
+                    true>>{}(mappingDesc, "LocalRejectionProbabilityCacheField");
+        }
+
+        //! print local time remaining to console
+        HINLINE static void printTimeRemaingToConsole()
+        {
+            picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
+                picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>,
+                picongpu::particles::atomicPhysics2::localHelperFields::PrintTimeRemaingToConsole>{}(
+                mappingDesc,
+                "LocalTimeRemainingField");
+        }
+
+        //! print local time step to console
+        HINLINE static void printTimeStepToConsole()
+        {
+            picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
+                picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>,
+                picongpu::particles::atomicPhysics2::localHelperFields::PrintTimeStepToConsole>{}(
+                mappingDesc,
+                "LocalTimeStepField");
         }
 
     public:
@@ -238,28 +286,29 @@ namespace picongpu::simulation::stage
                 // particle[accepted_] = false, in each macro ion
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
                 resetHistograms();
+
                 if constexpr(picongpu::atomicPhysics2::debug::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
                     ForEachElectronSpeciesSetTemperature{}(currentStep);
                 }
+
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
+
                 if constexpr(picongpu::atomicPhysics2::debug::electronHistogram::PRINT_TO_CONSOLE)
                 {
-                    picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                        picongpu::particles::atomicPhysics2::electronDistribution::
-                            LocalHistogramField<picongpu::atomicPhysics2::ElectronHistogram, picongpu::MappingDesc>,
-                        picongpu::particles::atomicPhysics2::electronDistribution::PrintHistogramToConsole<false>>{}(
-                        mappingDesc,
-                        "Electron_localHistogramField");
+                    printHistogramToConsole</*print all bins*/ false>();
                 }
+
                 // timeStep = localTimeRemaining
                 picongpu::particles::atomicPhysics2::stage::ResetLocalTimeStepField()(mappingDesc);
                 ForEachIonSpeciesResetLocalRateCache{}();
                 ForEachIonSpeciesCheckPresenceOfAtomicStates{}(mappingDesc);
                 // R_ii = -(sum of rates of all transitions from state i to some other state j)
                 ForEachIonSpeciesFillLocalRateCache{}(mappingDesc);
+
                 if constexpr(picongpu::atomicPhysics2::debug::rateCache::PRINT_TO_CONSOLE)
                     ForEachIonSpeciesDumpRateCacheToConsole{}(mappingDesc);
+
                 // min(1/(-R_ii)) * alpha
                 ForEachIonSpeciesCalculateStepLength{}(mappingDesc);
 
@@ -302,31 +351,9 @@ namespace picongpu::simulation::stage
                                           : "false")
                                   << std::endl;
 
-                        // print LocalElectronHistogramOverSubscribedField
-                        picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                            picongpu::particles::atomicPhysics2::localHelperFields::
-                                LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>,
-                            picongpu::particles::atomicPhysics2::localHelperFields ::
-                                PrintOverSubcriptionFieldToConsole>{}(
-                            mappingDesc,
-                            "LocalElectronHistogramOverSubscribedField");
-
-                        // print rejectionProbabilityCache
-                        picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                            picongpu::particles::atomicPhysics2::localHelperFields ::
-                                LocalRejectionProbabilityCacheField<picongpu::MappingDesc>,
-                            picongpu::particles::atomicPhysics2::localHelperFields ::
-                                PrintRejectionProbabilityCacheToConsole<true>>{}(
-                            mappingDesc,
-                            "LocalRejectionProbabilityCacheField");
-
-                        // print histogram
-                        picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                            picongpu::particles::atomicPhysics2::electronDistribution::LocalHistogramField<
-                                picongpu::atomicPhysics2::ElectronHistogram,
-                                picongpu::MappingDesc>,
-                            picongpu::particles::atomicPhysics2::electronDistribution::PrintHistogramToConsole<
-                                true>>{}(mappingDesc, "Electron_localHistogramField");
+                        printOverSubscriptionFieldToConsole();
+                        printRejectionProbabilityCacheToConsole();
+                        printHistogramToConsole</*print only oversubscribed*/ true>();
                     }
 
                     if(!static_cast<bool>(deviceLocalReduce(
@@ -358,31 +385,9 @@ namespace picongpu::simulation::stage
                                                   : "false")
                                           << std::endl;
 
-                                // print LocalElectronHistogramOverSubscribedField
-                                picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                                    picongpu::particles::atomicPhysics2::localHelperFields::
-                                        LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>,
-                                    picongpu::particles::atomicPhysics2::localHelperFields::
-                                        PrintOverSubcriptionFieldToConsole>{}(
-                                    mappingDesc,
-                                    "LocalElectronHistogramOverSubscribedField");
-
-                                // print rejectionProbabilityCache
-                                picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                                    picongpu::particles::atomicPhysics2::localHelperFields::
-                                        LocalRejectionProbabilityCacheField<picongpu::MappingDesc>,
-                                    picongpu::particles::atomicPhysics2::localHelperFields::
-                                        PrintRejectionProbabilityCacheToConsole<true>>{}(
-                                    mappingDesc,
-                                    "LocalRejectionProbabilityCacheField");
-
-                                // print histogram
-                                picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                                    picongpu::particles::atomicPhysics2::electronDistribution::LocalHistogramField<
-                                        picongpu::atomicPhysics2::ElectronHistogram,
-                                        picongpu::MappingDesc>,
-                                    picongpu::particles::atomicPhysics2::electronDistribution::PrintHistogramToConsole<
-                                        true>>{}(mappingDesc, "Electron_localHistogramField");
+                                printOverSubscriptionFieldToConsole();
+                                printRejectionProbabilityCacheToConsole();
+                                printHistogramToConsole</*print only oversubscribed*/ true>();
                             }
                         }
 
@@ -421,25 +426,9 @@ namespace picongpu::simulation::stage
                     ForEachIonSpeciesDumpToConsole{}(mappingDesc);
                 }
                 if constexpr(picongpu::atomicPhysics2::debug::timeRemaining::PRINT_TO_CONSOLE)
-                {
-                    // print local time remaining to console
-                    picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                        picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
-                            picongpu::MappingDesc>,
-                        picongpu::particles::atomicPhysics2::localHelperFields::PrintTimeRemaingToConsole>{}(
-                        mappingDesc,
-                        "LocalTimeRemainingField");
-                }
+                    printTimeRemaingToConsole();
                 if constexpr(picongpu::atomicPhysics2::debug::timeStep::PRINT_TO_CONSOLE)
-                {
-                    // print local time step to console
-                    picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
-                        picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeStepField<
-                            picongpu::MappingDesc>,
-                        picongpu::particles::atomicPhysics2::localHelperFields::PrintTimeStepToConsole>{}(
-                        mappingDesc,
-                        "LocalTimeStepField");
-                }
+                    printTimeStepToConsole();
 
                 // record changes electron spectrum
                 ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
