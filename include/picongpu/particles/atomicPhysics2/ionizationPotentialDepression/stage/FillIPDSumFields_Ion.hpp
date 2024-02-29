@@ -38,8 +38,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
     /** IPD sub-stage for filling the sum fields required for calculating the IPD inputs for an ion species
      *
      * @tparam T_IonSpecies ion species to fill into sum fields
+     * @tparam T_TemperatureFunctional functional to use for temperature calculation
      */
-    template<typename T_IonSpecies>
+    template<typename T_IonSpecies, typename T_TemperatureFunctional>
     struct FillIPDSumFields
     {
         // might be alias, from here on out no more
@@ -74,7 +75,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                     "SumChargeNumberSquaredIonsField");
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion(), workerCfg)
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion<T_TemperatureFunctional>(), workerCfg)
             (mapper.getGridDim())(
                 mapper,
                 localTimeRemainingField.getDeviceDataBox(),

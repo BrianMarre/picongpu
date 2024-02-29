@@ -116,7 +116,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
                         / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE)
 
                     // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-                    sumTemperatureFunctional += T_TemperatureFunctional<typename T_ElectronBox::FrameType>::term(
+                    sumTemperatureFunctional += T_TemperatureFunctional<typename T_IonBox::FrameType>::term(
                         precisionCast<float3_64>(momentumVectorNormalized),
                         precisionCast<float_64>(weightNormalized));
 

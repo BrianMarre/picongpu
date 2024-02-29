@@ -30,7 +30,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
 {
     /**superCell field of local temperature * k_Boltzman
      *
-     * unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, weighted^1
+     * unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
      *
      * @details required for calculating the local ionization potential depression(IPD) and filled by
      *  calculateIPDInput kernel.
