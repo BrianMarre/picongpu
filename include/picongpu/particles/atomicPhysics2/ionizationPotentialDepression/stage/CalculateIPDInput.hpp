@@ -57,6 +57,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
 
             auto& localSumWeightElectronField
                 = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
+
             auto& localSumChargeNumberIonsField
                 = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField>("SumChargeNumberIonsField");
             auto& localSumChargeNumberSquaredIonsField

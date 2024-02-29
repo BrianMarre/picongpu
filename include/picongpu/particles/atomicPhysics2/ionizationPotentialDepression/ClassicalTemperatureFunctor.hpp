@@ -26,20 +26,24 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/TemperatureFunctor.hpp"
+
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
     /** functor computing non-relativistic temperature contribution of particle with given weight and momentum
      *
      * @tparam T_FrameType frame type of particle
-     *
-     * @param momentumVector in UNIT_MASS * UNIT_LENGTH / UNIT_TIME / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-     * @param weight in 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-     *
-     * @return unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
      */
     template<typename T_FrameType>
-    struct ClassicalTemperatureFunctor
+    struct ClassicalTemperatureFunctor : TemperatureFunctor<T_FrameType>
     {
+        /** calculate term value
+         *
+         * @param momentumVector in UNIT_MASS * UNIT_LENGTH / UNIT_TIME / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+         * @param weight in 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+         *
+         * @return unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+         */
         HDINLINE static float_X term(float3_64 const momentumVector, float_64 const weight)
         {
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2
