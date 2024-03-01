@@ -793,13 +793,10 @@ namespace picongpu
             }
         }
 
-        /** create the superCell fields and store them in the dataConnector
-         *
-         * used for atomicPhysics step
-         */
+        //! create and store in dataConnector all superCell fields required by atomicPhysics
         void initAtomicPhysicsSuperCellFields(DataConnector& dataConnector)
         {
-            // local interaction histograms
+            // local electron interaction histograms
             auto localSuperCellElectronHistogramField
                 = std::make_unique<particles::atomicPhysics2::electronDistribution::LocalHistogramField<
                     atomicPhysics2::ElectronHistogram, // set in atomicPhysics2.param
@@ -807,7 +804,7 @@ namespace picongpu
                                    >(*cellDescription, "Electron");
             dataConnector.consume(std::move(localSuperCellElectronHistogramField));
 
-            ///@todo same for "Photons" once implemented, Brian Marre, 2022
+            ///@todo repeat for "Photons" once implemented, Brian Marre, 2022
 
             // local rate cache, create in pre-stage call for each species
             pmacc::meta::ForEach<
@@ -846,6 +843,8 @@ namespace picongpu
                 = std::make_unique<particles::atomicPhysics2::localHelperFields::LocalRejectionProbabilityCacheField<
                     picongpu::MappingDesc>>(*cellDescription);
             dataConnector.consume(std::move(localSuperCellRejectionProbabilityCacheField));
+
+            //! @todo create IPD fields
         }
 
         /** load the atomic input files, for each create an atomicData data base object
@@ -892,9 +891,12 @@ namespace picongpu
             /* following fields are effectively cleared each iteration and so do not need a reset.
              * - FieldJ
              * - localTimeRemainingField
-             * - localTimeStepLengthField,
+             * - localTimeStepLengthField
              * - localHistogramField
              * - localRateCacheField
+             * - localElectronHistogramOverSubscribedField
+             * - LocalRejectionProbabilityCacheField
+             * - LocalAllMacroIonsAcceptedField
              * - FieldTmp
              */
             std::array<std::string, 4> const fieldNames{
