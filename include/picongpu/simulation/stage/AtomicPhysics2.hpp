@@ -109,7 +109,7 @@ namespace picongpu::simulation::stage
 
             auto& localTimeRemainingField = *dc.get<S_TimeRemainingField>("LocalTimeRemainingField");
 
-            localTimeRemainingField.getDeviceBuffer().setValue(DELTA_T); // UNIT_TIME
+            localTimeRemainingField.getDeviceBuffer().setValue(picongpu::DELTA_T); // UNIT_TIME
         }
 
         //! reset local allMacroIonsAccepted switch to true
@@ -135,7 +135,7 @@ namespace picongpu::simulation::stage
             localElectronHistogramField.getDeviceBuffer().setValue(picongpu::atomicPhysics2::ElectronHistogram());
         }
 
-        //! print electron histogram to console
+        //! print electron histogram to console, debug only
         template<bool T_printOnlyOverSubscribed>
         HINLINE static void printHistogramToConsole()
         {
@@ -146,7 +146,7 @@ namespace picongpu::simulation::stage
                     T_printOnlyOverSubscribed>>{}(mappingDesc, "Electron_localHistogramField");
         }
 
-        //! print LocalElectronHistogramOverSubscribedField to console
+        //! print LocalElectronHistogramOverSubscribedField to console, debug only
         HINLINE static void printOverSubscriptionFieldToConsole()
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
@@ -157,7 +157,7 @@ namespace picongpu::simulation::stage
                 "LocalElectronHistogramOverSubscribedField");
         }
 
-        //! print rejectionProbabilityCache
+        //! print rejectionProbabilityCache to console, debug only
         HINLINE static void printRejectionProbabilityCacheToConsole()
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
@@ -167,7 +167,7 @@ namespace picongpu::simulation::stage
                     true>>{}(mappingDesc, "LocalRejectionProbabilityCacheField");
         }
 
-        //! print local time remaining to console
+        //! print local time remaining to console, debug only
         HINLINE static void printTimeRemaingToConsole()
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
@@ -177,7 +177,7 @@ namespace picongpu::simulation::stage
                 "LocalTimeRemainingField");
         }
 
-        //! print local time step to console
+        //! print local time step to console, debug only
         HINLINE static void printTimeStepToConsole()
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<

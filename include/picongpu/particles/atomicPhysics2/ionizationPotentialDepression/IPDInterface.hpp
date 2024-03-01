@@ -17,29 +17,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements temperature functor interface
- *
- * implementations of this are used for the calculation of a local temperature as ionization potential depression(IPD)
- * input parameter.
- */
+//! @file interface for all ionization potential depression implementations
 
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
+
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    //! interface of functor computing temperature term contribution of particle with given weight and momentum
-    struct TemperatureFunctor
+    struct IPDInterface
     {
-        /** calculate term value
+        //! create all HelperFields required by the IPD model
+        HINLINE static void createHelperFields();
+
+        /** calculate ionization potential depression
          *
-         * @param particle
-         * @param weightNormalized weight of particle normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-         *
-         * @return unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+         * @return unit UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
          */
-        template<typename T_Particle>
-        HDINLINE static float_X term(T_Particle& particle, float_64 const weightNormalized);
-    };
+        template<typename T_Input...>
+        HDINLINE static float_X calculateIPD(T_Input... const input);
+    }
+
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
