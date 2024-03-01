@@ -30,31 +30,32 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    /** functor computing relativistic temperature contribution of particle with given weight and momentum
-     *
-     * @tparam T_FrameType frame type of particle
-     */
-    template<typename T_FrameType>
-    struct RelativisticTemperatureFunctor : TemperatureFunctor<T_FrameType>
+    //! functor computing relativistic temperature contribution of particle with given weight and momentum
+    struct RelativisticTemperatureFunctor : TemperatureFunctor
     {
-        /** calculate term value
+        /** calculate term value for given particle
          *
-         * @param momentumVector in UNIT_MASS * UNIT_LENGTH / UNIT_TIME / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-         * @param weight in 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+         * @param particle
+         * @param weightNormalized weight of particle normalized by picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
          *
          * @return unit: UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
          */
-        HDINLINE static float_X term(float3_64 const momentumVector, float_64 const weight)
+        template<typename T_Particle>
+        HDINLINE static float_X term(T_Particle& particle, float_64 const weightNormalized)
         {
+            // UNIT_MASS * UNIT_LENGTH / UNIT_TIME * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+            float3_64 const momentumVectorNormalized
+                = precisionCast<float3_64>(particle[momentum_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
+
+            // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2
+            float_64 const momentumSquared = pmacc::math::l2norm2(momentumVectorNormalized);
+
             // UNIT_MASS, not weighted
-            constexpr float_64 mass = static_cast<float_64>(picongpu::traits::frame::getMass<T_FrameType>());
+            constexpr float_64 mass = static_cast<float_64>(picongpu::traits::frame::getMass<T_Particle::FrameType>());
             // UNIT_LENGTH / UNIT_TIME, not weighted
             constexpr float_64 c = picongpu::SPEED_OF_LIGHT_SI;
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             constexpr float_64 m2c2 = pmacc::math::cPow(mass * c, 2u);
-
-            // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2
-            float_64 const momentumSquared = pmacc::math::l2norm2(momentumVector);
 
             // UNIT_LENGTH / UNIT_TIME
             //  * (UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2)
@@ -63,7 +64,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             //      / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2)
             // = UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
             return /*since we sum over all three dimensions */ (1._X / 3._X)
-                * static_cast<float_X>(c * momentumSquared / math::sqrt(momentumSquared + m2c2 * weight * weight));
+                * static_cast<float_X>(
+                       c * momentumSquared
+                       / math::sqrt(momentumSquared + m2c2 * pmacc::math::cPow(weightNormalized, 2u)));
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression

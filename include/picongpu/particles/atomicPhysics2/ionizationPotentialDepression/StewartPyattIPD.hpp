@@ -17,15 +17,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+//! @file implements Stewart-Pyatt ionization potential depression(IPD) model
+
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
+#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDInterface.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/CalculateIPDInput.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Electron.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Ion.hpp"
 
-#include <cstdint>
+#include <pmacc/meta/ForEach.hpp>
+#include <pmacc/particles/traits/FilterByFlag.hpp>
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
@@ -38,10 +44,11 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
      * average(A) = k_B * T, must follow
      */
     template<typename T_TemperatureFunctor>
-    struct StewartPyattIPD
+    struct StewartPyattIPD : IPDInterface
     {
+    private:
         //! reset IPD support infrastructure before we accumulate over particles to calculate new IPD Inputs
-        HINLINE static void reset()
+        HINLINE static void resetSumFields()
         {
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
@@ -63,6 +70,53 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             localSumWeightElectronField.getDeviceBuffer().setValue(0._X);
             localSumChargeNumberIonsField.getDeviceBuffer().setValue(0._X);
             localSumChargeNumberSquaredIonsField.getDeviceBuffer().setValue(0._X);
+        }
+
+    public:
+        //! create all HelperFields required by the IPD model
+        HINLINE static void createHelperFields(DataConnector& dataConnector, picongpu::MappingDesc const mappingDesc)
+        {
+            // create sumFields
+            //{
+            auto sumWeightAllField
+                = std::make_unique<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>(*mappingDesc);
+            dataConnector.consume(std::move(sumWeightAllField));
+            auto sumTemperatureFunctionalField
+                = std::make_unique<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(sumTemperatureFunctionalField));
+
+            auto sumWeightElectronsField
+                = std::make_unique<s_IPD::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(sumWeightElectronsField));
+
+            auto sumChargeNumberIonsField
+                = std::make_unique<s_IPD::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(sumChargeNumberIonsField));
+            auto sumChargeNumberSquaredIonsField
+                = std::make_unique<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(sumChargeNumberSquaredIonsField));
+            //}
+
+            // create IPD input Fields
+            //{
+            auto localDebyeLengthField
+                = std::make_unique<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(localDebyeLengthField));
+            // z^star IPD input field, z^star = = average(q^2) / average(q) ;for q charge number of ion
+            auto localZStarField
+                = std::make_unique<s_IPD::localHelperFields::localZStarField<picongpu::MappingDesc>>(*mappingDesc);
+            dataConnector.consume(std::move(localZStarField));
+            // local k_Boltzman * Temperature field
+            auto localTemperatureEnergyField
+                = std::make_unique<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(localTemperatureEnergyField));
+            //}
         }
 
         //! do all precalculation work for IPD
@@ -99,7 +153,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
                 ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Ion<boost::mpl::_1, T_TemperatureFunctor>>;
 
             // reset IPD SumFields
-            reset();
+            resetSumFields();
 
             ForEachElectronSpeciesFillSumFields{}(mappingDesc);
             ForEachIonSpeciesFillSumFields{}(mappingDesc);
@@ -115,12 +169,10 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
          * @param zStar = average(q^2) / average(q) ; q = charge number of ions, unitless
          * @param debyeLength in UNIT_LENGTH
          *
-         * @todo switch to per species pre-calculated IPD field, Brian Marre 2024
-         *
          * @return unit UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
          */
         template<uint8_t T_atomicNumber>
-        HDINLINE static float_X getIPD(
+        HDINLINE static float_X calculateIPD(
             float_X const temperatureTimesk_Boltzman,
             float_X const zStar,
             float_X const debyeLength)
