@@ -36,14 +36,7 @@
 #include "picongpu/particles/InitFunctors.hpp"
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/ParticlesFunctors.hpp"
-#include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
-#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeStepField.hpp"
-#include "picongpu/particles/atomicPhysics2/stage/CreateLocalRateCacheField.hpp"
+#include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
@@ -513,10 +506,10 @@ namespace picongpu
                     removeOuterParticlesAllSpecies(step);
 
                     // fix mismatches between boundElectrons and atomicStateCollectionIndex attributes
-                    using SpeciesRepresentingIons =
-                        typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
+                    using SpeciesRepresentingAtomicPhysicsIons =
+                        typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
                     using ForEachIonSpeciesFixAtomicState = pmacc::meta::ForEach<
-                        SpeciesRepresentingIons,
+                        SpeciesRepresentingAtomicPhysicsIons,
                         particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
                     ForEachIonSpeciesFixAtomicState{}(*cellDescription);
 
@@ -681,16 +674,6 @@ namespace picongpu
         uint32_t numRanksPerDevice = 1u;
 
     private:
-        /** list of all species of macro particles with atomicPhysics input data
-         *
-         * as defined in species.param, is list of types
-         * @todo use different Flag?, Brian Marre, 2022
-         */
-        using SpeciesWithAtomicPhysicsInputData =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
-        using AtomicPhysicsSpecies =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
-
         /** Get available memory on device
          *
          * @attention This method is using MPI collectives and must be called from all MPI processes collectively.
@@ -790,58 +773,13 @@ namespace picongpu
             }
         }
 
-        //! create and store in dataConnector all superCell fields required by atomicPhysics
+        //! create superCell fields required by atomicPhysics
         void initAtomicPhysicsSuperCellFields(DataConnector& dataConnector)
         {
-            // local electron interaction histograms
-            auto localSuperCellElectronHistogramField
-                = std::make_unique<particles::atomicPhysics2::electronDistribution::LocalHistogramField<
-                    atomicPhysics2::ElectronHistogram, // set in atomicPhysics2.param
-                    picongpu::MappingDesc> // defined in memory.param
-                                   >(*cellDescription, "Electron");
-            dataConnector.consume(std::move(localSuperCellElectronHistogramField));
-
-            ///@todo repeat for "Photons" once implemented, Brian Marre, 2022
-
-            // local rate cache, create in pre-stage call for each species
-            pmacc::meta::ForEach<
-                AtomicPhysicsSpecies,
-                particles::atomicPhysics2::stage::CreateLocalRateCacheField<boost::mpl::_1>>
-                ForEachIonSpeciesCreateLocalRateCacheField;
-            ForEachIonSpeciesCreateLocalRateCacheField(dataConnector, *cellDescription);
-
-            // local time remaining field
-            auto localSuperCellTimeRemainingField = std::make_unique<
-                particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                *cellDescription);
-            dataConnector.consume(std::move(localSuperCellTimeRemainingField));
-
-            // local time step field
-            auto localSuperCellTimeStepField = std::make_unique<
-                particles::atomicPhysics2::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
-                *cellDescription);
-            dataConnector.consume(std::move(localSuperCellTimeStepField));
-
-            // local electron histogram over subscribed switch
-            auto localSuperCellElectronHistogramOverSubscribedField
-                = std::make_unique<particles::atomicPhysics2::localHelperFields::
-                                       LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
-                    *cellDescription);
-            dataConnector.consume(std::move(localSuperCellElectronHistogramOverSubscribedField));
-
-            // local all macro ion accepted field
-            auto localSuperCellAllMacroIonsAccceptedField = std::make_unique<
-                particles::atomicPhysics2::localHelperFields::LocalAllMacroIonsAcceptedField<picongpu::MappingDesc>>(
-                *cellDescription);
-            dataConnector.consume(std::move(localSuperCellAllMacroIonsAccceptedField));
-
-            // rejection probability for each over-subscribed bin of the local electron histogram
-            auto localSuperCellRejectionProbabilityCacheField
-                = std::make_unique<particles::atomicPhysics2::localHelperFields::LocalRejectionProbabilityCacheField<
-                    picongpu::MappingDesc>>(*cellDescription);
-            dataConnector.consume(std::move(localSuperCellRejectionProbabilityCacheField));
-
-            //! @todo create IPD fields
+            // core algorithm helper fields
+            picongpu::particles::atomicPhysics2::AtomicPhysicsSuperCellFields::ceate(dataConnector, *cellDescription);
+            // IPD helper fields
+            picongpu::IPDModel::createHelperFields(dataConnector, *cellDescription);
         }
 
         /** load the atomic input files, for each create an atomicData data base object
@@ -853,6 +791,9 @@ namespace picongpu
          */
         void loadAtomicInputData(DataConnector& dataConnector)
         {
+            using SpeciesWithAtomicPhysicsInputData =
+                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, atomicDataType<>>::type;
+
             //! load atomic input data in pre-stage call for each species with atomic Input data
             pmacc::meta::ForEach<
                 SpeciesWithAtomicPhysicsInputData,

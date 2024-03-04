@@ -74,7 +74,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 
     public:
         //! create all HelperFields required by the IPD model
-        HINLINE static void createHelperFields(DataConnector& dataConnector, picongpu::MappingDesc const mappingDesc)
+        HINLINE static void createHelperFields(
+            picongpu::DataConnector& dataConnector,
+            picongpu::MappingDesc const mappingDesc)
         {
             // create sumFields
             //{
