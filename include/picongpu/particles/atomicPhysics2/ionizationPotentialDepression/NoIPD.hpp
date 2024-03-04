@@ -17,28 +17,34 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file interface for all ionization potential depression implementations
+//! @file no ionization potential depression implementation
 
 #pragma once
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDInterface.hpp"
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    struct IPDInterface
+    struct NoIPD : IPDInterface
     {
         //! create all HelperFields required by the IPD model
-        HINLINE static void createHelperFields();
+        HINLINE static void createHelperFields()
+        {
+        }
 
-        //! do all precalculation work for IPD
-        HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc);
+        HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc)
+        {
+        }
 
         /** calculate ionization potential depression
          *
-         * @return unit UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
+         * @returns 0._X
          */
-        template<typename T_Input...>
-        HDINLINE static float_X calculateIPD(T_Input... const input);
+        HDINLINE static float_X calculateIPD()
+        {
+            return 0._X;
+        }
     }
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
