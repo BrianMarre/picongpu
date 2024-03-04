@@ -73,6 +73,20 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         }
 
     public:
+        //! list of all atomicPhysics partaking electron species
+        using AtomicPhysicsElectronSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsElectron<>>::type;
+        //! list of all only IPD partaking electron species
+        using OnlyIPDElectronSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDElectron<>>::type;
+
+        //! list of all atomicPhysics partaking ion species
+        using AtomicPhysicsIonSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
+        //! list of all only IPD partaking ion species
+        using OnlyIPDIonSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDIon<>>::type;
+
         //! create all HelperFields required by the IPD model
         HINLINE static void createHelperFields(
             picongpu::DataConnector& dataConnector,
@@ -124,27 +138,10 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         //! do all precalculation work for IPD
         HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc)
         {
-            // figure out species to reduce
-            //{
-            //! list of all atomicPhysics partaking electron species
-            using AtomicPhysicsElectronSpecies =
-                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsElectron<>>::type;
-            //! list of all only IPD partaking electron species
-            using OnlyIPDElectronSpecies =
-                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDElectron<>>::type;
-
-            //! list of all atomicPhysics partaking ion species
-            using AtomicPhysicsElectronSpecies =
-                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
-            //! list of all only IPD partaking ion species
-            using OnlyIPDIonSpecies =
-                typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDIon<>>::type;
-
             //! list of all electron species for IPD
             using IPDElectronSpecies = MakeSeq_t<AtomicPhysicsElectronSpecies, OnlyIPDElectronSpecies>;
             //! list of all ion species for IPD
             using IPDIonSpecies = MakeSeq_t<AtomicPhysicsIonSpecies, OnlyIPDIonSpecies>;
-            //}
 
             using ForEachElectronSpeciesFillSumFields = pmacc::meta::
                 ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Electron<boost::mpl::_1, T_TemperatureFunctor>>;
@@ -161,6 +158,13 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             ForEachIonSpeciesFillSumFields{}(mappingDesc);
 
             s_IPD::stage::CalculateIPDInput()(mappingDesc);
+        }
+
+        //! apply pressure ionization effects to all atomicPhysics ions
+        HINLINE static void ApplyPressureIonization(picongpu::MappingDesc const mappingDesc)
+        {
+            using ForEachIonSpeciesApplyPressureIonization
+                = pmacc::meta::ForEach<AtomicPhysicsIonSpecies, s_IPD::stage::ApplyPressureIonization<boost::mpl::_1>>;
         }
 
         /** calculate ionization potential depression
