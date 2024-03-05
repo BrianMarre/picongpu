@@ -119,15 +119,17 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 
             // create IPD input Fields
             //{
+            // in UNIT_LENGTH, not weighted
             auto localDebyeLengthField
                 = std::make_unique<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
                     *mappingDesc);
             dataConnector.consume(std::move(localDebyeLengthField));
-            // z^star IPD input field, z^star = = average(q^2) / average(q) ;for q charge number of ion
+            // z^star IPD input field, z^star = = average(q^2) / average(q) ;for q charge number of ion, unitless,
+            //  not weighted
             auto localZStarField
                 = std::make_unique<s_IPD::localHelperFields::localZStarField<picongpu::MappingDesc>>(*mappingDesc);
             dataConnector.consume(std::move(localZStarField));
-            // local k_Boltzman * Temperature field
+            // local k_Boltzman * Temperature field, in eV
             auto localTemperatureEnergyField
                 = std::make_unique<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
                     *mappingDesc);
@@ -160,42 +162,60 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             s_IPD::stage::CalculateIPDInput()(mappingDesc);
         }
 
-        //! apply pressure ionization effects to all atomicPhysics ions
-        HINLINE static void ApplyPressureIonization(picongpu::MappingDesc const mappingDesc)
-        {
-            using ForEachIonSpeciesApplyPressureIonization
-                = pmacc::meta::ForEach<AtomicPhysicsIonSpecies, s_IPD::stage::ApplyPressureIonization<boost::mpl::_1>>;
-        }
-
         /** calculate ionization potential depression
          *
          * @tparam T_atomicNumber atomicNumber of ion species
          *
-         * @param temperatureTimesk_Boltzman k_B * T in UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
-         * @param zStar = average(q^2) / average(q) ; q = charge number of ions, unitless
-         * @param debyeLength in UNIT_LENGTH
+         * @param localTemperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
+         *  local superCells, in UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
+         * @param localZStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
+         *  for all local superCells, unitless, not weighted
+         * @param localDebyeLengthBox deviceDataBox giving access to the local debye length for all local superCells,
+         *  UNIT_LENGTH, not weighted
+         * @param superCellFieldIdx index of superCell in superCellField(without guards)
          *
          * @return unit UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
          */
-        template<uint8_t T_atomicNumber>
+        template<
+            uint8_t T_atomicNumber,
+            typename T_LocalTemperatureEnergyBox,
+            typename T_LocalZStarBox,
+            typename T_LocalDebyeLengthBox>
         HDINLINE static float_X calculateIPD(
-            float_X const temperatureTimesk_Boltzman,
-            float_X const zStar,
-            float_X const debyeLength)
+            pmacc::DataSpace<simDim> const superCellFieldIdx,
+            T_LocalDebyeLengthBox const localTemperatureEnergyBox,
+            T_LocalZStarBox const localZStarBox,
+            T_LocalDebyeLengthBox const localDebyeLengthBox)
         {
-            // unitless * UNIT_CHARGE^2 / ( unitless * UNIT_CHARGE^2 * UNIT_TIME^2 / (UNIT_LENGTH^3 * UNIT_MASS))
-            // UNIT_MASS * UNIT_LENGTH^3 / UNIT_TIME^2
-            constexpr float_X scaleFactor = static_cast<float_X>(T_atomicNumber)
+            // eV/(UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2)
+            constexpr float_X eV = static_cast<float_X>(
+                picongpu::UNIT_MASS * pmacc::math::cPow(picongpu::UNIT_LENGTH, 2u)
+                / pmacc::math::cPow(picongpu::UNIT_TIME, 2u) * picongpu::UNITCONV_Joule_to_keV * 1e3);
+
+            // eV/(UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2) * unitless * UNIT_CHARGE^2
+            //  / ( unitless * UNIT_CHARGE^2 * UNIT_TIME^2 / (UNIT_LENGTH^3 * UNIT_MASS))
+            // = eV * UNIT_TIME^2 * UNIT_MASS^(-1) * UNIT_LENGTH^(-2) * UNIT_CHARGE^2 * UNIT_CHARGE^(-2)
+            //  * UNIT_TIME^(-2) * UNIT_LENGTH^3 * UNIT_MASS^1 = eV * UNIT_LENGTH
+            // eV * UNIT_LENGTH
+            constexpr float_X scaleFactor = eV * static_cast<float_X>(T_atomicNumber)
                 * pmacc::math::cPow(picongpu::ELECTRON_CHARGE, 2u)
                 / (4._X * static_cast<float_X>(picongpu::PI) * picongpu::EPS0);
 
-            // (UNIT_MASS * UNIT_LENGTH^3 / UNIT_TIME^2) / (UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * UNIT_LENGTH)
-            // unitless
+            // eV, not weighted
+            float_X const temperatureTimesk_Boltzman = localTemperatureEnergyBox(superCellFieldIdx);
+            // UNIT_LENGTH, not weighted
+            float_X const debyeLength = localDebyeLengthBox(superCellFieldIdx);
+
+            // (eV * UNIT_LENGTH) / (eV * UNIT_LENGTH), not weighted
+            // unitless, not weighted
             float_X const K = scaleFactor / (temperatureTimesk_Boltzman * debyeLength);
 
-            // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
+            // unitless, not weighted
+            float_X const zStar = localZStarBox(superCellFieldIdx);
+
+            // eV, not weighted
             return temperatureTimesk_Boltzman * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
-                / (2._X * (zStar + 1));
+                / (2._X * (zStar + 1._X));
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression

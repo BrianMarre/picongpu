@@ -23,7 +23,7 @@
 // need: picongpu/param/atomicPhysics2_Debug.param,
 //       picongpu/param/atomicPhysics2.param
 
-#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
@@ -56,14 +56,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
     template<picongpu::particles::atomicPhysics2::enums::ProcessClassGroup T_ProcessClassGroup>
     struct SpawnIonizationMacroElectronsKernel
     {
-    private:
-        //! @todo find standard way, Brian Marre, 2023
-        HDINLINE static constexpr uint32_t UI32(detail::Access access)
-        {
-            return static_cast<uint32_t>(access);
-        }
-
-    public:
         /** call operator
          *
          * called by SpawnIonizationMacroElectrons atomic physics sub-stage
@@ -112,9 +104,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
             using ElectronFramePtr = typename T_IonizationElectronBox::FramePtr;
             using IonFramePtr = typename T_IonBox::FramePtr;
 
+            PMACC_CASSERT_MSG(
+                ion_and_electron_framesize_must_be_equal,
+                T_IonBox::frameSize == T_IonizationElectronBox::frameSize);
             constexpr uint32_t frameSize = T_IonBox::frameSize;
 
-            pmacc::DataSpace<simDim> const superCellIdx
+            pmacc::DataSpace<picongpu::simDim> const superCellIdx
                 = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -153,14 +148,13 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 {
                     offsetLowFrame
                         = static_cast<int32_t>(ionizationElectronBox.getSuperCell(superCellIdx).getSizeLastFrame());
-                    totalNumberMacroElectronsToSpawn = static_cast<uint32_t>(0u);
 
+                    totalNumberMacroElectronsToSpawn = static_cast<uint32_t>(0u);
                     spawnCounter = static_cast<uint32_t>(0u);
 
-                    electronFrameArray[UI32(detail::Access::low)] = ionizationElectronBox.getLastFrame(superCellIdx);
                     // might be nullptr if no electrons in superCell
-
-                    electronFrameArray[UI32(detail::Access::high)] = nullptr;
+                    electronFrameArray[u32(detail::Access::low)] = ionizationElectronBox.getLastFrame(superCellIdx);
+                    electronFrameArray[u32(detail::Access::high)] = nullptr;
                 });
             worker.sync();
 
@@ -177,9 +171,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // slot not occupied or not bound-free transition based ionizing process
                         if(
                             // slot is not occupied
-                            !static_cast<bool>(ion[multiMask_]) ||
+                            !static_cast<bool>(ion[multiMask_])
                             // no bound-free based ionizing process
-                            !(enums::IsProcess<T_ProcessClassGroup>::check(ion[processClass_])))
+                            || !(enums::IsProcess<T_ProcessClassGroup>::check(ion[processClass_])))
                         {
                             numberIonizationElectrons = static_cast<uint8_t>(0u);
                             return;
@@ -221,7 +215,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                 numberIonizationElectrons = static_cast<int8_t>(0u);
                             }
                         }
-
 
                         uint32_t const temp = numberIonizationElectrons;
                         // update global counter
@@ -355,11 +348,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                 //  and "empty" frame at high
                                 /// @attention high may be nullptr if no further electrons to
                                 ///     spawn
-                                electronFrameArray[UI32(detail::Access::low)]
-                                    = electronFrameArray[UI32(detail::Access::high)];
+                                electronFrameArray[u32(detail::Access::low)]
+                                    = electronFrameArray[u32(detail::Access::high)];
 
                                 // reset high with nullptr to mark for next "need new frame?" pass
-                                electronFrameArray[UI32(detail::Access::high)] = nullptr;
+                                electronFrameArray[u32(detail::Access::high)] = nullptr;
                             }
 
                             using SuperCellType = typename T_IonizationElectronBox::SuperCellType;

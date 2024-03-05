@@ -38,9 +38,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
 {
     /** binning kernel
      *
-     * @attention assumes that the histogram has been reset previously
+     * called by BinElectrons atomicPhysics sub-stage for each superCell, bins all macro electrons into the respective
+     *  electron histogram.
      *
-     * called by binElectrons sub-stage, bins all macro particles in the given electron histograms for each superCell
+     * @attention assumes that the histogram has been reset previously
+     * @tparam T_Histogram type of electron histogram
      */
     template<typename T_Histogram>
     struct BinElectronsKernel

@@ -88,8 +88,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          * @attention needs to fulfill all ordering and content assumptions of constructor!
          *
          * @param collectionIndex index of data box entry to rewrite
-         * @param configNumber configuration number of atomic state
-         * @param stateEnergy energy of atomic state over ground state
+         * @param tuple chargeState tuple read from input file
          */
         HINLINE void store(uint32_t const collectionIndex, S_ChargeStateTuple& tuple)
         {
@@ -126,7 +125,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             m_boxScreenedCharge[collectionIndex] = std::get<2>(tuple);
         }
 
-        //! @attention NEVER call with chargeState >= T_atomicNumber, otherwise invalid memory access
+        /** get ionization energy of the ground state of the charge state
+         *
+         * @attention NEVER call with chargeState >= T_atomicNumber, otherwise invalid memory access
+         *
+         * @return unit: eV
+         */
         HDINLINE T_Value ionizationEnergy(uint8_t const chargeState) const
         {
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
