@@ -57,6 +57,18 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
         ) const;
     };
 
+    //! specialisation for pressureIonization
+    template<>
+    struct InitIonizationElectron<s_enums::ProcessClass::pressureIonization>
+    {
+        //! call operator
+        template<typename T_IonParticle, typename T_ElectronParticle>
+        HDINLINE void operator()(T_IonParticle const& ion, T_ElectronParticle& electron) const
+        {
+            CoMoving::initElectron<T_IonParticle, T_ElectronParticle>(ion, electron);
+        }
+    };
+
     /** specialisation for electronicIonization
      *
      * @attention not momentum conserving! We do not model a three body inelastic
