@@ -17,11 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file processClass enum, enum of physical processes
- *
- * @attention NumberIonizationelectrons and NumberPhysicalTransitions must be kept consistent
- *  with the enum ProcessClass
- */
+//! @file processClass enum, enum of physical processes
 
 #pragma once
 
@@ -40,7 +36,8 @@ namespace picongpu::particles::atomicPhysics2
             electronicDeexcitation = 3u,
             electronicIonization = 4u,
             autonomousIonization = 5u,
-            fieldIonization = 6u
+            fieldIonization = 6u,
+            pressureIonization = 7u,
         };
     } // namespace enums
 
@@ -67,6 +64,9 @@ namespace picongpu::particles::atomicPhysics2
         if constexpr(
             static_cast<uint8_t>(T_ProcessClass) == static_cast<uint8_t>(enums::ProcessClass::fieldIonization))
             return "fieldIonization";
+        if constexpr(
+            static_cast<uint8_t>(T_ProcessClass) == static_cast<uint8_t>(enums::ProcessClass::pressureIonization))
+            return "pressureIonization";
         return "unknown";
     }
 } // namespace picongpu::particles::atomicPhysics2

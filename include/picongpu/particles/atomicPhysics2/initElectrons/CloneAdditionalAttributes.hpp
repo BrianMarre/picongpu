@@ -37,8 +37,8 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
          */
         template<typename T_IonParticle, typename T_ElectronParticle>
         HDINLINE static void init(
-            T_IonParticle& ion,
             // cannot be const even though we do not write to the ion
+            T_IonParticle& ion,
             T_ElectronParticle& electron)
         {
             namespace partOp = pmacc::particles::operations;

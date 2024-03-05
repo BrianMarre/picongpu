@@ -41,11 +41,6 @@ namespace picongpu::particles::atomicPhysics2
         template<typename T_Particle>
         HDINLINE static float_X KineticEnergy(T_Particle const& particle)
         {
-            // unit conversion factor for eV
-            constexpr float_X eV = static_cast<float_X>(
-                picongpu::UNIT_MASS * picongpu::SI::SPEED_OF_LIGHT_SI * picongpu::SI::SPEED_OF_LIGHT_SI
-                * picongpu::UNITCONV_Joule_to_keV * 1e3);
-
             // is by definition == 1 in current internal unit system
             /// @todo convert to assert/ compile time check with special case, Brian Marre, 2023
             constexpr float_X conversionFactor = static_cast<float_X>(
@@ -70,6 +65,11 @@ namespace picongpu::particles::atomicPhysics2
             // UNIT_MASS * c_SI^2
             float_X const energy = (math::sqrt(m * m + momentumSquared * conversionFactor) - m);
             //}
+
+            // unit conversion factor for eV
+            constexpr float_X eV = static_cast<float_X>(
+                picongpu::UNIT_MASS * picongpu::SI::SPEED_OF_LIGHT_SI * picongpu::SI::SPEED_OF_LIGHT_SI
+                * picongpu::UNITCONV_Joule_to_keV * 1e3);
 
             // eV
             return energy * eV;
