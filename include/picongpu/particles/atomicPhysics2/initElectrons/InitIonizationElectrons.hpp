@@ -63,7 +63,7 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
     {
         //! call operator
         template<typename T_IonParticle, typename T_ElectronParticle>
-        HDINLINE void operator()(T_IonParticle const& ion, T_ElectronParticle& electron) const
+        HDINLINE void operator()(T_IonParticle& ion, T_ElectronParticle& electron) const
         {
             CoMoving::initElectron<T_IonParticle, T_ElectronParticle>(ion, electron);
         }
