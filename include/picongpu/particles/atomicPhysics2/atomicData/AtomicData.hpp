@@ -925,10 +925,15 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                 uint8_t const pressureIonizationStateChargeState
                     = ConfigNumber::getChargeState(pressureIonizationStateConfigNumber);
 
-                // check is actually ionization
+                // check is actually ionization, or disabled
                 Idx const atomicStateConfigNumber = atomicStateDataHostBox.configNumber(collectionIndexAtomicState);
                 uint8_t const atomicStateChargeState = ConfigNumber::getChargeState(atomicStateConfigNumber);
-                if((atomicStateChargeState + 1) > pressureIonizationStateChargeState)
+
+                bool const pressureIonizationIsDisabled
+                    = (pressureIonizationStateConfigNumber == atomicStateConfigNumber);
+                bool const transitionIsIonization
+                    = ((atomicStateChargeState + 1) <= pressureIonizationStateChargeState);
+                if(!transitionIsIonization && !pressureIonizationIsDisabled)
                     throw std::runtime_error(
                         "atomicPhysics ERROR: pressure ionization state[" + collectionIndexAtomicState
                         + "] is no ionization state of corresponding atomic state");
