@@ -1,0 +1,531 @@
+/* Copyright 2024 Brian Marre
+ *
+ * This file is part of PIConGPU.
+ *
+ * PIConGPU is free software you can redistribute it and or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * PIConGPU is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PIConGPU.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/** @file kernel for spawning new macro particles of a productSpecies(P) based on macro particles of a sourceSpecies(S)
+ *
+ * Kernel takes the following 6 main template arguments:
+ *  - PredictorFunctor
+ *      functor predicting the number of P-particles to be spawned based on a S-particle
+ *      e.g. functor returning if/(how many) electrons are created by ion due to ionizing transition
+ *  - ParticlePairUpdateFunctor
+ *      functor initialising a P-particle based on a S-particle and/or changing S-particle after spawning of a derived
+ *      S-particle
+ *      e.g. functor initialising ionization electron as co-moving, functor modifying both electron and ion momentum
+ *          as two body inelastic collision after ionization of the ion or functor updating ion atomic state after
+ *          pressure ionization
+ *  - SharedState
+ *      type of read-only shared ressource influencing prediction of new P-particles to spawn
+ *      e.g. cache of superCell fields, atomic state data table, pressure ionization state table, ...
+ *  - SharedStateIndex returns index to access sharedStateBoxes
+ *  - InitSharedStateFunctor
+ *      functor initalising sharedState variable from dataBox for a given superCell
+ *  - IndividualState
+ *      type of state individual to each PredictorFunctor call
+ *      e.g. delta energy transition of each ionization
+ *  - InitIndividualStateFunctor
+ *      functor initialising individual state
+ *
+ * and some additional ones see class documentation
+ *
+ * Kernel follows the following steps framewise
+ *  1.) predict for each s-particle how many p-particles are to be spawned based on the s-particle and SharedState data
+ *  2.) p-particles are initialized depending on the source particle attributes and SharedState data
+ *  3.) s-particles are updated depending on p-particle and SharedState
+ */
+
+#pragma once
+
+#include "picongpu/simulation_defines.hpp"
+
+#include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
+#include "picongpu/particles/atomicPhysics2/initElectrons/InitIonizationElectrons.hpp"
+
+#include <pmacc/lockstep/ForEach.hpp>
+#include <pmacc/particles/algorithm/ForEach.hpp>
+#include <pmacc/static_assert.hpp>
+
+#include <cstdint>
+
+namespace picongpu::particles::atomicPhysics2::kernel
+{
+    namespace detail
+    {
+        enum struct Access : uint32_t
+        {
+            low = 0u,
+            high = 1u
+        };
+    } // namespace detail
+
+    //! interface for SanityCheck of SpawnFromSourceSpeciesKernel
+    template<
+        typename T_SourceParticleBox,
+        typename T_ProductParticleBox,
+        typename... T_additionalStuffAndSharedStateBoxes>
+    struct SanityCheckInputs
+    {
+        // place PMACC_CASSERT_MSG(...); here
+    };
+
+    //! sanity checks for apply ApplyPressureIonizationKernel
+    template<
+        typename T_IonBox,
+        typename T_IonizationElectronBox,
+        // T_additionalStuff:
+        typename T_IPDModel,
+        typename T_AtomicNumber,
+        // T_SharedStateBoxes:
+        typename T_LocalTimeRemainingBox,
+        typename T_AtomicStateDataBox,
+        typename T_ChargeStateDataBox,
+        typename T_PressureIonizationStateDataBox,
+        typename... T_IPDInputBoxes>
+    struct ApplyPressureIonizationSanityCheck : public SanityCheckInputs
+    {
+        PMACC_CASSERT_MSG(
+            AtomicStateDataBox_and_chargeStateDataBox_atomicNumber_not_consistent,
+            T_AtomicStateDataBox::ConfigNumber::atomicNumber == T_ChargeStateDataBox::atomicNumber);
+    };
+
+    //! interface of SharedStateIndex specialization
+    template<uint8_t T_dim>
+    struct SharedStateIndex
+    {
+        HDINLINE static pmacc::DataSpace<T_dim> get(
+            T_AreaMapping const areaMapping,
+            pmacc::DataSpace<picongpu::simDim> const superCellIdx);
+    };
+
+    //! functor to get superCellFieldIdx
+    struct SuperCellFieldIndex : public SharedStateIndex<picongpu::simDim>
+    {
+        template<typename T_AreaMapping>
+        HDINLINE static pmacc::DataSpace<picongpu::simDim> get(
+            T_AreaMapping const areaMapping,
+            pmacc::DataSpace<picongpu::simDim> const superCellIdx)
+        {
+            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+            //  -> must subtract guard to get correct superCellFieldIdx
+            return superCellIdx - areaMapping.getGuardingSuperCells();
+        }
+    };
+
+    //! interface for SkipTestFunctors
+    template<typename T_SharedState, typename... T_additionalStuff>
+    struct SkipSuperCellFunctor
+    {
+        template<uint8_t T_dim, typename... T_SharedStateBoxes>
+        HDINLINE static bool test(
+            pmacc::DataSpace<picongpu::simDim> const superCellIndex,
+            pmacc::DataSpace<T_dim> const sharedStateIndex,
+            T_SharedState const sharedState,
+            T_SharedStateBoxes... sharedStateBoxes);
+    };
+
+    //! test for local time remaining <= 0 for superCell
+    template<typename... T_additionalStuff>
+    struct SkipFinishedSuperCellsAtomicPhysics : public SkipTestFunctor<float_X, T_additionalStuff...>
+    {
+        template<typename T_LocalTimeRemainingBox, typename... T_addStuff>
+        HDINLINE static bool test(
+            pmacc::DataSpace<picongpu::simDim> const,
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
+            float_X const,
+            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_addStuff...)
+        {
+            return (localTimeRemainingBox[superCellFieldIdx] <= 0._X);
+        }
+    };
+
+    template<typename T_IPDModel, uint8_t T_atomicNumber>
+    struct CalculateIPDValue
+    {
+        template<typename... T_IPDInputBoxes>
+        HDINLINE static float_X init(
+            pmacc::DataSpace<picongpu::simDim> const,
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
+            T_IPDInputBoxes... ipdInputBoxes)
+        {
+            // eV
+            return T_IPDModel::calculateIPD<T_atomicNumber>(superCellFieldIdx, ipdInputBoxes...);
+        }
+    };
+
+    template<typename T_Number, typename... T_addStuff>
+    struct PredictorFunctor
+    {
+        template<typename T_Particle, typename T_SharedState, typename... T_SharedStateBoxes>
+        HDINLINE static T_Number getNumberNewParticles(
+            T_Particle particle,
+            T_SharedState const sharedState,
+            T_SharedStateBoxes const... sharedStateBoxes);
+    };
+
+    template<typename T_Number, typename T_IPDModel, uint8_t T_atomicNumber>
+    struct PressureIonizationPredictor : public PredictorFunctor<T_Number, T_IPDModel, T_atomicNumber>
+    {
+        template<
+            typename T_Ion,
+            typename T_LocalTimeRemainingBox,
+            typename T_AtomicStateDataBox,
+            typename T_ChargeStateDataBox,
+            typename T_PressureIonizationStateDataBox,
+            typename... T_IPDInputBoxes>
+        HDINLINE static T_Number getNumberNewParticles(
+            T_Ion& ion,
+            float_X const ionizationPotentialDepression,
+            T_LocalTimeRemainingBox const,
+            T_AtomicStateDataBox const atomicStateBox,
+            T_ChargeStateDataBox const chargeStateBox,
+            T_PressureIonizationStateDataBox const pressureIonizationStateBox,
+            T_IPDInputBoxes const... ipdInputBoxes)
+        {
+            auto const currentAtomicStateClctIdx = ion[atomicStateCollectionIndex_];
+            auto const pressureIonizationStateClctIdx
+                = pressureIonizationStateBox.pressureIonizationState(currentAtomicStateClctIdx);
+
+            bool const noPressureIonizationPath = (pressureIonizationStateClctIdx == currentAtomicStateClctIdx);
+
+            if(noPressureIonizationPath)
+                return static_cast<T_Number>(0u);
+
+            // do prediction
+            auto const currentAtomicStateConfigNumber = atomicStateBox.configNumber(currentAtomicStateClctIdx);
+            float_X const atomicStateEnergy = atomicStateBox.energy(currentStateClctIdx);
+
+            // fully ionized state has no pressure ionization state --> currentChargeState < T_atomicNumber
+            uint8_t const currentChargeState
+                = T_AtomicStateDataBox::ConfigNumber::getChargeState(currentAtomicStateConfigNumber);
+            uint8_t const chargeStatePressureIonizationState = T_AtomicStateDataBox::ConfigNumber::getChargeState(
+                atomicStateBox.configNumber(pressureIonizationStateClctIdx));
+
+            // eV
+            float_X const ionizationEnergyGroundState = chargeStateBox.ionizationEnergy(currentChargeState);
+            // eV
+            float_X const ipdIonizationEnergy
+                = ionizationEnergyGroundState - atomicStateEnergy - ionizationPotentialDepression;
+
+            T_Number numberIonizationElectrons = static_cast<T_Number>(0u);
+
+            if(ipdIonizationEnergy < 0._X)
+            {
+                // update ion atomic state
+                ion[atomicStateCollectionIndex_] = pressureIonizationStateClctIdx;
+
+                // get number of electrons to spawn
+                numberIonizationElectrons = chargeStatePressureIonizationState - currentChargeState;
+            }
+
+            return numberIonizationElectrons;
+        }
+    };
+
+    /** generalised kernel for spawning p-particles from p-particles
+     *
+     * @tparam T_SanityCheckInputs struct containing compile time asserts only, checking that the settings in
+     *  T_additionalStuff and passed types of T_SharedStateBoxes are consistent with expectations and assumptions
+     *  e.g. that if we do boundFree transition based ioniaztion the transitionDataBox passed via T_SharedStateBoxes
+     *      actually contain boundFree transitions, or that the atomicNumber of the chargeStateDataDataBox passed is
+     *      consistent with the atomicNumber of the also passed atomicStateDataDataBox
+     * @tparam T_SkipSuperCellFunctor test allowing entire superCell to be skipped depending on sharedStateBoxes,
+     *  e.g. skip superCell if timeRemaining timeRemaining > 0
+     * @tparam T_PredictorFunctor
+     * @tparam T_ParticlePairUpdateFunctor
+     * @tparam T_SharedState
+     * @tparam T_SharedStateIndex struct with internal state containing sharedStateIndex to use for accessing
+     * sharedStateBoxes
+     * @tparam T_InitSharedStateFunctor
+     * @tparam T_IndividualState
+     * @tparam T_InitIndividualStateFunctor
+     * @tparam T_additionalStuff setting options for Functors customizing their behaviour
+     *
+     * @todo wrap different components in single type
+     */
+    template<
+        typename T_TypeNumberProductParticles,
+        typename T_SanityCheckInputs,
+        typename T_SkipSuperCellFunctor,
+        typename T_PredictorFunctor,
+        typename T_ParticlePairUpdateFunctor,
+        typename T_SharedState,
+        typename T_SharedStateIndex,
+        typename T_InitSharedStateFunctor,
+        typename... T_additionalStuff>
+    struct SpawnFromSourceSpeciesKernel
+    {
+        /** call operator
+         *
+         * called by picongpu stage/sub-stage
+         *
+         * @param worker object containing the device and block information,
+         *  passed by PMACC_KERNEL call
+         * @param areMapping mapping of blockIndex to block superCell index
+         * @param sourceBox deviceDataBox giving access to the particle frames of sourceSpecies particles of all local
+         *  superCells
+         * @param productBox deviceDataBox giving access to the particle frames of productSpecies particles of all
+         * local superCells
+         * @param sharedStateBoxes deviceDataBox giving access to the particle frames of productSpecies particles of
+         * all local superCells
+         */
+        template<
+            typename T_Worker,
+            typename T_AreaMapping,
+            typename T_SourceParticleBox,
+            typename T_ProductParticleBox,
+            typename... T_SharedStateBoxes>
+        HDINLINE void operator()(
+            T_Worker const& worker,
+            T_AreaMapping const areaMapping,
+            T_SourceParticleBox sourceBox,
+            T_ProductParticleBox productBox,
+            T_SharedStateBoxes const... sharedStateBoxes) const
+        {
+            using TypeNumber = T_TypeNumberProductParticles;
+            using SourceSpeciesFramePtr = typename T_SourceParticleBox::FramePtr;
+            using ProductSpeciesFramePtr = typename T_ProductParticleBox::FramePtr;
+
+            // perform sanity checks that input is consistent with assumptions
+            using = T_SanityCheckInputs<
+                T_SourceParticleBox,
+                T_ProductParticleBox,
+                T_additionalStuff...,
+                T_SharedStateBoxes...>;
+
+            PMACC_CASSERT_MSG(
+                sourceSpecies_framesize_must_less_or_equal_productSpecies_framesize,
+                T_IonBox::frameSize == T_IonizationElectronBox::frameSize)
+            constexpr uint32_t frameSize = T_SourceParticleBox::frameSize;
+
+            pmacc::DataSpace<picongpu::simDim> const superCellIdx
+                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
+            auto const sharedStateIndex = T_SharedStateIndex::get(areaMapping, superCellIdx);
+
+            SourceSpeciesFramePtr sourceSpeciesFrame = sourceBox.getLastFrame(superCellIdx);
+
+            // test for skipping superCell due to no sourceSpecies particles or Skip Test
+            bool const skipSuperCell
+                = T_SkipSuperCellFunctor::test(superCellIndex, sharedStateIndex, sharedStateBoxes...);
+
+            if(skipSuperCell || (!sourceSpeciesFrame.isValid()))
+                return;
+
+            auto forEachFrameSlot = pmacc::lockstep::makeForEach<frameSize, T_Worker>(worker);
+            auto forEachFrameMaster = pmacc::lockstep::makeForEach<2u, T_Worker>(worker);
+            auto onlyMaster = pmacc::lockstep::makeMaster(worker);
+
+            using FrameArray = memory::Array<ProductSpeciesFramePtr, static_cast<uint32_t>(2u)>;
+
+            PMACC_SMEM(worker, offsetLowFrame, int32_t);
+            PMACC_SMEM(worker, totalNumberProductSpeciesParticlesToSpawn, uint32_t);
+            PMACC_SMEM(worker, spawnCounter, uint32_t);
+
+            PMACC_SMEM(worker, productSpeciesFrameArray, FrameArray);
+
+            // create shared memory variable for shared state
+            PMACC_SMEM(worker, sharedState, T_SharedState);
+
+            auto numberProductParticlesCtxArr
+                = lockstep::makeVar<TypeNumber>(forEachFrameSlot, static_cast<TypeNumber>(0u));
+
+            // init shared memory
+            onlyMaster(
+                [&superCellIdx,
+                 &offsetLowFrame,
+                 &spawnCounter,
+                 &totalNumberProductSpeciesParticlesToSpawn,
+                 &productSpeciesFrameArray,
+                 &sharedState,
+                 &sharedStateBoxes...]()
+                {
+                    sharedState = T_InitIndividualStateFunctor<T_additionalStuff>::template init(
+                        superCellIndex,
+                        sharedStateIndex,
+                        sharedStateBoxes...);
+
+                    //! number of particles in last frame of productSpecies particleBox frameList of superCell
+                    offsetLowFrame = static_cast<int32_t>(productBox.getSuperCell(superCellIdx).getSizeLastFrame());
+                    totalNumberProductSpeciesParticlesToSpawn = static_cast<uint32_t>(0u);
+                    spawnCounter = static_cast<uint32_t>(0u);
+
+                    // might be nullptr if no electrons in superCell
+                    electronFrameArray[u32(detail::Access::low)] = productBox.getLastFrame(superCellIdx);
+                    electronFrameArray[u32(detail::Access::high)] = nullptr;
+                });
+            worker.sync();
+
+            // go over frames until all processed
+            while(ionFrame.isValid())
+            {
+                /* Predictor: get number productSpecies particles to spawn for each sourceSpecies particle in current
+                 *  sourceSpecies frame */
+                forEachFrameSlot(
+                    [&worker,
+                     &sourceSpeciesFrame,
+                     &totalNumberProductSpeciesParticlesToSpawn,
+                     &sharedState,
+                     &sharedStateBoxes...](uint32_t const idx, TypeNumber& numberProductParticles)
+                    {
+                        auto const sourceParticle = sourceSpeciesFrame[idx];
+
+                        bool const slotNotOccupied = !static_cast<bool>(sourceParticle[multiMask_]);
+                        if(slotNotOccupied)
+                        {
+                            numberProductParticles = static_cast<TypeNumber>(0u);
+                            return;
+                        }
+
+                        numberProductParticles = T_PredictorFunctor::getNumberNewParticles(
+                            sourceParticle,
+                            sharedState,
+                            sharedStateBoxes...);
+
+                        T_TypeNumberProductParticles const temp = numberIonizationElectrons;
+                        // update global counter
+                        cupla::atomicAdd(worker.getAcc(), &totalNumberProductSpeciesParticlesToSpawn, temp);
+                    },
+                    numberProductParticlesCtxArr);
+                worker.sync();
+
+                // work over current frame until all predicted product species particles have been spawned
+                while(true)
+                {
+                    // need new frame? provide!
+                    /* might create frame not used in current iteration but never one not used at all */
+                    forEachFrameMaster(
+                        [&worker,
+                         &frameSize,
+                         &superCellIdx,
+                         &offsetLowFrame,
+                         &totalNumberProductSpeciesParticlesToSpawn,
+                         &productBox,
+                         &productSpeciesFrameArray](uint32_t const linearIdx)
+                        {
+                            int32_t const numberFreeSlotsPreviousLinearIdx
+                                = static_cast<int32_t>(linearIdx * frameSize) - offsetLowFrame;
+                            // for low will always be <0(partially filled) or ==0(nullptr)
+
+                            if(
+                                // need slots from frame, since previous is not enough
+                                (numberFreeSlotsPreviousLinearIdx
+                                 < static_cast<int32_t>(totalNumberProductSpeciesParticlesToSpawn))
+                                &&
+                                // is nullPtr
+                                !(electronFrameArray[linearIdx].isValid()))
+                            {
+                                electronFrameArray[linearIdx] = ionizationElectronBox.getEmptyFrame(worker);
+                                ionizationElectronBox.setAsLastFrame(
+                                    worker,
+                                    productSpeciesFrameArray[linearIdx],
+                                    superCellIdx);
+                            }
+                        });
+                    worker.sync();
+
+                    // try to init one productParticle for each logical worker
+                    forEachFrameSlot(
+                        [&worker,
+                         &sourceSpeciesFrame,
+                         &productSpeciesFrameArray,
+                         &frameSize,
+                         &spawnCounter,
+                         &offsetLowFrame](uint32_t const frameSlotIdx, TypeNumber& numberProductParticles)
+                        {
+                            auto sourceParticle = sourceSpeciesFrame[frameSlotIdx];
+
+                            // not occupied or does not want to spawn a particle
+                            if(numberProductParticles == static_cast<TypeNumber>(0u))
+                                return;
+
+                            uint32_t const globalSlotIndex
+                                = cupla::atomicAdd(worker.getAcc(), &spawnCounter, static_cast<uint32_t>(1u));
+
+                            uint32_t const productSpeciesFrameIndex = (globalSlotIndex + offsetLowFrame) / frameSize;
+                            uint32_t const localSlotIndex = (globalSlotIndex + offsetLowFrame) % frameSize;
+
+                            auto productParticle = productSpeciesFrameArray[electronFrameIndex][localSlotIndex];
+
+                            // init frame slot, mark as valid particle
+                            productParticle[multiMask_] = 1u;
+
+                            // init productParticle and maybe change source particle attributes
+                            T_ParticlePairUpdateFunctor{}(sourceParticle, productParticle, sharedStateBoxes...);
+
+                            // update frame slot counter
+                            //      will never underflow since we check for 0 above
+                            numberProductParticles -= static_cast<uint8_t>(1u);
+                        },
+                        numberProductParticlesCtxArr);
+                    worker.sync();
+
+                    // book keeping
+                    onlyMaster(
+                        [&spawnCounter,
+                         &totalNumberProductSpeciesParticlesToSpawn,
+                         &productBox,
+                         &superCellIdx,
+                         &offsetLowFrame,
+                         &frameSize,
+                         &productSpeciesFrameArray]()
+                        {
+                            totalNumberProductSpeciesParticlesToSpawn -= spawnCounter;
+                            // will never underflow since we only spawn what was previously predicted
+
+                            offsetLowFrame += spawnCounter;
+
+                            if(offsetLowFrame >= static_cast<int32_t>(frameSize))
+                            {
+                                // low frame of FrameArray is full --> need to shift one further in linked list
+                                // update offset
+                                offsetLowFrame -= frameSize;
+
+                                // shift high to low to keep partially filled frame at low and "empty" frame at high
+                                /// @attention high may be nullptr if no further electrons to spawn
+                                electronFrameArray[u32(detail::Access::low)]
+                                    = electronFrameArray[u32(detail::Access::high)];
+
+                                // reset high with nullptr to mark for next "need new frame?" pass
+                                electronFrameArray[u32(detail::Access::high)] = nullptr;
+                            }
+
+                            using SuperCellType = typename T_ProductParticleBox::SuperCellType;
+                            SuperCellType& superCell = productBox.getSuperCell(superCellIdx);
+
+                            // update numParticles in superCell for electrons
+                            superCell.setNumParticles(superCell.getNumParticles() + spawnCounter);
+
+                            spawnCounter = static_cast<uint32_t>(0u);
+                        });
+                    worker.sync();
+
+                    if(totalNumberProductSpeciesParticlesToSpawn == static_cast<uint32_t>(0u))
+                        break;
+                }
+
+                // get next ion frame
+                sourceSpeciesFrame = sourceBox.getPreviousFrame(ionFrame);
+
+                //  no need to set "totalNumberProductSpeciesParticlesToSpawn = 0",
+                //   already guaranteed by break condition
+
+                worker.sync();
+            }
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics2::kernel
