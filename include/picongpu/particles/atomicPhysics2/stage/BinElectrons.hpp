@@ -95,7 +95,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                 mapper,
                 localTimeRemainingField.getDeviceDataBox(),
                 electrons.getDeviceParticlesBox(),
-                localElectronHistogramField.getDeviceDataBox()); // standard data box
+                localElectronHistogramField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

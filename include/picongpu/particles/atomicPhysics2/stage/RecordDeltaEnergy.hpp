@@ -38,7 +38,7 @@ namespace picongpu::particles::atomicPhysics2::stage
      * @tparam T_IonSpecies ion species type
      */
     template<typename T_IonSpecies>
-    struct RecordChanges
+    struct RecordDeltaEnergy
     {
         // might be alias, from here on out no more
         //! resolved type of alias T_IonSpecies
@@ -103,24 +103,6 @@ namespace picongpu::particles::atomicPhysics2::stage
                         .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
             }
 
-            if constexpr(AtomicDataType::switchSpontaneousDeexcitation)
-            {
-                using RecordChanges_spontaneousDeexcitation
-                    = picongpu::particles::atomicPhysics2::kernel::RecordChangesKernel<
-                        enums::ProcessClass::spontaneousDeexcitation,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
-
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_spontaneousDeexcitation(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData
-                        .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
-            }
-
             if constexpr(AtomicDataType::switchElectronicIonization)
             {
                 using RecordChanges_electronicIonization
@@ -138,27 +120,6 @@ namespace picongpu::particles::atomicPhysics2::stage
                     atomicData
                         .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byUpperState>(),
                     atomicData.template getChargeStateDataDataBox<false>());
-            }
-
-            // currently no bound-free based non-collisional processes exist
-            /// @todo implement field ionization, Brian Marre, 2023
-
-            if constexpr(AtomicDataType::switchAutonomousIonization)
-            {
-                using RecordChanges_autonomousIonization
-                    = picongpu::particles::atomicPhysics2::kernel::RecordChangesKernel<
-                        enums::ProcessClass::autonomousIonization,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
-
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_autonomousIonization(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData
-                        .template getAutonomousTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
             }
         }
     };

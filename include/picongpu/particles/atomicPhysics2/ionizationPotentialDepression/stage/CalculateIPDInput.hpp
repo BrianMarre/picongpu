@@ -44,8 +44,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<T_ElectronSpecies::FrameType::frameSize>();
+            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<1u>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<

@@ -139,19 +139,16 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             //}
         }
 
+        //            //! list of all electron species for IPD
+        //            using IPDElectronSpecies = MakeSeq_t<AtomicPhysicsElectronSpecies, OnlyIPDElectronSpecies>;
+        //            //! list of all ion species for IPD
+        //            using IPDIonSpecies = MakeSeq_t<AtomicPhysicsIonSpecies, OnlyIPDIonSpecies>;
         //! do all precalculation work for IPD
+        template<typename T_IPDIonSpecies, typename T_IPDElectronSpecies>
         HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc)
         {
-            //! list of all electron species for IPD
-            using IPDElectronSpecies = MakeSeq_t<AtomicPhysicsElectronSpecies, OnlyIPDElectronSpecies>;
-            //! list of all ion species for IPD
-            using IPDIonSpecies = MakeSeq_t<AtomicPhysicsIonSpecies, OnlyIPDIonSpecies>;
-
             using ForEachElectronSpeciesFillSumFields = pmacc::meta::
                 ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Electron<boost::mpl::_1, T_TemperatureFunctor>>;
-            using ForEachIonSpeciesFillSumFields = pmacc::meta::
-                ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Ion<boost::mpl::_1, T_TemperatureFunctor>>;
-
             using ForEachIonSpeciesFillSumFields = pmacc::meta::
                 ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Ion<boost::mpl::_1, T_TemperatureFunctor>>;
 
@@ -162,6 +159,15 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             ForEachIonSpeciesFillSumFields{}(mappingDesc);
 
             s_IPD::stage::CalculateIPDInput()(mappingDesc);
+        }
+
+        //! @tparam resolved type of ion species
+        template<typename T_IPDIonSpecies>
+        HINLINE static void callApplyPressureIonizationKernel(
+            picongpu::MappingDesc const mappingDesc,
+            uint32_t currentStep)
+        {
+            // do for each species call
         }
 
         /** calculate ionization potential depression
