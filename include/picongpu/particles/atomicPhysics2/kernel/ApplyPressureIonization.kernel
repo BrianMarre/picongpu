@@ -17,6 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
+//! definition of ApplyPressure Ionization Kernel using the SpawnParticlesFromSourceSpecies kernel framework
+
 #pragma once
 
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
@@ -24,8 +26,7 @@
 #include "picongpu/particles/creation/SpawnFromSourceSpecies.kernel"
 #include "picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp"
 
-
-namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
+namespace picongpu::particles::atomicPhysics2::kernel
 {
     namespace s_enums = picongpu::particles::atomicPhysics2::enums;
 
@@ -167,6 +168,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
         }
     };
 
+    //! moduleConfig of the ApplyPressureIonizationKernel
     using ApplyPressureIonizationModulConfig = particles::creation::ModuleConfig<
         ApplyPressureIonizationSanityCheck,
         SkipFinishedSuperCellsAtomicPhysics,
@@ -188,4 +190,4 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
         false,
         ApplyPressureIonizationModulConfig,
         T_IPDModel>;
-} // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
+} // namespace picongpu::particles::atomicPhysics2::kernel
