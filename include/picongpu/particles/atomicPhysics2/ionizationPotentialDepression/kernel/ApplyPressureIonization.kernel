@@ -19,334 +19,173 @@
 
 #pragma once
 
-#include "picongpu/simulation_defines.hpp"
-
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
-#include "picongpu/particles/atomicPhysics2/initElectrons/InitIonizationElectrons.hpp"
+#include "picongpu/particles/atomicPhysics2/initElectrons/InitIonizationElectron.hpp"
+#include "picongpu/particles/creation/SpawnFromSourceSpecies.kernel"
+#include "picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp"
 
-#include <pmacc/lockstep/ForEach.hpp>
-#include <pmacc/particles/algorithm/ForEach.hpp>
-#include <pmacc/static_assert.hpp>
 
-#include <cstdint>
-
-namespace picongpu::particles::atomicPhysics2::kernel
+namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
 {
-    namespace detail
-    {
-        enum struct Access : uint32_t
-        {
-            low = 0u,
-            high = 1u
-        };
-    } // namespace detail
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
 
-    /** pressure ionization kernel
-     *
-     * called by ApplyPressureIonization atomicPhysics sub-stage
-     *
-     * checks all macro ions for unbound states due to pressure ionization depression(IPD), i.e. states above the
-     *  depressed continium edge.
-     * If an unbound macro ion is found it is ionized, into the pressure ionization state of it's atomic state, until
-     *  it is no longer in an unbound state.
-     *
-     * @tparam T_IPDModel
-     */
-    template<typename T_IPDModel>
-    struct ApplyPressureIonization
+    //! sanity checks for apply ApplyPressureIonizationKernel
+    template<
+        typename T_IonBox,
+        typename T_IonizationElectronBox,
+        // T_KernelConfigOptions:
+        typename T_IPDModel,
+        // T_SharedStateBoxes:
+        typename T_LocalTimeRemainingBox,
+        typename T_ChargeStateDataBox,
+        typename T_AtomicStateDataBox,
+        typename T_PressureIonizationStateDataBox,
+        typename... T_IPDInputBoxes>
+    struct ApplyPressureIonizationSanityCheckInputs
+        : public SanityCheckInputs<
+              T_IPDModel,
+              T_LocalTimeRemainingBox,
+              T_AtomicStateDataBox,
+              T_ChargeStateDataBox,
+              T_PressureIonizationStateDataBox,
+              T_IPDInputBoxes...>
     {
-        /** call operator
-         *
-         * called by ApplyPressureIonization atomic physics sub-stage
-         *
-         * @param worker object containing the device and block information,
-         *  passed by PMACC_KERNEL call
-         * @param areMapping mapping of blockIndex to block superCell index
-         * @param ionBox deviceDataBox giving access to the particle frames of T_IonSpecies
-         *  of all local superCells
-         * @param ionizationElectronBox deviceDataBox giving access to the particle frames
-         *  of T_IonSpecies ionization electrons of all local superCells
-         * @param atomicStateBox deviceDataBox giving access to atomic state property data
-         * @param chargeStateBox deviceDataBox giving access to charge state property data
-         * @param pressureIonizationStateBox deviceDataBox giving access to pressure ionization state data
-         * @param ipdInputBoxes deviceDataBoxes giving access to the ipd input field values of the all local superCells
-         */
+        PMACC_CASSERT_MSG(
+            AtomicStateDataBox_and_chargeStateDataBox_atomicNumber_not_consistent,
+            T_AtomicStateDataBox::ConfigNumber::atomicNumber == T_ChargeStateDataBox::atomicNumber);
+    };
+
+    //! test for local time remaining <= 0 for superCell
+    template<typename... T_KernelConfigOptions>
+    struct SkipFinishedSuperCellsAtomicPhysics : public SkipSuperCellFunctor<T_KernelConfigOptions...>
+    {
+        template<typename T_LocalTimeRemainingBox, typename... T_addSharedDataBoxes>
+        HDINLINE static bool test(
+            pmacc::DataSpace<picongpu::simDim> const,
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
+            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_addSharedStateBoxes...)
+        {
+            return (localTimeRemainingBox[superCellFieldIndex] <= 0._X);
+        }
+    };
+
+    template<typename T_Number, typename T_IPDModel>
+    struct PressureIonizationPredictor : public PredictorFunctor<T_Number, T_IPDModel>
+    {
         template<
-            typename T_Worker,
-            typename T_AreaMapping,
+            typename T_Ion,
             typename T_LocalTimeRemainingBox,
-            typename T_IonBox,
-            typename T_IonizationElectronBox,
             typename T_AtomicStateDataBox,
             typename T_ChargeStateDataBox,
             typename T_PressureIonizationStateDataBox,
-            typename T_IPDInputBoxes...>
-        HDINLINE void operator()(
-            T_Worker const& worker,
-            T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_IonBox ionBox,
-            T_IonizationElectronBox ionizationElectronBox,
-            T_AtomicStateDataBox atomicStateBox,
-            T_ChargeStateDataBox chargeStateBox,
-            T_PressureIonizationStateDataBox pressureIonizationStateBox,
-            T_IPDInputBoxes... ipdInputBoxes) const
+            typename... T_IPDInputBoxes>
+        HDINLINE static T_Number getNumberNewParticles(
+            T_Ion& ion,
+            float_X const ionizationPotentialDepression,
+            T_LocalTimeRemainingBox const,
+            T_AtomicStateDataBox const atomicStateBox,
+            T_ChargeStateDataBox const chargeStateBox,
+            T_PressureIonizationStateDataBox const pressureIonizationStateBox,
+            T_IPDInputBoxes const...)
         {
-            namespace enums = picongpu::particles::atomicPhysics2::enums;
+            auto const currentAtomicStateClctIdx = ion[atomicStateCollectionIndex_];
+            auto const pressureIonizationStateClctIdx
+                = pressureIonizationStateBox.pressureIonizationState(currentAtomicStateClctIdx);
 
-            using ElectronFramePtr = typename T_IonizationElectronBox::FramePtr;
-            using IonFramePtr = typename T_IonBox::FramePtr;
+            bool const noPressureIonizationPath = (pressureIonizationStateClctIdx == currentAtomicStateClctIdx);
 
-            // verify input for consistency with assumptions
-            PMACC_CASSERT_MSG(
-                AtomicStateDataBox_and_chargeStateDataBox_atomicNumber_not_consistent,
-                T_AtomicStateDataBox::ConfigNumber::atomicNumber == T_ChargeStateDataBox::atomicNumber);
-            PMACC_CASSERT_MSG(
-                ion_and_electron_framesize_must_be_equal,
-                T_IonBox::frameSize == T_IonizationElectronBox::frameSize);
+            if(noPressureIonizationPath)
+                return static_cast<T_Number>(0u);
 
-            constexpr uint32_t frameSize = T_IonBox::frameSize;
+            // do prediction
+            auto const currentAtomicStateConfigNumber = atomicStateBox.configNumber(currentAtomicStateClctIdx);
+            float_X const atomicStateEnergy = atomicStateBox.energy(currentStateClctIdx);
 
-            pmacc::DataSpace<picongpu::simDim> const superCellIdx
-                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
-            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
-            //  -> must subtract guard to get correct superCellFieldIdx
-            pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = superCellIdx - areaMapping.getGuardingSuperCells();
+            // fully ionized state has no pressure ionization state --> currentChargeState < T_atomicNumber
+            uint8_t const currentChargeState
+                = T_AtomicStateDataBox::ConfigNumber::getChargeState(currentAtomicStateConfigNumber);
+            uint8_t const chargeStatePressureIonizationState = T_AtomicStateDataBox::ConfigNumber::getChargeState(
+                atomicStateBox.configNumber(pressureIonizationStateClctIdx));
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
-            IonFramePtr ionFrame = ionBox.getLastFrame(superCellIdx);
+            // eV
+            float_X const ionizationEnergyGroundState = chargeStateBox.ionizationEnergy(currentChargeState);
+            // eV
+            float_X const ipdIonizationEnergy
+                = ionizationEnergyGroundState - atomicStateEnergy - ionizationPotentialDepression;
 
-            // end kernel if superCell already finished or no ions in superCell --> no pressure ionization possible
-            if((timeRemaining <= 0._X) || (!ionFrame.isValid()))
-                return;
+            T_Number numberIonizationElectrons = static_cast<T_Number>(0u);
 
-            auto forEachFrameSlot = pmacc::lockstep::makeForEach<frameSize, T_Worker>(worker);
-            auto forEachFrameMaster = pmacc::lockstep::makeForEach<2u, T_Worker>(worker);
-            auto onlyMaster = pmacc::lockstep::makeMaster(worker);
-
-            using FrameArray = memory::Array<ElectronFramePtr, static_cast<uint32_t>(2u)>;
-            PMACC_SMEM(worker, electronFrameArray, FrameArray);
-
-            PMACC_SMEM(worker, offsetLowFrame, int32_t);
-            PMACC_SMEM(worker, totalNumberMacroElectronsToSpawn, uint32_t);
-            PMACC_SMEM(worker, spawnCounter, uint32_t);
-
-            // unit: eV
-            PMACC_SMEM(worker, ionizationPotentialDepression, float_x);
-
-            auto numberIonizationElectronsCtxArr
-                = lockstep::makeVar<uint8_t>(forEachFrameSlot, static_cast<uint8_t>(0u));
-
-            // init shared memory
-            onlyMaster(
-                [&superCellIdx,
-                 &ionizationPotentialDepression,
-                 &ionizationElectronBox,
-                 &offsetLowFrame,
-                 &spawnCounter,
-                 &totalNumberMacroElectronsToSpawn,
-                 &electronFrameArray]()
-                {
-                    ionizationPotentialDepression
-                        = T_IPDModel::calculateIPD<T_atomicNumber>(superCellFieldIdx, ipdInputBoxes...);
-
-                    offsetLowFrame
-                        = static_cast<int32_t>(ionizationElectronBox.getSuperCell(superCellIdx).getSizeLastFrame());
-
-                    totalNumberMacroElectronsToSpawn = static_cast<uint32_t>(0u);
-                    spawnCounter = static_cast<uint32_t>(0u);
-
-                    // might be nullptr if no electrons in superCell
-                    electronFrameArray[u32(detail::Access::low)] = ionizationElectronBox.getLastFrame(superCellIdx);
-                    electronFrameArray[u32(detail::Access::high)] = nullptr;
-                });
-            worker.sync();
-
-            while(ionFrame.isValid())
+            if(ipdIonizationEnergy < 0._X)
             {
-                // Predictor: get number ionization electrons for each ion in current ion frame
-                forEachFrameSlot(
-                    [&worker, &ionFrame, &totalNumberMacroElectronsToSpawn, &atomicStateBox, &transitionBox](
-                        uint32_t const idx,
-                        uint8_t& numberIonizationElectrons)
-                    {
-                        auto const ion = ionFrame[idx];
+                // update ion atomic state
+                ion[atomicStateCollectionIndex_] = pressureIonizationStateClctIdx;
 
-                        auto const currentAtomicStateClctIdx = ion[atomicStateCollectionIndex_];
-                        auto const pressureIonizationStateClctIdx
-                            = pressureIonizationStateBox.pressureIonizationState(currentAtomicStateClctIdx);
-
-                        bool const slotNotOccupied = !static_cast<bool>(ion[multiMask_]);
-                        bool const noPressureIonizationPath
-                            = (pressureIonizationStateClctIdx == currentAtomicStateClctIdx);
-
-                        if(slotNotOccupied || noPressureIonizationPath)
-                        {
-                            numberIonizationElectrons = static_cast<uint8_t>(0u);
-                            return;
-                        }
-
-                        auto const currentAtomicStateConfigNumber
-                            = atomicStateBox.configNumber(currentAtomicStateClctIdx);
-                        float_X const atomicStateEnergy = atomicStateBox.energy(currentStateClctIdx);
-
-                        // fully ionized state has no pressure ionization state --> currentChargeState < T_atomicNumber
-                        uint8_t const currentChargeState
-                            = T_AtomicStateDataBox::ConfigNumber::getChargeState(currentAtomicStateConfigNumber);
-                        uint8_t const chargeStatePressureIonizationState
-                            = T_AtomicStateDataBox::ConfigNumber::getChargeState(
-                                atomicStateBox.configNumber(pressureIonizationStateClctIdx));
-
-                        // eV
-                        float_X const ionizationEnergyGroundState
-                            = chargeStateBox.ionizationEnergy(currentChargeState);
-                        // eV
-                        float_X const ipdIonizationEnergy
-                            = ionizationEnergyGroundState - atomicStateEnergy - ionizationPotentialDepression;
-
-                        if(ipdIonizationEnergy < 0._X)
-                        {
-                            // update ion atomic state
-                            ion[atomicStateCollectionIndex_] = pressureIonizationStateClctIdx;
-
-                            // get number of electrons to spawn
-                            numberIonizationElectrons = chargeStatePressureIonizationState - currentChargeState;
-                        }
-
-                        uint32_t const temp = numberIonizationElectrons;
-                        // update global counter
-                        cupla::atomicAdd(worker.getAcc(), &totalNumberMacroElectronsToSpawn, temp);
-                    },
-                    numberIonizationElectronsCtxArr);
-                worker.sync();
-
-                // work over current frame until all predicted electrons have been spawned
-                while(true)
-                {
-                    // need new frame? provide!
-                    /* might create frame not used in current iteration but never one not used at all */
-                    forEachFrameMaster(
-                        [&worker,
-                         &frameSize,
-                         &superCellIdx,
-                         &offsetLowFrame,
-                         &totalNumberMacroElectronsToSpawn,
-                         &ionizationElectronBox,
-                         &electronFrameArray](uint32_t const linearIdx)
-                        {
-                            int32_t const numberFreeSlotsPreviousLinearIdx
-                                = static_cast<int32_t>(linearIdx * frameSize) - offsetLowFrame;
-                            // for low will always be <0(partially filled) or ==0(nullptr)
-
-                            if(
-                                // need slots from frame, since previous is not enough
-                                (numberFreeSlotsPreviousLinearIdx
-                                 < static_cast<int32_t>(totalNumberMacroElectronsToSpawn))
-                                &&
-                                // is nullPtr
-                                !(electronFrameArray[linearIdx].isValid()))
-                            {
-                                electronFrameArray[linearIdx] = ionizationElectronBox.getEmptyFrame(worker);
-                                ionizationElectronBox.setAsLastFrame(
-                                    worker,
-                                    electronFrameArray[linearIdx],
-                                    superCellIdx);
-                            }
-                        });
-                    worker.sync();
-
-                    // try to init one electron for each logical worker
-                    forEachFrameSlot(
-                        [&worker, &ionFrame, &electronFrameArray, &frameSize, &spawnCounter, &offsetLowFrame](
-                            uint32_t const frameSlotIdx,
-                            uint8_t& numberIonizationElectrons)
-                        {
-                            auto ion = ionFrame[frameSlotIdx];
-
-                            // not occupied or does not want to spawn an electron
-                            if(numberIonizationElectrons == static_cast<uint32_t>(0u))
-                                return;
-
-                            uint32_t const globalSlotIndex
-                                = cupla::atomicAdd(worker.getAcc(), &spawnCounter, static_cast<uint32_t>(1u));
-
-                            uint32_t const electronFrameIndex = (globalSlotIndex + offsetLowFrame) / frameSize;
-                            uint32_t const localSlotIndex = (globalSlotIndex + offsetLowFrame) % frameSize;
-
-                            auto electron = electronFrameArray[electronFrameIndex][localSlotIndex];
-
-                            // init frame slot, mark as valid particle
-                            electron[multiMask_] = 1u;
-
-                            // init new electron attributes
-                            initElectrons::InitIonizationElectron<enums::ProcessClass::pressureIonization>{}(
-                                ion,
-                                electron);
-
-                            // update frame slot counter
-                            //      will never underflow since we check for 0 above
-                            numberIonizationElectrons -= static_cast<uint8_t>(1u);
-                        },
-                        numberIonizationElectronsCtxArr);
-                    worker.sync();
-
-                    // book keeping
-                    onlyMaster(
-                        [&spawnCounter,
-                         &totalNumberMacroElectronsToSpawn,
-                         &ionizationElectronBox,
-                         &superCellIdx,
-                         &offsetLowFrame,
-                         &frameSize,
-                         &electronFrameArray]()
-                        {
-                            totalNumberMacroElectronsToSpawn -= spawnCounter;
-                            // will never underflow since we only spawn what was previously predicted
-
-                            offsetLowFrame += spawnCounter;
-
-                            if(offsetLowFrame >= static_cast<int32_t>(frameSize))
-                            {
-                                // low frame of electronFrameArray is full
-                                // --> need to shift one further in linked list
-
-                                // update offset
-                                offsetLowFrame -= frameSize;
-
-                                // shift high to low to keep partially filled frame at low
-                                //  and "empty" frame at high
-                                /// @attention high may be nullptr if no further electrons to
-                                ///     spawn
-                                electronFrameArray[u32(detail::Access::low)]
-                                    = electronFrameArray[u32(detail::Access::high)];
-
-                                // reset high with nullptr to mark for next "need new frame?" pass
-                                electronFrameArray[u32(detail::Access::high)] = nullptr;
-                            }
-
-                            using SuperCellType = typename T_IonizationElectronBox::SuperCellType;
-                            SuperCellType& superCell = ionizationElectronBox.getSuperCell(superCellIdx);
-
-                            // update numParticles in superCell for electrons
-                            superCell.setNumParticles(superCell.getNumParticles() + spawnCounter);
-
-                            spawnCounter = static_cast<uint32_t>(0u);
-                        });
-                    worker.sync();
-
-                    if(totalNumberMacroElectronsToSpawn == static_cast<uint32_t>(0u))
-                        break;
-                }
-
-                // get next ion frame
-                ionFrame = ionBox.getPreviousFrame(ionFrame);
-
-                //  no need to set "totalNumberMacroElectronsToSpawn = 0",
-                //   already guaranteed by break condition
-
-                worker.sync();
+                // get number of electrons to spawn
+                numberIonizationElectrons = chargeStatePressureIonizationState - currentChargeState;
             }
+
+            return numberIonizationElectrons;
         }
     };
-} // namespace picongpu::particles::atomicPhysics2::kernel
+
+    template<typename T_SharedStateType, typename T_IPDModel>
+    struct CalculateIPDValue : public InitSharedStateFunctor<T_SharedStateType, T_IPDModel>
+    {
+        template<
+            typename T_LocalTimeRemainingBox,
+            typename T_ChargeStateDataBox,
+            typename T_AtomicStateDataBox,
+            typename T_PressureIonizationStateDataBox,
+            typename... T_IPDInputBoxes>
+        HDINLINE static T_SharedStateType init(
+            pmacc::DataSpace<picongpu::simDim> const,
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
+            T_LocalTimeRemainingBox const,
+            T_ChargeStateDataBox const,
+            T_AtomicStateDataBox const,
+            T_IPDInputBoxes const... ipdInputBoxes)
+        {
+            // eV
+            return static_cast<T_SharedStateType>(
+                T_IPDModel::calculateIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIndex, ipdInputBoxes...));
+        }
+    };
+
+    //! functor to get superCellFieldIdx
+    template<typename... T_KernelConfigOptions>
+    struct SuperCellFieldIndex : public SharedStateIndex<T_KernelConfigOptions...>
+    {
+        template<typename T_AreaMapping>
+        HDINLINE static pmacc::DataSpace<SharedStateIndex::indexDim> get(
+            T_AreaMapping const areaMapping,
+            pmacc::DataSpace<picongpu::simDim> const superCellIdx)
+        {
+            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+            //  -> must subtract guard to get correct superCellFieldIdx
+            return superCellIdx - areaMapping.getGuardingSuperCells();
+        }
+    };
+
+    using ApplyPressureIonizationModulConfig = particles::creation::ModuleConfig<
+        ApplyPressureIonizationSanityCheck,
+        SkipFinishedSuperCellsAtomicPhysics,
+        PressureIonizationPredictor,
+        atomicPhysics2::initElectrons::InitIonizationElectron<s_enums::ProcessClass::pressureIonization>,
+        // ipd in eV
+        float_X,
+        CalculateIPDValue,
+        SuperCellFieldIndex>;
+
+    //! definition of ApplyPressureIonizationKernel
+    template<typename T_IPDModel>
+    using ApplyPressureIonizationKernel = particles::creation::SpawnFromSourceSpecies<
+        // T_TypeNumber
+        uint8_t,
+        // T_passCascadeIndex
+        false,
+        // T_passSharedDataBoxes
+        false,
+        ApplyPressureIonizationModulConfig,
+        T_IPDModel>;
+} // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
