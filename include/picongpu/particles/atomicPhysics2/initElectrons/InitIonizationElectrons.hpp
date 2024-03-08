@@ -47,14 +47,14 @@ namespace picongpu::particles::atomicPhysics2::initElectrons
          * @param electron electron Particle to init, must point to valid electron frame slot
          * @param cascadeIndex index of electron in cascade if multiple electrons are
          *  created by one process
+         * @param DataBox deviceDataBox giving access to global data for the initialization
          */
-        template<typename T_IonParticle, typename T_ElectronParticle>
+        template<typename T_IonParticle, typename T_ElectronParticle, typename... T_DataBox>
         HDINLINE void operator()(
             T_IonParticle& ion,
             T_ElectronParticle& electron,
-            uint8_t const cascadeIndex
-            //, ...
-        ) const;
+            uint8_t const cascadeIndex,
+            T_DataBox const... dataBoxes) const;
     };
 
     //! specialisation for pressureIonization

@@ -102,7 +102,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
                 using SpawnElectrons_Autonomous
-                    = picongpu::particles::atomicPhysics2::kernel ::SpawnIonizationMacroElectronsKernel<
+                    = picongpu::particles::atomicPhysics2::kernel::SpawnIonizationMacroElectronsKernel<
                         enums::ProcessClassGroup::autonomousBased>;
 
                 RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
