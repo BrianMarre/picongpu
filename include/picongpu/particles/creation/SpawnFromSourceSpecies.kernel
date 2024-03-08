@@ -25,8 +25,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/creation/ModuleConfig.hpp"
 // interface definitions for modules of this kernel
-#include "picongpu/particles/creation/ModulConfig.hpp"
 #include "picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp"
 
 #include <pmacc/lockstep/ForEach.hpp>
@@ -60,7 +60,7 @@ namespace picongpu::particles::creation
      * sharedDataBoxes
      *
      * @tparam T_TypeNumber type to use for storage of number of particles to spawn
-     * @tparam T_ModulConfig wrapper holding all modules to be used in framework kernel, see ModulConfig above for
+     * @tparam T_ModuleConfig wrapper holding all modules to be used in framework kernel, see ModuleConfig above for
      *  interface
      * @tparam T_passCascadeIndex true =^= pass cascade index to ParticlePairUpdateFunctor, false =^= don't
      * @tparam T_passSharedDataBoxes true =^= pass sharedDataBoxes to ParticlePairUpdateFunctor, false =^= don't
@@ -68,13 +68,13 @@ namespace picongpu::particles::creation
      */
     template<
         typename T_TypeNumber,
-        typename T_ModulConfig,
+        typename T_ModuleConfig,
         bool T_passCascadeIndex,
         bool T_passSharedDataBoxes,
         typename... T_KernelConfigOptions>
     struct SpawnFromSourceSpeciesKernelFramework
     {
-        using Modules = T_ModulConfig;
+        using Modules = T_ModuleConfig;
         using TypeNumber = T_TypeNumber;
 
         /** call operator
