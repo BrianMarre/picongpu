@@ -33,6 +33,8 @@
 #include <pmacc/meta/ForEach.hpp>
 #include <pmacc/particles/traits/FilterByFlag.hpp>
 
+#include <cstdint>
+
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
     //! short hand for IPD namespace
@@ -164,8 +166,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 
         /** calculate ionization potential depression
          *
-         * @tparam T_atomicNumber atomicNumber of ion species
-         *
          * @param localTemperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
          *  local superCells, in UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
          * @param localZStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
@@ -177,8 +177,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
          * @return unit UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
          */
         template<
-            uint8_t T_atomicNumber,
-            typename T_LocalTemperatureEnergyBox,
+            uint8_t T_atomicNumber typename T_LocalTemperatureEnergyBox,
             typename T_LocalZStarBox,
             typename T_LocalDebyeLengthBox>
         HDINLINE static float_X calculateIPD(
@@ -197,7 +196,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             // = eV * UNIT_TIME^2 * UNIT_MASS^(-1) * UNIT_LENGTH^(-2) * UNIT_CHARGE^2 * UNIT_CHARGE^(-2)
             //  * UNIT_TIME^(-2) * UNIT_LENGTH^3 * UNIT_MASS^1 = eV * UNIT_LENGTH
             // eV * UNIT_LENGTH
-            constexpr float_X scaleFactor = eV * static_cast<float_X>(T_atomicNumber)
+            constexpr float_X constFactor = eV * static_cast<float_X>(T_atomicNumber)
                 * pmacc::math::cPow(picongpu::ELECTRON_CHARGE, 2u)
                 / (4._X * static_cast<float_X>(picongpu::PI) * picongpu::EPS0);
 
@@ -208,7 +207,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 
             // (eV * UNIT_LENGTH) / (eV * UNIT_LENGTH), not weighted
             // unitless, not weighted
-            float_X const K = scaleFactor / (temperatureTimesk_Boltzman * debyeLength);
+            float_X const K = constFactor / (temperatureTimesk_Boltzman * debyeLength);
 
             // unitless, not weighted
             float_X const zStar = localZStarBox(superCellFieldIdx);
