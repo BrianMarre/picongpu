@@ -21,8 +21,10 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "pciongpu/particles/AtomicPhysics2/localHelperFields/localTimeRemainingField.hpp"
 #include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
 #include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/kernel/ApplyPressureIonization.kernel"
+#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/localHelperFields/LocalFoundUnboundIonField.hpp"
 
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage
@@ -63,6 +65,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
+            auto& localFoundUnboundIonField
+                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalFoundUnboundIonField<
+                    picongpu::MappingDesc>>("LocalFoundUnboundIonField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
             auto& electrons = *dc.get<IonizationElectronSpecies>(IonizationElectronSpecies::FrameType::getName());
@@ -86,10 +91,10 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             PMACC_LOCKSTEP_KERNEL(ApplyPressureIonization<StewartPyattIPD>(), workerCfg)
             (mapper.getGridDim())(
                 mapper,
-                localTimeRemainingField.getDeviceDataBox(),
                 ions.getDeviceParticleBox(),
                 electrons.getDeviceParticleBox(),
                 localTimeRemainingField.getDeviceDataBox(),
+                localFoundUnboundIonField.getDeviceDataBox(),
                 atomicData.getChargeStateDataDataBox</*on device*/ false>(),
                 atomicData.getAtomicStateDataDataBox</*on device*/ false>(),
                 atomicData.getPressureIonizationStateDataBox</*on device*/ false>(),

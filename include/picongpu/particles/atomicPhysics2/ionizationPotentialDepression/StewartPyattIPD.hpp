@@ -23,6 +23,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "pciongpu/particles/AtomicPhysics2/ionizationPotentialDepression/localHelperFields/LocalFoundUnboundIonField.hpp"
 #include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
 #include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDInterface.hpp"
@@ -56,22 +57,23 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             auto& localSumWeightAllField = *dc.get<s_IPD::localHelperFields::SumWeightAllField>("SumWeightAllField");
+            localSumWeightAllField.getDeviceBuffer().setValue(0._X);
+
             auto& localSumTemperatureFunctionalField
                 = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField>("SumTemperatureFunctionalField");
+            localSumTemperatureFunctionalField.getDeviceBuffer().setValue(0._X);
 
             auto& localSumWeightElectronField
                 = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
+            localSumWeightElectronField.getDeviceBuffer().setValue(0._X);
 
             auto& localSumChargeNumberIonsField
                 = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField>("SumChargeNumberIonsField");
+            localSumChargeNumberIonsField.getDeviceBuffer().setValue(0._X);
+
             auto& localSumChargeNumberSquaredIonsField
                 = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField>(
                     "SumChargeNumberSquaredIonsField");
-
-            localSumWeightAllField.getDeviceBuffer().setValue(0._X);
-            localSumTemperatureFunctionalField.getDeviceBuffer().setValue(0._X);
-            localSumWeightElectronField.getDeviceBuffer().setValue(0._X);
-            localSumChargeNumberIonsField.getDeviceBuffer().setValue(0._X);
             localSumChargeNumberSquaredIonsField.getDeviceBuffer().setValue(0._X);
         }
 
@@ -159,7 +161,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
          *
          * @attention must be called once for each step in a pressure ionization cascade
          *
-         * @tparam list of all species partaking as ion in atomicPhysics
+         * @tparam T_AtomicPhysicsIonSpeciesList list of all species partaking as ion in atomicPhysics
+         * @tparam T_IPDIonSpeciesList list of all species partaking as ions in IPD input
+         * @tparam T_IPDElectronSpeciesList list of all species partaking as electrons in IPD input
          *
          * @attention collective over all ion species
          */
@@ -170,7 +174,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
                 ForEach<T_AtomicPhysicsIonSpeciesList, s_IPD::stage::ApplyPressureIonization<boost::mpl::_1>>;
 
             ForEachIonSpeciesApplyPressureIonization{}(mappingDesc);
-        }
+        };
 
         /** calculate ionization potential depression
          *

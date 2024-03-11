@@ -26,3 +26,4 @@
 #include "picongpu/particles/creation/moduleInterfaces/SanityCheckInputs.hpp"
 #include "picongpu/particles/creation/moduleInterfaces/SharedDataBoxIndexFunctor.hpp"
 #include "picongpu/particles/creation/moduleInterfaces/SkipSuperCellFunctor.hpp"
+#include "picongpu/particles/creation/moduleInterfaces/WriteOutSharedStateFunctor.hpp"
