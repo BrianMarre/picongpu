@@ -38,10 +38,10 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalDebyeLengthField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
+    struct LocalDebyeLengthField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
     {
         LocalDebyeLengthField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<T_Type, T_MappingDescription, false /*no guards*/>(mappingDesc)
+            : SuperCellField<T_Type, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
 

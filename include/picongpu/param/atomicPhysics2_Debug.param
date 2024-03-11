@@ -152,4 +152,10 @@ namespace picongpu::atomicPhysics2::debug
         //! @attention performance relevant
         constexpr bool ELECTRON_PARTICLE_BOX_FILL_GAPS = false;
     } // namespace kernel::spawnIonizationElectrons
+
+    namespace kernel::applyPressureIonization
+    {
+        //! @attention performance relevant
+        constexpr bool ELECTRON_PARTICLE_BOX_FILL_GAPS = false;
+    } // namespace kernel::applyPressureIonization
 } // namespace picongpu::atomicPhysics2::debug
