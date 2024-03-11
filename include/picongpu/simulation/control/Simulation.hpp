@@ -796,7 +796,7 @@ namespace picongpu
         void initAtomicPhysicsSuperCellFields(DataConnector& dataConnector)
         {
             // core algorithm helper fields
-            picongpu::particles::atomicPhysics2::AtomicPhysicsSuperCellFields::ceate(dataConnector, *cellDescription);
+            picongpu::particles::atomicPhysics2::AtomicPhysicsSuperCellFields::create(dataConnector, *cellDescription);
             // IPD helper fields
             picongpu::IPDModel::createHelperFields(dataConnector, *cellDescription);
         }

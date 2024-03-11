@@ -22,8 +22,8 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalFoundUnboundIonField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeStepField.hpp"
@@ -76,11 +76,11 @@ namespace picongpu::particles::atomicPhysics2
                                        LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(*mappingDesc);
             dataConnector.consume(std::move(localSuperCellElectronHistogramOverSubscribedField));
 
-            // local all macro ion accepted field
-            auto localSuperCellAllMacroIonsAccceptedField = std::make_unique<
-                particles::atomicPhysics2::localHelperFields::LocalAllMacroIonsAcceptedField<picongpu::MappingDesc>>(
-                *mappingDesc);
-            dataConnector.consume(std::move(localSuperCellAllMacroIonsAccceptedField));
+            // local storage for FoundUnboundIonField
+            auto localFoundUnboundIonField
+                = std::make_unique<s_IPD::localHelperFields::LocalFoundUnboundIonField<picongpu::MappingDesc>>(
+                    *mappingDesc);
+            dataConnector.consume(std::move(localFoundUnboundIonField));
 
             // rejection probability for each over-subscribed bin of the local electron histogram
             auto localSuperCellRejectionProbabilityCacheField

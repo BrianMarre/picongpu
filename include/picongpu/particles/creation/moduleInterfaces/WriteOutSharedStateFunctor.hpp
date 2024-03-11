@@ -23,21 +23,15 @@
 
 namespace picongpu::particles::creation::moduleInterfaces
 {
-    //! interface of PredictorFunctor
-    template<typename T_Number, typename... T_KernelConfigOptions>
-    struct PredictorFunctor
+    //! interface of WriteOutSharedStateFunctor
+    template<typename... T_KernelConfigOptions>
+    struct WriteOutSharedStateFunctor
     {
-        template<
-            typename T_Worker,
-            typename T_Index,
-            typename T_Particle,
-            typename T_SharedState,
-            typename... T_SharedDataBoxes>
-        HDINLINE static T_Number getNumberNewParticles(
-            T_Worker const& worker,
+        template<typename T_Index, typename T_SharedStateType, typename... T_SharedDataBoxes>
+        HDINLINE static void write(
+            pmacc::DataSpace<picongpu::simDim> const superCellIndex,
             T_Index const sharedDataBoxIndex,
-            T_Particle particle,
-            T_SharedState& sharedState,
-            T_SharedStateBoxes... sharedDataBoxes);
-    };
+            T_SharedStateType const sharedState,
+            T_SharedDataBoxes... sharedDataBoxes);
+    }
 } // namespace picongpu::particles::creation::moduleInterfaces

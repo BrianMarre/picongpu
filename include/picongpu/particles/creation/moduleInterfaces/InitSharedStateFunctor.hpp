@@ -24,13 +24,14 @@
 namespace picongpu::particles::creation::moduleInterfaces
 {
     //! interface of InitSharedStateFunctor
-    template<typename T_SharedStateType, typename... T_KernelConfigOptions>
+    template<typename... T_KernelConfigOptions>
     struct InitSharedStateFunctor
     {
-        template<typename T_Index, typename... T_SharedDataBoxes>
-        HDINLINE static T_SharedStateType init(
+        template<typename T_SharedStateType, typename T_Index, typename... T_SharedDataBoxes>
+        HDINLINE static void init(
             pmacc::DataSpace<picongpu::simDim> const superCellIndex,
             T_Index const sharedDataBoxIndex,
-            T_SharedDataBoxes const... sharedDataBoxes);
+            T_SharedStateType& sharedState,
+            T_SharedDataBoxes... sharedDataBoxes);
     }
 } // namespace picongpu::particles::creation::moduleInterfaces

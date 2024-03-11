@@ -21,10 +21,11 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-
 namespace picongpu::particles::creation
 {
     /** configuration wrapper, holding all modules to be used by the SpawnFromSourceSpecies kernel framework
+     *
+     * @details see picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp for interface definitions.
      *
      * @tparam T_SanityCheckInputs struct containing compile time asserts checking settings in T_ConfigOptions and
      *  T_SharedDataBoxes are consistent with expectations and assumptions
@@ -40,12 +41,13 @@ namespace picongpu::particles::creation
      *  species particle, depending on sharedState, @note may/(may not) update source particle!
      * @tparam T_ParticlePairUpdateFunctor functor initialising spawned productSpecies particle based on
      * sharedDataBoxes and sourceSpecies particle
-     * @tparam T_SharedStateType type of read-only sharedState
+     * @tparam T_SharedStateType type of sharedState, one instance for each superCell
      * @tparam T_InitSharedStateFunctor functor initialising sharedState variable
      * @tparam T_SharedDataBoxIndexFunctor functor returning index to access sharedDataBoxes by,
      *  @note only one is supported for all sharedDataBoxes
      *  @note dimension is configurable
      *  @note may be ignored for some or all sharedDataBoxes
+     * @tparam T_WriteOutSharedStateFunctor write out final sharedState
      */
     template<
         typename T_SanityCheckInputs,
@@ -54,7 +56,8 @@ namespace picongpu::particles::creation
         typename T_ParticlePairUpdateFunctor,
         typename T_SharedStateType,
         typename T_InitSharedStateFunctor,
-        typename T_SharedDataBoxIndexFunctor>
+        typename T_SharedDataBoxIndexFunctor,
+        typename T_WriteOutSharedStateFunctor>
     struct ModuleConfig
     {
         using SanityCheckInputs = T_SanityCheckInputs;
@@ -64,5 +67,6 @@ namespace picongpu::particles::creation
         using SharedStateType = T_SharedStateType;
         using SharedDataBoxIndexFunctor = T_SharedDataBoxIndexFunctor;
         using InitSharedStateFunctor = T_InitSharedStateFunctor;
+        using WriteOutSharedStateFunctor = T_WriteOutSharedStateFunctor;
     };
 } // namespace picongpu::particles::creation
