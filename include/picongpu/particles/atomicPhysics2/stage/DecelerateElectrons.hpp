@@ -44,7 +44,7 @@ namespace picongpu::particles::atomicPhysics2::stage
      * is called once per time step for the entire local simulation volume and for
      * every isElectron species by the atomicPhysics stage by the atomicPhysicsStage
      *
-     * @attention assumes DepositDeltaEnergy atomicPhysics sub-stage to have been executed previously
+     * @attention assumes RecordChanges atomicPhysics sub-stage to have been executed previously
      *
      * @todo iterate this kernel call until all deltaEnergy is accounted for, Brian Marre, 2023
      *
