@@ -38,6 +38,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
         typename T_IPDModel,
         // T_SharedStateBoxes:
         typename T_LocalTimeRemainingBox,
+        typename T_LocalFoundUnboundIonBox,
         typename T_ChargeStateDataBox,
         typename T_AtomicStateDataBox,
         typename T_PressureIonizationStateDataBox,
@@ -75,16 +76,20 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
     struct PressureIonizationPredictor : public PredictorFunctor<T_Number, T_IPDModel>
     {
         template<
+            typename T_Worker,
             typename T_Ion,
             typename T_LocalTimeRemainingBox,
-            typename T_AtomicStateDataBox,
+            typename T_LocalFoundUnboundIonBox typename T_AtomicStateDataBox,
             typename T_ChargeStateDataBox,
             typename T_PressureIonizationStateDataBox,
             typename... T_IPDInputBoxes>
         HDINLINE static T_Number getNumberNewParticles(
+            T_Worker const& worker,
+            pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
             T_Ion& ion,
-            float_X const ionizationPotentialDepression,
+            SharedState& sharedState,
             T_LocalTimeRemainingBox const,
+            T_LocalFoundUnboundIonBox const,
             T_AtomicStateDataBox const atomicStateBox,
             T_ChargeStateDataBox const chargeStateBox,
             T_PressureIonizationStateDataBox const pressureIonizationStateBox,
@@ -103,6 +108,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             auto const currentAtomicStateConfigNumber = atomicStateBox.configNumber(currentAtomicStateClctIdx);
             float_X const atomicStateEnergy = atomicStateBox.energy(currentStateClctIdx);
 
+            uint32_t& foundUnbound = localAllIonsInBoundStateBox(superCellFieldIndex);
+
             // fully ionized state has no pressure ionization state --> currentChargeState < T_atomicNumber
             uint8_t const currentChargeState
                 = T_AtomicStateDataBox::ConfigNumber::getChargeState(currentAtomicStateConfigNumber);
@@ -113,7 +120,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             float_X const ionizationEnergyGroundState = chargeStateBox.ionizationEnergy(currentChargeState);
             // eV
             float_X const ipdIonizationEnergy
-                = ionizationEnergyGroundState - atomicStateEnergy - ionizationPotentialDepression;
+                = ionizationEnergyGroundState - atomicStateEnergy - sharedState.ionizationPotentialDepression;
 
             T_Number numberIonizationElectrons = static_cast<T_Number>(0u);
 
@@ -124,38 +131,52 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
 
                 // get number of electrons to spawn
                 numberIonizationElectrons = chargeStatePressureIonizationState - currentChargeState;
+
+                // set flag that at least one ions was in unbound state
+                cupla::atomicExch(worker.getAcc(), &sharedState.foundUnbound, static_cast<uint32_t>(true));
             }
 
             return numberIonizationElectrons;
         }
     };
 
-    template<typename T_SharedStateType, typename T_IPDModel>
-    struct CalculateIPDValue : public InitSharedStateFunctor<T_SharedStateType, T_IPDModel>
+    struct SharedState
+    {
+        // eV
+        float_X ionizationPotentialDepression;
+        uint32_t foundUnbound;
+    };
+
+    template<typename T_IPDModel>
+    struct CalculateIPDValue : public InitSharedStateFunctor<T_IPDModel>
     {
         template<
             typename T_LocalTimeRemainingBox,
+            typename T_LocalFoundUnboundIonBox,
             typename T_ChargeStateDataBox,
             typename T_AtomicStateDataBox,
             typename T_PressureIonizationStateDataBox,
             typename... T_IPDInputBoxes>
-        HDINLINE static T_SharedStateType init(
+        HDINLINE static void init(
             pmacc::DataSpace<picongpu::simDim> const,
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
+            T_SharedStateType& sharedState,
             T_LocalTimeRemainingBox const,
+            T_LocalFoundUnboundIonBox const,
             T_ChargeStateDataBox const,
             T_AtomicStateDataBox const,
             T_IPDInputBoxes const... ipdInputBoxes)
         {
             // eV
-            return static_cast<T_SharedStateType>(
-                T_IPDModel::calculateIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIndex, ipdInputBoxes...));
+            sharedState.ionizationPotentialDepression
+                = T_IPDModel::calculateIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIndex, ipdInputBoxes...);
+            sharedState.foundUnbound = static_cast<uint32_t>(false);
         }
     };
 
     //! functor to get superCellFieldIdx
     template<typename... T_KernelConfigOptions>
-    struct SuperCellFieldIndex : public SharedStateIndex<T_KernelConfigOptions...>
+    struct SuperCellFieldIndexFunctor : public SharedDataboxIndexFunctor<T_KernelConfigOptions...>
     {
         template<typename T_AreaMapping>
         HDINLINE static pmacc::DataSpace<SharedStateIndex::indexDim> get(
@@ -168,25 +189,51 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
         }
     };
 
+    struct WriteFoundUnboundToSuperCellField
+    {
+        template<
+            typename T_Index,
+            typename T_SharedStateType,
+            typename T_LocalTimeRemainingBox,
+            typename T_LocalFoundUnboundIonBox,
+            typename T_ChargeStateDataBox,
+            typename T_AtomicStateDataBox,
+            typename T_PressureIonizationStateDataBox,
+            typename... T_IPDInputBoxes>
+        HDINLINE static void write(
+            pmacc::DataSpace<picongpu::simDim> const superCellIndex,
+            T_Index const sharedDataBoxIndex,
+            T_SharedStateType const sharedState,
+            T_LocalTimeRemainingBox const,
+            T_LocalFoundUnboundIonBox const localFoundUnboundIonBox,
+            T_ChargeStateDataBox const,
+            T_AtomicStateDataBox const,
+            T_IPDInputBoxes const... ipdInputBoxes)
+        {
+            uint32_t& foundUnbound = localFoundUnboundIonBox(superCellFieldIdx);
+            foundUnbound = foundUnbound || static_cast<uint32_t>(sharedState.foundUnbound);
+        }
+    };
+
     //! moduleConfig of the ApplyPressureIonizationKernel
     using ApplyPressureIonizationModulConfig = particles::creation::ModuleConfig<
         ApplyPressureIonizationSanityCheck,
         SkipFinishedSuperCellsAtomicPhysics,
         PressureIonizationPredictor,
         atomicPhysics2::initElectrons::InitIonizationElectron<s_enums::ProcessClass::pressureIonization>,
-        // ipd in eV
-        float_X,
+        SharedState,
         CalculateIPDValue,
-        SuperCellFieldIndex>;
+        SuperCellFieldIndexFunctor,
+        WriteFoundUnboundToSuperCellField>;
 
     //! definition of ApplyPressureIonizationKernel
     template<typename T_IPDModel>
     using ApplyPressureIonizationKernel = particles::creation::SpawnFromSourceSpecies<
         // T_TypeNumber
         uint8_t,
-        // T_passCascadeIndex
+        // don't pass cascade index to ParticlePairUpdateFunctor
         false,
-        // T_passSharedDataBoxes
+        // don't pass shared DataBoxes cascade index to ParticlePairUpdateFunctor
         false,
         ApplyPressureIonizationModulConfig,
         T_IPDModel>;

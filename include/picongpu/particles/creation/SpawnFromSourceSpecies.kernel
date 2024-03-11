@@ -89,7 +89,7 @@ namespace picongpu::particles::creation
          * @param productBox deviceDataBox giving access to the particle frames of productSpecies particles of all
          * local superCells
          * @param sharedDataBoxes deviceDataBoxes giving access to the some superCell/Cell/global data required by the
-         *  modul functors
+         *  modul functors or to which the functors write
          */
         template<
             typename T_Worker,
@@ -102,7 +102,7 @@ namespace picongpu::particles::creation
             T_AreaMapping const areaMapping,
             T_SourceParticleBox sourceBox,
             T_ProductParticleBox productBox,
-            T_SharedDataBoxes const... sharedDataBoxes) const
+            T_SharedDataBoxes... sharedDataBoxes) const
         {
             using SourceSpeciesFramePtr = typename T_SourceParticleBox::FramePtr;
             using ProductSpeciesFramePtr = typename T_ProductParticleBox::FramePtr;
@@ -121,13 +121,13 @@ namespace picongpu::particles::creation
             constexpr uint32_t frameSize = T_SourceParticleBox::frameSize;
 
             // for accessing particle frame list of superCell
-            pmacc::DataSpace<picongpu::simDim> const superCellIdx
+            pmacc::DataSpace<picongpu::simDim> const superCellIndex
                 = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
 
             auto const sharedDataBoxIndex
-                = Moduls::SharedDataBoxIndexFunctor<T_KernelConfigOptions...>::getIndex(areaMapping, superCellIdx);
+                = Moduls::SharedDataBoxIndexFunctor<T_KernelConfigOptions...>::getIndex(areaMapping, superCellIndex);
 
-            SourceSpeciesFramePtr sourceSpeciesFrame = sourceBox.getLastFrame(superCellIdx);
+            SourceSpeciesFramePtr sourceSpeciesFrame = sourceBox.getLastFrame(superCellIndex);
 
             // test for skipping superCell due to no sourceSpecies particles or Skip Test
             bool const skipSuperCell = Modules::SkipSuperCellFunctor<T_KernelConfigOptions...>::test(
@@ -158,7 +158,8 @@ namespace picongpu::particles::creation
 
             // init shared memory
             onlyMaster(
-                [&superCellIdx,
+                [&superCellIndex,
+                 &sharedDataBoxIndex,
                  &offsetLowFrame,
                  &spawnCounter,
                  &totalNumberProductSpeciesParticlesToSpawn,
@@ -166,18 +167,19 @@ namespace picongpu::particles::creation
                  &sharedState,
                  &sharedDataBoxes...]()
                 {
-                    sharedState = Modules::InitSharedStateFunctor<T_SharedStateType, T_KernelConfigOptions...>::init(
+                    Modules::InitSharedStateFunctor<T_KernelConfigOptions...>::init(
                         superCellIndex,
-                        sharedStateIndex,
+                        sharedDataBoxIndex,
+                        sharedState,
                         sharedDataBoxes...);
 
                     //! number of particles in last frame of productSpecies particleBox frameList of superCell
-                    offsetLowFrame = static_cast<int32_t>(productBox.getSuperCell(superCellIdx).getSizeLastFrame());
+                    offsetLowFrame = static_cast<int32_t>(productBox.getSuperCell(superCellIndex).getSizeLastFrame());
                     totalNumberProductSpeciesParticlesToSpawn = static_cast<uint32_t>(0u);
                     spawnCounter = static_cast<uint32_t>(0u);
 
                     // might be nullptr if no electrons in superCell
-                    electronFrameArray[u32(detail::Access::low)] = productBox.getLastFrame(superCellIdx);
+                    electronFrameArray[u32(detail::Access::low)] = productBox.getLastFrame(superCellIndex);
                     electronFrameArray[u32(detail::Access::high)] = nullptr;
                 });
             worker.sync();
@@ -189,12 +191,13 @@ namespace picongpu::particles::creation
                  *  sourceSpecies frame */
                 forEachFrameSlot(
                     [&worker,
+                     &sharedDataBoxIndex,
                      &sourceSpeciesFrame,
                      &totalNumberProductSpeciesParticlesToSpawn,
                      &sharedState,
-                     &sharedDataBoxes...](uint32_t const idx, TypeNumber& numberProductParticles)
+                     &sharedDataBoxes...](uint32_t const slotIdx, TypeNumber& numberProductParticles)
                     {
-                        auto const sourceParticle = sourceSpeciesFrame[idx];
+                        auto const sourceParticle = sourceSpeciesFrame[slotIdx];
 
                         // empty slots never spawn P-particles
                         bool const slotNotOccupied = !static_cast<bool>(sourceParticle[multiMask_]);
@@ -206,6 +209,8 @@ namespace picongpu::particles::creation
 
                         numberProductParticles
                             = Modules::PredictorFunctor<TypeNumber, T_KernelConfigOptions...>::getNumberNewParticles(
+                                worker,
+                                sharedDataBoxIndex,
                                 sourceParticle,
                                 sharedState,
                                 sharedDataBoxes...);
@@ -225,7 +230,7 @@ namespace picongpu::particles::creation
                     forEachFrameMaster(
                         [&worker,
                          &frameSize,
-                         &superCellIdx,
+                         &superCellIndex,
                          &offsetLowFrame,
                          &totalNumberProductSpeciesParticlesToSpawn,
                          &productBox,
@@ -243,11 +248,8 @@ namespace picongpu::particles::creation
                                 // is nullPtr
                                 !(electronFrameArray[linearIdx].isValid()))
                             {
-                                electronFrameArray[linearIdx] = ionizationElectronBox.getEmptyFrame(worker);
-                                ionizationElectronBox.setAsLastFrame(
-                                    worker,
-                                    productSpeciesFrameArray[linearIdx],
-                                    superCellIdx);
+                                productSpeciesFrameArray[linearIdx] = productBox.getEmptyFrame(worker);
+                                productBox.setAsLastFrame(worker, productSpeciesFrameArray[linearIdx], superCellIndex);
                             }
                         });
                     worker.sync();
@@ -306,7 +308,7 @@ namespace picongpu::particles::creation
                         [&spawnCounter,
                          &totalNumberProductSpeciesParticlesToSpawn,
                          &productBox,
-                         &superCellIdx,
+                         &superCellIndex,
                          &offsetLowFrame,
                          &frameSize,
                          &productSpeciesFrameArray]()
@@ -332,7 +334,7 @@ namespace picongpu::particles::creation
                             }
 
                             using SuperCellType = typename T_ProductParticleBox::SuperCellType;
-                            SuperCellType& superCell = productBox.getSuperCell(superCellIdx);
+                            SuperCellType& superCell = productBox.getSuperCell(superCellIndex);
 
                             // update numParticles in superCell for electrons
                             superCell.setNumParticles(superCell.getNumParticles() + spawnCounter);
@@ -353,6 +355,15 @@ namespace picongpu::particles::creation
 
                 worker.sync();
             }
+
+            onlyMaster(
+                [&superCellIndex, &sharedDataBoxIndex, &sharedState, &sharedDataBoxes...]() {
+                    Modules::WriteOutSharedStateFunctor::write(
+                        superCellIndex,
+                        sharedDataBoxIndex,
+                        sharedState,
+                        sharedDataBoxes...);
+                });
         }
     };
 } // namespace picongpu::particles::creation

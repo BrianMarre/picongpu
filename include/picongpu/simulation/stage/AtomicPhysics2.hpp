@@ -24,12 +24,8 @@
 //  and picongpu/param/atomicPhysics2_debug.param
 
 #include "picongpu/particles/InitFunctors.hpp"
+#include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
 #include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
-#include "picongpu/particles/atomicPhysics2/electronDistribution/LocalHistogramField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalAllMacroIonsAcceptedField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
-#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/BinElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CalculateStepLength.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CheckForOverSubscription.hpp"
@@ -89,6 +85,8 @@ namespace picongpu::simulation::stage
                 picongpu::MappingDesc>;
         using S_TimeRemainingField
             = particles::atomicPhysics2::localHelperFields ::LocalTimeRemainingField<picongpu::MappingDesc>;
+        using S_FoundUnboundField
+            = particles::atomicPhysics2::localHelperFields ::LocalFoundUnboundIonField<picongpu::MappingDesc>;
 
         // species Lists
         //{
@@ -148,6 +146,17 @@ namespace picongpu::simulation::stage
 
             localElectronHistogramField.getDeviceBuffer().setValue(picongpu::atomicPhysics2::ElectronHistogram());
         }
+
+        //! reset localFoundUnboundIonField on device side
+        HINLINE static void resetFoundUnboundIon()
+        {
+            pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+
+            // reset foundUnbound Field
+            auto& localFoundUnboundIonField = *dc.get<S_FoundUnboundField>("LocalFoundUnboundIonField");
+
+            localFoundUnboundIonField.getDeviceBuffer().setValue(0._X);
+        };
 
         //! print electron histogram to console, debug only
         template<bool T_printOnlyOverSubscribed>
@@ -275,6 +284,11 @@ namespace picongpu::simulation::stage
             auto& localTimeRemainingField = *dc.get<S_TimeRemainingField>("LocalTimeRemainingField");
             DataSpace<picongpu::simDim> const fieldGridLayoutTimeRemaining
                 = localTimeRemainingField.getGridLayout().getDataSpaceWithoutGuarding();
+
+            // FoundUnboundIonSuperCellField
+            auto& localFoundUnboundIonField = *dc.get<S_FoundUnboundField>("LocalFoundUnboundIonField");
+            DataSpace<picongpu::simDim> const fieldGridLayoutFoundUnbound
+                = localFoundUnboundIonField.getGridLayout().getDataSpaceWithoutGuarding();
 
             // ElectronHistogramOverSubscribedSuperCellField
             auto& localElectronHistogramOverSubscribedField
@@ -455,9 +469,10 @@ namespace picongpu::simulation::stage
                 ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
 
-                // pressure ionization loop, end when no ion in unbound state anymore
+                // pressure ionization loop, ends when no ion in unbound state anymore
                 while(true)
                 {
+                    resetFoundUnboundIon();
                     picongpu::atomicPhysics2::IPDModel::calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
                         mappingDesc,
                         currentStep);
@@ -465,8 +480,18 @@ namespace picongpu::simulation::stage
                         mappingDesc,
                         currentStep);
 
-                    if (//check)
+                    auto linearizedFoundUnboundIonBox = S_LinearizedBox<S_FoundUnboundField>(
+                        localFoundUnboundIonField.getDeviceDataBox(),
+                        fieldGridLayoutFoundUnbound);
+
+                    if(!static_cast<bool>(deviceLocalReduce(
+                           pmacc::math::operation::Or(),
+                           linearizedFoundUnboundIonBox,
+                           fieldGridLayoutFoundUnbound.productOfComponents())))
+                    {
+                        // no ion found in unbound state
                         break;
+                    }
                 }
 
                 // timeRemaining -= timeStep

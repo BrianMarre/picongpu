@@ -1,4 +1,4 @@
-/* Copyright 2023 Brian Marre
+/* Copyright 2024Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements bool storage superCellField if all macro ions have accepted a transition
+//! @file implements bool storage superCellField if an unbound ion was found previously
 
 #pragma once
 
@@ -28,22 +28,22 @@
 
 namespace picongpu::particles::atomicPhysics2::localHelperFields
 {
-    /**@class superCell field of the electronHistogram over subscribed state
+    /**superCell field
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalAllMacroIonsAcceptedField : public SuperCellField<uint32_t, T_MappingDescription, false /*no guards*/>
+    struct LocalFoundUnboundIonField : public SuperCellField<uint32_t, T_MappingDescription, /*no guards*/ false>
     {
-        LocalAllMacroIonsAcceptedField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<uint32_t, T_MappingDescription, false /*no guards*/>(mappingDesc)
+        LocalFoundUnboundIonField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<uint32_t, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
 
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalAllMacroIonsAcceptedField";
+            return "LocalFoundUnboundIonField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::localHelperFields
