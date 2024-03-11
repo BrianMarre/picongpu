@@ -30,7 +30,7 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel
 {
-    /** calculate IPD input kernel
+    /** calculate IPD input kernel for the Stewart-Pyatt IPD model
      *
      * @attention assumes that the sumFields have been reset previously
      *

@@ -26,6 +26,7 @@
 #include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
 #include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDInterface.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/ApplyPressureIonization.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/CalculateIPDInput.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Electron.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Ion.hpp"
@@ -75,21 +76,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         }
 
     public:
-        //! list of all atomicPhysics partaking electron species
-        using AtomicPhysicsElectronSpecies =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsElectron<>>::type;
-        //! list of all only IPD partaking electron species
-        using OnlyIPDElectronSpecies =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDElectron<>>::type;
-
-        //! list of all atomicPhysics partaking ion species
-        using AtomicPhysicsIonSpecies =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
-        //! list of all only IPD partaking ion species
-        using OnlyIPDIonSpecies =
-            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDIon<>>::type;
-
-        //! create all HelperFields required by the IPD model
+        //! create all HelperFields required by the IPD model, called once in initialization of simulation
         HINLINE static void createHelperFields(
             picongpu::DataConnector& dataConnector,
             picongpu::MappingDesc const mappingDesc)
@@ -126,11 +113,13 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
                 = std::make_unique<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
                     *mappingDesc);
             dataConnector.consume(std::move(localDebyeLengthField));
+
             // z^star IPD input field, z^star = = average(q^2) / average(q) ;for q charge number of ion, unitless,
             //  not weighted
             auto localZStarField
                 = std::make_unique<s_IPD::localHelperFields::localZStarField<picongpu::MappingDesc>>(*mappingDesc);
             dataConnector.consume(std::move(localZStarField));
+
             // local k_Boltzman * Temperature field, in eV
             auto localTemperatureEnergyField
                 = std::make_unique<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
@@ -139,13 +128,15 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             //}
         }
 
-        //            //! list of all electron species for IPD
-        //            using IPDElectronSpecies = MakeSeq_t<AtomicPhysicsElectronSpecies, OnlyIPDElectronSpecies>;
-        //            //! list of all ion species for IPD
-        //            using IPDIonSpecies = MakeSeq_t<AtomicPhysicsIonSpecies, OnlyIPDIonSpecies>;
-        //! do all precalculation work for IPD
-        template<typename T_IPDIonSpecies, typename T_IPDElectronSpecies>
-        HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc)
+        /** calculate all inputs for the ionization potential depression
+         *
+         * @tparam T_IPDIonSpeciesList list of all species partaking as ions in IPD input
+         * @tparam T_IPDElectronSpeciesList list of all species partaking as electrons in IPD input
+         *
+         * @attention collective over all IPD species
+         */
+        template<typename T_IPDIonSpeciesList, typename T_IPDElectronSpeciesList>
+        HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc, uint32_t const)
         {
             using ForEachElectronSpeciesFillSumFields = pmacc::meta::
                 ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Electron<boost::mpl::_1, T_TemperatureFunctor>>;
@@ -161,13 +152,24 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             s_IPD::stage::CalculateIPDInput()(mappingDesc);
         }
 
-        //! @tparam resolved type of ion species
-        template<typename T_IPDIonSpecies>
-        HINLINE static void callApplyPressureIonizationKernel(
-            picongpu::MappingDesc const mappingDesc,
-            uint32_t currentStep)
+        /** check for and apply single step of pressure ionization cascade
+         *
+         * @attention assumes that ipd-input fields are up to date
+         * @attention invalidates ipd-input fields if at least one ionization electron has been spawned
+         *
+         * @attention must be called once for each step in a pressure ionization cascade
+         *
+         * @tparam list of all species partaking as ion in atomicPhysics
+         *
+         * @attention collective over all ion species
+         */
+        template<typename T_AtomicPhysicsIonSpeciesList>
+        HINLINE static void applyPressureIonization(picongpu::MappingDesc const mappingDesc, uint32_t const)
         {
-            // do for each species call
+            using ForEachIonSpeciesApplyPressureIonization = pmacc::meta::
+                ForEach<T_AtomicPhysicsIonSpeciesList, s_IPD::stage::ApplyPressureIonization<boost::mpl::_1>>;
+
+            ForEachIonSpeciesApplyPressureIonization{}(mappingDesc);
         }
 
         /** calculate ionization potential depression
@@ -180,17 +182,18 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
          *  UNIT_LENGTH, not weighted
          * @param superCellFieldIdx index of superCell in superCellField(without guards)
          *
-         * @return unit UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2
+         * @return unit: eV, not weighted
          */
         template<
-            uint8_t T_atomicNumber typename T_LocalTemperatureEnergyBox,
-            typename T_LocalZStarBox,
-            typename T_LocalDebyeLengthBox>
+            uint8_t T_atomicNumber,
+            typename T_LocalDebyeLengthBox,
+            typename T_LocalTemperatureEnergyBox,
+            typename T_LocalZStarBox>
         HDINLINE static float_X calculateIPD(
             pmacc::DataSpace<simDim> const superCellFieldIdx,
-            T_LocalDebyeLengthBox const localTemperatureEnergyBox,
-            T_LocalZStarBox const localZStarBox,
-            T_LocalDebyeLengthBox const localDebyeLengthBox)
+            T_LocalDebyeLengthBox const localDebyeLengthBox,
+            T_LocalTemperatureEnergyBox const localTemperatureEnergyBox,
+            T_LocalZStarBox const localZStarBox)
         {
             // eV/(UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2)
             constexpr float_X eV = static_cast<float_X>(
