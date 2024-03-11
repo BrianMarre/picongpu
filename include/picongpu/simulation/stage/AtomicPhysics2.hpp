@@ -25,6 +25,7 @@
 
 #include "picongpu/particles/InitFunctors.hpp"
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/BinElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CalculateStepLength.hpp"

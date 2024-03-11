@@ -38,6 +38,6 @@ namespace picongpu::particles::creation::moduleInterfaces
             T_Index const sharedDataBoxIndex,
             T_Particle particle,
             T_SharedState& sharedState,
-            T_SharedStateBoxes... sharedDataBoxes);
+            T_SharedDataBoxes... sharedDataBoxes);
     };
 } // namespace picongpu::particles::creation::moduleInterfaces

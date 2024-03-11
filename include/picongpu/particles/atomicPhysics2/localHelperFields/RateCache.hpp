@@ -22,7 +22,7 @@
 #include "picongpu/simulation_defines.hpp"
 // need: picongpu/param/atomicPhysics2_Debug.param
 
-#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDataSet.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionType.hpp"

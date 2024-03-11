@@ -40,8 +40,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
     template<typename T_MappingDescription>
     struct LocalTemperatureEnergyField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
     {
-        LocalTemperatureField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<T_Type, T_MappingDescription, /*no guards*/ false>(mappingDesc)
+        LocalTemperatureEnergyField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
 

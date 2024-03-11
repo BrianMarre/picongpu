@@ -21,11 +21,10 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "pciongpu/particles/AtomicPhysics2/localHelperFields/localTimeRemainingField.hpp"
-#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
-#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/kernel/ApplyPressureIonization.kernel"
-#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/localHelperFields/LocalFoundUnboundIonField.hpp"
-
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/ApplyPressureIonization.kernel"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalFoundUnboundIonField.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage
 {
@@ -39,7 +38,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
      *
      * @tparam ion species with atomic data
      */
-    template<typename T_IonSpecies>
+    template<typename T_IonSpecies, typename T_IPDModel>
     struct ApplyPressureIonization
     {
         // might be alias, from here on out no more
@@ -63,11 +62,11 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                 = pmacc::lockstep::makeWorkerCfg<T_IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
-                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
-                    picongpu::MappingDesc>>("LocalTimeRemainingField");
+                = *dc.get<atomicPhysics2::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
+                    "LocalTimeRemainingField");
             auto& localFoundUnboundIonField
-                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalFoundUnboundIonField<
-                    picongpu::MappingDesc>>("LocalFoundUnboundIonField");
+                = *dc.get<atomicPhysics2::localHelperFields::LocalFoundUnboundIonField<picongpu::MappingDesc>>(
+                    "LocalFoundUnboundIonField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
             auto& electrons = *dc.get<IonizationElectronSpecies>(IonizationElectronSpecies::FrameType::getName());
@@ -76,28 +75,27 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
 
             // ipd input fields
             //{
-            auto& localDebyeLengthField = *dc.get<
-                picongpu::particles::atomicPhysics2::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
-                "LocalDebyeLengthField");
+            auto& localDebyeLengthField
+                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
+                    "LocalDebyeLengthField");
             auto& localTemperatureEnergyField
-                = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTemperatureEnergyField<
-                    picongpu::MappingDesc>>("LocalTemperatureEnergyField");
-            auto& localZStarField = *dc.get<
-                picongpu::particles::atomicPhysics2::localHelperFields::localZStarField<picongpu::MappingDesc>>(
-                "LocalZStarField");
+                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
+                    "LocalTemperatureEnergyField");
+            auto& localZStarField
+                = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
             //}
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(ApplyPressureIonization<StewartPyattIPD>(), workerCfg)
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::ApplyPressureIonizationKernel<T_IPDModel>(), workerCfg)
             (mapper.getGridDim())(
                 mapper,
                 ions.getDeviceParticleBox(),
                 electrons.getDeviceParticleBox(),
                 localTimeRemainingField.getDeviceDataBox(),
                 localFoundUnboundIonField.getDeviceDataBox(),
-                atomicData.getChargeStateDataDataBox</*on device*/ false>(),
-                atomicData.getAtomicStateDataDataBox</*on device*/ false>(),
-                atomicData.getPressureIonizationStateDataBox</*on device*/ false>(),
+                atomicData.template getChargeStateDataDataBox</*on device*/ false>(),
+                atomicData.template getAtomicStateDataDataBox</*on device*/ false>(),
+                atomicData.template getPressureIonizationStateDataBox</*on device*/ false>(),
                 localDebyeLengthField.getDeviceDataBox(),
                 localTemperatureEnergyField.getDeviceDataBox(),
                 localZStarField.getDeviceDataBox());
