@@ -90,17 +90,31 @@ namespace picongpu::simulation::stage
         using S_TimeRemainingField
             = particles::atomicPhysics2::localHelperFields ::LocalTimeRemainingField<picongpu::MappingDesc>;
 
+        // species Lists
+        //{
         //! list of all species of macro particles that partake in atomicPhysics as electrons
-        using SpeciesRepresentingElectrons =
+        using AtomicPhysicsElectronSpecies =
             typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsElectron<>>::type;
+        //! list of all only IPD partaking electron species
+        using OnlyIPDElectronSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDElectron<>>::type;
 
         /** list of all species of macro particles that partake in atomicPhysics as ions
          *
          * @attention atomicPhysics  assumes that all species with isAtomicPhysicsIon flag also have the required
          * atomic data flags, see picongpu/param/speciesAttributes.param for details
          */
-        using SpeciesRepresentingIons =
+        using AtomicPhysicsIonSpecies =
             typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isAtomicPhysicsIon<>>::type;
+        //! list of all only IPD partaking ion species
+        using OnlyIPDIonSpecies =
+            typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, isOnlyIPDIon<>>::type;
+
+        //! list of all electron species for IPD
+        using IPDElectronSpecies = MakeSeq_t<AtomicPhysicsElectronSpecies, OnlyIPDElectronSpecies>;
+        //! list of all ion species for IPD
+        using IPDIonSpecies = MakeSeq_t<AtomicPhysicsIonSpecies, OnlyIPDIonSpecies>;
+        //}
 
         //! set local timeRemaining to PIC-time step
         HINLINE static void setTimeRemaining()
@@ -195,64 +209,64 @@ namespace picongpu::simulation::stage
         {
             //! fix mismatches between boundElectrons and atomicStateCollectionIndex attributes
             using ForEachIonSpeciesFixAtomicState = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
+                ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics2::stage::FixAtomicState<boost::mpl::_1>>;
             //! reset macro particle attribute accepted to false for each ion species
             using ForEachIonSpeciesResetAcceptedStatus = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::ResetAcceptedStatus<boost::mpl::_1>>;
             //! bin electrons sub stage call for each electron species
             using ForEachElectronSpeciesBinElectrons = pmacc::meta::
-                ForEach<SpeciesRepresentingElectrons, particles::atomicPhysics2::stage::BinElectrons<boost::mpl::_1>>;
+                ForEach<AtomicPhysicsElectronSpecies, particles::atomicPhysics2::stage::BinElectrons<boost::mpl::_1>>;
             //! reset localRateCacheField sub stage for each ion species
             using ForEachIonSpeciesResetLocalRateCache = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::ResetLocalRateCache<boost::mpl::_1>>;
             //! fill rate cache with diagonal elements of rate matrix
             using ForEachIonSpeciesFillLocalRateCache = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::FillLocalRateCache<boost::mpl::_1>>;
+                ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics2::stage::FillLocalRateCache<boost::mpl::_1>>;
             //! check which atomic states are actually present in each superCell
             using ForEachIonSpeciesCheckPresenceOfAtomicStates = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::CheckPresence<boost::mpl::_1>>;
+                ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics2::stage::CheckPresence<boost::mpl::_1>>;
             //! calculate local atomicPhysics time step length
             using ForEachIonSpeciesCalculateStepLength = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::CalculateStepLength<boost::mpl::_1>>;
             //! chooseTransitionType for every macro-ion
             using ForEachIonSpeciesChooseTransitionType = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::ChooseTransitionType<boost::mpl::_1>>;
             //! chooseTransitionType for every macro-ion
             using ForEachIonSpeciesChooseTransition = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::ChooseTransition<boost::mpl::_1>>;
+                ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics2::stage::ChooseTransition<boost::mpl::_1>>;
             //! record suggested changes
             using ForEachIonSpeciesRecordSuggestedChanges = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::RecordSuggestedChanges<boost::mpl::_1>>;
             //! roll for rejection of transitions due to over subscription
             using ForEachIonSpeciesRollForOverSubscription = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::RollForOverSubscription<boost::mpl::_1>>;
             //! record delta energy for all transitions
             using ForEachIonSpeciesRecordChanges = pmacc::meta::
-                ForEach<SpeciesRepresentingIons, particles::atomicPhysics2::stage::RecordChanges<boost::mpl::_1>>;
+                ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics2::stage::RecordChanges<boost::mpl::_1>>;
             //! decelerate all electrons according to their bin delta energy
             using ForEachElectronSpeciesDecelerateElectrons = pmacc::meta::ForEach<
-                SpeciesRepresentingElectrons,
+                AtomicPhysicsElectronSpecies,
                 particles::atomicPhysics2::stage::DecelerateElectrons<boost::mpl::_1>>;
             //! spawn ionization created macro electrons due to atomicPhysics processes
             using ForEachIonSpeciesSpawnIonizationElectrons = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::SpawnIonizationElectrons<boost::mpl::_1>>;
 
             // debug only
             using ForEachIonSpeciesDumpToConsole = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::DumpAllIonsToConsole<boost::mpl::_1>>;
             using ForEachElectronSpeciesSetTemperature = pmacc::meta::ForEach<
-                SpeciesRepresentingElectrons,
+                AtomicPhysicsElectronSpecies,
                 picongpu::particles::Manipulate<picongpu::particles::atomicPhysics2::SetTemperature, boost::mpl::_1>>;
             using ForEachIonSpeciesDumpRateCacheToConsole = pmacc::meta::ForEach<
-                SpeciesRepresentingIons,
+                AtomicPhysicsIonSpecies,
                 particles::atomicPhysics2::stage::DumpRateCacheToConsole<boost::mpl::_1>>;
 
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
@@ -441,7 +455,19 @@ namespace picongpu::simulation::stage
                 ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
 
-                //! @todo do pressure ionization
+                // pressure ionization loop, end when no ion in unbound state anymore
+                while(true)
+                {
+                    picongpu::atomicPhysics2::IPDModel::calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
+                        mappingDesc,
+                        currentStep);
+                    picongpu::atomicPhysics2::IPDModel::applyPressureIonization<AtomicPhysicsIonSpecies>(
+                        mappingDesc,
+                        currentStep);
+
+                    if (//check)
+                        break;
+                }
 
                 // timeRemaining -= timeStep
                 picongpu::particles::atomicPhysics2::stage::UpdateTimeRemaining()(mappingDesc);

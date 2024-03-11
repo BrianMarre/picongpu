@@ -64,7 +64,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
             pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<T_ElectronSpecies::FrameType::frameSize>();
+                = pmacc::lockstep::makeWorkerCfg<ElectronSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -79,7 +79,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     "Electron_localHistogramField");
 
             using DecelerateElectrons = picongpu::particles::atomicPhysics2::kernel ::
-                DecelerateElectronsKernel<T_ElectronSpecies, picongpu::atomicPhysics2::ElectronHistogram>;
+                DecelerateElectronsKernel<ElectronSpecies, picongpu::atomicPhysics2::ElectronHistogram>;
 
             // macro for call of kernel on every superCell, see pull request #4321
             PMACC_LOCKSTEP_KERNEL(DecelerateElectrons(), workerCfg)
