@@ -23,14 +23,14 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "pciongpu/particles/AtomicPhysics2/ionizationPotentialDepression/localHelperFields/LocalFoundUnboundIonField.hpp"
-#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
-#include "picongpu/particles/AtomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDInterface.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/ApplyPressureIonization.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/CalculateIPDInput.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Electron.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Ion.hpp"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalFoundUnboundIonField.hpp"
 
 #include <pmacc/meta/ForEach.hpp>
 #include <pmacc/particles/traits/FilterByFlag.hpp>

@@ -41,7 +41,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
     struct SumWeightElectronsField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
     {
         SumWeightElectronsField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<T_Type, T_MappingDescription, false /*no guards*/>(mappingDesc)
+            : SuperCellField<float_X, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
 

@@ -49,7 +49,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
     struct SumTemperatureFunctionalField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
     {
         SumTemperatureFunctionalField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<T_Type, T_MappingDescription, false /*no guards*/>(mappingDesc)
+            : SuperCellField<float_X, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
 

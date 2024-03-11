@@ -50,23 +50,50 @@ namespace picongpu::particles::creation
      * @tparam T_WriteOutSharedStateFunctor write out final sharedState
      */
     template<
+        template<
+            typename T_SourceParticleBox,
+            typename T_ProductParticleBox,
+            typename... T_KernelConfigOptionsAndSharedDataBoxTypes>
         typename T_SanityCheckInputs,
+        template<typename... T_KernelConfigOptions>
         typename T_SkipSuperCellFunctor,
+        template<typename T_Number, typename... T_KernelConfigOptions>
         typename T_PredictorFunctor,
         typename T_ParticlePairUpdateFunctor,
         typename T_SharedStateType,
+        template<typename... T_KernelConfigOptions>
         typename T_InitSharedStateFunctor,
+        template<typename... T_KernelConfigOptions>
         typename T_SharedDataBoxIndexFunctor,
+        template<typename... T_KernelConfigOptions>
         typename T_WriteOutSharedStateFunctor>
     struct ModuleConfig
     {
-        using SanityCheckInputs = T_SanityCheckInputs;
-        using SkipSuperCellFunctor = T_SkipSuperCellFunctor;
-        using PredictorFunctor = T_PredictorFunctor;
+        template<
+            typename T_SourceParticleBox,
+            typename T_ProductParticleBox,
+            typename... T_KernelConfigOptionsAndSharedDataBoxTypes>
+        using SanityCheckInputs = T_SanityCheckInputs<
+            T_SourceParticleBox,
+            T_ProductParticleBox,
+            T_KernelConfigOptionsAndSharedDataBoxTypes...>;
+
+        template<typename... T_KernelConfigOptions>
+        using SkipSuperCellFunctor = T_SkipSuperCellFunctor<T_KernelConfigOptions...>;
+
+        template<typename T_Number, typename... T_KernelConfigOptions>
+        using PredictorFunctor = T_PredictorFunctor<T_Number, T_KernelConfigOptions...>;
+
         using ParticlePairUpdateFunctor = T_ParticlePairUpdateFunctor;
         using SharedStateType = T_SharedStateType;
-        using SharedDataBoxIndexFunctor = T_SharedDataBoxIndexFunctor;
-        using InitSharedStateFunctor = T_InitSharedStateFunctor;
-        using WriteOutSharedStateFunctor = T_WriteOutSharedStateFunctor;
+
+        template<typename... T_KernelConfigOptions>
+        using SharedDataBoxIndexFunctor = T_SharedDataBoxIndexFunctor<T_KernelConfigOptions...>;
+
+        template<typename... T_KernelConfigOptions>
+        using InitSharedStateFunctor = T_InitSharedStateFunctor<T_KernelConfigOptions...>;
+
+        template<typename... T_KernelConfigOptions>
+        using WriteOutSharedStateFunctor = T_WriteOutSharedStateFunctor<T_KernelConfigOptions...>;
     };
 } // namespace picongpu::particles::creation

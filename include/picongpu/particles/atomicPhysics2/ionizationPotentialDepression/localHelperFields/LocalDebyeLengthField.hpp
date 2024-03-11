@@ -41,7 +41,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::lo
     struct LocalDebyeLengthField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
     {
         LocalDebyeLengthField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<T_Type, T_MappingDescription, /*no guards*/ false>(mappingDesc)
+            : SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
 

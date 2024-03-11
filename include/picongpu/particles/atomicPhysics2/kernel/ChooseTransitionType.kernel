@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>

@@ -51,12 +51,9 @@
 // enum of groups of processClass's
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
 // enum of transition ordering in dataBoxes
-#include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
-
-// number of physical transitions for each transition data entry
-#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
-#include "picongpu/particles/atomicPhysics2/enums/NumberPhysicalTransitions.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 
 // debug only
 #include "picongpu/particles/atomicPhysics2/DebugHelper.hpp"

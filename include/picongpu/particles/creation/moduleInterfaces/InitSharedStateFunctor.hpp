@@ -33,5 +33,5 @@ namespace picongpu::particles::creation::moduleInterfaces
             T_Index const sharedDataBoxIndex,
             T_SharedStateType& sharedState,
             T_SharedDataBoxes... sharedDataBoxes);
-    }
+    };
 } // namespace picongpu::particles::creation::moduleInterfaces
