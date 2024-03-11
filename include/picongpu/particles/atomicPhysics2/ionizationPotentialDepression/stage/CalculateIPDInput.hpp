@@ -26,8 +26,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "pciongpu/particles/AtomicPhysics2/localHelperFields/localTimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/CalculateIPDInput.kernel"
+#include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 
 #include <string>
 

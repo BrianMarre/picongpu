@@ -31,4 +31,4 @@
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumChargeNumberSquaredIonsField.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumTemperatureFunctionalField.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumWeightAllField.hpp"
-#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumWeightElectrons.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/localHelperFields/SumWeightElectronsField.hpp"

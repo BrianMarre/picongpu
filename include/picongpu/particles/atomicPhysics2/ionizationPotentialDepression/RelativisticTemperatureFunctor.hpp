@@ -27,6 +27,7 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/TemperatureFunctor.hpp"
+#include "picongpu/traits/frame/GetMass.hpp"
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
@@ -44,8 +45,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         HDINLINE static float_X term(T_Particle& particle, float_64 const weightNormalized)
         {
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-            float3_64 const momentumVectorNormalized
-                = precisionCast<float3_64>(particle[momentum_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
+            float3_64 const momentumVectorNormalized = precisionCast<float3_64>(
+                particle[momentum_] / picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
 
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2
             float_64 const momentumSquared = pmacc::math::l2norm2(momentumVectorNormalized);
@@ -53,7 +54,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             // UNIT_MASS, not weighted
             constexpr float_64 mass = static_cast<float_64>(picongpu::traits::frame::getMass<T_Particle::FrameType>());
             // UNIT_LENGTH / UNIT_TIME, not weighted
-            constexpr float_64 c = picongpu::SPEED_OF_LIGHT_SI;
+            constexpr float_64 c = picongpu::SPEED_OF_LIGHT;
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             constexpr float_64 m2c2 = pmacc::math::cPow(mass * c, 2u);
 

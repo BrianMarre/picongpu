@@ -64,7 +64,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
          *
          * @return unit: eV, not weighted
          */
-        template<typename T_Input...>
-        HDINLINE static float_X calculateIPD(pmacc::DataSpace<simDim> const superCellFieldIdx, T_Input... const input);
-    }
+        template<typename... T_Input>
+        HDINLINE static float_X calculateIPD(pmacc::DataSpace<simDim> const superCellFieldIdx, T_Input const... input);
+    };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression

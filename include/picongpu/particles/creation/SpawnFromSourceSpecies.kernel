@@ -25,6 +25,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/creation/ModuleConfig.hpp"
 // interface definitions for modules of this kernel
 #include "picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp"
@@ -37,6 +38,7 @@
 
 namespace picongpu::particles::creation
 {
+    namespace s_conv = picongpu::particles::atomicPhysics2;
     namespace detail
     {
         //! helper struct for named index acess
@@ -108,7 +110,7 @@ namespace picongpu::particles::creation
             using ProductSpeciesFramePtr = typename T_ProductParticleBox::FramePtr;
 
             // perform sanity checks that input is consistent with assumptions
-            using = Modules::SanityCheckInputs<
+            using SanityCheck = typename Modules::template SanityCheckInputs<
                 T_SourceParticleBox,
                 T_ProductParticleBox,
                 T_KernelConfigOptions...,
@@ -117,7 +119,7 @@ namespace picongpu::particles::creation
             // get frame size
             PMACC_CASSERT_MSG(
                 sourceSpecies_framesize_must_less_or_equal_productSpecies_framesize,
-                T_SourceParticleBox::frameSize == T_ProductParticleBox::frameSize)
+                T_SourceParticleBox::frameSize == T_ProductParticleBox::frameSize);
             constexpr uint32_t frameSize = T_SourceParticleBox::frameSize;
 
             // for accessing particle frame list of superCell
@@ -125,15 +127,17 @@ namespace picongpu::particles::creation
                 = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
 
             auto const sharedDataBoxIndex
-                = Moduls::SharedDataBoxIndexFunctor<T_KernelConfigOptions...>::getIndex(areaMapping, superCellIndex);
+                = Modules::template SharedDataBoxIndexFunctor<T_KernelConfigOptions...>::getIndex(
+                    areaMapping,
+                    superCellIndex);
 
             SourceSpeciesFramePtr sourceSpeciesFrame = sourceBox.getLastFrame(superCellIndex);
 
             // test for skipping superCell due to no sourceSpecies particles or Skip Test
-            bool const skipSuperCell = Modules::SkipSuperCellFunctor<T_KernelConfigOptions...>::test(
+            bool const skipSuperCell = Modules::template SkipSuperCellFunctor<T_KernelConfigOptions...>::test(
                 superCellIndex,
                 sharedDataBoxIndex,
-                sharedStateBoxes...);
+                sharedDataBoxes...);
 
             if(skipSuperCell || (!sourceSpeciesFrame.isValid()))
                 return;
@@ -142,16 +146,15 @@ namespace picongpu::particles::creation
             auto forEachFrameMaster = pmacc::lockstep::makeForEach<2u, T_Worker>(worker);
             auto onlyMaster = pmacc::lockstep::makeMaster(worker);
 
-            using FrameArray = memory::Array<ProductSpeciesFramePtr, static_cast<uint32_t>(2u)>;
-
             PMACC_SMEM(worker, offsetLowFrame, int32_t);
             PMACC_SMEM(worker, totalNumberProductSpeciesParticlesToSpawn, uint32_t);
             PMACC_SMEM(worker, spawnCounter, uint32_t);
 
+            using FrameArray = memory::Array<ProductSpeciesFramePtr, static_cast<uint32_t>(2u)>;
             PMACC_SMEM(worker, productSpeciesFrameArray, FrameArray);
 
             // create shared memory variable for shared state
-            PMACC_SMEM(worker, sharedState, Modules::SharedStateType);
+            PMACC_SMEM(worker, sharedState, typename Modules::SharedStateType);
 
             auto numberProductParticlesCtxArr
                 = lockstep::makeVar<TypeNumber>(forEachFrameSlot, static_cast<TypeNumber>(0u));
@@ -159,6 +162,7 @@ namespace picongpu::particles::creation
             // init shared memory
             onlyMaster(
                 [&superCellIndex,
+                 &productBox,
                  &sharedDataBoxIndex,
                  &offsetLowFrame,
                  &spawnCounter,
@@ -167,7 +171,7 @@ namespace picongpu::particles::creation
                  &sharedState,
                  &sharedDataBoxes...]()
                 {
-                    Modules::InitSharedStateFunctor<T_KernelConfigOptions...>::init(
+                    Modules::template InitSharedStateFunctor<T_KernelConfigOptions...>::init(
                         superCellIndex,
                         sharedDataBoxIndex,
                         sharedState,
@@ -179,13 +183,14 @@ namespace picongpu::particles::creation
                     spawnCounter = static_cast<uint32_t>(0u);
 
                     // might be nullptr if no electrons in superCell
-                    electronFrameArray[u32(detail::Access::low)] = productBox.getLastFrame(superCellIndex);
-                    electronFrameArray[u32(detail::Access::high)] = nullptr;
+                    productSpeciesFrameArray[s_conv::u32(detail::Access::low)]
+                        = productBox.getLastFrame(superCellIndex);
+                    productSpeciesFrameArray[s_conv::u32(detail::Access::high)] = nullptr;
                 });
             worker.sync();
 
             // go over frames until all processed
-            while(ionFrame.isValid())
+            while(sourceSpeciesFrame.isValid())
             {
                 /* Predictor: get number productSpecies particles to spawn for each sourceSpecies particle in current
                  *  sourceSpecies frame */
@@ -207,8 +212,8 @@ namespace picongpu::particles::creation
                             return;
                         }
 
-                        numberProductParticles
-                            = Modules::PredictorFunctor<TypeNumber, T_KernelConfigOptions...>::getNumberNewParticles(
+                        numberProductParticles = Modules::
+                            template PredictorFunctor<TypeNumber, T_KernelConfigOptions...>::getNumberNewParticles(
                                 worker,
                                 sharedDataBoxIndex,
                                 sourceParticle,
@@ -246,7 +251,7 @@ namespace picongpu::particles::creation
                                  < static_cast<int32_t>(totalNumberProductSpeciesParticlesToSpawn))
                                 &&
                                 // is nullPtr
-                                !(electronFrameArray[linearIdx].isValid()))
+                                !(productSpeciesFrameArray[linearIdx].isValid()))
                             {
                                 productSpeciesFrameArray[linearIdx] = productBox.getEmptyFrame(worker);
                                 productBox.setAsLastFrame(worker, productSpeciesFrameArray[linearIdx], superCellIndex);
@@ -261,7 +266,8 @@ namespace picongpu::particles::creation
                          &productSpeciesFrameArray,
                          &frameSize,
                          &spawnCounter,
-                         &offsetLowFrame](uint32_t const frameSlotIdx, TypeNumber& numberProductParticles)
+                         &offsetLowFrame,
+                         &sharedDataBoxes...](uint32_t const frameSlotIdx, TypeNumber& numberProductParticles)
                         {
                             auto sourceParticle = sourceSpeciesFrame[frameSlotIdx];
 
@@ -275,26 +281,41 @@ namespace picongpu::particles::creation
                             uint32_t const productSpeciesFrameIndex = (globalSlotIndex + offsetLowFrame) / frameSize;
                             uint32_t const localSlotIndex = (globalSlotIndex + offsetLowFrame) % frameSize;
 
-                            auto productParticle = productSpeciesFrameArray[electronFrameIndex][localSlotIndex];
+                            auto productParticle = productSpeciesFrameArray[productSpeciesFrameIndex][localSlotIndex];
 
                             // init frame slot, mark as valid particle
                             productParticle[multiMask_] = 1u;
 
                             // init productParticle and maybe change source particle attributes
-                            if constexpr(T_passCascadeIndex && T_passSharedDataBoxes):
-                                Modules::ParticlePairUpdateFunctor{}(sourceParticle, productParticle, numberProductParticles, sharedDataBoxes...);
-                            else if constexpr(T_passCascadeIndex)
-                                Modules::ParticlePairUpdateFunctor{}(
+                            if constexpr(T_passCascadeIndex && T_passSharedDataBoxes)
+                            {
+                                (typename Modules::ParticlePairUpdateFunctor){}(
                                     sourceParticle,
                                     productParticle,
-                                    numberProductParticles);
-                            else if constexpr(T_passSharedDataBoxes)
-                                Modules::ParticlePairUpdateFunctor{}(
-                                    sourceParticle,
-                                    productParticle,
+                                    numberProductParticles,
                                     sharedDataBoxes...);
+                            }
                             else
-                                Modules::ParticlePairUpdateFunctor{}(sourceParticle, productParticle);
+                            {
+                                if constexpr(T_passCascadeIndex)
+                                {
+                                    (typename Modules::ParticlePairUpdateFunctor){}(
+                                        sourceParticle,
+                                        productParticle,
+                                        numberProductParticles);
+                                }
+                                if constexpr(T_passSharedDataBoxes)
+                                {
+                                    (typename Modules::ParticlePairUpdateFunctor){}(
+                                        sourceParticle,
+                                        productParticle,
+                                        sharedDataBoxes...);
+                                }
+                                else
+                                {
+                                    (typename Modules::ParticlePairUpdateFunctor){}(sourceParticle, productParticle);
+                                }
+                            }
 
                             // update frame slot counter
                             //      will never underflow since we check for 0 above
@@ -326,11 +347,11 @@ namespace picongpu::particles::creation
 
                                 // shift high to low to keep partially filled frame at low and "empty" frame at high
                                 /// @attention high may be nullptr if no further electrons to spawn
-                                electronFrameArray[u32(detail::Access::low)]
-                                    = electronFrameArray[u32(detail::Access::high)];
+                                productSpeciesFrameArray[s_conv::u32(detail::Access::low)]
+                                    = productSpeciesFrameArray[s_conv::u32(detail::Access::high)];
 
                                 // reset high with nullptr to mark for next "need new frame?" pass
-                                electronFrameArray[u32(detail::Access::high)] = nullptr;
+                                productSpeciesFrameArray[s_conv::u32(detail::Access::high)] = nullptr;
                             }
 
                             using SuperCellType = typename T_ProductParticleBox::SuperCellType;
@@ -348,7 +369,7 @@ namespace picongpu::particles::creation
                 }
 
                 // get next ion frame
-                sourceSpeciesFrame = sourceBox.getPreviousFrame(ionFrame);
+                sourceSpeciesFrame = sourceBox.getPreviousFrame(sourceSpeciesFrame);
 
                 //  no need to set "totalNumberProductSpeciesParticlesToSpawn = 0",
                 //   already guaranteed by break condition
@@ -357,8 +378,9 @@ namespace picongpu::particles::creation
             }
 
             onlyMaster(
-                [&superCellIndex, &sharedDataBoxIndex, &sharedState, &sharedDataBoxes...]() {
-                    Modules::WriteOutSharedStateFunctor::write(
+                [&superCellIndex, &sharedDataBoxIndex, &sharedState, &sharedDataBoxes...]()
+                {
+                    Modules::WriteOutSharedStateFunctor::template write(
                         superCellIndex,
                         sharedDataBoxIndex,
                         sharedState,

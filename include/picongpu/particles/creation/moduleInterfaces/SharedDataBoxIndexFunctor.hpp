@@ -21,6 +21,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include <cstdint>
+
 namespace picongpu::particles::creation::moduleInterfaces
 {
     //! interface of SharedDataBoxIndexFunctor
@@ -28,7 +30,7 @@ namespace picongpu::particles::creation::moduleInterfaces
     struct SharedDataBoxIndexFunctor
     {
         //! may be overwritten by implementation
-        using indexDim = picongpu::simDim;
+        static constexpr uint8_t indexDim = picongpu::simDim;
 
         template<typename T_AreaMapping>
         HDINLINE static pmacc::DataSpace<indexDim> getIndex(

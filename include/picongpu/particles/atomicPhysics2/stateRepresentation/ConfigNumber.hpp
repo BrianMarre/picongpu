@@ -62,10 +62,10 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
+
 #include <pmacc/algorithms/math.hpp>
 #include <pmacc/math/Vector.hpp>
-
-#include "picongpu/particles/atomicPhysics2/ConvertEnumToUint.hpp"
 
 #include <cstdint>
 
@@ -303,15 +303,15 @@ namespace picongpu::particles::atomicPhysics2::stateRepresentation
 
             // find highest occupied shell
             uint8_t highestOccupiedShell = numberLevels - 1u;
-            for (uint8_t k = numberLevels; k >= 1u; --k)
+            for(uint8_t k = numberLevels; k >= 1u; --k)
             {
                 highestOccupiedShell = k - 1u;
-                if (levelVector[k - 1u] > 0u)
+                if(levelVector[k - 1u] > 0u)
                     break;
             }
 
             // find direct pressure ionization state level vector
-            if (levelVector[highestOccupiedShell] != 0u)
+            if(levelVector[highestOccupiedShell] != 0u)
                 // not completely ionized state
                 levelVector[highestOccupiedShell] -= 1u;
             return getAtomicConfigNumber(levelVector);

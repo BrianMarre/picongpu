@@ -27,6 +27,7 @@
 #include "picongpu/simulation_defines.hpp"
 
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/TemperatureFunctor.hpp"
+#include "picongpu/traits/frame/GetMass.hpp"
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
@@ -44,17 +45,17 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         HDINLINE static float_X term(T_Particle& particle, float_64 const weightNormalized)
         {
             // UNIT_MASS * UNIT_LENGTH / UNIT_TIME * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-            float3_64 const momentumVectorNormalized
-                = precisionCast<float3_64>(particle[momentum_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
+            float3_64 const momentumVectorNormalized = precisionCast<float3_64>(
+                particle[momentum_] / picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE);
 
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2
-            float_64 const momentumSquared = pmacc::math::l2norm2(momentumVectorNormalized);
+            float_64 momentumSquared = pmacc::math::l2norm2(momentumVectorNormalized);
 
             // get classical momentum
             // UNIT_MASS, not weighted
             constexpr float_64 mass = static_cast<float_64>(picongpu::traits::frame::getMass<T_Particle::FrameType>());
             // UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
-            constexpr float_64 c2 = piconpgu::SPEED_OF_LIGHT * picongpu::SPEED_OF_LIGHT;
+            constexpr float_64 c2 = picongpu::SPEED_OF_LIGHT * picongpu::SPEED_OF_LIGHT;
             // UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
             constexpr float_64 m2_c2_reciproc = 1.0 / (mass * mass * c2);
 
@@ -62,7 +63,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             //  / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2)
             //  / (UNIT_MASS^2 * UNIT_LENGTH^2 / UNIT_TIME^2 * weight^2 / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE^2) =
             // unitless
-            float_64 const gamma = math::sqrt(1.0 + momentumSquared / (m2_c2_reciproc * weight * weight));
+            float_64 const gamma
+                = math::sqrt(1.0 + momentumSquared / (m2_c2_reciproc * weightNormalized * weightNormalized));
 
             momentumSquared *= 1. / (gamma * gamma);
 
