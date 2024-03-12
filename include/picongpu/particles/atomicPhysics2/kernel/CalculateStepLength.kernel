@@ -113,22 +113,15 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             lossRateState = picongpu::atomicPhysics2::timeStepAlpha / DELTA_T;
                         }
 
-                    float_X const speciesStateLimitTimeStep = 1._X / (lossRateState);
                     // 1/(1/UNIT_TIME) = UNIT_TIME
+                    float_X const speciesStateLimitTimeStep = 1._X / (lossRateState);
 
-<<<<<<< HEAD
-                    cupla::atomicMin(
-                        worker.getAcc(),
-                        &timeStep, // UNIT_TIME
-                        speciesStateLimitTimeStep * picongpu::atomicPhysics2::timeStepAlpha);
-=======
+                    // UNIT_TIME
                     alpaka::atomicMin(
                         worker.getAcc(),
                         &timeStep, // UNIT_TIME
                         speciesStateLimitTimeStep * picongpu::atomicPhysics2::timeStepAlpha,
                         ::alpaka::hierarchy::Threads{});
->>>>>>> cfdeb632eab26043fee082aab08955a67b419f98
-                    // UNIT_TIME
                 });
         }
     };

@@ -148,15 +148,11 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
         template<typename T_Worker>
         HDINLINE void setPresent(T_Worker const& worker, uint32_t const collectionIndex, bool const status)
         {
-<<<<<<< HEAD
-            cupla::atomicExch(worker.getAcc(), &(this->m_present[collectionIndex]), static_cast<uint32_t>(status));
-=======
             alpaka::atomicExch(
                 worker.getAcc(),
                 &(this->m_present[collectionIndex]),
                 static_cast<uint32_t>(status),
                 ::alpaka::hierarchy::Threads{});
->>>>>>> cfdeb632eab26043fee082aab08955a67b419f98
             return;
         }
 

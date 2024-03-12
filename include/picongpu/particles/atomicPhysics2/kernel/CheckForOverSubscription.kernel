@@ -116,15 +116,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE / deltaWeight);
 
                         // set flag that histogram has over subscribed bin
-<<<<<<< HEAD
-                        cupla::atomicExch(worker.getAcc(), &histogramOverSubscribed, static_cast<uint32_t>(true));
-=======
                         alpaka::atomicExch(
                             worker.getAcc(),
                             &histogramOverSubscribed,
                             static_cast<uint32_t>(true),
                             ::alpaka::hierarchy::Threads{});
->>>>>>> cfdeb632eab26043fee082aab08955a67b419f98
                     }
                     else
                         rejectionProbability = -1._X;
