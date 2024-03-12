@@ -91,8 +91,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::ApplyPressureIonizationKernel<T_IPDModel>(), workerCfg)
             (mapper.getGridDim())(
                 mapper,
-                ions.getDeviceParticleBox(),
-                electrons.getDeviceParticleBox(),
+                ions.getDeviceParticlesBox(),
+                electrons.getDeviceParticlesBox(),
                 localTimeRemainingField.getDeviceDataBox(),
                 localFoundUnboundIonField.getDeviceDataBox(),
                 atomicData.template getChargeStateDataDataBox</*on device*/ false>(),
