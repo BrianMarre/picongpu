@@ -26,6 +26,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/CalculateIPDInput.kernel"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 
@@ -51,24 +53,31 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
                     picongpu::MappingDesc>>("LocalTimeRemainingField");
 
-            auto& localSumWeightAllField = *dc.get<s_IPD::localHelperFields::SumWeightAllField>("SumWeightAllField");
+            auto& localSumWeightAllField
+                = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
             auto& localSumTemperatureFunctionalField
-                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField>("SumTemperatureFunctionalField");
+                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
+                    "SumTemperatureFunctionalField");
 
             auto& localSumWeightElectronField
-                = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
+                = *dc.get<s_IPD::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
+                    "SumWeightElectronsField");
 
             auto& localSumChargeNumberIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField>("SumChargeNumberIonsField");
+                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
+                    "SumChargeNumberIonsField");
             auto& localSumChargeNumberSquaredIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField>(
+                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
                     "SumChargeNumberSquaredIonsField");
 
             auto& localTemperatureEnergyField
-                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField>("LocalTemperatureEnergyField");
-            auto& localZStarField = *dc.get<s_IPD::localHelperFields::LocalZStarField>("LocalZStarField");
+                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
+                    "LocalTemperatureEnergyField");
+            auto& localZStarField
+                = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
             auto& localDebyeLengthField
-                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField>("LocalDebyeLengthField");
+                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
+                    "LocalDebyeLengthField");
 
             // macro for kernel call
             PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::CalculateIPDInputKernel(), workerCfg)

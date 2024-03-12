@@ -25,6 +25,6 @@
 
 namespace picongpu::atomicPhysics2
 {
-    using IPDModell = picongpu::particles::atomicPhysics2::ionizationPotentialDepression::StewartPyattIPD<
+    using IPDModel = picongpu::particles::atomicPhysics2::ionizationPotentialDepression::StewartPyattIPD<
         picongpu::particles::atomicPhysics2::ionizationPotentialDepression::RelativisticTemperatureFunctor>;
 } // namespace picongpu::atomicPhysics2

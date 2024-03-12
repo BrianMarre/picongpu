@@ -79,10 +79,7 @@ namespace picongpu::simulation::stage
         using S_LinearizedBox = DataBoxDim1Access<typename T_Field::DataBoxType>;
 
         using S_OverSubscribedField
-            = picongpu::particles::atomicPhysics2::localHelperFields ::LocalElectronHistogramOverSubscribedField<
-                picongpu::MappingDesc>;
-        using S_AllIonsAcceptedField
-            = picongpu::particles::atomicPhysics2::localHelperFields ::LocalAllMacroIonsAcceptedField<
+            = picongpu::particles::atomicPhysics2::localHelperFields::LocalElectronHistogramOverSubscribedField<
                 picongpu::MappingDesc>;
         using S_TimeRemainingField
             = particles::atomicPhysics2::localHelperFields ::LocalTimeRemainingField<picongpu::MappingDesc>;
@@ -125,16 +122,6 @@ namespace picongpu::simulation::stage
             localTimeRemainingField.getDeviceBuffer().setValue(picongpu::DELTA_T); // UNIT_TIME
         }
 
-        //! reset local allMacroIonsAccepted switch to true
-        HINLINE static void resetAllMacroIonsAcceptedField()
-        {
-            pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-
-            auto& localAllIonsAcceptedField = *dc.get<S_AllIonsAcceptedField>("LocalAllMacroIonsAcceptedField");
-
-            localAllIonsAcceptedField.getDeviceBuffer().setValue(true);
-        }
-
         //! reset the histogram on device side
         HINLINE static void resetHistograms()
         {
@@ -161,7 +148,7 @@ namespace picongpu::simulation::stage
 
         //! print electron histogram to console, debug only
         template<bool T_printOnlyOverSubscribed>
-        HINLINE static void printHistogramToConsole()
+        HINLINE static void printHistogramToConsole(picongpu::MappingDesc const mappingDesc)
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                 picongpu::particles::atomicPhysics2::electronDistribution::
@@ -171,7 +158,7 @@ namespace picongpu::simulation::stage
         }
 
         //! print LocalElectronHistogramOverSubscribedField to console, debug only
-        HINLINE static void printOverSubscriptionFieldToConsole()
+        HINLINE static void printOverSubscriptionFieldToConsole(picongpu::MappingDesc const mappingDesc)
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                 picongpu::particles::atomicPhysics2::localHelperFields::LocalElectronHistogramOverSubscribedField<
@@ -182,7 +169,7 @@ namespace picongpu::simulation::stage
         }
 
         //! print rejectionProbabilityCache to console, debug only
-        HINLINE static void printRejectionProbabilityCacheToConsole()
+        HINLINE static void printRejectionProbabilityCacheToConsole(picongpu::MappingDesc const mappingDesc)
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                 picongpu::particles::atomicPhysics2::localHelperFields ::LocalRejectionProbabilityCacheField<
@@ -192,7 +179,7 @@ namespace picongpu::simulation::stage
         }
 
         //! print local time remaining to console, debug only
-        HINLINE static void printTimeRemaingToConsole()
+        HINLINE static void printTimeRemaingToConsole(picongpu::MappingDesc const mappingDesc)
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                 picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>,
@@ -202,7 +189,7 @@ namespace picongpu::simulation::stage
         }
 
         //! print local time step to console, debug only
-        HINLINE static void printTimeStepToConsole()
+        HINLINE static void printTimeStepToConsole(picongpu::MappingDesc const mappingDesc)
         {
             picongpu::particles::atomicPhysics2::stage::DumpSuperCellDataToConsole<
                 picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>,
@@ -325,7 +312,7 @@ namespace picongpu::simulation::stage
 
                 if constexpr(picongpu::atomicPhysics2::debug::electronHistogram::PRINT_TO_CONSOLE)
                 {
-                    printHistogramToConsole</*print all bins*/ false>();
+                    printHistogramToConsole</*print all bins*/ false>(mappingDesc);
                 }
 
                 // timeStep = localTimeRemaining
@@ -380,9 +367,9 @@ namespace picongpu::simulation::stage
                                           : "false")
                                   << std::endl;
 
-                        printOverSubscriptionFieldToConsole();
-                        printRejectionProbabilityCacheToConsole();
-                        printHistogramToConsole</*print only oversubscribed*/ true>();
+                        printOverSubscriptionFieldToConsole(mappingDesc);
+                        printRejectionProbabilityCacheToConsole(mappingDesc);
+                        printHistogramToConsole</*print only oversubscribed*/ true>(mappingDesc);
                     }
 
                     if(!static_cast<bool>(deviceLocalReduce(
@@ -414,9 +401,9 @@ namespace picongpu::simulation::stage
                                                   : "false")
                                           << std::endl;
 
-                                printOverSubscriptionFieldToConsole();
-                                printRejectionProbabilityCacheToConsole();
-                                printHistogramToConsole</*print only oversubscribed*/ true>();
+                                printOverSubscriptionFieldToConsole(mappingDesc);
+                                printRejectionProbabilityCacheToConsole(mappingDesc);
+                                printHistogramToConsole</*print only oversubscribed*/ true>(mappingDesc);
                             }
                         }
 
@@ -455,9 +442,9 @@ namespace picongpu::simulation::stage
                     ForEachIonSpeciesDumpToConsole{}(mappingDesc);
                 }
                 if constexpr(picongpu::atomicPhysics2::debug::timeRemaining::PRINT_TO_CONSOLE)
-                    printTimeRemaingToConsole();
+                    printTimeRemaingToConsole(mappingDesc);
                 if constexpr(picongpu::atomicPhysics2::debug::timeStep::PRINT_TO_CONSOLE)
-                    printTimeStepToConsole();
+                    printTimeStepToConsole(mappingDesc);
 
 
                 /** update atomic state and accumulate delta energy for delta energy histogram
@@ -474,10 +461,10 @@ namespace picongpu::simulation::stage
                 while(true)
                 {
                     resetFoundUnboundIon();
-                    picongpu::atomicPhysics2::IPDModel::calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
+                    picongpu::atomicPhysics2::IPDModel::template calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
                         mappingDesc,
                         currentStep);
-                    picongpu::atomicPhysics2::IPDModel::applyPressureIonization<AtomicPhysicsIonSpecies>(
+                    picongpu::atomicPhysics2::IPDModel::template applyPressureIonization<AtomicPhysicsIonSpecies>(
                         mappingDesc,
                         currentStep);
 

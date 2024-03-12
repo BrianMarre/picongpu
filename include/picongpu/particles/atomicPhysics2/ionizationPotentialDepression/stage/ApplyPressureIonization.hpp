@@ -25,6 +25,8 @@
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/kernel/ApplyPressureIonization.kernel"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalFoundUnboundIonField.hpp"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/traits/GetAtomicDataType.hpp"
+#include "picongpu/particles/traits/GetIonizationElectronSpecies.hpp"
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage
 {
@@ -103,7 +105,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             // no need to call fillAllGaps, since we do not leave any gaps
 
             // debug call
-            if constexpr(picongpu::atomicPhysics2::debug::kernel::ApplyPressureIonization::
+            if constexpr(picongpu::atomicPhysics2::debug::kernel::applyPressureIonization::
                              ELECTRON_PARTICLE_BOX_FILL_GAPS)
                 electrons.fillAllGaps();
         }

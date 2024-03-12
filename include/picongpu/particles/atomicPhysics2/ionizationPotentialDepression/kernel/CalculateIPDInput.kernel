@@ -162,7 +162,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
 
                     // sqrt(UNIT_LENGTH^2 / UNIT_ENERGY * UNIT_ENERGY) = UNIT_LENGTH
                     localDebyeLength = math::sqrt(
-                        scaleFactorDebyeLength * localTemperatureTimesk_Boltzman
+                        constFactorDebyeLength * localTemperatureTimesk_Boltzman
                         / (localSumChargeNumberSquared + localSumWeightElectron));
                 });
         }
