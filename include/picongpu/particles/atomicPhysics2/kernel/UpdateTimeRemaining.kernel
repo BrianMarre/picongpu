@@ -54,7 +54,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()))
                 - areaMapping.getGuardingSuperCells();
 
             // UNIT_TIME
@@ -70,8 +70,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto onlyMaster = lockstep::makeMaster(worker);
 
             /// @todo use forEachSuperCell instead of letting workers wait, Brian Marre, 2023
-            onlyMaster([&timeStep, &timeRemaining]() {
-                timeRemaining = timeRemaining - timeStep; });
+            onlyMaster([&timeStep, &timeRemaining]() { timeRemaining = timeRemaining - timeStep; });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

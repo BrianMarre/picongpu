@@ -131,7 +131,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()))
                 - areaMapping.getGuardingSuperCells();
 
             auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
@@ -163,45 +163,46 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &numberTransitionsDataBox,
                  &boundFreeTransitionDataBox](uint32_t const linearIdx)
                 {
-                uint32_t const binIndex = linearIdx / T_numberAtomicStates;
-                uint32_t const atomicStateCollectionIndex = linearIdx % T_numberAtomicStates;
+                    uint32_t const binIndex = linearIdx / T_numberAtomicStates;
+                    uint32_t const atomicStateCollectionIndex = linearIdx % T_numberAtomicStates;
 
-                // check if atomic state present at all
-                if(!rateCache.present(atomicStateCollectionIndex))
-                    return;
+                    // check if atomic state present at all
+                    if(!rateCache.present(atomicStateCollectionIndex))
+                        return;
 
-                uint32_t const numberTransitionsUp
-                    = numberTransitionsDataBox.numberOfTransitionsUp(atomicStateCollectionIndex);
+                    uint32_t const numberTransitionsUp
+                        = numberTransitionsDataBox.numberOfTransitionsUp(atomicStateCollectionIndex);
 
-                uint32_t offset = startIndexDataBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
+                    uint32_t offset = startIndexDataBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
 
-                [[maybe_unused]] auto const energy = cachedHistogram.energy[binIndex];
-                [[maybe_unused]] auto const binWidth = cachedHistogram.binWidth[binIndex];
-                [[maybe_unused]] auto const density = cachedHistogram.density[binIndex];
+                    [[maybe_unused]] auto const energy = cachedHistogram.energy[binIndex];
+                    [[maybe_unused]] auto const binWidth = cachedHistogram.binWidth[binIndex];
+                    [[maybe_unused]] auto const density = cachedHistogram.density[binIndex];
 
-                for(uint32_t transitionID = static_cast<uint32_t>(0u); transitionID < numberTransitionsUp;
-                    ++transitionID)
-                {
-                    if constexpr(T_electronicIonization)
+                    for(uint32_t transitionID = static_cast<uint32_t>(0u); transitionID < numberTransitionsUp;
+                        ++transitionID)
                     {
-                        rateCache.template add<T_Worker, s_enums::TransitionDataSet::boundFreeUpward>(
-                            worker,
-                            atomicStateCollectionIndex,
-                            picongpu::particles::atomicPhysics2::rateCalculation::
-                                BoundFreeTransitionRates<T_numberLevels>::template rateCollisionalIonizationTransition<
-                                    T_ChargeStateDataDataBox,
-                                    T_AtomicStateDataDataBox,
-                                    T_BoundFreeTransitionDataBox>(
-                                    energy,
-                                    binWidth,
-                                    density,
-                                    // transitionCollectionIndex
-                                    offset + transitionID,
-                                    chargeStateDataDataBox,
-                                    atomicStateDataDataBox,
-                                    boundFreeTransitionDataBox));
+                        if constexpr(T_electronicIonization)
+                        {
+                            rateCache.template add<T_Worker, s_enums::TransitionDataSet::boundFreeUpward>(
+                                worker,
+                                atomicStateCollectionIndex,
+                                picongpu::particles::atomicPhysics2::rateCalculation::BoundFreeTransitionRates<
+                                    T_numberLevels>::
+                                    template rateCollisionalIonizationTransition<
+                                        T_ChargeStateDataDataBox,
+                                        T_AtomicStateDataDataBox,
+                                        T_BoundFreeTransitionDataBox>(
+                                        energy,
+                                        binWidth,
+                                        density,
+                                        // transitionCollectionIndex
+                                        offset + transitionID,
+                                        chargeStateDataDataBox,
+                                        atomicStateDataDataBox,
+                                        boundFreeTransitionDataBox));
+                        }
                     }
-                }
                 });
         }
     };

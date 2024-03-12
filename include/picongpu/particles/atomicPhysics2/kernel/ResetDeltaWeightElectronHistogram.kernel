@@ -58,7 +58,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()))
                 - areaMapping.getGuardingSuperCells();
 
             auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
@@ -70,8 +70,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             T_Histogram& histogram = localHistogramBox(superCellFieldIdx);
 
-            forEachBin([&worker, &histogram](uint32_t const binIndex) {
-                histogram.setDeltaWeight(binIndex, 0._X); });
+            forEachBin([&worker, &histogram](uint32_t const binIndex) { histogram.setDeltaWeight(binIndex, 0._X); });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel
