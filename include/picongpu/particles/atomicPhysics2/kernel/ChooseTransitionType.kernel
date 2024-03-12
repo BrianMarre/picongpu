@@ -113,7 +113,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_IonBox ionBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -134,39 +134,39 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachLocalIonBoxEntry(
                 [&rngGenerator, &rateCache, &timeStep](T_Worker const& worker, auto& ion)
                 {
-                constexpr uint32_t numberRateCacheTransitionTypes = T_RateCache::numberStoredDataSets;
+                    constexpr uint32_t numberRateCacheTransitionTypes = T_RateCache::numberStoredDataSets;
 
-                if(ion[accepted_])
-                    return;
-                auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
+                    if(ion[accepted_])
+                        return;
+                    auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
 
-                float_X const r = rngGenerator();
+                    float_X const r = rngGenerator();
 
-                /// @todo change to compile time loop, Brian Marre, 2023
-                float_X cumSum = 0._X;
-                for(uint32_t transitionTypeID = 0u; transitionTypeID < numberRateCacheTransitionTypes;
-                    ++transitionTypeID)
-                {
-                    // check whether user activated at least one process from the transitionType
-                    if(transitionTypeActive(transitionTypeID))
+                    /// @todo change to compile time loop, Brian Marre, 2023
+                    float_X cumSum = 0._X;
+                    for(uint32_t transitionTypeID = 0u; transitionTypeID < numberRateCacheTransitionTypes;
+                        ++transitionTypeID)
                     {
-                        cumSum += timeStep * rateCache.rate(transitionTypeID, atomicStateCollectionIndex);
-                        if(r < cumSum)
+                        // check whether user activated at least one process from the transitionType
+                        if(transitionTypeActive(transitionTypeID))
                         {
-                            // only in between storage
-                            ion[transitionIndex_] = transitionTypeID;
-                            break;
+                            cumSum += timeStep * rateCache.rate(transitionTypeID, atomicStateCollectionIndex);
+                            if(r < cumSum)
+                            {
+                                // only in between storage
+                                ion[transitionIndex_] = transitionTypeID;
+                                break;
+                            }
                         }
                     }
-                }
-                // noChange transition as last resort transition, never stored in RateCache
-                if(r >= cumSum) // and <= 1
-                {
-                    ion[processClass_] = u8(s_enums::ProcessClass::noChange);
-                    // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange
-                    //  and accepted_ = true prevents it being worked on by ChooseTransitionKernels
-                    ion[accepted_] = true;
-                }
+                    // noChange transition as last resort transition, never stored in RateCache
+                    if(r >= cumSum) // and <= 1
+                    {
+                        ion[processClass_] = u8(s_enums::ProcessClass::noChange);
+                        // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange
+                        //  and accepted_ = true prevents it being worked on by ChooseTransitionKernels
+                        ion[accepted_] = true;
+                    }
                 });
         }
     };

@@ -57,7 +57,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_LocalRateCache localRateCacheBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -73,8 +73,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             auto& rateCache = localRateCacheBox(superCellFieldIdx);
 
             forEachLocalIonBoxEntry([&rateCache](T_Worker const& worker, auto& ion)
-                                    {
-                rateCache.setPresent(worker, ion[atomicStateCollectionIndex_], true); });
+                                    { rateCache.setPresent(worker, ion[atomicStateCollectionIndex_], true); });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

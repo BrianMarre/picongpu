@@ -71,7 +71,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_LocalElectronHistogramDataBox localElectronHistogramDataBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -94,72 +94,72 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachLocalElectronBoxEntry(
                 [&histogram](T_Worker const& worker, auto& electron)
                 {
-                // energy of a single corresponding physical electron,
-                //      no need to use float_64 since really high energy electrons are
-                //      suppressed in atomicPhysics
-                float_X const energyElectron = GetPhysicalEnergy::KineticEnergy(electron);
-                // eV
+                    // energy of a single corresponding physical electron,
+                    //      no need to use float_64 since really high energy electrons are
+                    //      suppressed in atomicPhysics
+                    float_X const energyElectron = GetPhysicalEnergy::KineticEnergy(electron);
+                    // eV
 
-                // no corresponding bin exist
-                if(!histogram.inRange(energyElectron /*eV*/))
-                    return;
+                    // no corresponding bin exist
+                    if(!histogram.inRange(energyElectron /*eV*/))
+                        return;
 
-                // look up in the histogram, which bin corresponds to this energy
-                uint32_t const binIndex = histogram.getBinIndex(energyElectron /*eV*/);
+                    // look up in the histogram, which bin corresponds to this energy
+                    uint32_t const binIndex = histogram.getBinIndex(energyElectron /*eV*/);
 
-                float_X const weightBin = histogram.getBinWeight0(binIndex);
-                float_X const deltaEnergyBin = histogram.getBinDeltaEnergy(binIndex);
-                // eV, weighted
+                    float_X const weightBin = histogram.getBinWeight0(binIndex);
+                    float_X const deltaEnergyBin = histogram.getBinDeltaEnergy(binIndex);
+                    // eV, weighted
 
-                // m_internal * kg/m_internal * m^2/s^2 * eV/J = kg * m^2/s^2 * eV/ J
-                //  = Nm/J * eV = J/J * eV = eV, ~ 511e3 eV
-                constexpr float_X mcSquaredElectron = static_cast<float_X>(
-                    static_cast<float_64>(picongpu::traits::frame::getMass<typename T_Electron::FrameType>())
-                    * UNIT_MASS * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * UNITCONV_Joule_to_keV
-                    * 1.e3);
-                // eV, not weighted
+                    // m_internal * kg/m_internal * m^2/s^2 * eV/J = kg * m^2/s^2 * eV/ J
+                    //  = Nm/J * eV = J/J * eV = eV, ~ 511e3 eV
+                    constexpr float_X mcSquaredElectron = static_cast<float_X>(
+                        static_cast<float_64>(picongpu::traits::frame::getMass<typename T_Electron::FrameType>())
+                        * UNIT_MASS * pmacc::math::cPow(picongpu::SI::SPEED_OF_LIGHT_SI, 2u) * UNITCONV_Joule_to_keV
+                        * 1.e3);
+                    // eV, not weighted
 
-                // distribute energy change as mean by weight on all electrons in bin
-                // eV + eV /(unitless * unitless) = eV
-                float_X newEnergyElectron = energyElectron + static_cast<float_X>(deltaEnergyBin / weightBin);
-                // (eV, not weighted) + ((eV, weighted)/weight)
-                //  = (eV, not weighted) + (eV, not weighted) = (eV, weighted)
-                // eV, not weighted
+                    // distribute energy change as mean by weight on all electrons in bin
+                    // eV + eV /(unitless * unitless) = eV
+                    float_X newEnergyElectron = energyElectron + static_cast<float_X>(deltaEnergyBin / weightBin);
+                    // (eV, not weighted) + ((eV, weighted)/weight)
+                    //  = (eV, not weighted) + (eV, not weighted) = (eV, weighted)
+                    // eV, not weighted
 
-                // case: too much energy removed
-                if(newEnergyElectron < 0._X)
-                    newEnergyElectron = 0._X; // extract as much as possible, rest is hopefully negligible
+                    // case: too much energy removed
+                    if(newEnergyElectron < 0._X)
+                        newEnergyElectron = 0._X; // extract as much as possible, rest is hopefully negligible
 
-                constexpr float_X c_internal
-                    = static_cast<float_X>(picongpu::SI::SPEED_OF_LIGHT_SI * UNIT_TIME / UNIT_LENGTH);
-                // usually ~1, internal units
+                    constexpr float_X c_internal
+                        = static_cast<float_X>(picongpu::SI::SPEED_OF_LIGHT_SI * UNIT_TIME / UNIT_LENGTH);
+                    // usually ~1, internal units
 
-                constexpr float_X conversionEnergy = static_cast<float_X>(UNITCONV_eV_to_Joule * 1. / UNIT_ENERGY);
-                // J/(eV) * UNIT_ENERGY/J  = J/J * UNIT_ENERGY/(eV)
+                    constexpr float_X conversionEnergy = static_cast<float_X>(UNITCONV_eV_to_Joule * 1. / UNIT_ENERGY);
+                    // J/(eV) * UNIT_ENERGY/J  = J/J * UNIT_ENERGY/(eV)
 
-                constexpr float_X scalingFactor = 1._X / c_internal * conversionEnergy;
+                    constexpr float_X scalingFactor = 1._X / c_internal * conversionEnergy;
 
-                // sqrt(E' * (E' + 2* m*c^2)) / c
-                float_X const newElectronMomentum
-                    = math::sqrt(newEnergyElectron * (newEnergyElectron + 2 * mcSquaredElectron)) * scalingFactor;
-                // AU = ATOMIC_UNIT_ENERGY
-                // sqrt(eV * (eV + eV))/(UNIT_LENGTH/UNIT_TIME) * (UNIT_ENERGY/eV)
-                //  = sqrt((eV)^2)/(eV) * UNIT_TIME/UNIT_LENGTH * UNIT_ENERGY
-                //  = UNIT_MASS * UNIT_LENGTH^2/UNIT_TIME^2 * UNIT_TIME/UNIT_LENGTH
-                //  = UNIT_MASS * UNIT_LENGTH/UNIT_TIME
-                // internal units, not weighted
+                    // sqrt(E' * (E' + 2* m*c^2)) / c
+                    float_X const newElectronMomentum
+                        = math::sqrt(newEnergyElectron * (newEnergyElectron + 2 * mcSquaredElectron)) * scalingFactor;
+                    // AU = ATOMIC_UNIT_ENERGY
+                    // sqrt(eV * (eV + eV))/(UNIT_LENGTH/UNIT_TIME) * (UNIT_ENERGY/eV)
+                    //  = sqrt((eV)^2)/(eV) * UNIT_TIME/UNIT_LENGTH * UNIT_ENERGY
+                    //  = UNIT_MASS * UNIT_LENGTH^2/UNIT_TIME^2 * UNIT_TIME/UNIT_LENGTH
+                    //  = UNIT_MASS * UNIT_LENGTH/UNIT_TIME
+                    // internal units, not weighted
 
-                float_X previousMomentumVectorLength = pmacc::math::l2norm(electron[momentum_]);
-                // internal units, scaled
+                    float_X previousMomentumVectorLength = pmacc::math::l2norm(electron[momentum_]);
+                    // internal units, scaled
 
-                // case: not moving electron, --> no need to resize vector
-                if(previousMomentumVectorLength == 0._X)
-                    previousMomentumVectorLength = 1._X;
+                    // case: not moving electron, --> no need to resize vector
+                    if(previousMomentumVectorLength == 0._X)
+                        previousMomentumVectorLength = 1._X;
 
-                // if previous momentum == 0, discards electron
-                // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
-                electron[momentum_]
-                    *= newElectronMomentum * electron[weighting_] * 1._X / previousMomentumVectorLength;
+                    // if previous momentum == 0, discards electron
+                    // UNIT_MASS * UNIT_LENGTH / UNIT_TIME, weighted
+                    electron[momentum_]
+                        *= newElectronMomentum * electron[weighting_] * 1._X / previousMomentumVectorLength;
                 });
         }
     };

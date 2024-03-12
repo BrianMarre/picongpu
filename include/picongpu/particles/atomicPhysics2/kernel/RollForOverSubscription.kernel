@@ -74,7 +74,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_LocalRejectionProbabilityCacheDataBox localRejectionProbabilityCacheBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -102,33 +102,34 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachLocalIonBoxEntry(
                 [&](T_Worker const& worker, auto& ion)
                 {
-                uint32_t const binIndex = ion[binIndex_];
-                uint8_t const processClass = ion[processClass_];
+                    uint32_t const binIndex = ion[binIndex_];
+                    uint8_t const processClass = ion[processClass_];
 
-                namespace enums = picongpu::particles::atomicPhysics2::enums;
+                    namespace enums = picongpu::particles::atomicPhysics2::enums;
 
-                bool const processUsesElectronHistogramWeight
-                    = enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(processClass);
+                    bool const processUsesElectronHistogramWeight
+                        = enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(processClass);
 
-                bool const usesNotOverSubcribedBin
-                    = (rejectionProbabilityCache.rejectionProbability(binIndex) <= 0._X);
+                    bool const usesNotOverSubcribedBin
+                        = (rejectionProbabilityCache.rejectionProbability(binIndex) <= 0._X);
 
-                if constexpr(picongpu::atomicPhysics2::debug::kernel::rollForOverSubscription::PRINT_DEBUG_TO_CONSOLE)
-                {
-                    if(!usesNotOverSubcribedBin && processUsesElectronHistogramWeight && ion[accepted_])
+                    if constexpr(picongpu::atomicPhysics2::debug::kernel::rollForOverSubscription::
+                                     PRINT_DEBUG_TO_CONSOLE)
                     {
-                        picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion);
+                        if(!usesNotOverSubcribedBin && processUsesElectronHistogramWeight && ion[accepted_])
+                        {
+                            picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion);
+                        }
                     }
-                }
 
-                if((!ion[accepted_]) || (!processUsesElectronHistogramWeight) || usesNotOverSubcribedBin)
-                    return;
+                    if((!ion[accepted_]) || (!processUsesElectronHistogramWeight) || usesNotOverSubcribedBin)
+                        return;
 
-                if(rngGenerator() < rejectionProbabilityCache.rejectionProbability(binIndex))
-                {
-                    // reject transition
-                    ion[accepted_] = false;
-                }
+                    if(rngGenerator() < rejectionProbabilityCache.rejectionProbability(binIndex))
+                    {
+                        // reject transition
+                        ion[accepted_] = false;
+                    }
                 });
         }
     };
