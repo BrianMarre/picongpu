@@ -167,7 +167,6 @@ namespace picongpu
                             particleLoadOffset,
                             numParticlesCurrentBatch);
 
-
                         pmacc::particles::operations::splitIntoListOfFrames(
                             *speciesTmp,
                             mappedFrame,

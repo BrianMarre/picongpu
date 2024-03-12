@@ -50,7 +50,6 @@ namespace picongpu
             using SuperCellSize = typename Mapping::SuperCellSize;
 
             PMACC_SMEM(worker, sh_sumJ, float3_X);
-
             auto onlyMaster = lockstep::makeMaster(worker);
 
             onlyMaster([&]() { sh_sumJ = float3_X::create(0.0); });

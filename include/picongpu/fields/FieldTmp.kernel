@@ -82,6 +82,7 @@ namespace picongpu
             using SuperCellSize = typename T_BlockDescription::SuperCellSize;
 
             DataSpace<simDim> const superCellIdx(mapper.getSuperCellIndex(worker.blockDomIdxND()));
+
             auto accFilter = particleFilter(worker, superCellIdx - mapper.getGuardingSuperCells());
 
             namespace particleAccAlgos = pmacc::particles::algorithm::acc;

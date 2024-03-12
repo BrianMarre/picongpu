@@ -67,7 +67,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())))
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()))
                 - areaMapping.getGuardingSuperCells();
 
             auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
@@ -116,11 +116,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     float_X const speciesStateLimitTimeStep = 1._X / (lossRateState);
                     // 1/(1/UNIT_TIME) = UNIT_TIME
 
-                    cupla::atomicMin(
+                    // UNIT_TIME
+                    alpaka::atomicMin(
                         worker.getAcc(),
                         &timeStep, // UNIT_TIME
-                        speciesStateLimitTimeStep * picongpu::atomicPhysics2::timeStepAlpha);
-                    // UNIT_TIME
+                        speciesStateLimitTimeStep * picongpu::atomicPhysics2::timeStepAlpha,
+                        ::alpaka::hierarchy::Threads{});
                 });
         }
     };

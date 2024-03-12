@@ -37,6 +37,7 @@ namespace pmacc
 {
     /**
      * Manages a pool of ComputeDeviceQueues and gives access to them.
+     *
      * This class is a singleton.
      */
     class QueueController

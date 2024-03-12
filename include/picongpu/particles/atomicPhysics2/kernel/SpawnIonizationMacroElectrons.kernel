@@ -110,7 +110,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             constexpr uint32_t frameSize = T_IonBox::frameSize;
 
             pmacc::DataSpace<picongpu::simDim> const superCellIdx
-                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -218,7 +218,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                         uint32_t const temp = numberIonizationElectrons;
                         // update global counter
-                        cupla::atomicAdd(worker.getAcc(), &totalNumberMacroElectronsToSpawn, temp);
+                        alpaka::atomicAdd(
+                            worker.getAcc(),
+                            &totalNumberMacroElectronsToSpawn,
+                            temp,
+                            ::alpaka::hierarchy::Threads{});
                     },
                     numberIonizationElectronsCtxArr);
                 worker.sync();
@@ -278,8 +282,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             if(numberIonizationElectrons == static_cast<uint32_t>(0u))
                                 return;
 
-                            uint32_t const globalSlotIndex
-                                = cupla::atomicAdd(worker.getAcc(), &spawnCounter, static_cast<uint32_t>(1u));
+                            uint32_t const globalSlotIndex = alpaka::atomicAdd(
+                                worker.getAcc(),
+                                &spawnCounter,
+                                static_cast<uint32_t>(1u),
+                                ::alpaka::hierarchy::Threads{});
 
                             uint32_t const electronFrameIndex = (globalSlotIndex + offsetLowFrame) / frameSize;
                             uint32_t const localSlotIndex = (globalSlotIndex + offsetLowFrame) % frameSize;

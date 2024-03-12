@@ -37,11 +37,13 @@ namespace pmacc
     private:
         /** native alpaka event */
         ComputeDeviceEvent event;
+
         /** native alpaka queue where the event is recorded
          *
          *  only valid if isRecorded is true
          */
         std::optional<ComputeDeviceQueue> stream;
+
         /** state if a recorded event is finished
          *
          * avoids that alpaka calls backend API methods after `isFinished()` returns the first time true

@@ -26,6 +26,11 @@
 
 #include <alpaka/alpaka.hpp>
 
+#include "pmacc/alpakaHelper/Device.hpp"
+#include "pmacc/alpakaHelper/acc.hpp"
+
+#include <alpaka/alpaka.hpp>
+
 namespace pmacc
 {
     Queue::Queue() : queue(ComputeDeviceQueue(manager::Device<ComputeDevice>::get().current()))

@@ -26,6 +26,7 @@
 #include "pmacc/alpakaHelper/Device.hpp"
 #include "pmacc/alpakaHelper/acc.hpp"
 #include "pmacc/eventSystem/events/ComputeEventHandle.hpp"
+
 #include "pmacc/types.hpp"
 
 namespace pmacc
@@ -74,7 +75,6 @@ namespace pmacc
         }
         return finished;
     }
-
 
     void ComputeEvent::recordEvent(ComputeDeviceQueue const& stream)
     {

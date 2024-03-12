@@ -52,6 +52,7 @@ namespace picongpu
         DINLINE void operator()(T_Worker const& worker, ParBox parBox, CounterBox counterBox, Mapping mapper) const
         {
             const DataSpace<simDim> superCellIdx(mapper.getSuperCellIndex(worker.blockDomIdxND()));
+
             /* counterBox has no guarding supercells*/
             const DataSpace<simDim> superCellIdxNoGuard = superCellIdx - mapper.getGuardingSuperCells();
 

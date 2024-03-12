@@ -219,6 +219,7 @@ namespace picongpu
                         totalCellIdx_,
                         rangeMapper,
                         rp.particleFilter);
+
                 counterBuffer.deviceToHost();
                 log<picLog::INPUT_OUTPUT>("openPMD:  ( end ) copy particle to host: %1%") % name;
                 eventSystem::getTransactionEvent().waitForFinished();

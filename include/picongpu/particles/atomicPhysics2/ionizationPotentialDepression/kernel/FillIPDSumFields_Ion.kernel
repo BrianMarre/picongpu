@@ -81,7 +81,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             T_SumChargeSquaredIonsFieldDataBox localSumChargeSquaredBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -131,13 +131,26 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
                 });
 
             // use atomic add to write worker partial sums for species back to superCell field
-            cupla::atomicAdd(worker.getAcc(), &(localSumWeightAllBox(superCellFieldIdx)), sumWeight);
-            cupla::atomicAdd(
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(localSumWeightAllBox(superCellFieldIdx)),
+                sumWeight,
+                ::alpaka::hierarchy::Threads{});
+            alpaka::atomicAdd(
                 worker.getAcc(),
                 &(localSumTemperatureFunctionalBox(superCellFieldIdx)),
-                sumTemperatureFunctional);
-            cupla::atomicAdd(worker.getAcc(), &(localSumChargeBox(superCellFieldIdx)), sumChargeNumber);
-            cupla::atomicAdd(worker.getAcc(), &(localSumChargeSquaredBox(superCellFieldIdx)), sumChargeNumberSquared);
+                sumTemperatureFunctional,
+                ::alpaka::hierarchy::Threads{});
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(localSumChargeBox(superCellFieldIdx)),
+                sumChargeNumber,
+                ::alpaka::hierarchy::Threads{});
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(localSumChargeSquaredBox(superCellFieldIdx)),
+                sumChargeNumberSquared,
+                ::alpaka::hierarchy::Threads{});
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel

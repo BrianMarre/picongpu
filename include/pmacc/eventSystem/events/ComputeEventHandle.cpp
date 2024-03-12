@@ -23,6 +23,8 @@
 
 #include "pmacc/alpakaHelper/acc.hpp"
 
+#include "pmacc/alpakaHelper/acc.hpp"
+
 namespace pmacc
 {
     ComputeEventHandle::ComputeEventHandle(ComputeEvent* const evPointer) : event(evPointer)

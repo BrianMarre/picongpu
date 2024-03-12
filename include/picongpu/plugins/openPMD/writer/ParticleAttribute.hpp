@@ -157,6 +157,18 @@ namespace picongpu
                     return;
                 }
 
+                auto unitMap = convertToUnitDimension(unitDimension);
+
+                record.setUnitDimension(unitMap);
+                record.setAttribute("macroWeighted", macroWeighted);
+                record.setAttribute("weightingPower", weightingPower);
+
+                /* @todo check if always correct at this point,
+                 * depends on attribute and MW-solver/pusher implementation
+                 */
+                float_X const timeOffset = 0.0;
+                record.setAttribute("timeOffset", timeOffset);
+
                 log<picLog::INPUT_OUTPUT>("openPMD:  (begin) write species attribute: %1%") % Identifier::getName();
 
                 for(uint32_t d = 0; d < components; d++)

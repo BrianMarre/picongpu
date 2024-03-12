@@ -77,7 +77,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             T_SumWeightElectronsFieldDataBox localSumElectronWeightBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -100,26 +100,35 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             forEachLocalParticleBoxEntry(
                 [&sumWeight, &sumTemperatureFunctional, &sumElectronWeight](T_Worker const& worker, auto& electron)
                 {
-                    // unitless * 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-                    float_X const weightNormalized
-                        = electron[weighting_] / picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
+                // unitless * 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+                float_X const weightNormalized
+                    = electron[weighting_] / picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
 
-                    // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-                    sumTemperatureFunctional
-                        += T_TemperatureFunctor::term(electron, precisionCast<float_64>(weightNormalized));
+                // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+                sumTemperatureFunctional
+                    += T_TemperatureFunctor::term(electron, precisionCast<float_64>(weightNormalized));
 
-                    // weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
-                    sumWeight += weightNormalized;
-                    sumElectronWeight += weightNormalized;
+                // weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
+                sumWeight += weightNormalized;
+                sumElectronWeight += weightNormalized;
                 });
 
             // write worker partial sums for species to superCell field
-            cupla::atomicAdd(worker.getAcc(), &(localSumWeightBox(superCellFieldIdx)), sumWeight);
-            cupla::atomicAdd(
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(localSumWeightBox(superCellFieldIdx)),
+                sumWeight,
+                ::alpaka::hierarchy::Threads{});
+            alpaka::atomicAdd(
                 worker.getAcc(),
                 &(localSumTemperatureFunctionalBox(superCellFieldIdx)),
-                sumTemperatureFunctional);
-            cupla::atomicAdd(worker.getAcc(), &(localSumElectronWeightBox(superCellFieldIdx)), sumElectronWeight);
+                sumTemperatureFunctional,
+                ::alpaka::hierarchy::Threads{});
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(localSumElectronWeightBox(superCellFieldIdx)),
+                sumElectronWeight,
+                ::alpaka::hierarchy::Threads{});
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::kernel

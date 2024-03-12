@@ -25,6 +25,7 @@
 
 #include "pmacc/eventSystem/tasks/DeviceTask.hpp"
 
+
 namespace pmacc
 {
     class TaskKernel : public DeviceTask

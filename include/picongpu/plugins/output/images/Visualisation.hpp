@@ -283,6 +283,7 @@ namespace picongpu
             constexpr uint32_t cellsPerSupercell = pmacc::math::CT::volume<SuperCellSize>::type::value;
 
             DataSpace<simDim> const suplercellIdx = mapper.getSuperCellIndex(worker.blockDomIdxND());
+
             // offset of the supercell (in cells) to the origin of the local domain
             DataSpace<simDim> const supercellCellOffset(
                 (suplercellIdx - mapper.getGuardingSuperCells()) * SuperCellSize::toRT());
@@ -396,6 +397,7 @@ namespace picongpu
             auto isImageThreadCtx = lockstep::makeVar<bool>(forEachCell, false);
 
             DataSpace<simDim> const suplercellIdx = mapper.getSuperCellIndex(worker.blockDomIdxND());
+
             // offset of the supercell (in cells) to the origin of the local domain
             DataSpace<simDim> const supercellCellOffset(
                 (suplercellIdx - mapper.getGuardingSuperCells()) * SuperCellSize::toRT());
