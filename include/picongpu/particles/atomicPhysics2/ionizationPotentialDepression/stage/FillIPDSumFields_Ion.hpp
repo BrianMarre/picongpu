@@ -42,7 +42,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
      * @tparam T_TemperatureFunctional functional to use for temperature calculation
      */
     template<typename T_IonSpecies, typename T_TemperatureFunctional>
-    struct FillIPDSumFields
+    struct FillIPDSumFields_Ion
     {
         // might be alias, from here on out no more
         //! resolved type of alias T_ParticleSpecies
@@ -62,16 +62,19 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
 
             // pointer to memory, we will only work on device, no sync required
             // init pointer to particles and localSumFields
-            auto& ions = *dc.get<ParticleSpecies>(IonSpecies::FrameType::getName());
+            auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            auto& localSumWeightAllField = *dc.get<s_IPD::localHelperFields::SumWeightAllField>("SumWeightAllField");
+            auto& localSumWeightAllField
+                = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
             auto& localSumTemperatureFunctionalField
-                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField>("SumTemperatureFunctionalField");
+                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
+                    "SumTemperatureFunctionalField");
 
             auto& localSumChargeNumberIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField>("SumChargeNumberIonsField");
+                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
+                    "SumChargeNumberIonsField");
             auto& localSumChargeNumberSquaredIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField>(
+                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
                     "SumChargeNumberSquaredIonsField");
 
             // macro for call of kernel on every superCell, see pull request #4321

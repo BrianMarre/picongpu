@@ -37,6 +37,7 @@
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/ParticlesFunctors.hpp"
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"
@@ -778,8 +779,7 @@ namespace picongpu
         {
             // core algorithm helper fields
             picongpu::particles::atomicPhysics2::AtomicPhysicsSuperCellFields::create(dataConnector, *cellDescription);
-            // IPD helper fields
-            picongpu::IPDModel::createHelperFields(dataConnector, *cellDescription);
+            picongpu::atomicPhysics2::IPDModel::createHelperFields(dataConnector, *cellDescription);
         }
 
         /** load the atomic input files, for each create an atomicData data base object

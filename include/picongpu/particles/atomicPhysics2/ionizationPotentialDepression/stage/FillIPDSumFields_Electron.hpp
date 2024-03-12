@@ -42,7 +42,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
      * @tparam T_TemperatureFunctional functional to use for temperature calculation
      */
     template<typename T_ElectronSpecies, typename T_TemperatureFunctional>
-    struct FillIPDSumFields
+    struct FillIPDSumFields_Electron
     {
         // might be alias, from here on out no more
         //! resolved type of alias T_ParticleSpecies
@@ -63,14 +63,17 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
 
             // pointer to memory, we will only work on device, no sync required
             // init pointer to particles and localSumFields
-            auto& ions = *dc.get<ParticleSpecies>(ElectronSpecies::FrameType::getName());
+            auto& ions = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName());
 
-            auto& localSumWeightAllField = *dc.get<s_IPD::localHelperFields::SumWeightAllField>("SumWeightAllField");
+            auto& localSumWeightAllField
+                = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
             auto& localSumTemperatureFunctionalField
-                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField>("SumTemperatureFunctionalField");
+                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
+                    "SumTemperatureFunctionalField");
 
             auto& localSumWeightElectronField
-                = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
+                = *dc.get<s_IPD::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
+                    "SumWeightElectronsField");
 
             // macro for call of kernel on every superCell, see pull request #4321
             PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Electron<T_TemperatureFunctional>(), workerCfg)

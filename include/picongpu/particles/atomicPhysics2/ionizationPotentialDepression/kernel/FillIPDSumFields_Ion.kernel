@@ -103,13 +103,13 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             float_X sumChargeNumberSquared = 0._X;
 
             forEachLocalParticleBoxEntry(
-                [&sumWeight, &sumTemperatureFunctional, &sumCharge, &sumChargeNumberSquared](
+                [&sumWeight, &sumTemperatureFunctional, &sumChargeNumber, &sumChargeNumberSquared](
                     T_Worker const& worker,
                     auto& ion)
                 {
                     // unitless * 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                     float_X const weightNormalized
-                        = ion[weighting_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
+                        = ion[weighting_] / picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
 
                     // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                     sumTemperatureFunctional

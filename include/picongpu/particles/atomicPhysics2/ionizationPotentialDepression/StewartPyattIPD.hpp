@@ -56,23 +56,27 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         {
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localSumWeightAllField = *dc.get<s_IPD::localHelperFields::SumWeightAllField>("SumWeightAllField");
+            auto& localSumWeightAllField
+                = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
             localSumWeightAllField.getDeviceBuffer().setValue(0._X);
 
             auto& localSumTemperatureFunctionalField
-                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField>("SumTemperatureFunctionalField");
+                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
+                    "SumTemperatureFunctionalField");
             localSumTemperatureFunctionalField.getDeviceBuffer().setValue(0._X);
 
             auto& localSumWeightElectronField
-                = *dc.get<s_IPD::localHelperFields::SumWeigthElectronsField>("SumWeightElectronsField");
+                = *dc.get<s_IPD::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
+                    "SumWeightElectronsField");
             localSumWeightElectronField.getDeviceBuffer().setValue(0._X);
 
             auto& localSumChargeNumberIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField>("SumChargeNumberIonsField");
+                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
+                    "SumChargeNumberIonsField");
             localSumChargeNumberIonsField.getDeviceBuffer().setValue(0._X);
 
             auto& localSumChargeNumberSquaredIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField>(
+                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
                     "SumChargeNumberSquaredIonsField");
             localSumChargeNumberSquaredIonsField.getDeviceBuffer().setValue(0._X);
         }
@@ -86,25 +90,25 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             // create sumFields
             //{
             auto sumWeightAllField
-                = std::make_unique<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>(*mappingDesc);
+                = std::make_unique<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>(mappingDesc);
             dataConnector.consume(std::move(sumWeightAllField));
             auto sumTemperatureFunctionalField
                 = std::make_unique<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
-                    *mappingDesc);
+                    mappingDesc);
             dataConnector.consume(std::move(sumTemperatureFunctionalField));
 
             auto sumWeightElectronsField
                 = std::make_unique<s_IPD::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
-                    *mappingDesc);
+                    mappingDesc);
             dataConnector.consume(std::move(sumWeightElectronsField));
 
             auto sumChargeNumberIonsField
                 = std::make_unique<s_IPD::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
-                    *mappingDesc);
+                    mappingDesc);
             dataConnector.consume(std::move(sumChargeNumberIonsField));
             auto sumChargeNumberSquaredIonsField
                 = std::make_unique<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
-                    *mappingDesc);
+                    mappingDesc);
             dataConnector.consume(std::move(sumChargeNumberSquaredIonsField));
             //}
 
@@ -113,19 +117,19 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             // in UNIT_LENGTH, not weighted
             auto localDebyeLengthField
                 = std::make_unique<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
-                    *mappingDesc);
+                    mappingDesc);
             dataConnector.consume(std::move(localDebyeLengthField));
 
             // z^star IPD input field, z^star = = average(q^2) / average(q) ;for q charge number of ion, unitless,
             //  not weighted
             auto localZStarField
-                = std::make_unique<s_IPD::localHelperFields::localZStarField<picongpu::MappingDesc>>(*mappingDesc);
+                = std::make_unique<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>(mappingDesc);
             dataConnector.consume(std::move(localZStarField));
 
             // local k_Boltzman * Temperature field, in eV
             auto localTemperatureEnergyField
                 = std::make_unique<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
-                    *mappingDesc);
+                    mappingDesc);
             dataConnector.consume(std::move(localTemperatureEnergyField));
             //}
         }
@@ -140,10 +144,11 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         template<typename T_IPDIonSpeciesList, typename T_IPDElectronSpeciesList>
         HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc, uint32_t const)
         {
-            using ForEachElectronSpeciesFillSumFields = pmacc::meta::
-                ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Electron<boost::mpl::_1, T_TemperatureFunctor>>;
+            using ForEachElectronSpeciesFillSumFields = pmacc::meta::ForEach<
+                T_IPDElectronSpeciesList,
+                s_IPD::stage::FillIPDSumFields_Electron<boost::mpl::_1, T_TemperatureFunctor>>;
             using ForEachIonSpeciesFillSumFields = pmacc::meta::
-                ForEach<IPDIonSpecies, s_IPD::stage::FillIPDSumFields_Ion<boost::mpl::_1, T_TemperatureFunctor>>;
+                ForEach<T_IPDIonSpeciesList, s_IPD::stage::FillIPDSumFields_Ion<boost::mpl::_1, T_TemperatureFunctor>>;
 
             // reset IPD SumFields
             resetSumFields();
@@ -170,8 +175,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         template<typename T_AtomicPhysicsIonSpeciesList>
         HINLINE static void applyPressureIonization(picongpu::MappingDesc const mappingDesc, uint32_t const)
         {
-            using ForEachIonSpeciesApplyPressureIonization = pmacc::meta::
-                ForEach<T_AtomicPhysicsIonSpeciesList, s_IPD::stage::ApplyPressureIonization<boost::mpl::_1>>;
+            using ForEachIonSpeciesApplyPressureIonization = pmacc::meta::ForEach<
+                T_AtomicPhysicsIonSpeciesList,
+                s_IPD::stage::ApplyPressureIonization<boost::mpl::_1, StewartPyattIPD<T_TemperatureFunctor>>>;
 
             ForEachIonSpeciesApplyPressureIonization{}(mappingDesc);
         };
