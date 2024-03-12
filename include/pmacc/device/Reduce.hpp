@@ -41,17 +41,25 @@ namespace pmacc
         class Reduce
         {
         public:
+<<<<<<< HEAD
             /** Constructor
              *
              * Don't create a instance before you have set you cupla device!
+=======
+            static constexpr uint32_t defaultSharedMmemSize = 4 * 1024;
+            /** Constructor
+             *
+             * The memory required to hold the reduced result on the host and device will be allocated on the first
+             * reduction call.
+             *
+>>>>>>> cfdeb632eab26043fee082aab08955a67b419f98
              * @param byte how many bytes in global gpu memory can reserved for the reduce algorithm
              * @param sharedMemByte limit the usage of shared memory per block on gpu
              */
-            HINLINE Reduce(const uint32_t byte, const uint32_t sharedMemByte = 4 * 1024)
+            HINLINE Reduce(const uint32_t byte, const uint32_t sharedMemByte = defaultSharedMmemSize)
                 : byte(byte)
                 , sharedMemByte(sharedMemByte)
             {
-                reduceBuffer = std::make_unique<GridBuffer<char, DIM1>>(DataSpace<DIM1>(byte));
             }
 
             /** Reduce elements in global gpu memory
@@ -83,7 +91,12 @@ namespace pmacc
 
                 if(threads > n)
                     threads = n;
-                auto* dest = (Type*) reduceBuffer->getDeviceBuffer().getBasePointer();
+
+                // lazy allocation of the result buffer
+                if(!reduceBuffer)
+                    reduceBuffer = std::make_unique<GridBuffer<char, DIM1>>(DataSpace<DIM1>(byte));
+
+                auto* dest = (Type*) reduceBuffer->getDeviceBuffer().data();
 
                 uint32_t blocks = threads / 2 / blockcount;
                 if(blocks == 0)
@@ -146,7 +159,7 @@ namespace pmacc
 
                 reduceBuffer->deviceToHost();
                 eventSystem::getTransactionEvent().waitForFinished();
-                return *((Type*) (reduceBuffer->getHostBuffer().getBasePointer()));
+                return *((Type*) (reduceBuffer->getHostBuffer().data()));
             }
 
         private:
@@ -268,12 +281,22 @@ namespace pmacc
                 return getThreadsPerBlock(std::min(sharedBorder, n));
             }
 
+<<<<<<< HEAD
             //! global gpu buffer for reduce steps
             std::unique_ptr<GridBuffer<char, DIM1>> reduceBuffer;
             //! buffer size limit in bytes on gpu
             uint32_t byte;
             //! shared memory limit in byte for one block
             uint32_t sharedMemByte;
+=======
+            //! buffer size limit in bytes on gpu
+            uint32_t byte;
+            //! shared memory limit in byte for one block
+            uint32_t sharedMemByte = defaultSharedMmemSize;
+
+            //! global gpu buffer for reduce steps
+            std::unique_ptr<GridBuffer<char, DIM1>> reduceBuffer;
+>>>>>>> cfdeb632eab26043fee082aab08955a67b419f98
         };
 
     } // namespace device

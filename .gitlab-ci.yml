@@ -42,7 +42,7 @@ pull-request-validation:
     - source $CI_PROJECT_DIR/share/ci/git_merge.sh
     - pip3 install -U -r requirements_pre-commit.txt
     - pre-commit install
-    - pre-commit run --all-files --hook-stage manual
+    - pre-commit run --all-files --hook-stage manual --show-diff-on-failure
   tags:
     - x86_64
     - cpuonly
@@ -110,6 +110,20 @@ pmacc-compile-reduced-matrix:
     include:
       - artifact: compile.yml
         job: pmacc-generate-reduced-matrix
+    strategy: depend
+
+pmacc-header-generate-reduced-matrix:
+  variables:
+    PIC_INPUTS: "pmacc_header"
+    TEST_TUPLE_NUM_ELEM: 1
+  extends: ".base_generate-reduced-matrix"
+
+pmacc-header-compile-reduced-matrix:
+  stage: test
+  trigger:
+    include:
+      - artifact: compile.yml
+        job: pmacc-header-generate-reduced-matrix
     strategy: depend
 
 picongpu-unittest-generate-reduced-matrix:

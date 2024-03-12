@@ -272,14 +272,14 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
             // overflow bin
             if(!inRange(energy))
             {
-                cupla::atomicAdd(worker.getAcc(), &(this->overFlowBinWeight), weight);
+                alpaka::atomicAdd(worker.getAcc(), &(this->overFlowBinWeight), weight, ::alpaka::hierarchy::Threads{});
                 return;
             }
 
             // regular bin
             uint32_t binIndex = getBinIndex(energy);
 
-            cupla::atomicAdd(worker.getAcc(), &(this->binWeights0[binIndex]), weight);
+            alpaka::atomicAdd(worker.getAcc(), &(this->binWeights0[binIndex]), weight, ::alpaka::hierarchy::Threads{});
             return;
         }
 
@@ -300,7 +300,11 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
                 if(!debugCheckBinIndexInRange(binIndex))
                     return;
 
-            cupla::atomicAdd(worker.getAcc(), &(this->binDeltaWeights[binIndex]), weight);
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(this->binDeltaWeights[binIndex]),
+                weight,
+                ::alpaka::hierarchy::Threads{});
             return;
         }
 
@@ -339,7 +343,11 @@ namespace picongpu::particles::atomicPhysics2::electronDistribution
                 if(!debugCheckBinIndexInRange(binIndex))
                     return;
 
-            cupla::atomicAdd(worker.getAcc(), &(this->binDeltaEnergy[binIndex]), deltaEnergy);
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(this->binDeltaEnergy[binIndex]),
+                deltaEnergy,
+                ::alpaka::hierarchy::Threads{});
             return;
         }
 

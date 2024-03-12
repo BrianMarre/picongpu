@@ -87,8 +87,8 @@ namespace pmacc::lockstep
                  *
                  * This objects contains the functor and the starting parameter.
                  *
-                 * @tparam T_VectorGrid type which defines the grid extents (type must be castable to cupla dim3)
-                 * @tparam T_VectorBlock type which defines the block extents (type must be castable to cupla dim3)
+                 * @tparam T_VectorGrid type which defines the grid extents
+                 * @tparam T_VectorBlock type which defines the block extents
                  *
                  * @param gridExtent grid extent configuration for the kernel
                  * @param blockExtent block extent configuration for the kernel
@@ -99,9 +99,15 @@ namespace pmacc::lockstep
                  */
                 template<typename T_VectorGrid>
                 HINLINE auto operator()(T_VectorGrid const& gridExtent) const
-                    -> pmacc::exec::detail::KernelLauncher<KernelFunctor>
                 {
-                    return {m_kernelFunctor, m_metaData, gridExtent, T_WorkerCfg::getNumWorkers()};
+                    constexpr uint32_t dim = pmacc::exec::detail::GetDim<T_VectorGrid>::dim;
+                    auto blockExtent = DataSpace<dim>::create(1);
+                    blockExtent.x() = T_WorkerCfg::getNumWorkers();
+                    return pmacc::exec::detail::KernelLauncher<KernelFunctor, dim>{
+                        m_kernelFunctor,
+                        m_metaData,
+                        gridExtent,
+                        blockExtent};
                 }
 
                 /**
@@ -109,13 +115,16 @@ namespace pmacc::lockstep
                  */
                 template<typename T_VectorGrid>
                 HINLINE auto operator()(T_VectorGrid const& gridExtent, size_t const sharedMemByte) const
-                    -> pmacc::exec::detail::KernelLauncher<pmacc::exec::detail::KernelWithDynSharedMem<KernelFunctor>>
                 {
-                    return {
-                        pmacc::exec::detail::KernelWithDynSharedMem<KernelFunctor>(m_kernelFunctor, sharedMemByte),
-                        m_metaData,
-                        gridExtent,
-                        T_WorkerCfg::getNumWorkers()};
+                    constexpr uint32_t dim = pmacc::exec::detail::GetDim<T_VectorGrid>::dim;
+                    auto blockExtent = DataSpace<dim>::create(1);
+                    blockExtent.x() = T_WorkerCfg::getNumWorkers();
+                    return pmacc::exec::detail::
+                        KernelLauncher<pmacc::exec::detail::KernelWithDynSharedMem<KernelFunctor>, dim>{
+                            pmacc::exec::detail::KernelWithDynSharedMem<KernelFunctor>(m_kernelFunctor, sharedMemByte),
+                            m_metaData,
+                            gridExtent,
+                            blockExtent};
                 }
                 /**@}*/
             };

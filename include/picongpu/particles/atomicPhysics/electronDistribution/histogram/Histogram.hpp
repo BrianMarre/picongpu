@@ -149,15 +149,16 @@ namespace picongpu
                             // the value, as another thread may contribute to the same bin
                             if(index < maxNumBins) // bin already exists
                             {
-                                cupla::atomicAdd(acc, &(this->binWeights[index]), weight);
+                                alpaka::atomicAdd(worker.getAcc(), &(this->binWeights[index]), weight);
                             }
                             else
                             {
                                 // Otherwise we add it to a collection of new bins
-                                // Note: in current dev the namespace is different in cupla
-                                // get Index where to deposit it by atomic add to numNewBins
-                                // this assures that the same index is not used twice
-                                auto newBinIdx = cupla::atomicAdd<alpaka::hierarchy::Threads>(acc, &numNewBins, 1u);
+                                auto newBinIdx = alpaka::atomicAdd(
+                                    worker.getAcc(),
+                                    &numNewBins,
+                                    1u,
+                                    alpaka::hierarchy::Threads{});
                                 if(newBinIdx < maxNumNewBins)
                                 {
                                     newBinsWeights[newBinIdx] = weight;

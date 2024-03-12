@@ -142,7 +142,11 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
                 numberIonizationElectrons = chargeStatePressureIonizationState - currentChargeState;
 
                 // set flag that at least one ions was in unbound state
-                cupla::atomicExch(worker.getAcc(), &sharedState.foundUnbound, static_cast<uint32_t>(true));
+                alpaka::atomicExch(
+                    worker.getAcc(),
+                    &sharedState.foundUnbound,
+                    static_cast<uint32_t>(true),
+                    ::alpaka::hierarchy::Threads{});
             }
 
             return numberIonizationElectrons;
