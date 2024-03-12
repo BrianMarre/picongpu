@@ -101,8 +101,8 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             SharedState& sharedState,
             T_LocalTimeRemainingBox const,
             T_LocalFoundUnboundIonBox const,
-            T_AtomicStateDataBox const atomicStateBox,
             T_ChargeStateDataBox const chargeStateBox,
+            T_AtomicStateDataBox const atomicStateBox,
             T_PressureIonizationStateDataBox const pressureIonizationStateBox,
             T_IPDInputBoxes const...)
         {
@@ -168,6 +168,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             T_LocalFoundUnboundIonBox const,
             T_ChargeStateDataBox const,
             T_AtomicStateDataBox const,
+            T_PressureIonizationStateDataBox const,
             T_IPDInputBoxes const... ipdInputBoxes)
         {
             // eV
@@ -184,7 +185,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
     struct SuperCellFieldIndexFunctor : public s_interfaces::SharedDataBoxIndexFunctor<T_KernelConfigOptions...>
     {
         template<typename T_AreaMapping>
-        HDINLINE static pmacc::DataSpace<picongpu::simDim> get(
+        HDINLINE static pmacc::DataSpace<picongpu::simDim> getIndex(
             T_AreaMapping const areaMapping,
             pmacc::DataSpace<picongpu::simDim> const superCellIdx)
         {
@@ -198,7 +199,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
     struct WriteFoundUnboundToSuperCellField : public s_interfaces::WriteOutSharedStateFunctor<T_IPDModel>
     {
         template<
-            typename T_Index,
             typename T_SharedStateType,
             typename T_LocalTimeRemainingBox,
             typename T_LocalFoundUnboundIonBox,
@@ -211,9 +211,10 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
             T_SharedStateType const sharedState,
             T_LocalTimeRemainingBox const,
-            T_LocalFoundUnboundIonBox const localFoundUnboundIonBox,
+            T_LocalFoundUnboundIonBox localFoundUnboundIonBox,
             T_ChargeStateDataBox const,
             T_AtomicStateDataBox const,
+            T_PressureIonizationStateDataBox const,
             T_IPDInputBoxes const...)
         {
             uint32_t& foundUnbound = localFoundUnboundIonBox(superCellFieldIndex);

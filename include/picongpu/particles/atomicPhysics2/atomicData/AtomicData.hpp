@@ -932,7 +932,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     = ((atomicStateChargeState + 1) <= pressureIonizationStateChargeState);
                 if(!transitionIsIonization && !pressureIonizationIsDisabled)
                     throw std::runtime_error(
-                        "atomicPhysics ERROR: pressure ionization state[" + collectionIndexAtomicState
+                        "atomicPhysics ERROR: pressure ionization state[" + std::to_string(collectionIndexAtomicState)
                         + "] is no ionization state of corresponding atomic state");
 
                 CollectionIdx collectionIndexPressureIonizationState = atomicStateDataHostBox.findStateCollectionIndex(

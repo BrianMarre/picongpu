@@ -126,10 +126,8 @@ namespace picongpu::particles::creation
             pmacc::DataSpace<picongpu::simDim> const superCellIndex
                 = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
 
-            auto const sharedDataBoxIndex
-                = Modules::template SharedDataBoxIndexFunctor<T_KernelConfigOptions...>::getIndex(
-                    areaMapping,
-                    superCellIndex);
+            using IndexFunctor = typename Modules::template SharedDataBoxIndexFunctor<T_KernelConfigOptions...>;
+            auto const sharedDataBoxIndex = IndexFunctor::getIndex(areaMapping, superCellIndex);
 
             SourceSpeciesFramePtr sourceSpeciesFrame = sourceBox.getLastFrame(superCellIndex);
 
@@ -202,7 +200,7 @@ namespace picongpu::particles::creation
                      &sharedState,
                      &sharedDataBoxes...](uint32_t const slotIdx, TypeNumber& numberProductParticles)
                     {
-                        auto const sourceParticle = sourceSpeciesFrame[slotIdx];
+                        auto sourceParticle = sourceSpeciesFrame[slotIdx];
 
                         // empty slots never spawn P-particles
                         bool const slotNotOccupied = !static_cast<bool>(sourceParticle[multiMask_]);
@@ -220,7 +218,7 @@ namespace picongpu::particles::creation
                                 sharedState,
                                 sharedDataBoxes...);
 
-                        TypeNumber const temp = numberProductParticles;
+                        uint32_t const temp = static_cast<uint32_t>(numberProductParticles);
                         // update global counter
                         cupla::atomicAdd(worker.getAcc(), &totalNumberProductSpeciesParticlesToSpawn, temp);
                     },
@@ -380,7 +378,7 @@ namespace picongpu::particles::creation
             onlyMaster(
                 [&superCellIndex, &sharedDataBoxIndex, &sharedState, &sharedDataBoxes...]()
                 {
-                    Modules::WriteOutSharedStateFunctor::template write(
+                    Modules::template WriteOutSharedStateFunctor<T_KernelConfigOptions...>::template write(
                         superCellIndex,
                         sharedDataBoxIndex,
                         sharedState,
