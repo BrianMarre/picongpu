@@ -74,7 +74,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             T_ElectronBox const electronBox,
             T_SumWeightFieldDataBox localSumWeightBox,
             T_SumTemperatureFunctionalFieldDataBox localSumTemperatureFunctionalBox,
-            T_SumWeightElectronFieldBox localSumElectronWeightBox) const
+            T_SumWeightElectronsFieldDataBox localSumElectronWeightBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
                 areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
@@ -102,7 +102,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
                 {
                     // unitless * 1/TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                     float_X const weightNormalized
-                        = electron[weighting_] / picongpu::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
+                        = electron[weighting_] / picongpu::particles::TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE;
 
                     // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2 * weight / TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE
                     sumTemperatureFunctional

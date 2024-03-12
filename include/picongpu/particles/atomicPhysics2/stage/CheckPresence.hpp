@@ -30,7 +30,6 @@
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 #include "picongpu/particles/traits/GetAtomicDataType.hpp"
 
-#include <cstdint>
 #include <string>
 
 namespace picongpu::particles::atomicPhysics2::stage
