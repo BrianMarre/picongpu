@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -124,7 +124,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(chargeState > static_cast<uint32_t>(T_atomicNumber))
                 {
-                    printf("atomicPhysics ERROR: out of range chargeStateOrgaData.startIndexBlockAtomicStates() call\n");
+                    printf(
+                        "atomicPhysics ERROR: out of range chargeStateOrgaData.startIndexBlockAtomicStates() call\n");
                     return static_cast<T_Number>(0._X);
                 }
 
