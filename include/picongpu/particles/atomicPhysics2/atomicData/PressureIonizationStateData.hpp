@@ -82,7 +82,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param state collectionIndex of an atomic state
          */
-        HDINLINE CollectionIdx pressureIonizationState(CollectionIdx const state)
+        HDINLINE CollectionIdx pressureIonizationState(CollectionIdx const state) const
         {
             if constexpr(picongpu::atomicPhysics2::debug::atomicData::RANGE_CHECKS_IN_DATA_QUERIES)
                 if(state >= m_numberAtomicStates)
