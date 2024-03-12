@@ -99,10 +99,11 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
                     return;
                 }
 
-            cupla::atomicAdd(
+            alpaka::atomicAdd(
                 worker.getAcc(),
                 &(this->rateEntries[linearIndex(collectionIndex, u32(T_TransitionDataSet))]),
-                rate);
+                rate,
+                ::alpaka::hierarchy::Threads{});
         }
 
         /** add to cache entry, no atomics
@@ -147,7 +148,11 @@ namespace picongpu::particles::atomicPhysics2::localHelperFields
         template<typename T_Worker>
         HDINLINE void setPresent(T_Worker const& worker, uint32_t const collectionIndex, bool const status)
         {
-            cupla::atomicExch(worker.getAcc(), &(this->m_present[collectionIndex]), static_cast<uint32_t>(status));
+            alpaka::atomicExch(
+                worker.getAcc(),
+                &(this->m_present[collectionIndex]),
+                static_cast<uint32_t>(status),
+                ::alpaka::hierarchy::Threads{});
             return;
         }
 

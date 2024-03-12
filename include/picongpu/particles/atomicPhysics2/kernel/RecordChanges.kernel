@@ -85,7 +85,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 enums::IsProcess<T_TransitionDataBox::processClassGroup>::check(u8(T_ProcessClass)));
 
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -108,60 +108,60 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
-                    if constexpr(picongpu::atomicPhysics2::debug::kernel::recordChanges::CHECK_FOR_ACCEPTANCE)
-                        if(!ion[accepted_])
-                            printf("atomicPhysics ERROR: non accepted ion detected in recordChanges kernel\n");
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::recordChanges::CHECK_FOR_ACCEPTANCE)
+                    if(!ion[accepted_])
+                        printf("atomicPhysics ERROR: non accepted ion detected in recordChanges kernel\n");
 
-                    uint8_t const processClass = ion[processClass_];
+                uint8_t const processClass = ion[processClass_];
 
-                    // not a T_ProcessClass transition
-                    if((processClass) != u8(T_ProcessClass))
-                        return;
+                // not a T_ProcessClass transition
+                if((processClass) != u8(T_ProcessClass))
+                    return;
 
-                    uint32_t const transitionIndex = ion[transitionIndex_];
+                uint32_t const transitionIndex = ion[transitionIndex_];
 
-                    // get delta Energy transition
-                    [[maybe_unused]] float_X deltaEnergy = 0._X;
+                // get delta Energy transition
+                [[maybe_unused]] float_X deltaEnergy = 0._X;
+                if constexpr(enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(
+                                 u8(T_ProcessClass)))
+                {
+                    // electronic collisional process
+                    deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::
+                        get<T_AtomicStateDataBox, T_TransitionDataBox, T_ChargeStateBox...>(
+                            transitionIndex,
+                            atomicStateBox,
+                            transitionBox,
+                            chargeStateBox...);
+                }
+
+                uint32_t newAtomicStateCollectionIndex;
+
+                if constexpr(enums::IsProcess<enums::ProcessClassGroup::upward>::check(u8(T_ProcessClass)))
+                {
+                    // upward process
                     if constexpr(enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(
                                      u8(T_ProcessClass)))
-                    {
-                        // electronic collisional process
-                        deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::
-                            get<T_AtomicStateDataBox, T_TransitionDataBox, T_ChargeStateBox...>(
-                                transitionIndex,
-                                atomicStateBox,
-                                transitionBox,
-                                chargeStateBox...);
-                    }
+                        deltaEnergy = -deltaEnergy;
 
-                    uint32_t newAtomicStateCollectionIndex;
+                    // new state is upper state of transition
+                    newAtomicStateCollectionIndex = transitionBox.upperStateCollectionIndex(transitionIndex);
+                }
+                else
+                {
+                    // downward process, new state is lower state of transition
+                    newAtomicStateCollectionIndex = transitionBox.lowerStateCollectionIndex(transitionIndex);
+                }
 
-                    if constexpr(enums::IsProcess<enums::ProcessClassGroup::upward>::check(u8(T_ProcessClass)))
-                    {
-                        // upward process
-                        if constexpr(enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(
-                                         u8(T_ProcessClass)))
-                            deltaEnergy = -deltaEnergy;
+                // update atomic state
+                picongpu::particles::atomicPhysics2::SetAtomicState::op(
+                    atomicStateBox,
+                    ion,
+                    newAtomicStateCollectionIndex);
 
-                        // new state is upper state of transition
-                        newAtomicStateCollectionIndex = transitionBox.upperStateCollectionIndex(transitionIndex);
-                    }
-                    else
-                    {
-                        // downward process, new state is lower state of transition
-                        newAtomicStateCollectionIndex = transitionBox.lowerStateCollectionIndex(transitionIndex);
-                    }
-
-                    // update atomic state
-                    picongpu::particles::atomicPhysics2::SetAtomicState::op(
-                        atomicStateBox,
-                        ion,
-                        newAtomicStateCollectionIndex);
-
-                    // record used energy
-                    if constexpr(enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(
-                                     u8(T_ProcessClass)))
-                        electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);
+                // record used energy
+                if constexpr(enums::IsProcess<enums::ProcessClassGroup::electronicCollisional>::check(
+                                 u8(T_ProcessClass)))
+                    electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);
                 });
         }
     };

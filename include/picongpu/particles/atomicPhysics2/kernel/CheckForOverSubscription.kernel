@@ -66,7 +66,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_LocalRejectionProbabilityCacheDataBox localRejectionProbabilityCacheBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -90,7 +90,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 = localRejectionProbabilityCacheBox(superCellFieldIdx);
 
             // reset to initial value
-            onlyMaster([&histogramOverSubscribed]() { histogramOverSubscribed = static_cast<uint32_t>(false); });
+            onlyMaster([&histogramOverSubscribed]() {
+                histogramOverSubscribed = static_cast<uint32_t>(false); });
             worker.sync();
 
             /* check all bins for overSubscription
@@ -99,29 +100,33 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachBin(
                 [&worker, &histogram, &histogramOverSubscribed, &rejectionProbabilityCache](uint32_t const binIndex)
                 {
-                    float_X const weight0 = histogram.getBinWeight0(binIndex);
-                    float_X const deltaWeight = histogram.getBinDeltaWeight(binIndex);
+                float_X const weight0 = histogram.getBinWeight0(binIndex);
+                float_X const deltaWeight = histogram.getBinDeltaWeight(binIndex);
 
-                    float_X rejectionProbability;
+                float_X rejectionProbability;
 
-                    if(weight0 < deltaWeight)
-                    {
-                        // bin is oversubscribed by suggested changes
+                if(weight0 < deltaWeight)
+                {
+                    // bin is oversubscribed by suggested changes
 
-                        // calculate rejection probability
-                        rejectionProbability = math::max(
-                            // proportion of weight we want to reject
-                            (deltaWeight - weight0) / deltaWeight,
-                            // but at least one average one macro ion should be rejected
-                            TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE / deltaWeight);
+                    // calculate rejection probability
+                    rejectionProbability = math::max(
+                        // proportion of weight we want to reject
+                        (deltaWeight - weight0) / deltaWeight,
+                        // but at least one average one macro ion should be rejected
+                        TYPICAL_NUM_PARTICLES_PER_MACROPARTICLE / deltaWeight);
 
-                        // set flag that histogram has over subscribed bin
-                        cupla::atomicExch(worker.getAcc(), &histogramOverSubscribed, static_cast<uint32_t>(true));
-                    }
-                    else
-                        rejectionProbability = -1._X;
+                    // set flag that histogram has over subscribed bin
+                    alpaka::atomicExch(
+                        worker.getAcc(),
+                        &histogramOverSubscribed,
+                        static_cast<uint32_t>(true),
+                        ::alpaka::hierarchy::Threads{});
+                }
+                else
+                    rejectionProbability = -1._X;
 
-                    rejectionProbabilityCache.set(binIndex, rejectionProbability);
+                rejectionProbabilityCache.set(binIndex, rejectionProbability);
                 });
         }
     };

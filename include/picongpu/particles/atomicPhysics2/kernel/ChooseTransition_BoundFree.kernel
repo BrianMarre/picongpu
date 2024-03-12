@@ -124,7 +124,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     == u8(s_enums::TransitionOrderingFor<s_enums::TransitionDirection::upward>::ordering));
 
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -161,92 +161,91 @@ namespace picongpu::particles::atomicPhysics2::kernel
                  &cachedHistogram,
                  &rateCache](T_Worker const& worker, auto& ion)
                 {
-                    // debug
-                    checkForInvalidTransitionType(ion);
+                // debug
+                checkForInvalidTransitionType(ion);
 
-                    // reject already accepted macro-ions and other transitionTypes
-                    bool const selectedBoundFreeUpwardTransition
-                        = (ion[transitionIndex_] == u32(s_enums::TransitionDataSet::boundFreeUpward));
-                    if(ion[accepted_] || !selectedBoundFreeUpwardTransition)
-                        return;
+                // reject already accepted macro-ions and other transitionTypes
+                bool const selectedBoundFreeUpwardTransition
+                    = (ion[transitionIndex_] == u32(s_enums::TransitionDataSet::boundFreeUpward));
+                if(ion[accepted_] || !selectedBoundFreeUpwardTransition)
+                    return;
 
-                    auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
+                auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
 
-                    // get possible transitions' collectionIndices
-                    uint32_t const numberTransitions
-                        = numberTransitionsBox.numberOfTransitionsUp(atomicStateCollectionIndex);
-                    uint32_t const startIndexTransitionBlock
-                        = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
+                // get possible transitions' collectionIndices
+                uint32_t const numberTransitions
+                    = numberTransitionsBox.numberOfTransitionsUp(atomicStateCollectionIndex);
+                uint32_t const startIndexTransitionBlock
+                    = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
 
-                    if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::PRINT_DEBUG_TO_CONSOLE)
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::PRINT_DEBUG_TO_CONSOLE)
+                {
+                    printf(
+                        "stateIndex %u transitionType %u startIndexTransitionBlock %u numberTransitionsDown %u ",
+                        atomicStateCollectionIndex,
+                        ion[transitionIndex_],
+                        startIndexTransitionBlock,
+                        numberTransitions);
+                }
+
+                // get random number
+                float_X const r = rngGeneratorFloat();
+
+                // compare to cumulative sum of normalized transition rates to find choosen transition
+                constexpr uint32_t numberBins = T_Histogram::numberBins;
+
+                float_X cumSum = 0._X;
+                // electronic Ionization
+                if constexpr(T_electronicIonization)
+                {
+                    for(uint32_t transitionID = 0u; transitionID < numberTransitions; ++transitionID)
                     {
-                        printf(
-                            "stateIndex %u transitionType %u startIndexTransitionBlock %u numberTransitionsDown %u ",
-                            atomicStateCollectionIndex,
-                            ion[transitionIndex_],
-                            startIndexTransitionBlock,
-                            numberTransitions);
-                    }
-
-                    // get random number
-                    float_X const r = rngGeneratorFloat();
-
-                    // compare to cumulative sum of normalized transition rates to find choosen transition
-                    constexpr uint32_t numberBins = T_Histogram::numberBins;
-
-                    float_X cumSum = 0._X;
-                    // electronic Ionization
-                    if constexpr(T_electronicIonization)
-                    {
-                        for(uint32_t transitionID = 0u; transitionID < numberTransitions; ++transitionID)
+                        for(uint32_t binIndex = 0u; binIndex < numberBins; ++binIndex)
                         {
-                            for(uint32_t binIndex = 0u; binIndex < numberBins; ++binIndex)
+                            // 1/UNIT_TIME
+                            float_X const rateTransition = picongpu::particles::atomicPhysics2::rateCalculation::
+                                BoundFreeTransitionRates<T_n_max>::template rateCollisionalIonizationTransition<
+                                    T_ChargeStateDataDataBox,
+                                    T_AtomicStateDataDataBox,
+                                    T_BoundFreeTransitionDataBox>(
+                                    cachedHistogram.energy[binIndex],
+                                    cachedHistogram.binWidth[binIndex],
+                                    cachedHistogram.density[binIndex],
+                                    transitionID + startIndexTransitionBlock,
+                                    chargeStateDataDataBox,
+                                    atomicStateDataDataBox,
+                                    transitionDataBox);
+
+                            cumSum += rateTransition
+                                / rateCache.rate(
+                                    u32(s_enums::TransitionDataSet::boundFreeUpward),
+                                    atomicStateCollectionIndex);
+
+                            // inclusive limit, to make sure that r==1 is assigned a transition
+                            if(r <= cumSum)
                             {
-                                // 1/UNIT_TIME
-                                float_X const rateTransition = picongpu::particles::atomicPhysics2::rateCalculation::
-                                    BoundFreeTransitionRates<T_n_max>::template rateCollisionalIonizationTransition<
-                                        T_ChargeStateDataDataBox,
-                                        T_AtomicStateDataDataBox,
-                                        T_BoundFreeTransitionDataBox>(
-                                        cachedHistogram.energy[binIndex],
-                                        cachedHistogram.binWidth[binIndex],
-                                        cachedHistogram.density[binIndex],
-                                        transitionID + startIndexTransitionBlock,
-                                        chargeStateDataDataBox,
-                                        atomicStateDataDataBox,
-                                        transitionDataBox);
-
-                                cumSum += rateTransition
-                                    / rateCache.rate(
-                                        u32(s_enums::TransitionDataSet::boundFreeUpward),
-                                        atomicStateCollectionIndex);
-
-                                // inclusive limit, to make sure that r==1 is assigned a transition
-                                if(r <= cumSum)
-                                {
-                                    // found chosen transition
-                                    updateIon(
-                                        ion,
-                                        u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::
-                                               electronicIonization),
-                                        transitionID + startIndexTransitionBlock,
-                                        binIndex);
-                                    return;
-                                }
+                                // found chosen transition
+                                updateIon(
+                                    ion,
+                                    u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::electronicIonization),
+                                    transitionID + startIndexTransitionBlock,
+                                    binIndex);
+                                return;
                             }
                         }
                     }
-                    // field ionization
-                    /// @todo filed ionization, Brian Marre, 2023
-                    // down-ward bound-free transition
-                    /// @todo implement recombination, Brian Marre, 2023
+                }
+                // field ionization
+                /// @todo filed ionization, Brian Marre, 2023
+                // down-ward bound-free transition
+                /// @todo implement recombination, Brian Marre, 2023
 
-                    // select last resort, choose last possible transition
-                    updateIon(
-                        ion,
-                        u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::electronicIonization),
-                        startIndexTransitionBlock + numberTransitions - 1u,
-                        numberBins - 1u);
+                // select last resort, choose last possible transition
+                updateIon(
+                    ion,
+                    u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::electronicIonization),
+                    startIndexTransitionBlock + numberTransitions - 1u,
+                    numberBins - 1u);
                 });
         }
 

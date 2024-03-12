@@ -107,7 +107,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     == u8(s_enums::TransitionOrderingFor<s_enums::TransitionDirection::downward>::ordering));
 
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -128,66 +128,66 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     T_Worker const& worker,
                     auto& ion)
                 {
-                    // debug
-                    checkForInvalidTransitionType(ion);
+                // debug
+                checkForInvalidTransitionType(ion);
 
-                    bool const selectedAutonomousDownwardTransition
-                        = (ion[transitionIndex_] == u32(s_enums::TransitionDataSet::autonomousDownward));
-                    if(ion[accepted_] || !selectedAutonomousDownwardTransition)
+                bool const selectedAutonomousDownwardTransition
+                    = (ion[transitionIndex_] == u32(s_enums::TransitionDataSet::autonomousDownward));
+                if(ion[accepted_] || !selectedAutonomousDownwardTransition)
+                    return;
+
+                auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
+
+                // get possible transitions' collectionIndices
+                uint32_t const numberTransitionsDown
+                    = numberTransitionsBox.numberOfTransitionsDown(atomicStateCollectionIndex);
+                uint32_t const startIndexTransitionBlock
+                    = startIndexBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex);
+
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::PRINT_DEBUG_TO_CONSOLE)
+                {
+                    printf(
+                        "stateIndex %u transitionType %u startIndexTransitionBlock %u numberTransitionsDown %u ",
+                        atomicStateCollectionIndex,
+                        ion[transitionIndex_],
+                        startIndexTransitionBlock,
+                        numberTransitionsDown);
+                }
+
+                // get random number
+                float_X const r = rngGeneratorFloat();
+
+                // compare to cumulative sum of normalized transition rates to find choosen transition
+
+                float_X cumSum = 0._X;
+                for(uint32_t transitionID = 0u; transitionID < numberTransitionsDown; ++transitionID)
+                {
+                    cumSum += transitionDataBox.rate(transitionID + startIndexTransitionBlock)
+                        / rateCache.rate(
+                            u32(s_enums::TransitionDataSet::autonomousDownward),
+                            atomicStateCollectionIndex);
+
+                    // inclusive limit, to make sure that r==1 is assigned a transition
+                    if(r <= cumSum)
+                    {
+                        updateIon(
+                            ion,
+                            u8(s_enums::ProcessClass::autonomousIonization),
+                            startIndexTransitionBlock + transitionID);
                         return;
-
-                    auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
-
-                    // get possible transitions' collectionIndices
-                    uint32_t const numberTransitionsDown
-                        = numberTransitionsBox.numberOfTransitionsDown(atomicStateCollectionIndex);
-                    uint32_t const startIndexTransitionBlock
-                        = startIndexBox.startIndexBlockTransitionsDown(atomicStateCollectionIndex);
-
-                    if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::PRINT_DEBUG_TO_CONSOLE)
-                    {
-                        printf(
-                            "stateIndex %u transitionType %u startIndexTransitionBlock %u numberTransitionsDown %u ",
-                            atomicStateCollectionIndex,
-                            ion[transitionIndex_],
-                            startIndexTransitionBlock,
-                            numberTransitionsDown);
                     }
+                }
 
-                    // get random number
-                    float_X const r = rngGeneratorFloat();
+                // select last resort, choose last possible transition
+                updateIon(
+                    ion,
+                    u8(s_enums::ProcessClass::autonomousIonization),
+                    startIndexTransitionBlock + numberTransitionsDown - 1u);
 
-                    // compare to cumulative sum of normalized transition rates to find choosen transition
-
-                    float_X cumSum = 0._X;
-                    for(uint32_t transitionID = 0u; transitionID < numberTransitionsDown; ++transitionID)
-                    {
-                        cumSum += transitionDataBox.rate(transitionID + startIndexTransitionBlock)
-                            / rateCache.rate(
-                                u32(s_enums::TransitionDataSet::autonomousDownward),
-                                atomicStateCollectionIndex);
-
-                        // inclusive limit, to make sure that r==1 is assigned a transition
-                        if(r <= cumSum)
-                        {
-                            updateIon(
-                                ion,
-                                u8(s_enums::ProcessClass::autonomousIonization),
-                                startIndexTransitionBlock + transitionID);
-                            return;
-                        }
-                    }
-
-                    // select last resort, choose last possible transition
-                    updateIon(
-                        ion,
-                        u8(s_enums::ProcessClass::autonomousIonization),
-                        startIndexTransitionBlock + numberTransitionsDown - 1u);
-
-                    if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::PRINT_DEBUG_TO_CONSOLE)
-                    {
-                        printf(" transitionIndex %u\n", ion[transitionIndex_]);
-                    }
+                if constexpr(picongpu::atomicPhysics2::debug::kernel::chooseTransition::PRINT_DEBUG_TO_CONSOLE)
+                {
+                    printf(" transitionIndex %u\n", ion[transitionIndex_]);
+                }
                 });
         }
 

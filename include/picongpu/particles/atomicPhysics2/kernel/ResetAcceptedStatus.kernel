@@ -55,7 +55,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_IonBox const ionBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx
-                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc());
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
@@ -73,7 +73,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 return;
 
             // set accepted attribute to false
-            forEachLocalIonBoxEntry([](T_Worker const& worker, auto& particle) { particle[accepted_] = false; });
+            forEachLocalIonBoxEntry([](T_Worker const& worker, auto& particle) {
+                particle[accepted_] = false; });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel

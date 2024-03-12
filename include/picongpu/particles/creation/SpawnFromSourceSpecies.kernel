@@ -124,7 +124,7 @@ namespace picongpu::particles::creation
 
             // for accessing particle frame list of superCell
             pmacc::DataSpace<picongpu::simDim> const superCellIndex
-                = areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc())));
+                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
 
             using IndexFunctor = typename Modules::template SharedDataBoxIndexFunctor<T_KernelConfigOptions...>;
             auto const sharedDataBoxIndex = IndexFunctor::getIndex(areaMapping, superCellIndex);
@@ -220,7 +220,7 @@ namespace picongpu::particles::creation
 
                         uint32_t const temp = static_cast<uint32_t>(numberProductParticles);
                         // update global counter
-                        cupla::atomicAdd(worker.getAcc(), &totalNumberProductSpeciesParticlesToSpawn, temp);
+                        alpaka::atomicAdd(worker.getAcc(), &totalNumberProductSpeciesParticlesToSpawn, temp);
                     },
                     numberProductParticlesCtxArr);
                 worker.sync();
@@ -274,7 +274,7 @@ namespace picongpu::particles::creation
                                 return;
 
                             uint32_t const globalSlotIndex
-                                = cupla::atomicAdd(worker.getAcc(), &spawnCounter, static_cast<uint32_t>(1u));
+                                = alpaka::atomicAdd(worker.getAcc(), &spawnCounter, static_cast<uint32_t>(1u));
 
                             uint32_t const productSpeciesFrameIndex = (globalSlotIndex + offsetLowFrame) / frameSize;
                             uint32_t const localSlotIndex = (globalSlotIndex + offsetLowFrame) % frameSize;

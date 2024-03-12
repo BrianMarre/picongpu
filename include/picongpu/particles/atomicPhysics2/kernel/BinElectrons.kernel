@@ -73,7 +73,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_LocalElectronHistogramDataBox localElectronHistogramDataBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -94,12 +94,12 @@ namespace picongpu::particles::atomicPhysics2::kernel
             forEachLocalElectronBoxEntry(
                 [&histogram](T_Worker const& worker, auto& particle)
                 {
-                    float_X const energy = GetPhysicalEnergy::KineticEnergy(particle); // eV
+                float_X const energy = GetPhysicalEnergy::KineticEnergy(particle); // eV
 
-                    histogram.binParticle(
-                        worker,
-                        energy, // unit: eV
-                        particle[weighting_]); // unitless
+                histogram.binParticle(
+                    worker,
+                    energy, // unit: eV
+                    particle[weighting_]); // unitless
                 });
         }
     };

@@ -54,7 +54,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
         HDINLINE void operator()(T_Worker const& worker, T_AreaMapping const areaMapping, T_IonBox ionBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(DataSpace<simDim>(cupla::blockIdx(worker.getAcc()))));
+                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
 
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
@@ -65,7 +65,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // bin electrons
             forEachLocalIonBoxEntry(
                 [](T_Worker const& worker, auto& ion)
-                { picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion); });
+                {
+                picongpu::particles::atomicPhysics2::debug::printAtomicPhysicsIonToConsole(ion); });
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::kernel
