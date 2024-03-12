@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -67,8 +67,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param boxNumberTransitions number of transitions from the atomic state
          */
-        AtomicStateNumberOfTransitionsDataBox_Down(
-            typename S_DataBox::BoxNumber boxNumberOfTransitions)
+        AtomicStateNumberOfTransitionsDataBox_Down(typename S_DataBox::BoxNumber boxNumberOfTransitions)
             : m_boxNumberOfTransitions(boxNumberOfTransitions)
         {
         }
@@ -124,14 +123,12 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
         HINLINE DataBoxType getHostDataBox()
         {
-            return DataBoxType(
-                bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox());
+            return DataBoxType(bufferNumberOfTransitionsBlockTransitionsDown->getHostBuffer().getDataBox());
         }
 
         HINLINE DataBoxType getDeviceDataBox()
         {
-            return DataBoxType(
-                bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox());
+            return DataBoxType(bufferNumberOfTransitionsBlockTransitionsDown->getDeviceBuffer().getDataBox());
         }
 
         HINLINE void hostToDevice()

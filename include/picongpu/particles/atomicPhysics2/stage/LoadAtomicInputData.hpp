@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -74,7 +74,8 @@ namespace picongpu::particles::atomicPhysics2::stage
             PMACC_CASSERT_MSG(
                 Species_missing_pressure_ionization_file_name_flag,
                 HasFlag<FrameType, pressureIonizationStatesFileName<>>::type::value == true);
-            using AliasPressureIonizationFileName = typename GetFlagType<FrameType, pressureIonizationStatesFileName<>>::type;
+            using AliasPressureIonizationFileName =
+                typename GetFlagType<FrameType, pressureIonizationStatesFileName<>>::type;
             using PressureIonizationFileName = typename pmacc::traits::Resolve<AliasPressureIonizationFileName>::type;
 
             //      get bound-bound transitions input file name

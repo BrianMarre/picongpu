@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -105,12 +105,13 @@ namespace picongpu::particles::atomicPhysics2::debug
 
         // state data
         std::cout << "AtomicState Data" << std::endl;
-        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, PressureIonizationState" << std::endl;
-        std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown"
+        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, PressureIonizationState"
                   << std::endl;
+        std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown" << std::endl;
         for(uint32_t stateCollectionIndex = 0u; stateCollectionIndex < numberAtomicStates; stateCollectionIndex++)
         {
-            uint64_t const stateConfigNumber = static_cast<uint64_t>(atomicStateDataBox.configNumber(stateCollectionIndex));
+            uint64_t const stateConfigNumber
+                = static_cast<uint64_t>(atomicStateDataBox.configNumber(stateCollectionIndex));
             auto const stateLevelVector = S_ConfigNumber::getLevelVector(stateConfigNumber);
             auto const pressureIonizationStateCollectionIndex
                 = pressureIonizationStateDataBox.pressureIonizationState(stateCollectionIndex);
@@ -119,20 +120,20 @@ namespace picongpu::particles::atomicPhysics2::debug
 
             std::cout << "\t" << stateCollectionIndex << " : [" << stateConfigNumber << ", "
                       << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", "
-                      << precisionCast<uint16_t>(stateLevelVector).toString(",", "()") << "]: "
-                      << atomicStateDataBox.energy(stateCollectionIndex)
-                      << ",\t" << precisionCast<uint16_t>(levelVectorPressureIonizationState).toString(",", "()")
-                      << std::endl;
-            std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(stateCollectionIndex) << "/"
-                      << boundBoundNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
+                      << precisionCast<uint16_t>(stateLevelVector).toString(",", "()")
+                      << "]: " << atomicStateDataBox.energy(stateCollectionIndex) << ",\t"
+                      << precisionCast<uint16_t>(levelVectorPressureIonizationState).toString(",", "()") << std::endl;
+            std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(stateCollectionIndex)
+                      << "/" << boundBoundNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
                       << boundBoundStartIndexBox.startIndexBlockTransitionsUp(stateCollectionIndex) << "/"
                       << boundBoundStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex) << std::endl;
             std::cout << "\t\t f: " << boundFreeNumberTransitionsBox.numberOfTransitionsUp(stateCollectionIndex) << "/"
                       << boundFreeNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
                       << boundFreeStartIndexBox.startIndexBlockTransitionsUp(stateCollectionIndex) << "/"
                       << boundFreeStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex) << std::endl;
-            std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
-                      << autonomousStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex) << std::endl;
+            std::cout << "\t\t a: " << autonomousNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex)
+                      << ", " << autonomousStartIndexBox.startIndexBlockTransitionsDown(stateCollectionIndex)
+                      << std::endl;
         }
 
         // transitionData
