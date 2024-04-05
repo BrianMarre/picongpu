@@ -135,7 +135,7 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             auto const lowerStateConfigNumber = atomicStateDataBox.configNumber(lowerStateClctIdx);
 
             // eV
-            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition ::
+            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::
                 get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
                     transitionCollectionIndex,
                     atomicStateDataBox,
