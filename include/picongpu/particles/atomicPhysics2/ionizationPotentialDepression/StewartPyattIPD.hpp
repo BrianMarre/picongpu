@@ -23,13 +23,14 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDInterface.hpp"
+#include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/LocalIPDInputFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/ApplyPressureIonization.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/CalculateIPDInput.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Electron.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/stage/FillIPDSumFields_Ion.hpp"
+#include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_BoundFree.kernel"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalFoundUnboundIonField.hpp"
 
 #include <pmacc/meta/ForEach.hpp>
@@ -48,7 +49,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
      * average(A) = k_B * T, must follow
      */
     template<typename T_TemperatureFunctor>
-    struct StewartPyattIPD : IPDInterface
+    struct StewartPyattIPD : IPDModel
     {
     private:
         //! reset IPD support infrastructure before we accumulate over particles to calculate new IPD Inputs
@@ -82,7 +83,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         }
 
     public:
-        //! create all HelperFields required by the IPD model, called once in initialization of simulation
+        //! create the sum- and IPD-Input superCell fields required by Stewart-Pyatt
         HINLINE static void createHelperFields(
             picongpu::DataConnector& dataConnector,
             picongpu::MappingDesc const mappingDesc)
@@ -234,6 +235,31 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             // eV, not weighted
             return temperatureTimesk_Boltzman * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
                 / (2._X * (zStar + 1._X));
+        }
+
+        template<typename T_Kernel, typename T_WorkerCfg, typename... T_KernelInput>
+        HINLINE static void callKernelWithIPDInput(
+            pmacc::DataConnector& dc,
+            T_WorkerCfg workerCfg,
+            pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
+            T_KernelInput... kernelInput)
+        {
+            auto& localDebyeLengthField
+                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
+                    "LocalDebyeLengthField");
+            auto& localTemperatureEnergyField
+                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
+                    "LocalTemperatureEnergyField");
+            auto& localZStarField
+                = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
+
+            PMACC_LOCKSTEP_KERNEL(T_Kernel(), workerCfg)
+            (mapper.getGridDim())(
+                mapper,
+                kernelInput...,
+                localDebyeLengthField.getDeviceDataBox(),
+                localTemperatureEnergyField.getDeviceDataBox(),
+                localZStarField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression

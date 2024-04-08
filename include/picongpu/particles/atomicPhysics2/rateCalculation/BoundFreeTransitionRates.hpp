@@ -98,7 +98,8 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          * @tparam T_AtomicStateDataBox instantiated type of dataBox
          * @tparam T_BoundFreeTransitionDataBox instantiated type of dataBox
          *
-         * @param energyElectron kinetic energy of interacting free electron(/electron bin), [eV]
+         * @param energyElectron kinetic energy of interacting free electron(/electron bin), eV
+         * @param ionizationPotentialDepression in eV
          * @param transitionCollectionIndex index of transition in boundBoundTransitionDataBox
          * @param atomicStateDataBox access to atomic state property data
          * @param boundBoundTransitionDataBox access to bound-bound transition data
@@ -108,12 +109,12 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          * @attention assumes that chargeStateDataBox, atomicStateDataBox and boundFreeTransitionDataBox
          *      belong to the same AtomicData instance
          */
-        template<
-            typename T_ChargeStateDataBox,
-            typename T_AtomicStateDataBox,
-            typename T_BoundFreeTransitionDataBox>
+        template<typename T_ChargeStateDataBox, typename T_AtomicStateDataBox, typename T_BoundFreeTransitionDataBox>
         HDINLINE static float_X collisionalIonizationCrossSection(
-            float_X const energyElectron, // [eV]
+            // eV
+            float_X const energyElectron,
+            // eV
+            float_X const ionizationPotentialDepression,
             uint32_t const transitionCollectionIndex,
             T_ChargeStateDataBox const chargeStateDataBox,
             T_AtomicStateDataBox const atomicStateDataBox,
@@ -135,12 +136,12 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
             auto const lowerStateConfigNumber = atomicStateDataBox.configNumber(lowerStateClctIdx);
 
             // eV
-            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::
-                get<T_AtomicStateDataBox, T_BoundFreeTransitionDataBox, T_ChargeStateDataBox>(
-                    transitionCollectionIndex,
-                    atomicStateDataBox,
-                    boundFreeTransitionDataBox,
-                    chargeStateDataBox);
+            float_X const energyDifference = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                transitionCollectionIndex,
+                atomicStateDataBox,
+                boundFreeTransitionDataBox,
+                ionizationPotentialDepression,
+                chargeStateDataBox);
 
             if constexpr(picongpu::atomicPhysics2::debug::rateCalculation::DEBUG_CHECKS)
                 if(S_ConfigNumber::getChargeState(upperStateConfigNumber)
@@ -195,27 +196,32 @@ namespace picongpu::particles::atomicPhysics2::rateCalculation
          * @param energyElectron kinetic energy of interacting electron(/electron bin), [eV]
          * @param energyElectronBinWidth energy width of electron bin, [eV]
          * @param densityElectrons [1/(m^3 * eV)], local superCell number density of electrons in this bin
+         * @param ionizationPotentialDepression eV
          * @param transitionCollectionIndex index of transition in boundBoundTransitionDataBox
          * @param atomicStateDataBox access to atomic state property data
          * @param boundBoundTransitionDataBox access to bound-bound transition data
          *
          * @return unit: 1/UNIT_TIME
          */
-        template<
-            typename T_ChargeStateDataBox,
-            typename T_AtomicStateDataBox,
-            typename T_BoundFreeTransitionDataBox>
+        template<typename T_ChargeStateDataBox, typename T_AtomicStateDataBox, typename T_BoundFreeTransitionDataBox>
         HDINLINE static float_X rateCollisionalIonizationTransition(
-            float_X const energyElectron, // [eV]
-            float_X const energyElectronBinWidth, // [eV]
-            float_X const densityElectrons, // [1/(UNIT_LENGTH^3*eV)]
+            // eV
+            float_X const energyElectron,
+            // eV
+            float_X const energyElectronBinWidth,
+            // 1/(UNIT_LENGTH^3*eV)
+            float_X const densityElectrons,
+            // eV
+            float_X const ionizationPotentialDepression,
             uint32_t const transitionCollectionIndex,
             T_ChargeStateDataBox const chargeStateDataBox,
             T_AtomicStateDataBox const atomicStateDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
             float_X sigma = collisionalIonizationCrossSection(
-                energyElectron, // [eV]
+                // eV
+                energyElectron,
+                ionizationPotentialDepression,
                 transitionCollectionIndex,
                 chargeStateDataBox,
                 atomicStateDataBox,

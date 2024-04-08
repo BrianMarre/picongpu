@@ -27,7 +27,6 @@
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_Autonomous.kernel"
 #include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_BoundBound.kernel"
-#include "picongpu/particles/atomicPhysics2/kernel/ChooseTransition_BoundFree.kernel"
 #include "picongpu/particles/atomicPhysics2/localHelperFields/LocalTimeRemainingField.hpp"
 
 namespace picongpu::particles::atomicPhysics2::stage
@@ -48,6 +47,9 @@ namespace picongpu::particles::atomicPhysics2::stage
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
+        // ionization potential depression model to use
+        using IPDModel = picongpu::atomicPhysics2::IPDModel;
+
         using DistributionFloat = pmacc::random::distributions::Uniform<float_X>;
         using RngFactoryFloat = particles::functor::misc::Rng<DistributionFloat>;
 
@@ -55,7 +57,7 @@ namespace picongpu::particles::atomicPhysics2::stage
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
         {
             // full local domain, no guards
-            pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
+            pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
             pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
@@ -76,6 +78,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                 IonSpecies::FrameType::getName() + "_localRateCacheField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
+
             RngFactoryFloat rngFactoryFloat = RngFactoryFloat{currentStep};
 
             // no-change transitions are already accepted by chooseTransitionTypeKernel
@@ -135,14 +138,17 @@ namespace picongpu::particles::atomicPhysics2::stage
             // bound-free(upward) transitions
             if constexpr(AtomicDataType::switchElectronicIonization || AtomicDataType::switchFieldIonization)
             {
-                PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics2::kernel::ChooseTransitionKernel_BoundFree<
+                using ChooseTransitionKernel_BoundFree
+                    = picongpu::particles::atomicPhysics2::kernel::ChooseTransitionKernel_BoundFree<
                         picongpu::atomicPhysics2::ElectronHistogram,
                         AtomicDataType::ConfigNumber::numberLevels,
+                        IPDModel,
                         AtomicDataType::switchElectronicIonization,
-                        AtomicDataType::switchFieldIonization>(),
-                    workerCfg)
-                (mapper.getGridDim())(
+                        AtomicDataType::switchFieldIonization>;
+
+                IPDModel::template callKernelWithIPDInput<ChooseTransitionKernel_BoundFree>(
+                    dc,
+                    workerCfg,
                     mapper,
                     rngFactoryFloat,
                     atomicData.template getChargeStateDataDataBox<false>(),

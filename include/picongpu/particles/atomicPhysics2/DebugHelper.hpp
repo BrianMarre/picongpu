@@ -172,6 +172,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                                  i,
                                  atomicStateDataBox,
                                  boundFreeTransitionDataBox,
+                                 // eV, ionization potential depression is dynamics dependent, therefore set to zero
+                                 // for debug
+                                 0._X,
                                  chargeStateDataBox)
                           << "\tCoeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
                           << boundFreeTransitionDataBox.cxin2(i) << ", " << boundFreeTransitionDataBox.cxin3(i) << ", "
@@ -196,6 +199,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                                  i,
                                  atomicStateDataBox,
                                  autonomousTransitionDataBox,
+                                 // eV, ionization potential depression is dynamics dependent, therefore set to zero
+                                 // for debug
+                                 0._X,
                                  chargeStateDataBox)
                           << ",\trate: " << autonomousTransitionDataBox.rate(i) << std::endl;
             }
@@ -238,6 +244,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                                  i,
                                  atomicStateDataBox,
                                  boundFreeTransitionDataBox,
+                                 // eV, ionization potential depression is dynamics dependent, therefore set to zero
+                                 // for debug
+                                 0._X,
                                  chargeStateDataBox)
                           << "\tCoeff(" << boundFreeTransitionDataBox.cxin1(i) << ", "
                           << boundFreeTransitionDataBox.cxin2(i) << ", " << boundFreeTransitionDataBox.cxin3(i) << ", "
@@ -262,6 +271,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                                  i,
                                  atomicStateDataBox,
                                  autonomousTransitionDataBox,
+                                 // eV, ionization potential depression is dynamics dependent, therefore set to zero
+                                 // for debug
+                                 0._X,
                                  chargeStateDataBox)
                           << ", rate: " << autonomousTransitionDataBox.rate(i) << std::endl;
             }

@@ -37,7 +37,7 @@
 #include "picongpu/particles/Manipulate.hpp"
 #include "picongpu/particles/ParticlesFunctors.hpp"
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
-#include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.param" /// @todo move to atomicPhysics2.param, Brian Marre, 2024
 #include "picongpu/particles/atomicPhysics2/stage/FixAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/LoadAtomicInputData.hpp"
 #include "picongpu/particles/debyeLength/Check.hpp"

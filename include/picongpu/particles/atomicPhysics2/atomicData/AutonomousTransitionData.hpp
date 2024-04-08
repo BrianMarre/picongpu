@@ -82,9 +82,9 @@ namespace picongpu::particles::atomicPhysics2::atomicData
          *
          * @param boxTransitionRate rate over deexcitation [1/s]
          * @param boxLowerStateCollectionIndex collection index of the lower
-         *    (lower excitation energy) state of the transition in an atomic state dataBox
+         *    (lower energy) state of the transition in an atomic state dataBox
          * @param boxUpperStateCollectionIndex collection index of the upper
-         *    (higher excitation energy) state of the transition in an atomic state dataBox
+         *    (higher energy) state of the transition in an atomic state dataBox
          * @param numberTransitions number of atomic autonomous transitions stored
          */
         AutonomousTransitionDataBox(

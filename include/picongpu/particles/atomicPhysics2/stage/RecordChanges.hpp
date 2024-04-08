@@ -44,6 +44,9 @@ namespace picongpu::particles::atomicPhysics2::stage
         //! resolved type of alias T_IonSpecies
         using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, T_IonSpecies>;
 
+        // ionization potential depression model to use for energy calculation
+        using IPDModel = picongpu::atomicPhysics2::IPDModel;
+
         //! call of kernel for every superCell
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
         {
@@ -74,7 +77,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                 using RecordChanges_electronicExcitation
                     = picongpu::particles::atomicPhysics2 ::kernel::RecordChangesKernel<
                         enums::ProcessClass::electronicExcitation,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
+                        picongpu::atomicPhysics2::ElectronHistogram,
+                        IPDModel>;
+
                 PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicExcitation(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -91,7 +96,9 @@ namespace picongpu::particles::atomicPhysics2::stage
                 using RecordChanges_electronicDeexcitation
                     = picongpu::particles::atomicPhysics2::kernel::RecordChangesKernel<
                         enums::ProcessClass::electronicDeexcitation,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
+                        picongpu::atomicPhysics2::ElectronHistogram,
+                        IPDModel>;
+
                 PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicDeexcitation(), workerCfg)
                 (mapper.getGridDim())(
                     mapper,
@@ -108,7 +115,8 @@ namespace picongpu::particles::atomicPhysics2::stage
                 using RecordChanges_spontaneousDeexcitation
                     = picongpu::particles::atomicPhysics2::kernel::RecordChangesKernel<
                         enums::ProcessClass::spontaneousDeexcitation,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
+                        picongpu::atomicPhysics2::ElectronHistogram,
+                        IPDModel>;
 
                 PMACC_LOCKSTEP_KERNEL(RecordChanges_spontaneousDeexcitation(), workerCfg)
                 (mapper.getGridDim())(
@@ -126,10 +134,12 @@ namespace picongpu::particles::atomicPhysics2::stage
                 using RecordChanges_electronicIonization
                     = picongpu::particles::atomicPhysics2::kernel::RecordChangesKernel<
                         enums::ProcessClass::electronicIonization,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
+                        picongpu::atomicPhysics2::ElectronHistogram,
+                        IPDModel>;
 
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicIonization(), workerCfg)
-                (mapper.getGridDim())(
+                IPDModel::template callKernelWithIPDInput<RecordChanges_electronicIonization>(
+                    dc,
+                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
@@ -148,10 +158,12 @@ namespace picongpu::particles::atomicPhysics2::stage
                 using RecordChanges_autonomousIonization
                     = picongpu::particles::atomicPhysics2::kernel::RecordChangesKernel<
                         enums::ProcessClass::autonomousIonization,
-                        picongpu::atomicPhysics2::ElectronHistogram>;
+                        picongpu::atomicPhysics2::ElectronHistogram,
+                        IPDModel>;
 
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_autonomousIonization(), workerCfg)
-                (mapper.getGridDim())(
+                IPDModel::template callKernelWithIPDInput<RecordChanges_autonomousIonization>(
+                    dc,
+                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),

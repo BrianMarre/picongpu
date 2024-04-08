@@ -876,6 +876,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     collectionIndex,
                     this->getAtomicStateDataDataBox<true>(),
                     transitionHostBox,
+                    // ionization potential depression
+                    0._X,
                     this->getChargeStateDataDataBox<true>());
 
                 if(deltaEnergy < 0._X)
@@ -1010,6 +1012,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                             startIndexBlock,
                             atomicStateHostBox,
                             transitionHostBox,
+                            // ionization potential depression
+                            0._X,
                             chargeStateHostBox));
                     CollectionIdx index = 0u;
 
@@ -1022,6 +1026,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                                 startIndexBlock + i,
                                 atomicStateHostBox,
                                 transitionHostBox,
+                                // ionization potential depression
+                                0._X,
                                 chargeStateHostBox));
 
                         if(deltaEnergy < lowestAbsoluteDeltaEnergy)

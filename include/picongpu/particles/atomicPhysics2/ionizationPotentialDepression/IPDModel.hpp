@@ -26,7 +26,7 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    struct IPDInterface
+    struct IPDModel
     {
         //! create all HelperFields required by the IPD model
         HINLINE static void createHelperFields();

@@ -25,7 +25,7 @@
 
 #include "picongpu/particles/InitFunctors.hpp"
 #include "picongpu/particles/atomicPhysics2/AtomicPhysicsSuperCellFields.hpp"
-#include "picongpu/particles/atomicPhysics2/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics2/IPDModel.param"
 #include "picongpu/particles/atomicPhysics2/SetTemperature.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/BinElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/stage/CalculateStepLength.hpp"
@@ -309,6 +309,11 @@ namespace picongpu::simulation::stage
                 }
 
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
+
+                // calcualte ionization potential depression parameters for every superCell
+                picongpu::atomicPhysics2::IPDModel::template calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
+                    mappingDesc,
+                    currentStep);
 
                 if constexpr(picongpu::atomicPhysics2::debug::electronHistogram::PRINT_TO_CONSOLE)
                 {
