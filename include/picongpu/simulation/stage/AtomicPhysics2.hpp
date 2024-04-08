@@ -310,7 +310,7 @@ namespace picongpu::simulation::stage
 
                 ForEachElectronSpeciesBinElectrons{}(mappingDesc);
 
-                // calcualte ionization potential depression parameters for every superCell
+                // calculate ionization potential depression parameters for every superCell
                 picongpu::atomicPhysics2::IPDModel::template calculateIPDInput<IPDIonSpecies, IPDElectronSpecies>(
                     mappingDesc,
                     currentStep);

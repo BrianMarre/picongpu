@@ -59,8 +59,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
             T_KernelInput... kernelInput)
         {
-            PMACC_LOCKSTEP_KERNEL(T_Kernel(), workerCfg)
-            (mapper.getGridDim())(mapper, kernelInput...);
+            PMACC_LOCKSTEP_KERNEL(T_Kernel(), workerCfg)(mapper.getGridDim())(mapper, kernelInput...);
         }
     }
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
