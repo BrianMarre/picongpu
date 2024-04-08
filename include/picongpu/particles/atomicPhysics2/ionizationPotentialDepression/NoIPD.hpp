@@ -27,7 +27,7 @@
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
-    struct NoIPD : IPDInterface
+    struct NoIPD : IPDModel
     {
         //! create all HelperFields required by the IPD model
         HINLINE static void createHelperFields()
@@ -38,13 +38,29 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         {
         }
 
-        /** calculate ionization potential depression
-         *
-         * @returns 0._X
-         */
+        //! no IPD, means no pressure ionization
+        template<typename T_AtomicPhysicsIonSpeciesList>
+        HINLINE static void applyPressureIonization(picongpu::MappingDesc const, uint32_t const)
+        {
+        }
+
+        //! @returns 0._X eV
         HDINLINE static float_X calculateIPD()
         {
             return 0._X;
+        }
+
+
+        //! no input required, therefore straight pass through
+        template<typename T_Kernel, typename T_WorkerCfg, typename... T_KernelInput>
+        HINLINE static void callKernelWithIPDInput(
+            pmacc::DataConnector& dc,
+            T_WorkerCfg workerCfg,
+            pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
+            T_KernelInput... kernelInput)
+        {
+            PMACC_LOCKSTEP_KERNEL(T_Kernel(), workerCfg)
+            (mapper.getGridDim())(mapper, kernelInput...);
         }
     }
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression

@@ -66,5 +66,17 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
          */
         template<typename... T_Input>
         HDINLINE static float_X calculateIPD(pmacc::DataSpace<simDim> const superCellFieldIdx, T_Input const... input);
+
+        /** append ipd inut to kernelInput and do a PMACC_LOCKSTEP_KERNEL call for T_kernel
+         *
+         * @tparam T_Kernel kernel to call
+         * @param kernelInput stuff to pass to the kernel, before the ionization potential depression input
+         */
+        template<typename T_Kernel, typename T_WorkerCfg, typename... T_KernelInput>
+        HINLINE static void callKernelWithIPDInput(
+            pmacc::DataConnector& dc,
+            T_WorkerCfg workerCfg,
+            pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
+            T_KernelInput... kernelInput);
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
