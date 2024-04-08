@@ -86,7 +86,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 transition_dataBox_and_processClass_inconsistent,
                 s_enums::IsProcess<T_TransitionDataBox::processClassGroup>::check(u8(T_ProcessClass)));
 
-            constexpr bool isCollisonal
+            constexpr bool isCollisional
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::electronicCollisional>::check(u8(T_ProcessClass));
             constexpr bool isIonizing
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::ionizing>::check(u8(T_ProcessClass));
@@ -112,9 +112,38 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // get histogram for current superCell
             T_Histogram& electronHistogram = localElectronHistogramDataBox(superCellFieldIdx);
 
+            /*
+            PMACC_CASSERT_MSG(electronicExcitation_isCollisional_true,  !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicExcitation)) || !isCollisional);
+            PMACC_CASSERT_MSG(electronicExcitation_isCollisional_false, !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicExcitation)) ||  isCollisional);
+            */
+
+            /*
+            PMACC_CASSERT_MSG(electronicDeexcitation_isIonizing_true,     !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicDeexcitation)) || !isIonizing);
+            PMACC_CASSERT_MSG(electronicDeexcitation_isIonizing_false,    !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicDeexcitation)) ||  isIonizing);
+            PMACC_CASSERT_MSG(electronicDeexcitation_isCollisional_true,  !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicDeexcitation)) || !isCollisional);
+            PMACC_CASSERT_MSG(electronicDeexcitation_isCollisional_false, !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicDeexcitation)) ||  isCollisional);
+            */
+
+            /*
+            PMACC_CASSERT_MSG(electronicIonization_isIonizing_true,     !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicIonization)) || !isIonizing);
+            PMACC_CASSERT_MSG(electronicIonization_isIonizing_false,    !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicIonization)) ||  isIonizing);
+            PMACC_CASSERT_MSG(electronicIonization_isCollisional_true,  !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicIonization)) || !isCollisional);
+            PMACC_CASSERT_MSG(electronicIonization_isCollisional_false, !(u8(T_ProcessClass) ==
+            u8(s_enums::ProcessClass::electronicIonization)) ||  isCollisional);
+            */
+
             // eV
             [[maybe_unused]] float_X ionizationPotentialDepression = 0._X;
-            if constexpr(isIonizing && isCollisonal)
+            if constexpr(isIonizing && isCollisional)
                 ionizationPotentialDepression
                     = ionizationPotentialDepression::PassIPDInputs::template calculateIPD<T_IPDModel>(
                         superCellFieldIdx,
@@ -141,22 +170,21 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
                     // get delta Energy transition
                     [[maybe_unused]] float_X deltaEnergy = 0._X;
-
-                    if constexpr(isCollisonal)
+                    if constexpr(isCollisional && isIonizing)
                     {
-                        if constexpr(isIonizing)
-                            deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
-                                transitionIndex,
-                                atomicStateBox,
-                                transitionBox,
-                                ionizationPotentialDepression,
-                                ionizationPotentialDepression::PassIPDInputs::extractChargeStateBox(
-                                    chargeStateBoxAndIPDInput...));
-                        else
-                            deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
-                                transitionIndex,
-                                atomicStateBox,
-                                transitionBox);
+                        deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                            transitionIndex,
+                            atomicStateBox,
+                            transitionBox,
+                            ionizationPotentialDepression,
+                            chargeStateBoxAndIPDInput...);
+                    }
+                    if constexpr(isCollisional && !isIonizing)
+                    {
+                        deltaEnergy = picongpu::particles::atomicPhysics2::DeltaEnergyTransition::get(
+                            transitionIndex,
+                            atomicStateBox,
+                            transitionBox);
                     }
 
                     uint32_t newAtomicStateCollectionIndex;
@@ -164,7 +192,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     if constexpr(isUpward)
                     {
                         // upward process
-                        if constexpr(isCollisonal)
+                        if constexpr(isCollisional)
                             deltaEnergy = -deltaEnergy;
 
                         // new state is upper state of transition
@@ -183,7 +211,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         newAtomicStateCollectionIndex);
 
                     // record used energy
-                    if constexpr(isCollisonal)
+                    if constexpr(isCollisional)
                         electronHistogram.addDeltaEnergy(worker, ion[binIndex_], deltaEnergy);
                 });
         }

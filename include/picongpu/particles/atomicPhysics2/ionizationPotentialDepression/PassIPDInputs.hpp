@@ -62,11 +62,5 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
         {
             return chargeStateBox;
         }
-
-        template<typename T_ChargeStateDataBox, typename... T_IPDInput>
-        HDINLINE static T_ChargeStateDataBox extractChargeStateBox(T_ChargeStateDataBox chargeStateBox, T_IPDInput...)
-        {
-            return chargeStateBox;
-        }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
