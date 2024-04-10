@@ -1,4 +1,4 @@
-/* Copyright 2013-2023 Axel Huebl, Heiko Burau, Rene Widera, Brian Marre
+/* Copyright 2013-2023 Axel Huebl, Heiko Burau, Rene Widera
  *
  * This file is part of PIConGPU.
  *
@@ -21,7 +21,6 @@
 #pragma once
 
 #include "picongpu/particles/startPosition/OnePositionImpl.hpp"
-#include "picongpu/particles/startPosition/OneSuperCellPositionImpl.hpp"
 #include "picongpu/particles/startPosition/QuietImpl.hpp"
 #include "picongpu/particles/startPosition/RandomBinomialImpl.hpp"
 #include "picongpu/particles/startPosition/RandomImpl.hpp"

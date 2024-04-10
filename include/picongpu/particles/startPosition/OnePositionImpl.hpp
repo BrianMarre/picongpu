@@ -52,7 +52,7 @@ namespace picongpu::particles::startPosition::acc
         }
 
         template<typename T_Particle>
-        HDINLINE uint32_t numberOfMacroParticles(float_X const realParticlesPerCell, DataSpace<simDim> const)
+        HDINLINE uint32_t numberOfMacroParticles(float_X const realParticlesPerCell)
         {
             constexpr bool hasWeighting
                 = pmacc::traits::HasIdentifier<typename T_Particle::FrameType, weighting>::type::value;
