@@ -289,7 +289,7 @@ namespace picongpu::simulation::stage
             static pmacc::device::Reduce deviceLocalReduce = pmacc::device::Reduce(static_cast<uint32_t>(1200u));
 
             setTimeRemaining(); // = (Delta t)_PIC
-            // atomic state and charge state inconsistency
+            // fix atomic state and charge state inconsistency
             ForEachIonSpeciesFixAtomicState{}(mappingDesc);
 
             uint16_t counterSubStep = 0u;
