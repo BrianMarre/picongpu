@@ -292,7 +292,7 @@ namespace picongpu::simulation::stage
             // fix atomic state and charge state inconsistency
             ForEachIonSpeciesFixAtomicState{}(mappingDesc);
 
-            uint16_t counterSubStep = 0u;
+            uint32_t counterSubStep = 0u;
             // atomicPhysics sub-stepping loop, ends when timeRemaining<=0._X
             while(true)
             {
@@ -494,6 +494,10 @@ namespace picongpu::simulation::stage
                     localTimeRemainingField.getDeviceDataBox(),
                     fieldGridLayoutTimeRemaining);
 
+                // debug only
+                // dump particles
+                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, counterSubStep);
+
                 // timeRemaining <= 0? in all local superCells?
                 if(deviceLocalReduce(
                        pmacc::math::operation::Max(),
@@ -505,7 +509,7 @@ namespace picongpu::simulation::stage
                 }
 
                 // debug only
-                counterSubStep++;
+                ++counterSubStep;
             } // end atomicPhysics sub-stepping loop
         }
     };
