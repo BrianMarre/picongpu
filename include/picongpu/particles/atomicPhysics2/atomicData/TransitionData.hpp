@@ -210,8 +210,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HINLINE TransitionDataBuffer(uint32_t numberTransitions)
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
-            auto const layoutTransitions
-                = pmacc::GridLayout<1>(numberTransitions, guardSize).getDataSpaceWithoutGuarding();
+            auto const layoutTransitions = pmacc::GridLayout<1>(numberTransitions, guardSize).sizeWithoutGuardND();
 
             bufferLowerStateCollectionIndex.reset(new BufferCollectionIndex(layoutTransitions, false));
             bufferUpperStateCollectionIndex.reset(new BufferCollectionIndex(layoutTransitions, false));

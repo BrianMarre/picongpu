@@ -59,7 +59,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
@@ -82,13 +81,12 @@ namespace picongpu::particles::atomicPhysics2::stage
                 // macro for kernel call for every superCell
                 PMACC_LOCKSTEP_KERNEL(
                     picongpu::particles::atomicPhysics2::kernel::RecordUsedElectronHistogramWeightKernel<
-                        picongpu::atomicPhysics2::ElectronHistogram>(),
-                    workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox());
+                        picongpu::atomicPhysics2::ElectronHistogram>())
+                    .config(mapper.getGridDim(), ions)(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        ions.getDeviceParticlesBox(),
+                        localElectronHistogramField.getDeviceDataBox());
             }
 
             /// @todo implement photonic collisional interactions, Brian Marre, 2023

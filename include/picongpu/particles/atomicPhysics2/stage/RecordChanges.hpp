@@ -53,7 +53,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
@@ -80,15 +79,16 @@ namespace picongpu::particles::atomicPhysics2::stage
                         picongpu::atomicPhysics2::ElectronHistogram,
                         IPDModel>;
 
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicExcitation(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData
-                        .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byLowerState>());
+                PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicExcitation())
+                    .config(mapper.getGridDim(), ions)(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        ions.getDeviceParticlesBox(),
+                        localElectronHistogramField.getDeviceDataBox(),
+                        atomicData.template getAtomicStateDataDataBox<false>(),
+                        atomicData.template getBoundBoundTransitionDataBox<
+                            false,
+                            enums::TransitionOrdering::byLowerState>());
             }
 
             if constexpr(AtomicDataType::switchElectronicDeexcitation)
@@ -99,15 +99,16 @@ namespace picongpu::particles::atomicPhysics2::stage
                         picongpu::atomicPhysics2::ElectronHistogram,
                         IPDModel>;
 
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicDeexcitation(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData
-                        .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
+                PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicDeexcitation())
+                    .config(mapper.getGridDim(), ions)(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        ions.getDeviceParticlesBox(),
+                        localElectronHistogramField.getDeviceDataBox(),
+                        atomicData.template getAtomicStateDataDataBox<false>(),
+                        atomicData.template getBoundBoundTransitionDataBox<
+                            false,
+                            enums::TransitionOrdering::byUpperState>());
             }
 
             if constexpr(AtomicDataType::switchSpontaneousDeexcitation)
@@ -118,15 +119,16 @@ namespace picongpu::particles::atomicPhysics2::stage
                         picongpu::atomicPhysics2::ElectronHistogram,
                         IPDModel>;
 
-                PMACC_LOCKSTEP_KERNEL(RecordChanges_spontaneousDeexcitation(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData
-                        .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
+                PMACC_LOCKSTEP_KERNEL(RecordChanges_spontaneousDeexcitation())
+                    .config(mapper.getGridDim(), ions)(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        ions.getDeviceParticlesBox(),
+                        localElectronHistogramField.getDeviceDataBox(),
+                        atomicData.template getAtomicStateDataDataBox<false>(),
+                        atomicData.template getBoundBoundTransitionDataBox<
+                            false,
+                            enums::TransitionOrdering::byUpperState>());
             }
 
             if constexpr(AtomicDataType::switchElectronicIonization)
@@ -137,9 +139,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                         picongpu::atomicPhysics2::ElectronHistogram,
                         IPDModel>;
 
-                IPDModel::template callKernelWithIPDInput<RecordChanges_electronicIonization>(
+                IPDModel::template callKernelWithIPDInput<
+                    RecordChanges_electronicIonization,
+                    IonSpecies::FrameType::frameSize>(
                     dc,
-                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
@@ -161,9 +164,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                         picongpu::atomicPhysics2::ElectronHistogram,
                         IPDModel>;
 
-                IPDModel::template callKernelWithIPDInput<RecordChanges_autonomousIonization>(
+                IPDModel::template callKernelWithIPDInput<
+                    RecordChanges_autonomousIonization,
+                    IonSpecies::FrameType::frameSize>(
                     dc,
-                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),

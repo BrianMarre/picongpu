@@ -47,7 +47,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<1u>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -80,18 +79,18 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                     "LocalDebyeLengthField");
 
             // macro for kernel call
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::CalculateIPDInputKernel(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                localSumWeightAllField.getDeviceDataBox(),
-                localSumTemperatureFunctionalField.getDeviceDataBox(),
-                localSumWeightElectronField.getDeviceDataBox(),
-                localSumChargeNumberIonsField.getDeviceDataBox(),
-                localSumChargeNumberSquaredIonsField.getDeviceDataBox(),
-                localTemperatureEnergyField.getDeviceDataBox(),
-                localZStarField.getDeviceDataBox(),
-                localDebyeLengthField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::CalculateIPDInputKernel())
+                .template config<1u>(mapper.getGridDim())(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localSumWeightAllField.getDeviceDataBox(),
+                    localSumTemperatureFunctionalField.getDeviceDataBox(),
+                    localSumWeightElectronField.getDeviceDataBox(),
+                    localSumChargeNumberIonsField.getDeviceDataBox(),
+                    localSumChargeNumberSquaredIonsField.getDeviceDataBox(),
+                    localTemperatureEnergyField.getDeviceDataBox(),
+                    localZStarField.getDeviceDataBox(),
+                    localDebyeLengthField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage
