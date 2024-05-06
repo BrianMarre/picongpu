@@ -64,7 +64,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -83,15 +82,15 @@ namespace picongpu::particles::atomicPhysics2::stage
                     SpawnIonizationMacroElectronsKernel<IPDModel, enums::ProcessClassGroup::boundFreeBased>;
 
                 // spawn ionization electrons for bound-free based processes
-                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_BoundFree(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    ions.getDeviceParticlesBox(),
-                    electrons.getDeviceParticlesBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData
-                        .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byLowerState>());
+                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_BoundFree())
+                    .config(mapper.getGridDim(), ions)(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        ions.getDeviceParticlesBox(),
+                        electrons.getDeviceParticlesBox(),
+                        atomicData.template getAtomicStateDataDataBox<false>(),
+                        atomicData
+                            .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byLowerState>());
 
                 /// @todo field ionization, Brian Marre, 2023
             }
@@ -103,9 +102,8 @@ namespace picongpu::particles::atomicPhysics2::stage
 
                 RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
-                IPDModel::template callKernelWithIPDInput<SpawnElectrons_Autonomous>(
+                IPDModel::template callKernelWithIPDInput<SpawnElectrons_Autonomous, IonSpecies::FrameType::frameSize>(
                     dc,
-                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),

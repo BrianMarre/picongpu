@@ -52,8 +52,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<picongpu::atomicPhysics2::ElectronHistogram::numberBins>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -74,16 +72,14 @@ namespace picongpu::particles::atomicPhysics2::stage
                     picongpu::MappingDesc>>("LocalRejectionProbabilityCacheField");
 
             // macro for call of kernel for every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(
-                picongpu::particles::atomicPhysics2::kernel::CheckForOverSubscriptionKernel<
-                    picongpu::atomicPhysics2::ElectronHistogram>(),
-                workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                localElectronHistogramField.getDeviceDataBox(),
-                localElectronHistogramOverSubscribedField.getDeviceDataBox(),
-                localRejectionProbabilityCacheField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::CheckForOverSubscriptionKernel<
+                                      picongpu::atomicPhysics2::ElectronHistogram>())
+                .template config<picongpu::atomicPhysics2::ElectronHistogram::numberBins>(mapper.getGridDim())(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localElectronHistogramField.getDeviceDataBox(),
+                    localElectronHistogramOverSubscribedField.getDeviceDataBox(),
+                    localRejectionProbabilityCacheField.getDeviceDataBox());
 
             /// @todo implement photon histogram, Brian Marre, 2023
         }

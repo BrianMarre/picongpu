@@ -63,7 +63,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
@@ -71,12 +70,12 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
 
-            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::FixAtomicStateKernel(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                ions.getDeviceParticlesBox(),
-                atomicData.template getChargeStateOrgaDataBox<false>(),
-                atomicData.template getAtomicStateDataDataBox<false>());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::FixAtomicStateKernel())
+                .config(mapper.getGridDim(), ions)(
+                    mapper,
+                    ions.getDeviceParticlesBox(),
+                    atomicData.template getChargeStateOrgaDataBox<false>(),
+                    atomicData.template getAtomicStateDataDataBox<false>());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

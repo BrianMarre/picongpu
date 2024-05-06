@@ -124,7 +124,7 @@ namespace picongpu::particles::creation
 
             // for accessing particle frame list of superCell
             pmacc::DataSpace<picongpu::simDim> const superCellIndex
-                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
+                = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
             using IndexFunctor = typename Modules::template SharedDataBoxIndexFunctor<T_KernelConfigOptions...>;
             auto const sharedDataBoxIndex = IndexFunctor::getIndex(areaMapping, superCellIndex);
