@@ -111,7 +111,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             constexpr uint32_t frameSize = T_IonBox::frameSize;
 
             pmacc::DataSpace<picongpu::simDim> const superCellIdx
-                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()));
+                = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx

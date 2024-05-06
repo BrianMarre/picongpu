@@ -40,7 +40,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<1u>();
 
             // pointers to memory, we will only work on device, no sync required
             //      pointer to localTimeRemainingField
@@ -53,11 +52,11 @@ namespace picongpu::particles::atomicPhysics2::stage
                 "LocalTimeStepField");
 
             // macro for kernel call
-            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::UpdateTimeRemainingKernel(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                localTimeStepField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::UpdateTimeRemainingKernel())
+                .template config<1u>(mapper.getGridDim())(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localTimeStepField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

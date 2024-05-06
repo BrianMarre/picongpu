@@ -325,8 +325,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HINLINE AtomicStateDataBuffer(uint32_t numberAtomicStates) : m_numberAtomicStates(numberAtomicStates)
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
-            auto const layoutAtomicStates
-                = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
+            auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).sizeWithoutGuardND();
 
             bufferConfigNumber.reset(new BufferConfigNumber(layoutAtomicStates, false));
             bufferStateEnergy.reset(new typename S_DataBuffer::BufferValue(layoutAtomicStates, false));

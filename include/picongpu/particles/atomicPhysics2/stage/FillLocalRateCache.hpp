@@ -75,7 +75,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -111,17 +110,18 @@ namespace picongpu::particles::atomicPhysics2::stage
                     AtomicDataType::switchSpontaneousDeexcitation,
                     enums::TransitionOrdering::byLowerState>;
 
-                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheUpWardBoundBound(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
-                    atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
-                    atomicData
-                        .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byLowerState>());
+                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheUpWardBoundBound())
+                    .template config<IonSpecies::FrameType::frameSize>(mapper.getGridDim())(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        localRateCacheField.getDeviceDataBox(),
+                        localElectronHistogramField.getDeviceDataBox(),
+                        atomicData.template getAtomicStateDataDataBox<false>(),
+                        atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
+                        atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
+                        atomicData.template getBoundBoundTransitionDataBox<
+                            false,
+                            enums::TransitionOrdering::byLowerState>());
             }
 
             //    downward bound-bound transition rates
@@ -136,17 +136,18 @@ namespace picongpu::particles::atomicPhysics2::stage
                     AtomicDataType::switchSpontaneousDeexcitation,
                     enums::TransitionOrdering::byUpperState>;
 
-                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheDownWardBoundBound(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    atomicData.template getAtomicStateDataDataBox<false>(),
-                    atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
-                    atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
-                    atomicData
-                        .template getBoundBoundTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
+                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheDownWardBoundBound())
+                    .template config<IonSpecies::FrameType::frameSize>(mapper.getGridDim())(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        localRateCacheField.getDeviceDataBox(),
+                        localElectronHistogramField.getDeviceDataBox(),
+                        atomicData.template getAtomicStateDataDataBox<false>(),
+                        atomicData.template getBoundBoundStartIndexBlockDataBox<false>(),
+                        atomicData.template getBoundBoundNumberTransitionsDataBox<false>(),
+                        atomicData.template getBoundBoundTransitionDataBox<
+                            false,
+                            enums::TransitionOrdering::byUpperState>());
             }
 
             //    upward bound-free transition rates
@@ -160,9 +161,10 @@ namespace picongpu::particles::atomicPhysics2::stage
                     AtomicDataType::switchElectronicIonization,
                     enums::TransitionOrdering::byLowerState>;
 
-                IPDModel::template callKernelWithIPDInput<FillLocalRateCacheUpWardBoundFree>(
+                IPDModel::template callKernelWithIPDInput<
+                    FillLocalRateCacheUpWardBoundFree,
+                    IonSpecies::FrameType::frameSize>(
                     dc,
-                    workerCfg,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
                     localRateCacheField.getDeviceDataBox(),
@@ -185,15 +187,16 @@ namespace picongpu::particles::atomicPhysics2::stage
                     AtomicDataType::switchAutonomousIonization,
                     enums::TransitionOrdering::byUpperState>;
 
-                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheAutonomous(), workerCfg)
-                (mapper.getGridDim())(
-                    mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox(),
-                    atomicData.template getAutonomousStartIndexBlockDataBox<false>(),
-                    atomicData.template getAutonomousNumberTransitionsDataBox<false>(),
-                    atomicData
-                        .template getAutonomousTransitionDataBox<false, enums::TransitionOrdering::byUpperState>());
+                PMACC_LOCKSTEP_KERNEL(FillLocalRateCacheAutonomous())
+                    .template config<IonSpecies::FrameType::frameSize>(mapper.getGridDim())(
+                        mapper,
+                        localTimeRemainingField.getDeviceDataBox(),
+                        localRateCacheField.getDeviceDataBox(),
+                        atomicData.template getAutonomousStartIndexBlockDataBox<false>(),
+                        atomicData.template getAutonomousNumberTransitionsDataBox<false>(),
+                        atomicData.template getAutonomousTransitionDataBox<
+                            false,
+                            enums::TransitionOrdering::byUpperState>());
             }
         }
     };

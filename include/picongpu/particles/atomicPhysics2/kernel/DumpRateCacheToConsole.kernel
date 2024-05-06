@@ -52,8 +52,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc()))
-                - areaMapping.getGuardingSuperCells();
+                = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
             auto& rateCache = localRateCacheBox(superCellFieldIdx);
             rateCache.printToConsole(superCellFieldIdx);

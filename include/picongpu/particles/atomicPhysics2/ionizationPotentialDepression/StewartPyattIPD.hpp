@@ -237,10 +237,9 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
                 / (2._X * (zStar + 1._X));
         }
 
-        template<typename T_Kernel, typename T_WorkerCfg, typename... T_KernelInput>
+        template<typename T_Kernel, uint32_t T_chunkSize, typename... T_KernelInput>
         HINLINE static void callKernelWithIPDInput(
             pmacc::DataConnector& dc,
-            T_WorkerCfg workerCfg,
             pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
             T_KernelInput... kernelInput)
         {
@@ -253,13 +252,13 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
             auto& localZStarField
                 = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
 
-            PMACC_LOCKSTEP_KERNEL(T_Kernel(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                kernelInput...,
-                localDebyeLengthField.getDeviceDataBox(),
-                localTemperatureEnergyField.getDeviceDataBox(),
-                localZStarField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(T_Kernel())
+                .template config<T_chunkSize>(mapper.getGridDim())(
+                    mapper,
+                    kernelInput...,
+                    localDebyeLengthField.getDeviceDataBox(),
+                    localTemperatureEnergyField.getDeviceDataBox(),
+                    localZStarField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression

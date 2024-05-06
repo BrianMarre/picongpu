@@ -74,7 +74,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_IonBox const ionBox,
+            T_IonBox ionBox,
             T_LocalElectronHistogramDataBox localElectronHistogramDataBox,
             T_AtomicStateDataBox const atomicStateBox,
             T_TransitionDataBox const transitionBox,
@@ -93,8 +93,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             constexpr bool isUpward
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::upward>::check(u8(T_ProcessClass));
 
-            pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
+            pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -111,35 +110,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
             // get histogram for current superCell
             T_Histogram& electronHistogram = localElectronHistogramDataBox(superCellFieldIdx);
-
-            /*
-            PMACC_CASSERT_MSG(electronicExcitation_isCollisional_true,  !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicExcitation)) || !isCollisional);
-            PMACC_CASSERT_MSG(electronicExcitation_isCollisional_false, !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicExcitation)) ||  isCollisional);
-            */
-
-            /*
-            PMACC_CASSERT_MSG(electronicDeexcitation_isIonizing_true,     !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicDeexcitation)) || !isIonizing);
-            PMACC_CASSERT_MSG(electronicDeexcitation_isIonizing_false,    !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicDeexcitation)) ||  isIonizing);
-            PMACC_CASSERT_MSG(electronicDeexcitation_isCollisional_true,  !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicDeexcitation)) || !isCollisional);
-            PMACC_CASSERT_MSG(electronicDeexcitation_isCollisional_false, !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicDeexcitation)) ||  isCollisional);
-            */
-
-            /*
-            PMACC_CASSERT_MSG(electronicIonization_isIonizing_true,     !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicIonization)) || !isIonizing);
-            PMACC_CASSERT_MSG(electronicIonization_isIonizing_false,    !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicIonization)) ||  isIonizing);
-            PMACC_CASSERT_MSG(electronicIonization_isCollisional_true,  !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicIonization)) || !isCollisional);
-            PMACC_CASSERT_MSG(electronicIonization_isCollisional_false, !(u8(T_ProcessClass) ==
-            u8(s_enums::ProcessClass::electronicIonization)) ||  isCollisional);
-            */
 
             // eV
             [[maybe_unused]] float_X ionizationPotentialDepression = 0._X;

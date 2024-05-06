@@ -60,8 +60,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<T_IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<atomicPhysics2::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
@@ -88,19 +86,19 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             //}
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::ApplyPressureIonizationKernel<T_IPDModel>(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                ions.getDeviceParticlesBox(),
-                electrons.getDeviceParticlesBox(),
-                localTimeRemainingField.getDeviceDataBox(),
-                localFoundUnboundIonField.getDeviceDataBox(),
-                atomicData.template getChargeStateDataDataBox</*on device*/ false>(),
-                atomicData.template getAtomicStateDataDataBox</*on device*/ false>(),
-                atomicData.template getPressureIonizationStateDataBox</*on device*/ false>(),
-                localDebyeLengthField.getDeviceDataBox(),
-                localTemperatureEnergyField.getDeviceDataBox(),
-                localZStarField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::ApplyPressureIonizationKernel<T_IPDModel>())
+                .config(mapper.getGridDim(), ions)(
+                    mapper,
+                    ions.getDeviceParticlesBox(),
+                    electrons.getDeviceParticlesBox(),
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localFoundUnboundIonField.getDeviceDataBox(),
+                    atomicData.template getChargeStateDataDataBox</*on device*/ false>(),
+                    atomicData.template getAtomicStateDataDataBox</*on device*/ false>(),
+                    atomicData.template getPressureIonizationStateDataBox</*on device*/ false>(),
+                    localDebyeLengthField.getDeviceDataBox(),
+                    localTemperatureEnergyField.getDeviceDataBox(),
+                    localZStarField.getDeviceDataBox());
 
             // no need to call fillAllGaps, since we do not leave any gaps
 
