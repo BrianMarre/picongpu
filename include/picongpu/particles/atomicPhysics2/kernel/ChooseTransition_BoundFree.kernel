@@ -133,8 +133,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 u8(T_BoundFreeTransitionDataBox::transitionOrdering)
                     == u8(s_enums::TransitionOrderingFor<s_enums::TransitionDirection::upward>::ordering));
 
-            pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
+            pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx

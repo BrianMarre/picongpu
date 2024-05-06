@@ -55,8 +55,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_ChargeStateOrgaDataBox const chargeStateOrgaBox,
             T_AtomicStateDataDataBox const atomicStateDataBox) const
         {
-            pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
+            pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 

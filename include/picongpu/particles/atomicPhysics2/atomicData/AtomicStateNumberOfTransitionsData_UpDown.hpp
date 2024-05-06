@@ -140,8 +140,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HINLINE AtomicStateNumberOfTransitionsDataBuffer_UpDown(uint32_t numberAtomicStates)
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
-            auto const layoutAtomicStates
-                = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
+            auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).sizeWithoutGuardND();
 
             bufferNumberOfTransitionsDown.reset(new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));
             bufferNumberOfTransitionsUp.reset(new typename S_DataBuffer::BufferNumber(layoutAtomicStates, false));

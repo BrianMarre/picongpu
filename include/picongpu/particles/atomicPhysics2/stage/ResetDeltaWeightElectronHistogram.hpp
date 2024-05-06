@@ -48,8 +48,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<picongpu::atomicPhysics2::ElectronHistogram::numberBins>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -61,14 +59,12 @@ namespace picongpu::particles::atomicPhysics2::stage
                     "Electron_localHistogramField");
 
             // macro for call of kernel for every superCell
-            PMACC_LOCKSTEP_KERNEL(
-                picongpu::particles::atomicPhysics2::kernel::ResetDeltaWeightElectronHistogramKernel<
-                    picongpu::atomicPhysics2::ElectronHistogram>(),
-                workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                localElectronHistogramField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::ResetDeltaWeightElectronHistogramKernel<
+                                      picongpu::atomicPhysics2::ElectronHistogram>())
+                .template config<picongpu::atomicPhysics2::ElectronHistogram::numberBins>(mapper.getGridDim())(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localElectronHistogramField.getDeviceDataBox());
 
             /// @todo implement photon histogram, Brian Marre, 2023
         }

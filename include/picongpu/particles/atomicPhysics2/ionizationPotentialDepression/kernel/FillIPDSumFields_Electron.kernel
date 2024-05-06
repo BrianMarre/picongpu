@@ -76,8 +76,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             T_SumTemperatureFunctionalFieldDataBox localSumTemperatureFunctionalBox,
             T_SumWeightElectronsFieldDataBox localSumElectronWeightBox) const
         {
-            pmacc::DataSpace<simDim> const superCellIdx(
-                areaMapping.getSuperCellIndex(device::getBlockIdx(worker.getAcc())));
+            pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx

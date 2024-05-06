@@ -271,18 +271,18 @@ namespace picongpu::simulation::stage
             // TimeRemainingSuperCellField
             auto& localTimeRemainingField = *dc.get<S_TimeRemainingField>("LocalTimeRemainingField");
             DataSpace<picongpu::simDim> const fieldGridLayoutTimeRemaining
-                = localTimeRemainingField.getGridLayout().getDataSpaceWithoutGuarding();
+                = localTimeRemainingField.getGridLayout().sizeWithoutGuardND();
 
             // FoundUnboundIonSuperCellField
             auto& localFoundUnboundIonField = *dc.get<S_FoundUnboundField>("LocalFoundUnboundIonField");
             DataSpace<picongpu::simDim> const fieldGridLayoutFoundUnbound
-                = localFoundUnboundIonField.getGridLayout().getDataSpaceWithoutGuarding();
+                = localFoundUnboundIonField.getGridLayout().sizeWithoutGuardND();
 
             // ElectronHistogramOverSubscribedSuperCellField
             auto& localElectronHistogramOverSubscribedField
                 = *dc.get<S_OverSubscribedField>("LocalElectronHistogramOverSubscribedField");
             DataSpace<picongpu::simDim> const fieldGridLayoutOverSubscription
-                = localElectronHistogramOverSubscribedField.getGridLayout().getDataSpaceWithoutGuarding();
+                = localElectronHistogramOverSubscribedField.getGridLayout().sizeWithoutGuardND();
 
             /// @todo find better way than hard code old value, Brian Marre, 2023
             // `static` avoids that reduce is allocating each time step memory, which will reduce the performance.

@@ -54,7 +54,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -78,15 +77,15 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                     "SumChargeNumberSquaredIonsField");
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion<T_TemperatureFunctional>(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                ions.getDeviceParticlesBox(),
-                localSumWeightAllField.getDeviceDataBox(),
-                localSumTemperatureFunctionalField.getDeviceDataBox(),
-                localSumChargeNumberIonsField.getDeviceDataBox(),
-                localSumChargeNumberSquaredIonsField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion<T_TemperatureFunctional>())
+                .config(mapper.getGridDim(), ions)(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    ions.getDeviceParticlesBox(),
+                    localSumWeightAllField.getDeviceDataBox(),
+                    localSumTemperatureFunctionalField.getDeviceDataBox(),
+                    localSumChargeNumberIonsField.getDeviceDataBox(),
+                    localSumChargeNumberSquaredIonsField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage

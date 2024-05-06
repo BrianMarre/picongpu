@@ -54,8 +54,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg
-                = pmacc::lockstep::makeWorkerCfg<ElectronSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -63,7 +61,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
 
             // pointer to memory, we will only work on device, no sync required
             // init pointer to particles and localSumFields
-            auto& ions = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName());
+            auto& electrons = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName());
 
             auto& localSumWeightAllField
                 = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
@@ -76,14 +74,14 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::st
                     "SumWeightElectronsField");
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Electron<T_TemperatureFunctional>(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                ions.getDeviceParticlesBox(),
-                localSumWeightAllField.getDeviceDataBox(),
-                localSumTemperatureFunctionalField.getDeviceDataBox(),
-                localSumWeightElectronField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Electron<T_TemperatureFunctional>())
+                .config(mapper.getGridDim(), electrons)(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    electrons.getDeviceParticlesBox(),
+                    localSumWeightAllField.getDeviceDataBox(),
+                    localSumTemperatureFunctionalField.getDeviceDataBox(),
+                    localSumWeightElectronField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::stage

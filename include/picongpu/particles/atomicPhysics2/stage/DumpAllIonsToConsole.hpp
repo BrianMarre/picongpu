@@ -55,7 +55,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<Species::FrameType::frameSize>();
 
             // pointer to memory, we will only work on device, no sync required
             // init pointer to macro particles
@@ -64,8 +63,8 @@ namespace picongpu::particles::atomicPhysics2::stage
             using DumpToConsole = picongpu::particles::atomicPhysics2::kernel::DumpAllIonsToConsoleKernel;
 
             // macro for call of kernel on every superCell, see pull request #4321
-            PMACC_LOCKSTEP_KERNEL(DumpToConsole(), workerCfg)
-            (mapper.getGridDim())(mapper, particles.getDeviceParticlesBox());
+            PMACC_LOCKSTEP_KERNEL(DumpToConsole())
+                .config(mapper.getGridDim(), particles)(mapper, particles.getDeviceParticlesBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

@@ -52,14 +52,14 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 
 
         //! no input required, therefore straight pass through
-        template<typename T_Kernel, typename T_WorkerCfg, typename... T_KernelInput>
+        template<typename T_Kernel, uint32_t T_chunkSize, typename... T_KernelInput>
         HINLINE static void callKernelWithIPDInput(
             pmacc::DataConnector& dc,
-            T_WorkerCfg workerCfg,
             pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
             T_KernelInput... kernelInput)
         {
-            PMACC_LOCKSTEP_KERNEL(T_Kernel(), workerCfg)(mapper.getGridDim())(mapper, kernelInput...);
+            PMACC_LOCKSTEP_KERNEL(T_Kernel())
+                .template config<T_chunkSize>(mapper.getGridDim())(mapper, kernelInput...);
         }
     }
 } // namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
