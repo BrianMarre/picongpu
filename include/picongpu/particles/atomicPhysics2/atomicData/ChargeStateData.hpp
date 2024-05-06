@@ -178,8 +178,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         HINLINE ChargeStateDataBuffer()
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
-            auto const layoutChargeStates
-                = pmacc::GridLayout<1>(T_atomicNumber, guardSize).getDataSpaceWithoutGuarding();
+            auto const layoutChargeStates = pmacc::GridLayout<1>(T_atomicNumber, guardSize).sizeWithoutGuardND();
 
             bufferIonizationEnergy.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates, false));
             bufferScreenedCharge.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates, false));

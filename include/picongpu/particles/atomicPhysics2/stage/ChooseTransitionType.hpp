@@ -57,7 +57,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
@@ -85,14 +84,14 @@ namespace picongpu::particles::atomicPhysics2::stage
                     AtomicDataType::switchAutonomousIonization,
                     AtomicDataType::switchElectronicIonization,
                     AtomicDataType::switchFieldIonization>;
-            PMACC_LOCKSTEP_KERNEL(ChooseTransitionTypeKernel(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                rngFactoryFloat,
-                localTimeStepField.getDeviceDataBox(),
-                localTimeRemainingField.getDeviceDataBox(),
-                localRateCacheField.getDeviceDataBox(),
-                ions.getDeviceParticlesBox());
+            PMACC_LOCKSTEP_KERNEL(ChooseTransitionTypeKernel())
+                .config(mapper.getGridDim(), ions)(
+                    mapper,
+                    rngFactoryFloat,
+                    localTimeStepField.getDeviceDataBox(),
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localRateCacheField.getDeviceDataBox(),
+                    ions.getDeviceParticlesBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

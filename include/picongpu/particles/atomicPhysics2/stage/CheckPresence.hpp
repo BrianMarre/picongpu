@@ -53,7 +53,6 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -67,12 +66,12 @@ namespace picongpu::particles::atomicPhysics2::stage
                                                     LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
                 IonSpecies::FrameType::getName() + "_localRateCacheField");
 
-            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::CheckPresenceKernel(), workerCfg)
-            (mapper.getGridDim())(
-                mapper,
-                localTimeRemainingField.getDeviceDataBox(),
-                ions.getDeviceParticlesBox(),
-                localRateCacheField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::CheckPresenceKernel())
+                .config(mapper.getGridDim(), ions)(
+                    mapper,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    ions.getDeviceParticlesBox(),
+                    localRateCacheField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

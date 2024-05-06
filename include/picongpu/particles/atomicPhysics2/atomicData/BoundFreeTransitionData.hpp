@@ -435,7 +435,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
             auto const layoutBoundFreeTransitions
-                = pmacc::GridLayout<1>(numberBoundFreeTransitions, guardSize).getDataSpaceWithoutGuarding();
+                = pmacc::GridLayout<1>(numberBoundFreeTransitions, guardSize).sizeWithoutGuardND();
 
             bufferCxin1.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));
             bufferCxin2.reset(new typename S_TransitionDataBuffer::BufferValue(layoutBoundFreeTransitions, false));

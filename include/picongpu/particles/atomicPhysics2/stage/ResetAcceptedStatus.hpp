@@ -45,7 +45,6 @@ namespace picongpu::particles::atomicPhysics2::stage
         {
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<IonSpecies::FrameType::frameSize>();
 
             auto& localTimeRemainingField
                 = *dc.get<picongpu::particles::atomicPhysics2::localHelperFields::LocalTimeRemainingField<
@@ -53,8 +52,10 @@ namespace picongpu::particles::atomicPhysics2::stage
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::ResetAcceptedStatusKernel(), workerCfg)
-            (mapper.getGridDim())(mapper, localTimeRemainingField.getDeviceDataBox(), ions.getDeviceParticlesBox());
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::ResetAcceptedStatusKernel())
+                .config(
+                    mapper.getGridDim(),
+                    ions)(mapper, localTimeRemainingField.getDeviceDataBox(), ions.getDeviceParticlesBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

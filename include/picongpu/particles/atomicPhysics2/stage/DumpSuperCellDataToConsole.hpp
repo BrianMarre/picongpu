@@ -49,15 +49,14 @@ namespace picongpu::particles::atomicPhysics2::stage
             // full local domain, no guards
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
-            pmacc::lockstep::WorkerCfg workerCfg = pmacc::lockstep::makeWorkerCfg<1u>();
 
             T_FieldType& superCellField = *dc.get<T_FieldType>(superCellFieldName);
 
             using DumpToConsole
                 = picongpu::particles::atomicPhysics2::kernel::DumpSuperCellDataToConsoleKernel<T_PrintFunctor>;
 
-            PMACC_LOCKSTEP_KERNEL(DumpToConsole(), workerCfg)
-            (mapper.getGridDim())(mapper, superCellField.getDeviceDataBox());
+            PMACC_LOCKSTEP_KERNEL(DumpToConsole())
+                .template config<1u>(mapper.getGridDim())(mapper, superCellField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics2::stage

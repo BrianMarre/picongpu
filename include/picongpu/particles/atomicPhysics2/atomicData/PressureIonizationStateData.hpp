@@ -113,8 +113,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             : m_numberAtomicStates(numberAtomicStates)
         {
             auto const guardSize = pmacc::DataSpace<1>::create(0);
-            auto const layoutAtomicStates
-                = pmacc::GridLayout<1>(numberAtomicStates, guardSize).getDataSpaceWithoutGuarding();
+            auto const layoutAtomicStates = pmacc::GridLayout<1>(numberAtomicStates, guardSize).sizeWithoutGuardND();
             bufferCollectionIndex.reset(new BufferCollectionIndex(layoutAtomicStates, false));
         }
 
