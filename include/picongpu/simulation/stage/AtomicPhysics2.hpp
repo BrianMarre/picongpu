@@ -462,6 +462,9 @@ namespace picongpu::simulation::stage
                 ForEachElectronSpeciesDecelerateElectrons{}(mappingDesc);
                 ForEachIonSpeciesSpawnIonizationElectrons{}(mappingDesc, currentStep);
 
+                // debug only
+                uint16_t countPressureIonizationLoops = 0u;
+
                 // pressure ionization loop, ends when no ion in unbound state anymore
                 while(true)
                 {
@@ -485,6 +488,7 @@ namespace picongpu::simulation::stage
                         // no ion found in unbound state
                         break;
                     }
+                    ++countPressureIonizationLoops;
                 }
 
                 // timeRemaining -= timeStep
@@ -496,7 +500,9 @@ namespace picongpu::simulation::stage
 
                 // debug only
                 // dump particles
-                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, counterSubStep);
+                std::cout << "\tdumping particles: step: " << currentStep << ", subStep: " << counterSubStep + 1u
+                          << ", countPressureIonization: " << countPressureIonizationLoops << std::endl;
+                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, (counterSubStep + 1u) * 10u);
 
                 // timeRemaining <= 0? in all local superCells?
                 if(deviceLocalReduce(
