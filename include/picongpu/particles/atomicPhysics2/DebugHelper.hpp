@@ -54,10 +54,10 @@ namespace picongpu::particles::atomicPhysics2::debug
         std::cout << "\t Field Ionization:         " << ((T_AtomicData::switchFieldIonization) ? "true" : "false")
                   << std::endl;
 
-        uint32_t numberAtomicStates = atomicData->getNumberAtomicStates();
-        uint32_t numberBoundBoundTransitions = atomicData->getNumberBoundBoundTransitions();
-        uint32_t numberBoundFreeTransitions = atomicData->getNumberBoundFreeTransitions();
-        uint32_t numberAutonomousTransitions = atomicData->getNumberAutonomousTransitions();
+        uint32_t const numberAtomicStates = atomicData->getNumberAtomicStates();
+        uint32_t const numberBoundBoundTransitions = atomicData->getNumberBoundBoundTransitions();
+        uint32_t const numberBoundFreeTransitions = atomicData->getNumberBoundFreeTransitions();
+        uint32_t const numberAutonomousTransitions = atomicData->getNumberAutonomousTransitions();
 
         // basic numbers
         std::cout << "Basic Statistics:" << std::endl;
@@ -105,7 +105,8 @@ namespace picongpu::particles::atomicPhysics2::debug
 
         // state data
         std::cout << "AtomicState Data" << std::endl;
-        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, PressureIonizationState"
+        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, PressureIonizationState[index, "
+                     "chargeState, configNumber]"
                   << std::endl;
         std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown" << std::endl;
         for(uint32_t stateCollectionIndex = 0u; stateCollectionIndex < numberAtomicStates; stateCollectionIndex++)
@@ -117,12 +118,17 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = pressureIonizationStateDataBox.pressureIonizationState(stateCollectionIndex);
             auto const levelVectorPressureIonizationState = S_ConfigNumber::getLevelVector(
                 atomicStateDataBox.configNumber(pressureIonizationStateCollectionIndex));
+            auto const chargeStatePressureIonizationVector = S_ConfigNumber::getChargeState(
+                atomicStateDataBox.configNumber(pressureIonizationStateCollectionIndex));
 
             std::cout << "\t" << stateCollectionIndex << " : [" << stateConfigNumber << ", "
                       << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", "
                       << precisionCast<uint16_t>(stateLevelVector).toString(",", "()")
                       << "]: " << atomicStateDataBox.energy(stateCollectionIndex) << ",\t"
-                      << precisionCast<uint16_t>(levelVectorPressureIonizationState).toString(",", "()") << std::endl;
+                      << "[" << pressureIonizationStateCollectionIndex << ", "
+                      << static_cast<uint16_t>(chargeStatePressureIonizationVector) << ", "
+                      << precisionCast<uint16_t>(levelVectorPressureIonizationState).toString(",", "()") << "]"
+                      << std::endl;
             std::cout << "\t\t b: " << boundBoundNumberTransitionsBox.numberOfTransitionsUp(stateCollectionIndex)
                       << "/" << boundBoundNumberTransitionsBox.numberOfTransitionsDown(stateCollectionIndex) << ", "
                       << boundBoundStartIndexBox.startIndexBlockTransitionsUp(stateCollectionIndex) << "/"
@@ -143,8 +149,8 @@ namespace picongpu::particles::atomicPhysics2::debug
             auto boundBoundTransitionDataBox
                 = atomicData->template getBoundBoundTransitionDataBox<true, enums::TransitionOrdering::byLowerState>();
             std::cout << "bound-bound transition" << std::endl;
-            std::cout << "index :(low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
-            for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
+            std::cout << "index (low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+            for(uint32_t i = 0u; i < numberBoundBoundTransitions; i++)
             {
                 std::cout << i << "\t(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundBoundTransitionDataBox.upperStateCollectionIndex(i) << ")"
@@ -163,7 +169,7 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData->template getBoundFreeTransitionDataBox<true, enums::TransitionOrdering::byLowerState>();
             std::cout << "bound-free transition" << std::endl;
             std::cout << "index (low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
-            for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
+            for(uint32_t i = 0u; i < numberBoundFreeTransitions; i++)
             {
                 std::cout << i << "\t(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundFreeTransitionDataBox.upperStateCollectionIndex(i) << ")"
@@ -188,9 +194,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData->template getAutonomousTransitionDataBox<true, enums::TransitionOrdering::byLowerState>();
 
             std::cout << "autonomous transitions" << std::endl;
-            std::cout << "index :(low, up), dE, rate [1/Dt_PIC]" << std::endl;
+            std::cout << "index (low, up), dE, rate [1/Dt_PIC]" << std::endl;
 
-            for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
+            for(uint32_t i = 0u; i < numberAutonomousTransitions; i++)
             {
                 std::cout << i << "\t(" << autonomousTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
@@ -215,8 +221,8 @@ namespace picongpu::particles::atomicPhysics2::debug
             auto boundBoundTransitionDataBox
                 = atomicData->template getBoundBoundTransitionDataBox<true, enums::TransitionOrdering::byUpperState>();
             std::cout << "inverse bound-bound transition" << std::endl;
-            std::cout << "index :(low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
-            for(uint32_t i = 0; i < numberBoundBoundTransitions; i++)
+            std::cout << "index (low, up), dE, C, A, \"Gaunt\"( <1>, <2>, ...)" << std::endl;
+            for(uint32_t i = 0u; i < numberBoundBoundTransitions; i++)
             {
                 std::cout << i << "\t(" << boundBoundTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundBoundTransitionDataBox.upperStateCollectionIndex(i) << ")"
@@ -234,8 +240,8 @@ namespace picongpu::particles::atomicPhysics2::debug
             auto boundFreeTransitionDataBox
                 = atomicData->template getBoundFreeTransitionDataBox<true, enums::TransitionOrdering::byUpperState>();
             std::cout << "inverse bound-free transition" << std::endl;
-            std::cout << "index :(low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
-            for(uint32_t i = 0; i < numberBoundFreeTransitions; i++)
+            std::cout << "index (low, up), dE, Coeff( <1>, <2>, ...)" << std::endl;
+            for(uint32_t i = 0u; i < numberBoundFreeTransitions; i++)
             {
                 std::cout << i << "\t(" << boundFreeTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << boundFreeTransitionDataBox.upperStateCollectionIndex(i) << ")"
@@ -260,9 +266,9 @@ namespace picongpu::particles::atomicPhysics2::debug
                 = atomicData->template getAutonomousTransitionDataBox<true, enums::TransitionOrdering::byUpperState>();
 
             std::cout << "inverse autonomous transitions" << std::endl;
-            std::cout << "index :(low, up), dE, rate" << std::endl;
+            std::cout << "index (low, up), dE, rate" << std::endl;
 
-            for(uint32_t i = 0; i < numberAutonomousTransitions; i++)
+            for(uint32_t i = 0u; i < numberAutonomousTransitions; i++)
             {
                 std::cout << i << "\t(" << autonomousTransitionDataBox.lowerStateCollectionIndex(i) << ", "
                           << autonomousTransitionDataBox.upperStateCollectionIndex(i) << ") "
