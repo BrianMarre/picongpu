@@ -451,6 +451,8 @@ namespace picongpu::simulation::stage
                 if constexpr(picongpu::atomicPhysics2::debug::timeStep::PRINT_TO_CONSOLE)
                     printTimeStepToConsole(mappingDesc);
 
+                // debug only, dumping before update atomic state
+                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, (counterSubStep + 1u) * 10u);
 
                 /** update atomic state and accumulate delta energy for delta energy histogram
                  *
@@ -464,6 +466,9 @@ namespace picongpu::simulation::stage
 
                 // debug only
                 uint16_t countPressureIonizationLoops = 0u;
+
+                // dumping before pressure ionization
+                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, (counterSubStep + 1u) * 10u + 1u);
 
                 // pressure ionization loop, ends when no ion in unbound state anymore
                 while(true)
@@ -498,11 +503,9 @@ namespace picongpu::simulation::stage
                     localTimeRemainingField.getDeviceDataBox(),
                     fieldGridLayoutTimeRemaining);
 
-                // debug only
-                // dump particles
-                std::cout << "\tdumping particles: step: " << currentStep << ", subStep: " << counterSubStep + 1u
-                          << ", countPressureIonization: " << countPressureIonizationLoops << std::endl;
-                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, (counterSubStep + 1u) * 10u);
+                // debug only, dump particles
+                Environment<>::get().PluginConnector().notifyPluginsSub(currentStep, (counterSubStep + 1u) * 10u + 2u);
+                std::cout << "\t countPressureIonization: " << countPressureIonizationLoops << std::endl;
 
                 // timeRemaining <= 0? in all local superCells?
                 if(deviceLocalReduce(

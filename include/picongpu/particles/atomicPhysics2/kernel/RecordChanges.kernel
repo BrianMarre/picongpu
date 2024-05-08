@@ -37,6 +37,9 @@
 
 #include <cstdint>
 
+// debug only
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
+
 namespace picongpu::particles::atomicPhysics2::kernel
 {
     namespace s_enums = picongpu::particles::atomicPhysics2::enums;
