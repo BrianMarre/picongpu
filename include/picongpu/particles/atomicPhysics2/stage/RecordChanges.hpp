@@ -149,7 +149,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     localElectronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData
-                        .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byUpperState>(),
+                        .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byLowerState>(),
                     atomicData.template getChargeStateDataDataBox<false>());
             }
 

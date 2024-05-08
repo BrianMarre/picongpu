@@ -134,18 +134,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             float_X const ionizationEnergyGroundState = chargeStateBox.ionizationEnergy(currentChargeState);
             // eV
             float_X const ipdIonizationEnergy
-                = ionizationEnergyGroundState - atomicStateEnergy - sharedState.ionizationPotentialDepression;
-
-            // debug only
-            if(ion[processClass_] == 4u
-               && (ion[transitionIndex_] == 345u || ion[transitionIndex_] == 346u || ion[transitionIndex_] == 375u))
-                printf(
-                    "%lu %u: \tE_I=%f, E=%f IPD=%f\n",
-                    ion[particleId_],
-                    currentAtomicStateClctIdx,
-                    ionizationEnergyGroundState,
-                    atomicStateEnergy,
-                    sharedState.ionizationPotentialDepression);
+                = ionizationEnergyGroundState - sharedState.ionizationPotentialDepression;
 
             if(ipdIonizationEnergy < 0._X)
             {

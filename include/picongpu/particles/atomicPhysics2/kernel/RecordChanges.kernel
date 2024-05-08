@@ -93,6 +93,21 @@ namespace picongpu::particles::atomicPhysics2::kernel
             constexpr bool isUpward
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::upward>::check(u8(T_ProcessClass));
 
+            // check ordering consistent with direction of T_ProcessClass
+            //  otherwise unphysical behaviour and/or illegal memory accesses
+            if constexpr(isUpward)
+            {
+                PMACC_CASSERT_MSG(
+                    transition_databOxOrdering_and_processClass_inconsistent,
+                    T_TransitionDataBox::transitionOrdering == s_enums::TransitionOrdering::byLowerState);
+            }
+            else
+            {
+                PMACC_CASSERT_MSG(
+                    transition_databOxOrdering_and_processClass_inconsistent,
+                    T_TransitionDataBox::transitionOrdering == s_enums::TransitionOrdering::byUpperState);
+            }
+
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
