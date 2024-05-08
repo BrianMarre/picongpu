@@ -115,8 +115,10 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
 
             bool const noPressureIonizationPath = (pressureIonizationStateClctIdx == currentAtomicStateClctIdx);
 
+            T_Number numberIonizationElectrons = static_cast<T_Number>(0u);
+
             if(noPressureIonizationPath)
-                return static_cast<T_Number>(0u);
+                return numberIonizationElectrons;
 
             // do prediction
             auto const currentAtomicStateConfigNumber = atomicStateBox.configNumber(currentAtomicStateClctIdx);
@@ -134,7 +136,16 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
             float_X const ipdIonizationEnergy
                 = ionizationEnergyGroundState - atomicStateEnergy - sharedState.ionizationPotentialDepression;
 
-            T_Number numberIonizationElectrons = static_cast<T_Number>(0u);
+            // debug only
+            if(ion[processClass_] == 4u
+               && (ion[transitionIndex_] == 345u || ion[transitionIndex_] == 346u || ion[transitionIndex_] == 375u))
+                printf(
+                    "%lu %u: \tE_I=%f, E=%f IPD=%f\n",
+                    ion[particleId_],
+                    currentAtomicStateClctIdx,
+                    ionizationEnergyGroundState,
+                    atomicStateEnergy,
+                    sharedState.ionizationPotentialDepression);
 
             if(ipdIonizationEnergy < 0._X)
             {
