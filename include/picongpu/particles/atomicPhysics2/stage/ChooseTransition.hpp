@@ -86,7 +86,7 @@ namespace picongpu::particles::atomicPhysics2::stage
             if constexpr(AtomicDataType::switchElectronicExcitation)
             {
                 PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics2::kernel::ChooseTransitionKernel_BoundBound<
-                                          ^picongpu::atomicPhysics2::ElectronHistogram,
+                                          picongpu::atomicPhysics2::ElectronHistogram,
                                           AtomicDataType::ConfigNumber::numberLevels,
                                           s_enums::TransitionDirection::upward,
                                           AtomicDataType::switchElectronicExcitation,
