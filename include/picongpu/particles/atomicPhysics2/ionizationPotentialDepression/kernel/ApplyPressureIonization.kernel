@@ -17,7 +17,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! definition of ApplyPressure Ionization Kernel using the SpawnParticlesFromSourceSpecies kernel framework
+/** @file definition of ApplyPressure Ionization Kernel using the SpawnParticlesFromSourceSpecies kernel framework
+ *
+ * see:
+ *  include/picongpu/particles/creation/SpawnFromSourceSpecies.kernel/.stage for the kernel/stage implementation and
+ *  include/picongpu/particles/creation/moduleInterfaces/* for interface definitions of the modules of the base kernel
+ */
+
 
 #pragma once
 
@@ -85,6 +91,7 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
         }
     };
 
+    //! predict number pressure ionization electrons for one pressure ionization step and update ion atomic state
     template<typename T_Number, typename T_IPDModel>
     struct PressureIonizationPredictor : public s_interfaces::PredictorFunctor<T_Number, T_IPDModel>
     {
