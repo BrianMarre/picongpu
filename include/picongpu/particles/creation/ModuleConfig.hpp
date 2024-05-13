@@ -25,7 +25,8 @@ namespace picongpu::particles::creation
 {
     /** configuration wrapper, holding all modules to be used by the SpawnFromSourceSpecies kernel framework
      *
-     * @details see picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp for interface definitions.
+     * @details see files included by picongpu/particles/creation/SpawnFromSourceSpeciesModuleInterfaces.hpp for
+     *  interface definitions.
      *
      * @tparam T_SanityCheckInputs struct containing compile time asserts checking settings in T_ConfigOptions and
      *  T_SharedDataBoxes are consistent with expectations and assumptions
