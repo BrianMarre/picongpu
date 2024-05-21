@@ -21,11 +21,15 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics2/DeltaEnergyTransition.hpp"
 #include "picongpu/particles/atomicPhysics2/SetAtomicState.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDataSetFor.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDirectionFor.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionTypeFor.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/PassIPDInputs.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
@@ -80,11 +84,15 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_TransitionDataBox const transitionBox,
             T_ChargeStateBoxAndIPDInput... chargeStateBoxAndIPDInput) const
         {
-            // check transition dataBox consistent with T_ProcessClass
-            //  otherwise unphysical behaviour and/or illegal memory accesses
+            // check passed right transition dataBox, otherwise unphysical behaviour and/or illegal memory accesses
             PMACC_CASSERT_MSG(
-                transition_dataBox_and_processClass_inconsistent,
-                s_enums::IsProcess<T_TransitionDataBox::processClassGroup>::check(u8(T_ProcessClass)));
+                wrong_transition_dataBox_for_processClass,
+                s_enums::TransitionDataSetFor<
+                    s_enums::TransitionTypeFor<T_ProcessClass>::type,
+                    s_enums::TransitionTypeFor<T_ProcessClass>::direction>::dataSet
+                    == s_enums::TransitionDataSetFor<
+                        T_TransitionDataBox::transitionType,
+                        s_enums::TransitionDirectionFor<T_TransitionDataBox::transitionOrdering>::direction>::dataSet);
 
             constexpr bool isCollisional
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::electronicCollisional>::check(u8(T_ProcessClass));
@@ -92,21 +100,6 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::ionizing>::check(u8(T_ProcessClass));
             constexpr bool isUpward
                 = s_enums::IsProcess<s_enums::ProcessClassGroup::upward>::check(u8(T_ProcessClass));
-
-            // check ordering consistent with direction of T_ProcessClass
-            //  otherwise unphysical behaviour and/or illegal memory accesses
-            if constexpr(isUpward)
-            {
-                PMACC_CASSERT_MSG(
-                    transition_databOxOrdering_and_processClass_inconsistent,
-                    T_TransitionDataBox::transitionOrdering == s_enums::TransitionOrdering::byLowerState);
-            }
-            else
-            {
-                PMACC_CASSERT_MSG(
-                    transition_databOxOrdering_and_processClass_inconsistent,
-                    T_TransitionDataBox::transitionOrdering == s_enums::TransitionOrdering::byUpperState);
-            }
 
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 

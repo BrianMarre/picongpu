@@ -21,7 +21,7 @@
  *
  * see:
  *  include/picongpu/particles/creation/SpawnFromSourceSpecies.kernel/.stage for the kernel/stage implementation and
- *  include/picongpu/particles/creation/moduleInterfaces/* for interface definitions of the modules of the base kernel
+ *  include/picongpu/particles/creation/moduleInterfaces/ for interface definitions of the modules of the base kernel
  */
 
 
@@ -129,7 +129,6 @@ namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression::ke
 
             // do prediction
             auto const currentAtomicStateConfigNumber = atomicStateBox.configNumber(currentAtomicStateClctIdx);
-            float_X const atomicStateEnergy = atomicStateBox.energy(currentAtomicStateClctIdx);
 
             // fully ionized state has no pressure ionization state --> currentChargeState < T_atomicNumber
             uint8_t const currentChargeState

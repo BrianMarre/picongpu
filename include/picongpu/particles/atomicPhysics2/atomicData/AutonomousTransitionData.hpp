@@ -24,8 +24,8 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
-#include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionType.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -36,6 +36,8 @@
 
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
+
     /** data box storing bound-free transition property data
      *
      * for use on device.
@@ -61,15 +63,15 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         typename T_Value,
         typename T_CollectionIndex,
         typename T_ConfigNumberDataType,
-        picongpu::particles::atomicPhysics2::enums::TransitionOrdering T_TransitionOrdering>
+        s_enums::TransitionOrdering T_TransitionOrdering>
     class AutonomousTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
         using S_TransitionDataBox = TransitionDataBox<T_Number, T_Value, T_CollectionIndex>;
         using S_AutonomousTransitionTuple = AutonomousTransitionTuple<T_ConfigNumberDataType>;
 
-        static constexpr auto processClassGroup = particles::atomicPhysics2::enums::ProcessClassGroup::autonomousBased;
-        static constexpr auto transitionOrdering = T_TransitionOrdering;
+        static constexpr s_enums::TransitionType transitionType = s_enums::TransitionType::autonomous;
+        static constexpr s_enums::TransitionOrdering transitionOrdering = T_TransitionOrdering;
 
     private:
         typename S_TransitionDataBox::S_DataBox::BoxValue m_boxTransitionRate; // unit: 1/UNIT_TIME
@@ -181,8 +183,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
             T_ConfigNumberDataType,
             T_TransitionOrdering>;
 
-        static constexpr auto processClassGroup = particles::atomicPhysics2::enums::ProcessClassGroup::autonomousBased;
-        static constexpr auto transitionOrdering = T_TransitionOrdering;
+        static constexpr s_enums::TransitionType transitionType = s_enums::TransitionType::autonomous;
+        static constexpr s_enums::TransitionOrdering transitionOrdering = T_TransitionOrdering;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferTransitionRate;

@@ -29,6 +29,7 @@
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDataSet.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDirection.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrderingFor.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionType.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
@@ -120,18 +121,18 @@ namespace picongpu::particles::atomicPhysics2::kernel
             PMACC_CASSERT_MSG(
                 number_transition_dataBox_not_bound_free_based,
                 u8(T_AtomicStateBoundFreeNumberTransitionsDataBox::processClassGroup)
-                    == u8(enums::ProcessClassGroup::boundFreeBased));
+                    == u8(s_enums::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT_MSG(
                 startIndex_dataBox_not_bound_free_based,
                 u8(T_AtomicStateBoundFreeStartIndexBlockDataBox::processClassGroup)
-                    == u8(enums::ProcessClassGroup::boundFreeBased));
+                    == u8(s_enums::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT_MSG(
                 boundFreeTransitiondataBox_not_bound_free_based,
-                u8(T_BoundFreeTransitionDataBox::processClassGroup) == u8(enums::ProcessClassGroup::boundFreeBased));
+                T_BoundFreeTransitionDataBox::transitionType == s_enums::TransitionType::boundFree);
             PMACC_CASSERT_MSG(
                 wrong_transition_ordering_boundFreeTransitionDataBox,
-                u8(T_BoundFreeTransitionDataBox::transitionOrdering)
-                    == u8(s_enums::TransitionOrderingFor<s_enums::TransitionDirection::upward>::ordering));
+                T_BoundFreeTransitionDataBox::transitionOrdering
+                    == s_enums::TransitionOrderingFor<s_enums::TransitionDirection::upward>::ordering);
 
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
@@ -242,8 +243,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                                     // found chosen transition
                                     updateIon(
                                         ion,
-                                        u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::
-                                               electronicIonization),
+                                        u8(s_enums::ProcessClass::electronicIonization),
                                         transitionID + startIndexTransitionBlock,
                                         binIndex);
                                     return;
@@ -259,7 +259,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     // select last resort, choose last possible transition
                     updateIon(
                         ion,
-                        u8(picongpu::particles::atomicPhysics2::enums::ProcessClass::electronicIonization),
+                        u8(s_enums::ProcessClass::electronicIonization),
                         startIndexTransitionBlock + numberTransitions - 1u,
                         numberBins - 1u);
                 });

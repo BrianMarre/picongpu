@@ -859,11 +859,11 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         template<typename T_TransitionHostBox>
         ALPAKA_FN_HOST void checkTransitionsForEnergyInversion(T_TransitionHostBox transitionHostBox)
         {
-            // for bound-free transitions upper- and lower-State are defined by charge state only!
+            // for bound-free and autonomous transitions upper- and lower-State are defined by charge state only!
             PMACC_CASSERT_MSG(
-                wrong_or_unknown_transitionType_in_Energy_InversionCheck,
-                ((u8(T_TransitionHostBox::processClassGroup) == u8(s_enums::ProcessClassGroup::boundBoundBased))
-                 || (u8(T_TransitionHostBox::processClassGroup) == u8(s_enums::ProcessClassGroup::autonomousBased))));
+                wrong_transitionHostBox_in_Energy_InversionCheck,
+                (T_TransitionHostBox::transitionType == s_enums::TransitionType::boundBound)
+                    || (T_TransitionHostBox::transitionType == s_enums::TransitionType::autonomous));
 
             uint32_t const numberTransitions = transitionHostBox.getNumberOfTransitionsTotal();
 
@@ -882,7 +882,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
                     throw std::runtime_error(
                         "atomicPhysics ERROR: upper and lower state inverted in energy in input"
                         ", energy lower state must be <= energy upper state, transitionType: "
-                        + enumToString<T_TransitionHostBox::processClassGroup>() + " ,transition #"
+                        + enumToString<T_TransitionHostBox::transitionType>() + " ,transition #"
                         + std::to_string(collectionIndex));
             }
         }
