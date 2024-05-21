@@ -45,7 +45,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
      *
      * @tparam T_numberAtomicStates number of atomic states in atomic data data base
      * @tparam T_autonomousIonization is channel active?
-     * @tparam T_TransitionOrdering ordering of assumed for transition DataBox
+     * @tparam T_TransitionOrdering ordering assumed for transition DataBox
      */
     template<
         uint32_t T_numberAtomicStates,
@@ -97,12 +97,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 startIndex_DataBox_not_autonomous_based,
                 u8(T_AtomicStateStartIndexBox::processClassGroup) == u8(enums::ProcessClassGroup::autonomousBased));
             PMACC_CASSERT_MSG(
-                transition_dataBox_not_autonomousBased,
-                u8(T_AutonomousTransitionDataBox::processClassGroup) == u8(enums::ProcessClassGroup::autonomousBased));
-            // check ordering of transition dataBox
+                wrong_type_transition_dataBox,
+                T_AutonomousTransitionDataBox::transitionType == s_enums::TransitionType::autonomous);
             PMACC_CASSERT_MSG(
-                wrong_ordering_of_DataBox,
-                u8(T_AutonomousTransitionDataBox::transitionOrdering) == u8(T_TransitionOrdering));
+                wrong_ordering_transition_dataBox,
+                T_AutonomousTransitionDataBox::transitionOrdering == T_TransitionOrdering);
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx

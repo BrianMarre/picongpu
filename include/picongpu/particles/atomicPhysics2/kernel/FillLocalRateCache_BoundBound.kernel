@@ -26,6 +26,9 @@
 #include "picongpu/particles/atomicPhysics2/electronDistribution/CachedHistogram.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionDataSet.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDirectionFor.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionType.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundBoundTransitionRates.hpp"
 
 #include <pmacc/algorithms/math/PowerFunction.hpp>
@@ -67,6 +70,8 @@ namespace picongpu::particles::atomicPhysics2::kernel
         s_enums::TransitionOrdering T_TransitionOrdering>
     struct FillLocalRateCacheKernel_BoundBound
     {
+        static constexpr auto transitionType = s_enums::TransitionType::boundBound;
+
         /** call operator
          *
          * called by FillLocalRateCache atomic physics sub-stage
@@ -116,13 +121,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 startIndex_dataBox_not_bound_free_based,
                 u8(T_AtomicStateStartIndexBox::processClassGroup) == u8(s_enums::ProcessClassGroup::boundBoundBased));
             PMACC_CASSERT_MSG(
-                transition_dataBox_not_boud_bound_based,
-                u8(T_BoundBoundTransitionDataBox::processClassGroup)
-                    == u8(s_enums::ProcessClassGroup::boundBoundBased));
-            // check ordering of transition dataBox
+                wrong_type_transition_dataBox,
+                T_BoundBoundTransitionDataBox::transitionType == transitionType);
             PMACC_CASSERT_MSG(
-                wrong_ordering_of_DataBox,
-                u8(T_BoundBoundTransitionDataBox::transitionOrdering) == u8(T_TransitionOrdering));
+                wrong_ordering_transition_dataBox,
+                T_BoundBoundTransitionDataBox::transitionOrdering == T_TransitionOrdering);
 
             constexpr bool isUpward = (u8(T_TransitionOrdering) == u8(s_enums::TransitionOrdering::byLowerState));
 
@@ -152,6 +155,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
             PMACC_SMEM(worker, cachedHistogram, CachedHistogram<T_numberBins>);
             cachedHistogram.fill(worker, histogram, volumeScalingFactor);
 
+            // electronic de-/excitation
             if constexpr((isUpward && T_electronicExcitation) || ((!isUpward) && T_electronicDeexcitation))
             {
                 forEachAtomicStateAndBin(
@@ -191,46 +195,26 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         for(uint32_t transitionID = static_cast<uint32_t>(0u); transitionID < numberTransitions;
                             ++transitionID)
                         {
-                            // electronic excitation
-                            if constexpr(isUpward)
-                            {
-                                rateCache.template add<T_Worker, s_enums::TransitionDataSet::boundBoundUpward>(
-                                    worker,
-                                    atomicStateCollectionIndex,
-                                    // rate
-                                    picongpu::particles::atomicPhysics2::rateCalculation::BoundBoundTransitionRates<
-                                        T_numberLevels>::
-                                        template rateCollisionalBoundBoundTransition<
-                                            T_AtomicStateDataDataBox,
-                                            T_BoundBoundTransitionDataBox,
-                                            isUpward>(
-                                            energy,
-                                            binWidth,
-                                            density,
-                                            offset + transitionID,
-                                            atomicStateDataDataBox,
-                                            boundBoundTransitionDataBox));
-                            }
-                            // electronic deexcitation
-                            else
-                            {
-                                rateCache.template add<T_Worker, s_enums::TransitionDataSet::boundBoundDownward>(
-                                    worker,
-                                    atomicStateCollectionIndex,
-                                    // rate
-                                    picongpu::particles::atomicPhysics2::rateCalculation::BoundBoundTransitionRates<
-                                        T_numberLevels>::
-                                        template rateCollisionalBoundBoundTransition<
-                                            T_AtomicStateDataDataBox,
-                                            T_BoundBoundTransitionDataBox,
-                                            isUpward>(
-                                            energy,
-                                            binWidth,
-                                            density,
-                                            offset + transitionID,
-                                            atomicStateDataDataBox,
-                                            boundBoundTransitionDataBox));
-                            }
+                            rateCache.template add<
+                                T_Worker,
+                                s_enums::TransitionDataSetFor<
+                                    transitionType,
+                                    s_enums::TransitionDirectionFor<T_TransitionOrdering>::direction>::dataSet>(
+                                worker,
+                                atomicStateCollectionIndex,
+                                // rate
+                                picongpu::particles::atomicPhysics2::rateCalculation::BoundBoundTransitionRates<
+                                    T_numberLevels>::
+                                    template rateCollisionalBoundBoundTransition<
+                                        T_AtomicStateDataDataBox,
+                                        T_BoundBoundTransitionDataBox,
+                                        isUpward>(
+                                        energy,
+                                        binWidth,
+                                        density,
+                                        offset + transitionID,
+                                        atomicStateDataDataBox,
+                                        boundBoundTransitionDataBox));
                         }
                     });
             }

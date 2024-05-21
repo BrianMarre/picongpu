@@ -37,7 +37,7 @@
 
 namespace picongpu::particles::atomicPhysics2::stage
 {
-    namespace enums = picongpu::particles::atomicPhysics2::enums;
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
 
     template<typename T_IonSpecies>
     struct SpawnIonizationElectrons
@@ -78,31 +78,34 @@ namespace picongpu::particles::atomicPhysics2::stage
             //      bound-free based transitions
             if constexpr(AtomicDataType::switchElectronicIonization || AtomicDataType::switchFieldIonization)
             {
-                using SpawnElectrons_BoundFree = picongpu::particles::atomicPhysics2::kernel::
-                    SpawnIonizationMacroElectronsKernel<IPDModel, enums::ProcessClassGroup::boundFreeBased>;
+                using SpawnElectrons_electronicIonization = picongpu::particles::atomicPhysics2::kernel::
+                    SpawnIonizationMacroElectronsKernel<IPDModel, s_enums::ProcessClass::electronicIonization>;
 
                 // spawn ionization electrons for bound-free based processes
-                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_BoundFree())
+                PMACC_LOCKSTEP_KERNEL(SpawnElectrons_electronicIonization())
                     .config(mapper.getGridDim(), ions)(
                         mapper,
                         localTimeRemainingField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox(),
                         electrons.getDeviceParticlesBox(),
                         atomicData.template getAtomicStateDataDataBox<false>(),
-                        atomicData
-                            .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byLowerState>());
+                        atomicData.template getBoundFreeTransitionDataBox<
+                            false,
+                            s_enums::TransitionOrdering::byLowerState>());
 
                 /// @todo field ionization, Brian Marre, 2023
             }
             //      autonomous based transitions
             if constexpr(AtomicDataType::switchAutonomousIonization)
             {
-                using SpawnElectrons_Autonomous = picongpu::particles::atomicPhysics2::kernel::
-                    SpawnIonizationMacroElectronsKernel<IPDModel, enums::ProcessClassGroup::autonomousBased>;
+                using SpawnElectrons_autonomousIonization = picongpu::particles::atomicPhysics2::kernel::
+                    SpawnIonizationMacroElectronsKernel<IPDModel, s_enums::ProcessClass::autonomousIonization>;
 
                 RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
-                IPDModel::template callKernelWithIPDInput<SpawnElectrons_Autonomous, IonSpecies::FrameType::frameSize>(
+                IPDModel::template callKernelWithIPDInput<
+                    SpawnElectrons_autonomousIonization,
+                    IonSpecies::FrameType::frameSize>(
                     dc,
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
@@ -110,7 +113,7 @@ namespace picongpu::particles::atomicPhysics2::stage
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData
-                        .template getAutonomousTransitionDataBox<false, enums::TransitionOrdering::byUpperState>(),
+                        .template getAutonomousTransitionDataBox<false, s_enums::TransitionOrdering::byUpperState>(),
                     rngFactory,
                     atomicData.template getChargeStateDataDataBox<false>());
             }

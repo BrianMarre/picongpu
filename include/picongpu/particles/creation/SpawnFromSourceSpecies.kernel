@@ -22,7 +22,7 @@
  *
  * see
  *  include/picongpu/particles/creation/ModuleConfig.hpp for configuration of this base kernel and
- *  include/picongpu/particles/creation/moduleInterfaces/* for the interface definitions of the ModuleConfig options
+ *  include/picongpu/particles/creation/moduleInterfaces/ for the interface definitions of the ModuleConfig options
  */
 
 #pragma once

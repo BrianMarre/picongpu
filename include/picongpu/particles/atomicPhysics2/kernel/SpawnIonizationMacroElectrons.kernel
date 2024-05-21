@@ -27,6 +27,9 @@
 #include "picongpu/particles/atomicPhysics2/enums/IsProcess.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDataSetFor.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDirectionFor.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionTypeFor.hpp"
 #include "picongpu/particles/atomicPhysics2/initElectrons/InitIonizationElectrons.hpp"
 #include "picongpu/particles/atomicPhysics2/ionizationPotentialDepression/PassIPDInputs.hpp"
 
@@ -38,6 +41,8 @@
 
 namespace picongpu::particles::atomicPhysics2::kernel
 {
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
+
     namespace detail
     {
         enum struct Access : uint32_t
@@ -49,12 +54,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
 
     /** spawn ionization macro electrons for every ionization transitions
      *
-     * @tparam T_ProcessClassGroup group of processClass values to spawn electrons for,
-     *  see "picongpu/particles/atomicPhysics2/enums/IsProcess.hpp
-     *
-     * @attention T_ProcessClassGroup must be either boundFreeBased, or autonomousBased!
+     * @tparam T_ProcessClass processClass to spawn electrons for
      */
-    template<typename T_IPDModel, picongpu::particles::atomicPhysics2::enums::ProcessClassGroup T_ProcessClassGroup>
+    template<typename T_IPDModel, s_enums::ProcessClass T_ProcessClass>
     struct SpawnIonizationMacroElectronsKernel
     {
         /** call operator
@@ -73,7 +75,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
          * @param rngFactoryAndChargeStateBoxAndIPDInput optional, factory for uniformly distributed float random
          * number generator and deviceDataBox giving access to charge state property data and deviceDataBoxes giving
          * access to the ionization potential depression input for all local superCells, required for
-         * T_ProcessClassGroup = autonomousBased
+         * T_ProcessClass = autonomousIonization
          */
         template<
             typename T_Worker,
@@ -94,16 +96,24 @@ namespace picongpu::particles::atomicPhysics2::kernel
             T_TransitionDataBox transitionBox,
             T_RNGFactoryAndChargeStateDataBoxAndIPDInput... rngFactoryAndChargeStateBoxAndIPDInput) const
         {
-            namespace enums = picongpu::particles::atomicPhysics2::enums;
-
             using ElectronFramePtr = typename T_IonizationElectronBox::FramePtr;
             using IonFramePtr = typename T_IonBox::FramePtr;
 
-            // check transition data box content consistent with processClassGroup,
-            //  otherwise unpyhsical behaviour and/or illegal memory access
+            // check processClass is ionizing
             PMACC_CASSERT_MSG(
-                processClassGroup_and_transition_dataBox_not_consistent,
-                u8(T_ProcessClassGroup) == u8(T_TransitionDataBox::processClassGroup));
+                processClass_is_not_ionizing,
+                s_enums::IsProcess<s_enums::ProcessClassGroup::ionizing>::check(u8(T_ProcessClass)));
+
+            // check passed right transition data box, otherwise unpyhsical behaviour and/or illegal memory access
+
+            PMACC_CASSERT_MSG(
+                wrong_transition_dataBox_for_processClass,
+                s_enums::TransitionDataSetFor<
+                    s_enums::TransitionTypeFor<T_ProcessClass>::type,
+                    s_enums::TransitionTypeFor<T_ProcessClass>::direction>::dataSet
+                    == s_enums::TransitionDataSetFor<
+                        T_TransitionDataBox::transitionType,
+                        s_enums::TransitionDirectionFor<T_TransitionDataBox::transitionOrdering>::direction>::dataSet);
             PMACC_CASSERT_MSG(
                 ion_and_electron_framesize_must_be_equal,
                 T_IonBox::frameSize == T_IonizationElectronBox::frameSize);
@@ -139,7 +149,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 = lockstep::makeVar<uint8_t>(forEachFrameSlot, static_cast<uint8_t>(0u));
 
             [[maybe_unused]] float_X ionizationPotentialDepression = 0._X;
-            if constexpr(T_ProcessClassGroup == enums::ProcessClassGroup::autonomousBased)
+            if constexpr(u8(T_ProcessClass) == u8(s_enums::ProcessClass::autonomousIonization))
                 ionizationPotentialDepression
                     = ionizationPotentialDepression::PassIPDInputs::template calculateIPD_RngFactory<T_IPDModel>(
                         superCellFieldIdx,
@@ -176,12 +186,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     {
                         auto const ion = ionFrame[idx];
 
+                        bool const slotOccupied = !static_cast<bool>(ion[multiMask_]);
+                        bool const correctProcessClass = !(u8(T_ProcessClass) == ion[processClass_]);
+
                         // slot not occupied or not bound-free transition based ionizing process
-                        if(
-                            // slot is not occupied
-                            !static_cast<bool>(ion[multiMask_])
-                            // no bound-free based ionizing process
-                            || !(enums::IsProcess<T_ProcessClassGroup>::check(ion[processClass_])))
+                        if(!slotOccupied || !correctProcessClass)
                         {
                             numberIonizationElectrons = static_cast<uint8_t>(0u);
                             return;
@@ -203,23 +212,25 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             = T_AtomicStateDataBox::ConfigNumber::getChargeState(upperStateConfigNumber);
 
                         // set context array value
-                        if constexpr(u8(T_ProcessClassGroup) == u8(enums::ProcessClassGroup::autonomousBased))
+                        if constexpr(s_enums::IsProcess<s_enums::ProcessClassGroup::autonomousBased>::check(
+                                         u8(T_ProcessClass)))
                         {
                             // for autonomous transitions allows initialState == upperState
                             numberIonizationElectrons = lowerChargeState - upperChargeState;
                         }
                         else
                         {
-                            if constexpr(u8(T_ProcessClassGroup) == u8(enums::ProcessClassGroup::boundFreeBased))
+                            if constexpr(s_enums::IsProcess<s_enums::ProcessClassGroup::boundFreeBased>::check(
+                                             u8(T_ProcessClass)))
                             {
                                 numberIonizationElectrons = upperChargeState - lowerChargeState;
                             }
                             else
                             {
                                 printf(
-                                    "atomicPhysics ERROR: unknown processClassGroup %u in "
+                                    "atomicPhysics ERROR: unknown processClass %u in "
                                     "SpawnionizationMacroElectronsKernel\n",
-                                    static_cast<uint16_t>(u8(T_ProcessClassGroup)));
+                                    static_cast<uint16_t>(u8(T_ProcessClass)));
                                 numberIonizationElectrons = static_cast<int8_t>(0u);
                             }
                         }
@@ -308,21 +319,20 @@ namespace picongpu::particles::atomicPhysics2::kernel
                             electron[multiMask_] = 1u;
 
                             // init new electron attributes
-                            if constexpr(T_ProcessClassGroup == enums::ProcessClassGroup::boundFreeBased)
+                            if constexpr(u8(T_ProcessClass) == u8(s_enums::ProcessClass::electronicIonization))
                             {
                                 // does not need chargeStateBox since we init electron as co-moving currently
 
-                                initElectrons::InitIonizationElectron<enums::ProcessClass::electronicIonization>{}(
-                                    ion,
-                                    electron);
+                                initElectrons::InitIonizationElectron<T_ProcessClass>{}(ion, electron);
 
                                 /// @todo implement field ionization, Brian Marre, 2023
                             }
-                            else if constexpr(T_ProcessClassGroup == enums::ProcessClassGroup::autonomousBased)
+                            else if constexpr(u8(T_ProcessClass) == u8(s_enums::ProcessClass::autonomousIonization))
                             {
                                 auto const superCellLocalOffset = superCellIdx - areaMapping.getGuardingSuperCells();
 
-                                initElectrons::InitIonizationElectron<enums::ProcessClass::autonomousIonization>{}(
+                                /// @todo unify call interface, Brian Marre, 2024
+                                initElectrons::InitIonizationElectron<T_ProcessClass>{}(
                                     worker,
                                     ionizationPotentialDepression,
                                     ion,

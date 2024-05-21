@@ -99,8 +99,7 @@ namespace picongpu::particles::atomicPhysics2::kernel
                     == u8(s_enums::ProcessClassGroup::autonomousBased));
             PMACC_CASSERT_MSG(
                 transitiondataBox_not_autonomous_based,
-                u8(T_AutonomousTransitionDataBox::processClassGroup)
-                    == u8(s_enums::ProcessClassGroup::autonomousBased));
+                u8(T_AutonomousTransitionDataBox::transitionType) == u8(s_enums::TransitionType::autonomous));
             PMACC_CASSERT_MSG(
                 wrong_transition_ordering_AutonomousTransitionDataBox,
                 u8(T_AutonomousTransitionDataBox::transitionOrdering)
