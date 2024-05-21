@@ -108,7 +108,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *  PIConGPU itself only includes charge state data, for ADK-, Thomas-Fermi- and BSI-ionization.
      *  All other atomic state data is kept separate from PIConGPU itself, due to licensing requirements.
      *
-     * These files is read at the start of the simulation and stored distributed over the following:
+     * These files are read at the start of the simulation and stored distributed over the following:
      *  - charge state property data [ChargeStateData.hpp]
      *      * ionization energy
      *      * screened charge
@@ -122,9 +122,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      [AtomicStateNumberOfTransitionsData_Down.hpp, AtomicStateNumberOfTransitionsData_UpDown.hpp]
      *       * number of transitions (up-/)down for each atomic state,
      *          by type of transition(bound-bound/bound-free/autonomous)
-     *       * offset in transition selection ordering for each atomic state
      *      [AtomicStateStartIndexBlockData_Down.hpp, AtomicStateStartIndexBlockData_UpDown.hpp]
-     *       * start index of block in transition collection index for atomic state,
+     *       * start index of atomic state's block of transitions in transition collection,
      *          by type of transition(bound-bound/bound-free/autonomous)
      * - pressure ionization data [PressureIonizationData.hpp]
      *      * pressure ionization state collectionIndex
@@ -132,15 +131,14 @@ namespace picongpu::particles::atomicPhysics2::atomicData
      *      AutonomousTransitionData.hpp]
      *      * parameters for cross section calculation for each modelled transition
      *
-     * (orga data describes the structure of the property data for faster lookups, lookups are
-     *  are always possible without it, but are possibly non performant)
+     * @note orga data describes the structure of the property data for faster lookups, lookups are always possible
+     *       without it, but are possibly non performant
      *
-     * For each of data subsets exists a dataBox class, a container class holding
-     *      pmacc::dataBox'es, and a dataBuffer class, a container class holding
-     *      pmacc::buffers in turn allowing access to the pmacc::dataBox'es.
+     * For each of data subsets exists a dataBox class, a container class holding pmacc::dataBox'es, and a dataBuffer
+     *  class, a container class holding pmacc::buffers in turn allowing access to the pmacc::dataBox'es.
      *
-     * Each dataBuffer will create on demand a host- or device-side dataBox class object which
-     *  in turn gives access to the data.
+     * Each dataBuffer will create on demand a host- or device-side dataBox objects which in turn gives access to the
+     *  data.
      *
      * Assumptions about input data are described in CheckTransitionTuple.hpp, ordering requirements of transitions in
      *  CompareTransitionTuple.hpp and all other requirements in the checkChargeStateList(), checkAtomicStateList() and
@@ -1473,7 +1471,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
 
             //      sort by lower state of transition, optional since input files already sorted
             // boundBoundTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
-            // boundFreeTransitions.sort( CompareTransitionTupel<TypeValue, Idx, true>());
+            // boundFreeTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
             // autonomousTransitions.sort(CompareTransitionTupel<TypeValue, Idx, true>());
 
             // check user input fulfills ordering assumptions
