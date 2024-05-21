@@ -27,6 +27,9 @@
 
 namespace picongpu::particles::atomicPhysics2::enums
 {
+    //! transition type type + direction to transition data set
+    //@{
+
     // error case, unknown is always false
     template<TransitionType T_TransitionType, TransitionDirection T_TransitionDirection>
     struct TransitionDataSetFor;

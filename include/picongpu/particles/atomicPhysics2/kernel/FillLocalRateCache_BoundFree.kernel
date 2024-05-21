@@ -25,6 +25,7 @@
 #include "picongpu/particles/atomicPhysics2/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics2/electronDistribution/CachedHistogram.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionDirectionFor.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/BoundFreeTransitionRates.hpp"
 
@@ -125,12 +126,11 @@ namespace picongpu::particles::atomicPhysics2::kernel
                 startIndex_dataBox_not_bound_free_based,
                 u8(T_AtomicStateStartIndexBox::processClassGroup) == u8(s_enums::ProcessClassGroup::boundFreeBased));
             PMACC_CASSERT_MSG(
-                transition_dataBox_not_boud_free_based,
-                u8(T_BoundFreeTransitionDataBox::processClassGroup) == u8(s_enums::ProcessClassGroup::boundFreeBased));
-            // check ordering of transition dataBox
+                wrong_type_transition_dataBox,
+                T_BoundFreeTransitionDataBox::transitionType == s_enums::TransitionType::boundFree);
             PMACC_CASSERT_MSG(
-                wrong_ordering_of_DataBox,
-                u8(T_BoundFreeTransitionDataBox::transitionOrdering) == u8(T_TransitionOrdering));
+                wrong_ordering_transition_dataBox,
+                T_BoundFreeTransitionDataBox::transitionOrdering == T_TransitionOrdering);
 
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx

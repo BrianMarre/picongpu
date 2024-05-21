@@ -22,8 +22,8 @@
 
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicTuples.def"
 #include "picongpu/particles/atomicPhysics2/atomicData/TransitionData.hpp"
-#include "picongpu/particles/atomicPhysics2/enums/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics2/enums/TransitionOrdering.hpp"
+#include "picongpu/particles/atomicPhysics2/enums/TransitionType.hpp"
 #include "picongpu/particles/atomicPhysics2/rateCalculation/Multiplicities.hpp"
 
 #include <cstdint>
@@ -40,6 +40,8 @@
 
 namespace picongpu::particles::atomicPhysics2::atomicData
 {
+    namespace s_enums = picongpu::particles::atomicPhysics2::enums;
+
     /** data box storing bound-free transition property data
      *
      * for use on device.
@@ -62,7 +64,7 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         typename T_CollectionIndex,
         typename T_ConfigNumber,
         typename T_Multiplicity,
-        picongpu::particles::atomicPhysics2::enums::TransitionOrdering T_TransitionOrdering>
+        s_enums::TransitionOrdering T_TransitionOrdering>
     class BoundFreeTransitionDataBox : public TransitionDataBox<T_Number, T_Value, T_CollectionIndex>
     {
     public:
@@ -75,9 +77,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using TypeMultiplicity = T_Multiplicity;
         using BoxMultiplicity = pmacc::DataBox<pmacc::PitchedBox<TypeMultiplicity, 1u>>;
 
-        static constexpr auto processClassGroup
-            = picongpu::particles::atomicPhysics2::enums::ProcessClassGroup::boundFreeBased;
-        static constexpr auto transitionOrdering = T_TransitionOrdering;
+        static constexpr s_enums::TransitionType transitionType = s_enums::TransitionType::boundFree;
+        static constexpr s_enums::TransitionOrdering transitionOrdering = T_TransitionOrdering;
 
     private:
         //! cross section fit parameter 1, unitless
@@ -411,8 +412,8 @@ namespace picongpu::particles::atomicPhysics2::atomicData
         using TypeMultiplicity = T_Multiplicity;
         using BufferMultiplicity = pmacc::HostDeviceBuffer<TypeMultiplicity, 1u>;
 
-        static constexpr auto processClassGroup = particles::atomicPhysics2::enums::ProcessClassGroup::boundFreeBased;
-        static constexpr auto transitionOrdering = T_TransitionOrdering;
+        static constexpr s_enums::TransitionType transitionType = s_enums::TransitionType::boundFree;
+        static constexpr s_enums::TransitionOrdering transitionOrdering = T_TransitionOrdering;
 
     private:
         std::unique_ptr<typename S_TransitionDataBuffer::BufferValue> bufferCxin1;
