@@ -23,9 +23,6 @@
 
 #pragma once
 
-#include "picongpu/particles/atomicPhyscis2/ionizationPotentialDepression/ClassicalTemperatureFunctor.hpp"
-#include "picongpu/particles/atomicPhyscis2/ionizationPotentialDepression/RelativisticTemperatureFunctor.hpp"
-#include "picongpu/particles/atomicPhyscis2/ionizationPotentialDepression/StewartPyattIPD.hpp"
 #include "picongpu/particles/atomicPhysics2/ExponentialApproximationProbability.hpp"
 #include "picongpu/particles/atomicPhysics2/LinearApproximationProbability.hpp"
 #include "picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp"
@@ -40,15 +37,13 @@ namespace picongpu::atomicPhysics2
     //{
     struct MaxEnergyParam
     {
+        // eV
         static constexpr float_X maxEnergy = float_X(1e7);
     };
     using ElectronHistogram = particles::atomicPhysics2::electronDistribution::LogSpaceHistogram<
         100u, // T_numberBins
         MaxEnergyParam>;
     //}
-
-    using IPDModel = picongpu::particles::atomicPhysics2::ionizationPotentialDepression::StewartPyattIPD<
-        picongpu::particles::atomicPhysics2::ionizationPotentialDepression::RelativisticTemperatureFunctor>;
 
     // atomicPhysics rate solver settings
     //{
@@ -90,15 +85,27 @@ namespace picongpu::atomicPhysics2
      *
      * see picongpu/particles/atomicPhysics2/atomicData/AtomicData.hpp for further information.
      */
-    using AtomicData_Ar = picongpu::particles::atomicPhysics2::atomicData::AtomicData<
-        uint32_t, // T_Number
-        float_X, // T_Value
-        uint32_t, // T_CollectionIndex
-        ConfigNumber_Argon, // T_ConfigNumber, type used for analytic indexation
-        true, // T_electronicExcitation
-        true, // T_electronicDeexcitation
-        true, // T_spontaneousDeexcitation
-        true, // T_electronicIonization
-        true, // T_autonomousIonization
-        false>; // T_fieldIonization
+    using AtomicData_Ar = particles::atomicPhysics2::atomicData::AtomicData<
+        // T_Number
+        uint32_t,
+        // T_Value
+        float_X,
+        // T_CollectionIndex
+        uint32_t,
+        // T_ConfigNumber, type used for analytic indexation
+        ConfigNumber_Argon,
+        // T_Multiplicities, data type used for storage
+        float_64,
+        // T_electronicExcitation
+        true,
+        // T_electronicDeexcitation
+        true,
+        // T_spontaneousDeexcitation
+        true,
+        // T_electronicIonization
+        true,
+        // T_autonomousIonization
+        true,
+        // T_fieldIonization
+        false>;
 } // namespace picongpu::atomicPhysics2
