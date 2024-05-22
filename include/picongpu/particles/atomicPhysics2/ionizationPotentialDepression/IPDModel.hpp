@@ -23,6 +23,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include <pmacc/mappings/kernel/AreaMapping.hpp>
 
 namespace picongpu::particles::atomicPhysics2::ionizationPotentialDepression
 {
