@@ -21,7 +21,7 @@
 
 #pragma once
 
-#pragma once
+#include "pmacc/types.hpp"
 
 namespace pmacc::math::operation
 {
