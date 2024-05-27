@@ -149,7 +149,9 @@ namespace picongpu::particles::atomicPhysics2::kernel
                         // check whether user activated at least one process from the transitionType
                         if(transitionTypeActive(transitionTypeID))
                         {
-                            cumSum += timeStep * rateCache.rate(transitionTypeID, atomicStateCollectionIndex);
+                            cumSum += picongpu::atomicPhysics2::ProbabilityApproximationFunctor::probabilityChange(
+                                timeStep,
+                                rateCache.rate(transitionTypeID, atomicStateCollectionIndex));
                             if(r < cumSum)
                             {
                                 // only in between storage
