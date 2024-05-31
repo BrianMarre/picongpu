@@ -101,9 +101,9 @@ namespace picongpu
                     using namespace pmacc;
                     using SpeciesWithCurrentSolver =
                         typename pmacc::particles::traits::FilterByFlag<VectorAllSpecies, current<>>::type;
-                    auto const numSpeciesWithCurrentSolver = pmacc::mp_size<SpeciesWithCurrentSolver>::value;
-                    auto const existsParticleCurrent = numSpeciesWithCurrentSolver > 0;
-                    if(existsParticleCurrent)
+                    auto constexpr numSpeciesWithCurrentSolver = pmacc::mp_size<SpeciesWithCurrentSolver>::value;
+                    auto constexpr existsParticleCurrent = numSpeciesWithCurrentSolver > 0;
+                    if constexpr(existsParticleCurrent)
                     {
                         DataConnector& dc = Environment<>::get().DataConnector();
                         auto& fieldJ = *dc.get<FieldJ>(FieldJ::getName());
