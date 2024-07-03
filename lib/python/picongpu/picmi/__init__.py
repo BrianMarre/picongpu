@@ -8,9 +8,8 @@ from .solver import ElectromagneticSolver
 from .gaussian_laser import GaussianLaser
 from .species import Species
 from .layout import PseudoRandomLayout
-from .distribution import UniformDistribution
-from .distribution import FoilDistribution
 from . import constants
+from . import distribution
 
 import picmistandard
 
@@ -28,6 +27,7 @@ __all__ = [
     "UniformDistribution",
     "FoilDistribution",
     "constants",
+    "distribution",
 ]
 
 codename = "picongpu"

@@ -5,10 +5,8 @@ Authors: Hannes Troepgen, Brian Edward Marre
 License: GPLv3+
 """
 
-from ..pypicongpu import species
-from ..pypicongpu import util
-
-import picmistandard
+from ...pypicongpu import species
+from ...pypicongpu import util
 
 from typeguard import typechecked
 import typing
@@ -31,6 +29,8 @@ import math
 # representation stored in a separate object (Drift).
 # To accomodate that, this separate Drift object can be requested by the method
 # get_picongpu_drift(). In case of no drift, this method returns None.
+
+import picmistandard
 
 
 @typechecked
