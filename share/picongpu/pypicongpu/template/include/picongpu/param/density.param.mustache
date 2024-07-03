@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 /* Copyright 2013-2024 Axel Huebl, Heiko Burau, Rene Widera, Felix Schmitt,
  *                     Richard Pausch, Marco Garten, Brian Marre, Kristin Tippey
  *                     Hannes Troepgen, Masoud Afshari
@@ -72,7 +70,7 @@ namespace picongpu
                 static constexpr float_64 gasSigmaRight_SI = {{{profile.data.gas_sigma_rear}}};
 
                 //! factor to multiply BASE_DENSITY_SI by to get density
-                static constexpr float_X densityRatio
+                static constexpr float_X densityFactor
                     = static_cast<float_X>({{{profile.data.density}}} / SI::BASE_DENSITY_SI);
             };
 
@@ -82,10 +80,8 @@ namespace picongpu
           {{#profile.type.uniform}}
             /** generate the initial macroparticle position for species "{{{placed_species_initial.name}}}" ({{{placed_species_initial.typename}}})
              *
-             *
-             * (Note: This profile assumes ratio to be 1. The correct ratio is applied in the initpipeline by CreateDensity.)
-             * (Note: This profile assumes ratio to be 1. The correct ratio is applied in the initpipeline by CreateDensity.)
-             */
+             * @note the density may be further modified from this profile by the densityRatio of the species set in the
+             *  init-pipeline.
              */
             struct init_{{{placed_species_initial.typename}}}_functor
             {
@@ -106,7 +102,8 @@ namespace picongpu
           {{#profile.type.foil}}
             /** generate the initial macroparticle position for species "{{{placed_species_initial.name}}}" ({{{placed_species_initial.typename}}})
              *
-             * (Note: This profile assumes ratio to be 1. The correct ratio is applied in the initpipeline by CreateDensity.)
+             * @note the density may be further modified from this profile by the densityRatio of the species, set in
+             *  the init-pipeline.
              */
             struct init_{{{placed_species_initial.typename}}}_functor
             {

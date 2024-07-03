@@ -2,7 +2,7 @@
     "$id": "https://registry.hzdr.de/crp/picongpu/schema/picongpu.pypicongpu.species.operation.densityprofile.densityprofile.DensityProfile",
     "description": "Any density profile. Consists of (1) the type of density profile used and (2) the actual data for that profile.",
     "type": "object",
-    "required": ["type", "data"],
+    "required": ["type", "data", "placed_species_initial"],
     "unevaluatedProperties": false,
     "properties": {
         "type": {
@@ -19,6 +19,10 @@
                 "foil": {"type": "boolean"},
                 "gaussian": {"type": "boolean"}
             }
+        },
+        "placed_species_initial": {
+            "description": "species to be placed first, lowest ratio of species placed in this operation",
+            "$ref": "https://registry.hzdr.de/crp/picongpu/schema/picongpu.pypicongpu.species.species.Species"
         },
         "data": {
             "description": "data as provided by any density profile (schema)",

@@ -10,6 +10,9 @@ from picongpu import picmi
 import unittest
 
 from picongpu.pypicongpu import species
+from picongpu.pypicongpu.species import Species
+from picongpu.pypicongpu.species.attribute import Momentum, Position
+
 import math
 from typeguard import typechecked
 
@@ -259,6 +262,13 @@ class TestPicmiGaussianBunchDistribution(unittest.TestCase):
 
 
 class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
+    def setUp(self):
+        species = Species()
+        species.name = "electron"
+        species.attributes = [Position(), Momentum()]
+        species.constants = []
+        self.species = species._get_serialized()
+
     def _get_distribution(self, lower_bound, upper_bound):
         return picmi.FoilDistribution(
             density=1716273,
@@ -305,7 +315,7 @@ class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
         """density set to zero is not accepted"""
         foil = picmi.FoilDistribution(density=0, thickness=1.0, front=2.0)
         with self.assertRaisesRegex(ValueError, ".*density must be > 0.*"):
-            foil.get_as_pypicongpu().get_generic_profile_rendering_context()
+            foil.get_as_pypicongpu().get_generic_profile_rendering_context(self.species)
 
     def test_front_zero(self):
         """front set to zero is accepted"""
@@ -377,7 +387,7 @@ class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
 
         for i, entry in enumerate(testCases):
             with self.assertRaisesRegex(ValueError, ".*PlasmaCutoff must be >=0.*"):
-                entry.get_as_pypicongpu().get_generic_profile_rendering_context()
+                entry.get_as_pypicongpu().get_generic_profile_rendering_context(self.species)
 
     def test_length_zero(self):
         """length set to zero is not accepted"""
@@ -385,7 +395,7 @@ class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
 
         for entry in testCases:
             with self.assertRaisesRegex(ValueError, ".*PlasmaLength must be >0.*"):
-                entry.get_as_pypicongpu().get_generic_profile_rendering_context()
+                entry.get_as_pypicongpu().get_generic_profile_rendering_context(self.species)
 
     def test_length_below_zero(self):
         """length below zero is not accepted"""
@@ -394,7 +404,7 @@ class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
 
         for entry in testCases:
             with self.assertRaisesRegex(ValueError, ".*PlasmaLength must be >0.*"):
-                entry.get_as_pypicongpu().get_generic_profile_rendering_context()
+                entry.get_as_pypicongpu().get_generic_profile_rendering_context(self.species)
 
     def test_setting_noPlasmaRamps(self):
         testCases = self._get_test_foils(None, 1.0)
@@ -406,7 +416,7 @@ class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
                 "length and exponential_(pre|post)_plasma_cutoff must be"
                 " set to none or neither!",
             ):
-                entry.get_as_pypicongpu().get_generic_profile_rendering_context()
+                entry.get_as_pypicongpu().get_generic_profile_rendering_context(self.species)
 
         testCases = self._get_test_foils(1.0, None)
         for entry in testCases:
@@ -416,7 +426,7 @@ class TestPicmiFoilDistribution(unittest.TestCase, HelperTestPicmiBoundaries):
                 "length and exponential_(pre|post)_plasma_cutoff must be"
                 " set to none or neither!",
             ):
-                entry.get_as_pypicongpu().get_generic_profile_rendering_context()
+                entry.get_as_pypicongpu().get_generic_profile_rendering_context(self.species)
 
     def test_mandatory(self):
         """check that mandatory must be given"""

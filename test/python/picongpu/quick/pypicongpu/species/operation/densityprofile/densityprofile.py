@@ -6,6 +6,8 @@ License: GPLv3+
 """
 
 from picongpu.pypicongpu.species.operation.densityprofile import DensityProfile
+from picongpu.pypicongpu.species import Species
+from picongpu.pypicongpu.species.attribute import Momentum, Position
 
 import unittest
 
@@ -15,6 +17,13 @@ import jsonschema
 
 
 class TestDensityProfile(unittest.TestCase):
+    def setUp(self):
+        species = Species()
+        species.name = "electron"
+        species.attributes = [Position(), Momentum()]
+        species.constants = []
+        self.species = species._get_serialized()
+
     def tearDown(self):
         # rendering with type test tampers with the schema store:
         # reset it after tests
@@ -52,7 +61,7 @@ class TestDensityProfile(unittest.TestCase):
         RenderedObject._schemas_loaded = False
         RenderedObject._schema_by_uri = {}
 
-        context = uniform.get_generic_profile_rendering_context()
+        context = uniform.get_generic_profile_rendering_context(self.species)
 
         # schemas now loaded
         self.assertTrue(RenderedObject._schemas_loaded)
@@ -60,7 +69,7 @@ class TestDensityProfile(unittest.TestCase):
         self.assertEqual(context["data"], uniform.get_rendering_context())
 
         # contains information on all types
-        self.assertEqual(context["type"], {"uniform": True, "foil": False})
+        self.assertEqual(context["type"], {"uniform": True, "foil": False, "gaussian": False})
 
         # is actually validated against "DensityProfile" schema
         # (note: accessing internal methods only for testing, don't do this)
@@ -85,4 +94,4 @@ class TestDensityProfile(unittest.TestCase):
         with self.assertRaises(jsonschema.exceptions.ValidationError):
             # schema now rejects everything
             # -> must also reject previously correct context
-            uniform.get_generic_profile_rendering_context()
+            uniform.get_generic_profile_rendering_context(self.species)

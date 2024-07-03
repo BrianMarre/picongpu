@@ -30,7 +30,7 @@ class DensityProfile(RenderedObject):
         """
         raise NotImplementedError()
 
-    def get_generic_profile_rendering_context(self) -> dict:
+    def get_generic_profile_rendering_context(self, placed_species_initial: dict) -> dict:
         """
         retrieve a context valid for "any profile"
 
@@ -102,6 +102,7 @@ class DensityProfile(RenderedObject):
         returned_context = {
             "type": type_dict,
             "data": serialized_data,
+            "placed_species_initial": placed_species_initial,
         }
 
         # make sure it passes schema checks
