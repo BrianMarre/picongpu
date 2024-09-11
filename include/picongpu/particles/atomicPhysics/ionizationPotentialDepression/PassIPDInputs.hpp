@@ -17,7 +17,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file collection of helper functions for passing with ionization potential depression inputs to the IPDModell call
+//! @file collection of helper functions for passing with ionization potential depression inputs to the MatterIPDModell
+//! call
 
 #pragma once
 
@@ -25,25 +26,29 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
     struct PassIPDInputs
     {
-        template<typename T_IPDModel, typename T_RNGFactory, typename T_ChargeStateDataBox, typename... T_IPDInput>
+        template<
+            typename T_MatterIPDModel,
+            typename T_RNGFactory,
+            typename T_ChargeStateDataBox,
+            typename... T_IPDInput>
         HDINLINE static float_X calculateIPD_RngFactory(
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx,
             T_RNGFactory&,
             T_ChargeStateDataBox chargeStateBox,
             T_IPDInput... ipdInput)
         {
-            return T_IPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
+            return T_MatterIPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
                 superCellFieldIdx,
                 ipdInput...);
         }
 
-        template<typename T_IPDModel, typename T_ChargeStateDataBox, typename... T_IPDInput>
+        template<typename T_MatterIPDModel, typename T_ChargeStateDataBox, typename... T_IPDInput>
         HDINLINE static float_X calculateIPD(
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx,
             T_ChargeStateDataBox chargeStateBox,
             T_IPDInput... ipdInput)
         {
-            return T_IPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
+            return T_MatterIPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
                 superCellFieldIdx,
                 ipdInput...);
         }

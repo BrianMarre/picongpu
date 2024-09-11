@@ -90,6 +90,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
                 boundFreeTransitionDataBox,
                 ionizationPotentialDepression,
                 chargeStateDataBox);
+
             // unitless
             float_X const effectivePrincipalQuantumNumber
                 = screenedCharge / math::sqrt(2._X * ionizationEnergy * picongpu::UNITCONV_eV_to_AU);

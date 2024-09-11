@@ -27,7 +27,7 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
-    struct NoIPD : IPDModel
+    struct NoIPD : MatterIPDModel
     {
         //! create all HelperFields required by the IPD model
         HINLINE static void createHelperFields()

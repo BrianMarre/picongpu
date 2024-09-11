@@ -23,8 +23,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/LocalIPDInputFields.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/MatterIPDModel.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/ApplyIPDIonization.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/CalculateIPDInput.hpp"
@@ -48,7 +48,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
      * average(A) = k_B * T, must follow
      */
     template<typename T_TemperatureFunctor>
-    struct StewartPyattIPD : IPDModel
+    struct StewartPyattIPD : MatterIPDModel
     {
     private:
         //! reset IPD support infrastructure before we accumulate over particles to calculate new IPD Inputs

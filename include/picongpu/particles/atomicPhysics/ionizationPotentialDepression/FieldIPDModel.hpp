@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements the ionization potential depression(IPD) model
+//! @file interface for all electromagnetic field ionization potential depression(IPD) implementations
 
 #pragma once
 
@@ -25,10 +25,10 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
-    template<typename T_MatterIPDModel, typename T_FieldIPDModel>
-    struct IPDModel
+    struct FieldIPDModel
     {
-        using MatterIPDModel = T_MatterIPDModel;
-        using FieldIPDModel = T_FieldIPDModel;
+        //! calculate IPD due to the electric field
+        template<typename... T_Input>
+        HDINLINE static float_X calculateIPD(float_X const eFieldNorm, T_Input const... input);
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

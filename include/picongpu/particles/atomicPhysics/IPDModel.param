@@ -19,13 +19,16 @@
 
 #pragma once
 
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/BSIIPD.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ClassicalTemperatureFunctor.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/IPDModel.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/RelativisticTemperatureFunctor.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/StewartPyattIPD.hpp"
 
 namespace picongpu::atomicPhysics
 {
-    //! configuration of used ionization potential depression Model
-    using IPDModel = picongpu::particles::atomicPhysics::ionizationPotentialDepression::StewartPyattIPD<
-        picongpu::particles::atomicPhysics::ionizationPotentialDepression::RelativisticTemperatureFunctor>;
+    //! configuration of used ionization potential depression Models
+    using IPDModel = IPDModel<
+        ionizationPotentialDepression::StewartPyattIPD<ionizationPotentialDepression::RelativisticTemperatureFunctor>,
+        ionizationPotentialDepression::BSIIPD>;
 } // namespace picongpu::atomicPhysics
