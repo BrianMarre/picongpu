@@ -28,6 +28,8 @@
 #include "picongpu/particles/atomicPhysics/atomicData/AtomicData.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LogSpaceHistogram.hpp"
 #include "picongpu/particles/atomicPhysics/enums/ADKLaserPolarization.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/IPDModels.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/temperatureFunctor/TemperatureFunctorTags.hpp"
 #include "picongpu/particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp"
 
 #include <cstdint>
@@ -55,6 +57,16 @@ namespace picongpu::atomicPhysics
         // which probability approximation to use for the acceptance step
         using ProbabilityApproximationFunctor
             = picongpu::particles::atomicPhysics::ExponentialApproximationProbability;
+    };
+
+    //! IPD settings
+    struct IPDConfig
+    {
+        using s_IPD = particles::atomicPhysics::ionizationPotentialDepression;
+
+        using MatterIPDModel = s_IPD::stewartPyatt::Model_StewartPyatt<
+            s_IPD::stewartPyatt::temperatureFunctor::RelativisticTemperatureFunctorTag>;
+        using FieldIPDModel = s_IPD::fieldBarrierSuppression::Model_BSI;
     };
 
     /** atomicConfigNumber definition for argon ions

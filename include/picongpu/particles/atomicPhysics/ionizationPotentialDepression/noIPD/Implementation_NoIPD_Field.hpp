@@ -17,16 +17,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all  ionization potential depression(IPD) model
+/** @file NoIPD field ionization potential depression(IPD) implementation
+ *
+ * Implements the interface for skipping field IPD models in the atomicPhysics stage.
+ */
 
 #pragma once
 
 #include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
-{
-    struct MatterIPDModel : IPDModel
-    {
-    };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+#include <cstdint>

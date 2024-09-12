@@ -17,16 +17,16 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all  ionization potential depression(IPD) model
+/** @file compilation of all local helper fields for the calculation ionization potential depression(IPD)
+ *
+ * hold quantity for each super cell
+ *
+ * @details used for calculating IPD
+ */
+
 
 #pragma once
 
-#include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
-
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
-{
-    struct MatterIPDModel : IPDModel
-    {
-    };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/localHelperFields/LocalDebyeLengthField.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/localHelperFields/LocalTemperatureEnergyField.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/localHelperFields/LocalZStarField.hpp"

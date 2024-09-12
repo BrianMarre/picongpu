@@ -24,12 +24,12 @@
 //  and picongpu/param/atomicPhysics_debug.param
 
 #include "picongpu/particles/atomicPhysics/AtomicPhysicsSuperCellFields.hpp"
-#include "picongpu/particles/atomicPhysics/IPDModel.param" /// @todo move to atomicPhysics.param, Brian Marre, 2024
 #include "picongpu/particles/atomicPhysics/ParticleType.hpp"
 #include "picongpu/particles/atomicPhysics/SetTemperature.hpp"
 #include "picongpu/particles/atomicPhysics/debug/stage/DumpAllIonsToConsole.hpp"
 #include "picongpu/particles/atomicPhysics/debug/stage/DumpRateCacheToConsole.hpp"
 #include "picongpu/particles/atomicPhysics/debug/stage/DumpSuperCellDataToConsole.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/IPD.hpp"
 #include "picongpu/particles/atomicPhysics/stage/BinElectrons.hpp"
 #include "picongpu/particles/atomicPhysics/stage/CalculateStepLength.hpp"
 #include "picongpu/particles/atomicPhysics/stage/CheckForOverSubscription.hpp"
@@ -236,12 +236,12 @@ namespace picongpu::simulation::stage
             }
 
             //! calculate ionization potential depression parameters for every superCell
-            void calculateIPDInput(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep) const
+            void calculateIPDInput(picongpu::MappingDesc const& mappingDesc) const
             {
-                picongpu::atomicPhysics::IPDModel::
+                picongpu::particles::atomicPhysics::ionizationPotentialDepression::IPD<
+                    picongpu::atomicPhysics::IPDConfig>::
                     template calculateIPDInput<T_numberAtomicPhysicsIonSpecies, IPDIonSpecies, IPDElectronSpecies>(
-                        mappingDesc,
-                        currentStep);
+                        mappingDesc);
             }
 
             //! reset each superCell's time step
@@ -408,10 +408,10 @@ namespace picongpu::simulation::stage
                 do
                 {
                     resetFoundUnboundIon();
-                    picongpu::atomicPhysics::IPDModel::
+                    picongpu::particles::atomicPhysics::ionizationPotentialDepression::IPD<
+                        picongpu::atomicPhysics::IPDConfig>::
                         template calculateIPDInput<T_numberAtomicPhysicsIonSpecies, IPDIonSpecies, IPDElectronSpecies>(
-                            mappingDesc,
-                            currentStep);
+                            mappingDesc);
                     picongpu::atomicPhysics::IPDModel::template applyPressureIonization<AtomicPhysicsIonSpecies>(
                         mappingDesc,
                         currentStep);
@@ -483,7 +483,7 @@ namespace picongpu::simulation::stage
                     resetElectronEnergyHistogram();
                     debugForceConstantElectronTemperature(currentStep);
                     binElectronsToEnergyHistogram(mappingDesc);
-                    calculateIPDInput(mappingDesc, currentStep);
+                    calculateIPDInput(mappingDesc);
                     resetTimeStep(mappingDesc);
                     resetRateCache();
                     checkPresence(mappingDesc);

@@ -17,16 +17,21 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all  ionization potential depression(IPD) model
-
 #pragma once
 
 #include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
-    struct MatterIPDModel : IPDModel
+    /** user facing and .param file save configuration of the IPD model
+     *
+     * @tparam T_MatterIPDModel model to use for matter contribution of IPD in the atomicPhysics stage
+     * @tparam T_FieldIPDModel  model to use for field contribution of IPD in the atomicPhysics stage
+     */
+    template<typename T_MatterIPDModel, typename T_FieldIPDModel>
+    struct IPDConfig
     {
+        using MatterIPDModel = T_MatterIPDModel;
+        using FieldIPDModel = T_FieldIPDModel;
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

@@ -1,4 +1,4 @@
-/* Copyright 2024 Brian Marre
+/* Copyright 2022-2024 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -17,16 +17,9 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all  ionization potential depression(IPD) model
+//! @file collection of all temperature functors for easier include
 
 #pragma once
 
-#include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
-
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
-{
-    struct MatterIPDModel : IPDModel
-    {
-    };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/temperatureFunctor/ClassicalTemperaturFunctor.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/temperatureFunctor/RelativisticTemperatureFunctor.hpp"

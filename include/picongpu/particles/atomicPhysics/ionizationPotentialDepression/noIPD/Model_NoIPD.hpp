@@ -17,16 +17,22 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all  ionization potential depression(IPD) model
+//! @file implementation of ionization potential depression(IPD) calculation according of the the NoIPD model
 
 #pragma once
 
 #include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/MatterIPDModel.hpp"
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::noIPD
 {
-    struct MatterIPDModel : IPDModel
+    struct Model_NoIPD : MatterIPDModel
     {
+        //! @returns 0._X eV
+        HDINLINE static float_X calculateIPD()
+        {
+            return 0._X;
+        }
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::noIPD

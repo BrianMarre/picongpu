@@ -9,7 +9,7 @@
  *
  * PIConGPU is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -17,16 +17,20 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all  ionization potential depression(IPD) model
+/** @file collection of TemperaturFunctor tags
+ *
+ * @attention Each TemperatureFunctor must have exactly one associated tag and one associated conversion implementation
+ *  in TagToFunctor.hpp
+ */
 
 #pragma once
 
-#include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
-
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::temperatureFunctor
 {
-    struct MatterIPDModel : IPDModel
+    struct ClassicalTemperatureFunctorTag
     {
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
+    struct RelativisticTemperatureFunctorTag
+    {
+    };
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::temperatureFunctor

@@ -17,25 +17,26 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file general interface of all ionization potential depression(IPD) model
+//! @file implementation of ionization potential depression(IPD) according to barrier suppression ionization model
 
 #pragma once
 
 #include "picongpu/defines.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/FieldIPDModel.hpp"
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ipdModel
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::FieldBarrierSuppressionIPD
 {
-    struct IPDModel
+    struct Model_BSI : FieldIPDModel
     {
-        /** interface for calculating ionization potential depression(IPD)
+        /** calculate IPD due to the electric field
          *
-         * needs to implemented for each model
-         *
-         * @tparam T_IPDInput list of parameters of IPD calculation
+         * @param eFieldNorm, in internal units
+         * @param screenedCharge, in e
          *
          * @return unit: eV, not weighted
          */
-        template<typename... T_IPDInput>
-        HDINLINE static float_X calculateIPD(T_IPDInput const... ipdInput);
-    };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ipdModel
+        HDINLINE static float_X calculateIPD(float_X const eFieldNorm, float_X const screenedCharge)
+        {
+            return -2._X * math::sqrt(screenedCharge * eFieldNorm / picongpu::ATOMIC_UNIT_EFIELD);
+        }
+    } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ipdModel
