@@ -22,7 +22,7 @@
 #pragma once
 
 #include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/IPDModel.hpp"
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {

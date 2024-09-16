@@ -26,12 +26,12 @@
 
 #include <cstdint>
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::tewartPyattIPD
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
 {
-    template<typename T_TemperatureFunctorTag>
+    template<typename T_TemperatureFunctor>
     struct Model_StewartPyatt : MatterIPDModel
     {
-        using TemperatureFunctor = T_TemperatureFunctorTag;
+        using TemperatureFunctor = T_TemperatureFunctor;
 
         /** calculate ionization potential depression
          *
@@ -72,4 +72,4 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::tew
                 / (2._X * (zStar + 1._X));
         }
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::tewartPyattIPD
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt

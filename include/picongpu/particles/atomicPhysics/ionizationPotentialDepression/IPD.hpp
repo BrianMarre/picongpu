@@ -70,11 +70,10 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
         template<typename T_AtomicPhysicsIonSpeciesList>
         HINLINE static void applyIPDIonization(picongpu::MappingDesc const mappingDesc)
         {
-            using ForEachIonSpeciesApplyPressureIonization = pmacc::meta::ForEach<
-                T_AtomicPhysicsIonSpeciesList,
-                s_IPD::stage::ApplyPressureIonization<boost::mpl::_1, StewartPyattIPD<T_TemperatureFunctor>>>;
+            using ForEachIonSpeciesApplyIPDIonization = pmacc::meta::
+                ForEach<T_AtomicPhysicsIonSpeciesList, s_IPD::stage::ApplyIPDIonization<boost::mpl::_1, >>;
 
-            ForEachIonSpeciesApplyPressureIonization{}(mappingDesc);
+            ForEachIonSpeciesApplyIPDIonization{}(mappingDesc);
         };
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

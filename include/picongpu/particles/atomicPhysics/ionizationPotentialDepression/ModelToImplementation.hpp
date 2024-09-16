@@ -23,6 +23,8 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/fieldBarrierSuppression/Implementation_BSI.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/fieldBarrierSuppression/Model_BSI.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/Implementation_StewartPyatt.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/Model_StewartPyatt.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/temperatureFunctor/TagToFunctor.hpp"
@@ -35,10 +37,18 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
     struct ModelToImplementation;
 
     template<typename T_TemperaturFunctorTag>
-    struct ModelToImplementation<stewartPyatt::Model_StewartPyatt<T_TemperaturFunctorTag>, T_TemperaturFunctorTag>
+    struct ModelToImplementation<
+        stewartPyatt::Model_StewartPyatt<typename temperatureFunctor::TagToFunctor<T_TemperaturFunctorTag>::type>,
+        T_TemperaturFunctorTag>
     {
         using type = stewartPyatt::Implementation_StewartPyatt<
             temperatureFunctor::TagToFunctor<T_TemperaturFunctorTag>::type,
-            stewartPyatt::Model_StewartPyatt<T_TemperaturFunctorTag>>;
+            stewartPyatt::Model_StewartPyatt<T_TemperaturFunctorTag>::type>;
+    };
+
+    template<>
+    struct ModelToImplementation<fieldBarrierSuppression::Model_BSI>
+    {
+        using type = fieldBarrierSuppression::Implementation_BSI
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

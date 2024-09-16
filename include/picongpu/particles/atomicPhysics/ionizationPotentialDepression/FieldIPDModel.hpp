@@ -22,9 +22,9 @@
 #pragma once
 
 #include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ipdModel/IPDModel.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/IPDModel.hpp"
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ipdModel
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
     struct FieldIPDModel
     {
@@ -41,4 +41,4 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ipd
         template<typename... T_IPDInput>
         HDINLINE static float_X calculateIPD(float_X const eFieldNorm, T_IPDInput const... ipdInput);
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ipdModel
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
