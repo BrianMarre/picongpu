@@ -30,7 +30,7 @@
 
 #include <cstdint>
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::kernel
 {
     /** calculate IPD input kernel for the Stewart-Pyatt IPD model
      *
@@ -175,4 +175,4 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ste
                 });
         }
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::kernel

@@ -283,12 +283,11 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
         SuperCellFieldIndexFunctor,
         WriteFoundUnboundToSuperCellField>;
 
-    //! actual definition of ApplyIonizationPotentialDepressionIonizationKernel
+    //! actual definition of ApplyIPDIonizationKernel
     template<typename T_IPDImplementation>
-    using ApplyIonizationPotentialDepressionIonizationKernel
-        = picongpu::particles::creation::SpawnFromSourceSpeciesKernelFramework<
-            // T_TypeNumber
-            uint8_t,
-            ApplyIPDIonizationModulConfig,
-            T_IPDImplementation>;
+    using ApplyIPDIonizationKernel = picongpu::particles::creation::SpawnFromSourceSpeciesKernelFramework<
+        // T_TypeNumber
+        uint8_t,
+        ApplyIPDIonizationModulConfig,
+        T_IPDImplementation>;
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::kernel

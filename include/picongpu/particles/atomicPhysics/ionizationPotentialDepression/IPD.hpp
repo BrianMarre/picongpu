@@ -21,6 +21,7 @@
 
 #include "picongpu/simulation_defines.hpp"
 
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ApplyIPDIonization.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/ModelToImplementation.hpp"
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
@@ -54,26 +55,15 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
                     mappingDesc);
         }
 
-        /** check for and apply single step of pressure ionization cascade
+        /** append ipd input to kernelInput and do a PMACC_LOCKSTEP_KERNEL call for T_kernel
          *
-         * @attention assumes that ipd-input fields are up to date
-         * @attention invalidates ipd-input fields if at least one ionization electron has been spawned
-         *
-         * @attention must be called once for each step in a pressure ionization cascade
-         *
-         * @tparam T_AtomicPhysicsIonSpeciesList list of all species partaking as ion in atomicPhysics
-         * @tparam T_IPDIonSpeciesList list of all species partaking as ions in IPD input
-         * @tparam T_IPDElectronSpeciesList list of all species partaking as electrons in IPD input
-         *
-         * @attention collective over all ion species
+         * @tparam T_Kernel kernel to call
+         * @param kernelInput stuff to pass to the kernel, before the ionization potential depression input
          */
-        template<typename T_AtomicPhysicsIonSpeciesList>
-        HINLINE static void applyIPDIonization(picongpu::MappingDesc const mappingDesc)
-        {
-            using ForEachIonSpeciesApplyIPDIonization = pmacc::meta::
-                ForEach<T_AtomicPhysicsIonSpeciesList, s_IPD::stage::ApplyIPDIonization<boost::mpl::_1, >>;
-
-            ForEachIonSpeciesApplyIPDIonization{}(mappingDesc);
-        };
+        template<typename T_Kernel, uint32_t chunkSize, typename... T_KernelInput>
+        HINLINE static void callKernelWithIPDInput(
+            pmacc::DataConnector& dc,
+            pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
+            T_KernelInput... kernelInput);
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

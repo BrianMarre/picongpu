@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements filling of all sum fields for an electron species
+/** @file implements filling of all sum fields for an ion species
  *
  * Sum fields are used in the calculation of ionization potential depression(IPD) input parameters.
  *
@@ -30,51 +30,55 @@
 
 #include <pmacc/particles/algorithm/ForEach.hpp>
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::kernel
 {
-    /** fillSumFields kernel, electron variant
+    /** FillSumFields kernel, ion variant
      *
      * @attention assumes that the sumFields have been reset previously
      *
-     * called by FillSumFields_Electron IPD stage, adds contribution for all macro electrons to all sum fields
+     * called by FillSumFields_Ion IPD stage, adds contribution for all macro ions to all sum fields
      * @tparam T_TemperatureFunctor term to average for temperature calculation using equi-partition theorem
      */
     template<typename T_TemperatureFunctor>
-    struct FillIPDSumFieldsKernel_Electron
+    struct FillIPDSumFieldsKernel_Ion
     {
         /** call operator
          *
-         * called by FillSumFields_Electron IPD sub-stage
+         * called by FillSumFields_Ions IPD sub-stage
          *
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param localTimeRemainingBox deviceDataBox giving access to the atomic Physics step time remaining of all
          *  local superCells
-         * @param electronBox deviceDataBox giving access to the specie's electron frames of all local superCells
-         * @param localSumWeightBox deviceDataBox giving access to the sum of weights of macro particles for all
+         * @param ionBox deviceDataBox giving access to the specie's ion frames of all local superCells
+         * @param localSumWeightAllBox deviceDataBox giving access to the sum of weights of macro particles for all
          *  local superCells
          * @param localSumTemperatureFunctionalBox deviceDataBox giving access to the sum of the temperature
          *  functional of all macro particles for all local superCells
-         * @param localSumElectronWeightBox deviceDataBox giving access to the sum of weights for electron macro
+         * @param localSumCharge deviceDataBox giving access to the weighted sum of abs(charge) of ion macro particles
+         *  for all local superCells
+         * @param localSumChargeSquared deviceDataBox giving access to the weighted sum of charge squared of ion macro
          *  particles for all local superCells
          */
         template<
             typename T_Worker,
             typename T_AreaMapping,
             typename T_LocalTimeRemainingBox,
-            typename T_ElectronBox,
-            typename T_SumWeightFieldDataBox,
+            typename T_IonBox,
+            typename T_SumWeightAllFieldDataBox,
             typename T_SumTemperatureFunctionalFieldDataBox,
-            typename T_SumWeightElectronsFieldDataBox>
+            typename T_SumChargeIonsFieldDataBox,
+            typename T_SumChargeSquaredIonsFieldDataBox>
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_ElectronBox const electronBox,
-            T_SumWeightFieldDataBox localSumWeightBox,
+            T_IonBox const ionBox,
+            T_SumWeightAllFieldDataBox localSumWeightAllBox,
             T_SumTemperatureFunctionalFieldDataBox localSumTemperatureFunctionalBox,
-            T_SumWeightElectronsFieldDataBox localSumElectronWeightBox) const
+            T_SumChargeIonsFieldDataBox localSumChargeBox,
+            T_SumChargeSquaredIonsFieldDataBox localSumChargeSquaredBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
@@ -85,38 +89,51 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ste
 
             auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
             auto forEachLocalParticleBoxEntry
-                = pmacc::particles::algorithm::acc::makeForEach(worker, electronBox, superCellIdx);
+                = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
             // end kernel if superCell already finished or if contains no particles
             if((timeRemaining <= 0._X) || (!forEachLocalParticleBoxEntry.hasParticles()))
                 return;
 
             // init worker partial sum
-            auto sumWeight = 0._X;
-            auto sumTemperatureFunctional = 0._X;
-            auto sumElectronWeight = 0._X;
+            float_X sumWeight = 0._X;
+            float_X sumTemperatureFunctional = 0._X;
+            float_X sumChargeNumber = 0._X;
+            float_X sumChargeNumberSquared = 0._X;
 
             forEachLocalParticleBoxEntry(
-                [&sumWeight, &sumTemperatureFunctional, &sumElectronWeight](T_Worker const& worker, auto& electron)
+                [&sumWeight, &sumTemperatureFunctional, &sumChargeNumber, &sumChargeNumberSquared](
+                    T_Worker const& worker,
+                    auto& ion)
                 {
                     // unitless * 1/sim.unit.typicalNumParticlesPerMacroParticle()
                     float_X const weightNormalized
-                        = electron[weighting_] / picongpu::sim.unit.typicalNumParticlesPerMacroParticle();
+                        = ion[weighting_] / picongpu::sim.unit.typicalNumParticlesPerMacroParticle();
 
                     // sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2 * weight /
                     // sim.unit.typicalNumParticlesPerMacroParticle()
                     sumTemperatureFunctional
-                        += T_TemperatureFunctor::term(electron, precisionCast<float_64>(weightNormalized));
+                        += T_TemperatureFunctor::term(ion, precisionCast<float_64>(weightNormalized));
 
                     // weight / sim.unit.typicalNumParticlesPerMacroParticle()
                     sumWeight += weightNormalized;
-                    sumElectronWeight += weightNormalized;
+
+                    // sim.unit.charge()
+                    constexpr auto elementaryCharge = -picongpu::sim.pic.getElectronCharge();
+
+                    // sim.unit.charge() / sim.unit.charge() = unitless
+                    auto const chargeNumber = picongpu::traits::attribute::getCharge(1._X, ion) / elementaryCharge;
+
+                    // unitless * weight / sim.unit.typicalNumParticlesPerMacroParticle()
+                    sumChargeNumber += weightNormalized * chargeNumber;
+                    // unitless * weight / sim.unit.typicalNumParticlesPerMacroParticle()
+                    sumChargeNumberSquared += weightNormalized * pmacc::math::cPow(chargeNumber, 2u);
                 });
 
-            // write worker partial sums for species to superCell field
+            // use atomic add to write worker partial sums for species back to superCell field
             alpaka::atomicAdd(
                 worker.getAcc(),
-                &(localSumWeightBox(superCellFieldIdx)),
+                &(localSumWeightAllBox(superCellFieldIdx)),
                 sumWeight,
                 ::alpaka::hierarchy::Threads{});
             alpaka::atomicAdd(
@@ -126,9 +143,14 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ste
                 ::alpaka::hierarchy::Threads{});
             alpaka::atomicAdd(
                 worker.getAcc(),
-                &(localSumElectronWeightBox(superCellFieldIdx)),
-                sumElectronWeight,
+                &(localSumChargeBox(superCellFieldIdx)),
+                sumChargeNumber,
+                ::alpaka::hierarchy::Threads{});
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(localSumChargeSquaredBox(superCellFieldIdx)),
+                sumChargeNumberSquared,
                 ::alpaka::hierarchy::Threads{});
         }
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::kernel

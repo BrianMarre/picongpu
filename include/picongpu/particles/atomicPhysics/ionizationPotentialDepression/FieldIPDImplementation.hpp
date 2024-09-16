@@ -30,15 +30,39 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
-    /** calculate all inputs for the ionization potential depression
-     *
-     * @tparam T_IPDIonSpeciesList list of all species partaking as ions in IPD input
-     * @tparam T_IPDElectronSpeciesList list of all species partaking as electrons in IPD input
-     * @tparam T_numberAtomicPhysicsIonSpecies specialization template parameter used to prevent compilation of all
-     *  atomicPhysics kernels if no atomic physics species is present.
-     *
-     * @attention collective over all IPD species
-     */
-    template<uint32_t T_numberAtomicPhysicsIonSpecies, typename T_IPDIonSpeciesList, typename T_IPDElectronSpeciesList>
-    HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc);
+    struct FieldIPDImplementation
+    {
+        //! create all HelperFields required by the IPD model
+        ALPAKA_FN_HOST static void createHelperFields();
+
+        /** calculate all inputs for the ionization potential depression
+         *
+         * @tparam T_IPDIonSpeciesList list of all species partaking as ions in IPD input
+         * @tparam T_IPDElectronSpeciesList list of all species partaking as electrons in IPD input
+         * @tparam T_numberAtomicPhysicsIonSpecies specialization template parameter used to prevent compilation of all
+         *  atomicPhysics kernels if no atomic physics species is present.
+         *
+         * @attention collective over all IPD species
+         */
+        template<
+            uint32_t T_numberAtomicPhysicsIonSpecies,
+            typename T_IPDIonSpeciesList,
+            typename T_IPDElectronSpeciesList>
+        HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc);
+
+        /** calculate all inputs for the ionization potential depression
+         *
+         * @tparam T_IPDIonSpeciesList list of all species partaking as ions in IPD input
+         * @tparam T_IPDElectronSpeciesList list of all species partaking as electrons in IPD input
+         * @tparam T_numberAtomicPhysicsIonSpecies specialization template parameter used to prevent compilation of all
+         *  atomicPhysics kernels if no atomic physics species is present.
+         *
+         * @attention collective over all IPD species
+         */
+        template<
+            uint32_t T_numberAtomicPhysicsIonSpecies,
+            typename T_IPDIonSpeciesList,
+            typename T_IPDElectronSpeciesList>
+        HINLINE static void calculateIPDInput(picongpu::MappingDesc const mappingDesc);
+    };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

@@ -26,18 +26,15 @@
 
 #include "picongpu/simulation_defines.hpp"
 
-#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/CalculateIPDInput.kernel"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/LocalIPDInputFields.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/SumFields.hpp"
+#include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stewartPyatt/kernel/CalculateIPDInput.kernel"
 #include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
 
 #include <string>
 
-namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::stage
 {
-    //! short hand for IPD namespace
-    namespace s_IPD = picongpu::particles::atomicPhysics::ionizationPotentialDepression;
-
     /** IPD sub-stage for calculating IPD input from sumFields, required for calculating IPD
      *
      * @tparam T_numberAtomicPhysicsIonSpecies specialization template parameter used to prevent compilation of all
@@ -58,33 +55,34 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ste
                 "LocalTimeRemainingField");
 
             auto& localSumWeightAllField
-                = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
+                = *dc.get<stewartPyatt::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>(
+                    "SumWeightAllField");
             auto& localSumTemperatureFunctionalField
-                = *dc.get<s_IPD::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
+                = *dc.get<stewartPyatt::localHelperFields::SumTemperatureFunctionalField<picongpu::MappingDesc>>(
                     "SumTemperatureFunctionalField");
 
             auto& localSumWeightElectronField
-                = *dc.get<s_IPD::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
+                = *dc.get<stewartPyatt::localHelperFields::SumWeightElectronsField<picongpu::MappingDesc>>(
                     "SumWeightElectronsField");
 
             auto& localSumChargeNumberIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
+                = *dc.get<stewartPyatt::localHelperFields::SumChargeNumberIonsField<picongpu::MappingDesc>>(
                     "SumChargeNumberIonsField");
             auto& localSumChargeNumberSquaredIonsField
-                = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
+                = *dc.get<stewartPyatt::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
                     "SumChargeNumberSquaredIonsField");
 
             auto& localTemperatureEnergyField
-                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
+                = *dc.get<stewartPyatt::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
                     "LocalTemperatureEnergyField");
             auto& localZStarField
-                = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
+                = *dc.get<stewartPyatt::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
             auto& localDebyeLengthField
-                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
+                = *dc.get<stewartPyatt::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
                     "LocalDebyeLengthField");
 
             // macro for kernel call
-            PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::CalculateIPDInputKernel<T_numberAtomicPhysicsIonSpecies>())
+            PMACC_LOCKSTEP_KERNEL(stewartPyatt::kernel::CalculateIPDInputKernel<T_numberAtomicPhysicsIonSpecies>())
                 .template config<1u>(mapper.getGridDim())(
                     mapper,
                     localTimeRemainingField.getDeviceDataBox(),
@@ -107,4 +105,4 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ste
         {
         }
     };
-} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::stewartPyatt::stage
