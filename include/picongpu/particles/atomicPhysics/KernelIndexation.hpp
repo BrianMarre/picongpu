@@ -45,13 +45,14 @@ namespace picongpu::particles::atomicPhysics
          *
          * @attention assumes that the kernel was launched for CORE+BORDER Region
          */
+
         template<typename T_Worker, typename T_AreaMapping>
         HDINLINE static pmacc::DataSpace<picongpu::simDim> getSuperCellFieldIndex(
             T_Worker const& worker,
             T_AreaMapping const areaMapping)
         {
-            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
-            //  -> must subtract guard to get correct superCellFieldIdx
+            /* atomicPhysics superCellFields have no guard, but areMapping includes a guard
+             *  -> must subtract guard to get correct superCellFieldIdx */
             return getSuperCellIndex(worker, areaMapping) - areaMapping.getGuardingSuperCells();
         }
 
@@ -68,8 +69,8 @@ namespace picongpu::particles::atomicPhysics
         {
             static_assert(T_AreaMapping::AreaType == CORE + BORDER, "kernel area needs to be CORE+BORDER");
 
-            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
-            //  -> must subtract guard to get correct superCellFieldIdx
+            /* atomicPhysics superCellFields have no guard, but areMapping includes a guard
+             *  -> must subtract guard to get correct superCellFieldIdx */
             return superCellIndex - areaMapping.getGuardingSuperCells();
         }
     };
