@@ -1,0 +1,50 @@
+/* Copyright 2024 Brian Marre
+ *
+ * This file is part of PIConGPU.
+ *
+ * PIConGPU is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * PIConGPU is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PIConGPU.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#pragma once
+
+// need dimensions.param
+#include "picongpu/defines.hpp"
+
+namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression2
+{
+    //! short hand methods for getting dataBox access indices in atomicPhysics from kernels
+    struct KernelIndexation
+    {
+        //! get index of superCell corresponding of the worker
+        template<typename T_Worker, typename T_AreaMapping>
+        HDINLINE static pmacc::DataSpace<picongpu::simDim> getSuperCellIndex(
+            T_Worker const& worker,
+            T_AreaMapping const areaMapping)
+        {
+            return areaMapping.getSuperCellIndex(worker.blockDomIdxND());
+        }
+
+        //! get index of SuperCellField entry correpsonding to the worker's superCell
+        template<typename T_Worker, typename T_AreaMapping>
+        HDINLINE static pmacc::DataSpace<picongpu::simDim> getSuperCellFieldIndex(
+            T_Worker const& worker,
+            T_AreaMapping const areaMapping)
+        {
+            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
+            //  -> must subtract guard to get correct superCellFieldIdx
+            return superCellFieldIndex(worker, areaMapping) - areaMapping.getGuardingSuperCells();
+        }
+    };
+} // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression2
