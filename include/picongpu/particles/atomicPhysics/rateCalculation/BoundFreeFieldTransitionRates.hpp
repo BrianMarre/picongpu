@@ -86,14 +86,16 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
             float_X const nEffCubed = pmacc::math::cPow(nEff, 3u);
             float_X const ZCubed = pmacc::math::cPow(Z, 3u);
 
-            float_X const dBase = 4.0_X * math::exp(1._X) * ZCubed / (eFieldNorm_AU * pmacc::math::cPow(nEff, 4u));
-            float_X const dFromADK = math::pow(dBase, nEff);
+            float_64 const dBase = static_cast<float_64>(
+                4.0_X * math::exp(1._X) * ZCubed / (eFieldNorm_AU * pmacc::math::cPow(nEff, 4u)));
+            float_64 const dFromADK = math::pow(dBase, nEff);
 
             constexpr float_X pi = pmacc::math::Pi<float_X>::value;
 
             // 1/sim.atomicUnit.time()
-            float_X rateADK_AU = eFieldNorm_AU * pmacc::math::cPow(dFromADK, 2u) / (8._X * pi * Z)
-                * math::exp(-2._X * ZCubed / (3._X * nEffCubed * eFieldNorm_AU));
+            float_X rateADK_AU = eFieldNorm_AU / float_64(8._X * pi * Z)
+                * float_X(pmacc::math::cPow(dFromADK, 2u)
+                          * math::exp(float_64(-2. * ZCubed / float_64(3. * nEffCubed * eFieldNorm_AU))));
 
             // factor from averaging over one laser cycle with LINEAR polarization
             if constexpr(
@@ -221,6 +223,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
             float_X const F_max = 4._X * Z / (3 * nEffCubed * (4._X * nEff - 3._X));
 
             // fieldStrength for maximum Rate, in sim.atomicUnit.eField(), see Notebook 2024 P.43-48
+            // sim.atomicUnit.eField()
             float_X F;
             if(nEff <= 0.75_X || F_max > maxEField_AU)
             {
