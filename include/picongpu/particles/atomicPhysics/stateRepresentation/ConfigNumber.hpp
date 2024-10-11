@@ -71,12 +71,12 @@
 
 namespace picongpu::particles::atomicPhysics::stateRepresentation
 {
-    /** Implements the actual storage of the super configurations by index
+    /** conversion functor between atomicPhysics configuration number and the corresponding occupation number vector
+     *  of an atomic state.
      *
-     * @tparam T_DataType ... unsigned integer data type to represent the config number
-     * @tparam T_numberLevels ... max principle quantum number, n_max, represented in
-     *                              this configNumber
-     * @tparam T_atomicNumber ... atomic number of the ion, in units of elementary charge
+     * @tparam T_DataType unsigned integer data type to store the configuration number in
+     * @tparam T_numberLevels maximum principle quantum number, n_max, represented in this configNumber
+     * @tparam T_atomicNumber atomic number of the ion, in units of elementary charge
      */
     template<typename T_DataType, uint8_t T_numberLevels, uint8_t T_atomicNumber>
     class ConfigNumber
@@ -142,7 +142,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
 
         /** returns stepLength(current_n+1) based on stepLength(current_n) and current_n
          *
-         * equivalent to numberOfOccupationNumberValuesInShell(current_n+1), but faster
+         * @note equivalent to numberOfOccupationNumberValuesInShell(current_n+1) but faster
          *
          * @attention n larger than 254 cause an overflow.
          *
@@ -161,7 +161,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
 
         /** returns stepLength(current_n-1) based on stepLength(current_n) and current_n
          *
-         * equivalent to numberOfOccupationNumberValuesInShell(current_n-1), but faster
+         * @note equivalent to numberOfOccupationNumberValuesInShell(current_n-1) but faster
          *
          * @attention n larger than 254 cause an overflow
          * @attention does not check for ranges
@@ -180,7 +180,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
         }
 
     public:
-        //! returns number of different states(Configs) that are representable
+        //! returns number of different states(Configs) that may be represented
         HDINLINE static constexpr T_DataType numberStates()
         {
             return stepLength(numberLevels + static_cast<uint8_t>(1u));
@@ -188,10 +188,11 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
 
         // conversion methods
         //@{
-        /** convert an occupation number vector to a configNumber
+        /** convert an occupation number vector to a configuration number
          *
-         * Uses the formula in file description.
-         * @param levelVector occupation number vector (N_1, N_2, N_3, ... , N_(n_max)
+         * @details see formula in file description for details
+         *
+         * @param levelVector occupation number vector (N_1, N_2, N_3, ... , N_(n_max))
          */
         HDINLINE static constexpr DataType getAtomicConfigNumber(
             pmacc::math::Vector<uint8_t, numberLevels> const levelVector)
@@ -227,7 +228,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
          * This is used recursively to determine all occupation numbers.
          * further information: see master thesis of Brian Marre
          *
-         * @param N atomic state configNumber, uint like
+         * @param N atomic state configNumber
          * @return (N_1, N_2, N_3, ..., N_(n_max))
          */
         HDINLINE static pmacc::math::Vector<uint8_t, numberLevels> getLevelVector(DataType configNumber)
@@ -253,9 +254,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
 
         /** get number bound electrons from configNumber
          *
-         * @param configNumber configNumber, uint like, not an object
-         *
-         * @returns number of bound electrons
+         * @param configNumber configNumber
          */
         HDINLINE static constexpr uint8_t getBoundElectrons(DataType configNumber)
         {
@@ -282,9 +281,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
 
         /** get charge state from configNumber
          *
-         * @param configNumber configNumber, uint like, not an object
-         *
-         * @returns charge of ion
+         * @param configNumber configNumber
          */
         HDINLINE static constexpr uint8_t getChargeState(DataType configNumber)
         {
@@ -295,7 +292,7 @@ namespace picongpu::particles::atomicPhysics::stateRepresentation
          *
          * @returns for the atomicConfigNumber corresponding to the level vector n = (n_1, ..., n_k, 0, ...),
          *      n_i being the occupation number of the i-th shell and k being the highest occupied shell
-         * the atomicConfigNumber corresponding to n_PI = (n_1, ..., n_k - 1, 0, ...)
+         * the atomicConfigNumber corresponding to n_IPD = (n_1, ..., n_k - 1, 0, ...)
          */
         HDINLINE static DataType getDirectIPDIonizationState(DataType const configNumber)
         {
