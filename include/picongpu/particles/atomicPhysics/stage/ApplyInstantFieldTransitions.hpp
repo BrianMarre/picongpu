@@ -38,7 +38,7 @@
 
 namespace picongpu::particles::atomicPhysics::stage
 {
-    namespace enums = picongpu::particles::atomicPhysics::enums;
+    namespace s_enums = picongpu::particles::atomicPhysics::enums;
 
     /** accept field ionization processes with a rate above the time resolution limit instantaneously
      *
@@ -98,28 +98,29 @@ namespace picongpu::particles::atomicPhysics::stage
                     AtomicDataType::ADKLaserPolarization,
                     FieldE,
                     numberAtomicStatesOfSpecies,
-                    enums::TransitionOrdering::byLowerState>;
+                    s_enums::TransitionOrdering::byLowerState>;
 
                 RngFactoryFloat rngFactoryFloat = RngFactoryFloat{currentStep};
                 auto eField = dc.get<FieldE>(FieldE::getName());
                 auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
                 auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-                IPDModel::
-                    template callKernelWithIPDInput<ApplyInstantFieldTransitions, IonSpecies::FrameType::frameSize>(
-                        dc,
-                        mapper,
-                        rngFactoryFloat,
-                        localTimeRemainingField.getDeviceDataBox(),
-                        localFoundUnboundIonField.getDeviceDataBox(),
-                        eField->getDeviceDataBox(),
-                        atomicData.template getChargeStateDataDataBox<false>(),
-                        atomicData.template getAtomicStateDataDataBox<false>(),
-                        atomicData.template getBoundFreeStartIndexBlockDataBox<false>(),
-                        atomicData.template getBoundFreeNumberTransitionsDataBox<false>(),
-                        atomicData
-                            .template getBoundFreeTransitionDataBox<false, enums::TransitionOrdering::byLowerState>(),
-                        ions.getDeviceParticlesBox());
+                IPDModel::template callKernelWithIPDInput<
+                    ApplyInstantFieldTransitions,
+                    IonSpecies::FrameType::frameSize>(
+                    dc,
+                    mapper,
+                    rngFactoryFloat,
+                    localTimeRemainingField.getDeviceDataBox(),
+                    localFoundUnboundIonField.getDeviceDataBox(),
+                    eField->getDeviceDataBox(),
+                    atomicData.template getChargeStateDataDataBox<false>(),
+                    atomicData.template getAtomicStateDataDataBox<false>(),
+                    atomicData.template getBoundFreeStartIndexBlockDataBox<false>(),
+                    atomicData.template getBoundFreeNumberTransitionsDataBox<false>(),
+                    atomicData
+                        .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
+                    ions.getDeviceParticlesBox());
             }
         }
     };
