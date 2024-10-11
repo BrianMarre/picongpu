@@ -295,24 +295,25 @@ namespace picongpu::particles::atomicPhysics::atomicData
 
     /** complementing buffer class
      *
-     * @tparam T_DataBoxType dataBox type used for storage
      * @tparam T_Number dataType used for number storage, typically uint32_t
      * @tparam T_Value dataType used for value storage, typically float_X
-     * @tparam T_ConfigNumber dataType used for storage of configNumber of atomic states
+     * @tparam T_ConfigNumber ConfigNumber type for ion species
      */
     template<typename T_Number, typename T_Value, typename T_ConfigNumber, typename T_Multiplicity>
     class AtomicStateDataBuffer : public DataBuffer<T_Number, T_Value>
     {
     public:
-        using Idx = typename T_ConfigNumber::DataType;
-
-        using TypeMultiplicity = T_Multiplicity;
-        using BufferMultiplicity = pmacc::HostDeviceBuffer<TypeMultiplicity, 1u>;
-
         using ConfigNumber = T_ConfigNumber;
-        using BufferConfigNumber = pmacc::HostDeviceBuffer<typename T_ConfigNumber::DataType, 1u>;
+        using TypeMultiplicity = T_Multiplicity;
+        using Idx = typename ConfigNumber::DataType;
+
+        using DataBoxType = AtomicStateDataBox<T_Number, T_Value, ConfigNumber, TypeMultiplicity>;
+
+        using BufferMultiplicity = pmacc::HostDeviceBuffer<TypeMultiplicity, 1u>;
+        using BufferConfigNumber = pmacc::HostDeviceBuffer<typename ConfigNumber::DataType, 1u>;
 
         using S_DataBuffer = DataBuffer<T_Number, T_Value>;
+
 
     private:
         std::unique_ptr<BufferConfigNumber> bufferConfigNumber;
@@ -332,18 +333,18 @@ namespace picongpu::particles::atomicPhysics::atomicData
             bufferMultiplicity.reset(new BufferMultiplicity(layoutAtomicStates, false));
         }
 
-        HINLINE AtomicStateDataBox<T_Number, T_Value, T_ConfigNumber, T_Multiplicity> getHostDataBox()
+        HINLINE DataBoxType getHostDataBox()
         {
-            return AtomicStateDataBox<T_Number, T_Value, T_ConfigNumber, T_Multiplicity>(
+            return DataBoxType(
                 bufferConfigNumber->getHostBuffer().getDataBox(),
                 bufferStateEnergy->getHostBuffer().getDataBox(),
                 bufferMultiplicity->getHostBuffer().getDataBox(),
                 m_numberAtomicStates);
         }
 
-        HINLINE AtomicStateDataBox<T_Number, T_Value, T_ConfigNumber, T_Multiplicity> getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
-            return AtomicStateDataBox<T_Number, T_Value, T_ConfigNumber, T_Multiplicity>(
+            return DataBoxType(
                 bufferConfigNumber->getDeviceBuffer().getDataBox(),
                 bufferStateEnergy->getDeviceBuffer().getDataBox(),
                 bufferMultiplicity->getDeviceBuffer().getDataBox(),
