@@ -125,6 +125,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             typename T_AtomicStateStartIndexBox,
             typename T_AtomicStateNumberTransitionsBox,
             typename T_BoundFreeTransitionDataBox,
+            typename T_IPDIonizationStateDataBox,
             typename T_IonBox,
             typename... T_IPDInput>
         HDINLINE void operator()(
@@ -139,6 +140,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_AtomicStateStartIndexBox const startIndexDataBox,
             T_AtomicStateNumberTransitionsBox const numberTransitionsDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox,
+            T_IPDIonizationStateDataBox const ipdIonizationStateBox,
             T_IonBox ionBox,
             T_IPDInput... ipdInput) const
         {
@@ -177,7 +179,7 @@ namespace picongpu::particles::atomicPhysics::kernel
 
             // debug only
             std::cout << "\t minEFieldSuperCell: " << std::scientific << minEFieldSuperCell
-                      << " maxEFieldSuperCell:" << maxEFieldSuperCell << std::endl;
+                      << " maxEFieldSuperCell:" << maxEFieldSuperCell << std::fixed << std::endl;
 
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
             PMACC_SMEM(worker, fieldIonizationLossRates, pmacc::memory::Array<float_X, T_numberAtomicStates>);
@@ -215,7 +217,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                  &fieldIonizationLossRates](uint32_t const atomicStateCollectionIndex)
                 {
                     // early return on not present states
-                    if(fieldIonizationLossRates[atomicStateCollectionIndex] < 0._X)
+                    if(fieldIonizationLossRates[atomicStateCollectionIndex] == -1._X)
                         return;
 
                     uint32_t const numberTransitionsUp
@@ -240,10 +242,19 @@ namespace picongpu::particles::atomicPhysics::kernel
                                     atomicStateDataDataBox,
                                     boundFreeTransitionDataBox);
 
+                        if(lossRate == -1._X)
+                        {
+                            // found ~infinite transition rate
+                            sumRateTransitions = -1._X;
+                            break;
+                        }
+                        else
+                            sumRateTransitions += lossRate;
+
                         // debug only
-                        sumRateTransitions += lossRate;
                         std::cout << "\t\t transition: " << transitionCollectionIndex << " IPD: ";
-                        std::cout << ionizationPotentialDepression << " lossRate: " << lossRate << std::endl;
+                        std::cout << std::scientific << ionizationPotentialDepression << " lossRate: " << lossRate;
+                        std::cout << std::fixed << std::endl;
                     }
                     fieldIonizationLossRates[atomicStateCollectionIndex] = sumRateTransitions;
                 });
@@ -289,10 +300,14 @@ namespace picongpu::particles::atomicPhysics::kernel
                  &ionizationPotentialDepression,
                  &chargeStateDataDataBox,
                  &atomicStateDataDataBox,
-                 &boundFreeTransitionDataBox](T_Worker const& worker, auto& ion)
+                 &boundFreeTransitionDataBox,
+                 &ipdIonizationStateBox](T_Worker const& worker, auto& ion)
                 {
                     auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
+                    auto const ipdIonizationState
+                        = ipdIonizationStateBox.ipdIonizationState(atomicStateCollectionIndex);
 
+                    // 1/sim.unit.time()
                     float_X const stateLossRate = fieldIonizationLossRates[atomicStateCollectionIndex];
 
                     constexpr float_X alpha = picongpu::atomicPhysics::RateSolverParam::timeStepAlpha;
@@ -302,8 +317,18 @@ namespace picongpu::particles::atomicPhysics::kernel
                     // 1/sim.pic.getDt()
                     constexpr float_X maximumRate = alpha * maxNumSubSteps / picongpu::sim.pic.getDt();
 
-                    if(stateLossRate <= maximumRate)
+                    bool const infiniteRate = (stateLossRate < 0._X);
+                    bool const instantTransitionState = (stateLossRate > maximumRate);
+                    if(!infiniteRate && !instantTransitionState)
                         return;
+                    if(infiniteRate)
+                    {
+                        picongpu::particles::atomicPhysics::SetAtomicState::op(
+                            atomicStateDataDataBox,
+                            ion,
+                            ipdIonizationState);
+                        return;
+                    }
 
                     // set worker mark that we encountered at least one unbound ion
                     foundUnbound = true;

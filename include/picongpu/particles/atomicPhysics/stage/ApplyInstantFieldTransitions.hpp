@@ -120,6 +120,7 @@ namespace picongpu::particles::atomicPhysics::stage
                     atomicData.template getBoundFreeNumberTransitionsDataBox<false>(),
                     atomicData
                         .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
+                    atomicData.template getIPDIonizationStateDataBox<false>(),
                     ions.getDeviceParticlesBox());
             }
         }

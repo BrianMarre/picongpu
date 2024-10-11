@@ -28,6 +28,10 @@
 #include <pmacc/algorithms/math.hpp>
 
 #include <cstdint>
+#include <limits>
+
+// debug only
+#include <iostream>
 
 /** @file implements calculation of rates for bound-free field ionization atomic physics transitions
  *
@@ -80,36 +84,47 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
          * @param Z screenedCharge for ionization electron, e
          * @param nEff effective principal quantum number, unitless
          * @param eFieldNorm_AU norm of the E-Field strength, in sim.atomicUnit.eField()
+         *
+         * @returns -1._X if result would be larger than numerical limit, otherwise result will always be 0
          */
         HDINLINE static float_X rateFormula(float_X const Z, float_X const nEff, float_X const eFieldNorm_AU)
         {
             float_X const nEffCubed = pmacc::math::cPow(nEff, 3u);
             float_X const ZCubed = pmacc::math::cPow(Z, 3u);
 
+            // dBase may of the magnitude 1e3 leading for nEff ~10 to very large values of dFromADK
+            //  therefore we must use 64 bit floats here
             float_64 const dBase = static_cast<float_64>(
                 4.0_X * math::exp(1._X) * ZCubed / (eFieldNorm_AU * pmacc::math::cPow(nEff, 4u)));
             float_64 const dFromADK = math::pow(dBase, nEff);
 
             constexpr float_X pi = pmacc::math::Pi<float_X>::value;
 
-            // 1/sim.atomicUnit.time()
-            float_X rateADK_AU = eFieldNorm_AU / float_64(8._X * pi * Z)
-                * float_X(pmacc::math::cPow(dFromADK, 2u)
-                          * math::exp(float_64(-2. * ZCubed / float_64(3. * nEffCubed * eFieldNorm_AU))));
-
-            // factor from averaging over one laser cycle with LINEAR polarization
-            if constexpr(
-                u32(T_ADKLaserPolarization) == u32(atomicPhysics::enums::ADKLaserPolarization::linearPolarization))
-                rateADK_AU *= math::sqrt(3._X * nEffCubed * eFieldNorm_AU / (pi * ZCubed));
+            // exponential function may or may not reduce the dFromADK^2 below the numeric maximum value of float_32
+            float_64 const term = pmacc::math::cPow(dFromADK, 2u)
+                * math::exp(float_64(-2. * ZCubed / float_64(3. * nEffCubed * eFieldNorm_AU)));
 
             /* A * 1/sim.atomicUnit.time() = A * 1/sim.atomicUnit.time() * sim.unit.time() / sim.unit.time()
              *   = A * [sim.unit.time()/sim.atomicUnit.time()] * 1/sim.unit.time()
              *   = (A * timeConversion) * 1/sim.unit.time()
              *   = B * 1/sim.unit.time() */
             constexpr float_X timeConversion = picongpu::sim.unit.time() / picongpu::sim.atomicUnit.time();
+            constexpr float_64 maxValueFloat32 = std::numeric_limits<float_X>::max();
+
+            // 1/sim.atomicUnit.time()
+            float_X rateADK;
+            if(term > maxValueFloat32)
+                rateADK = -1._X;
+            else
+                float_X rateADK = timeConversion * eFieldNorm_AU / (8._X * pi * Z) * float_X(term);
+
+            // factor from averaging over one laser cycle with LINEAR polarization
+            if constexpr(
+                u32(T_ADKLaserPolarization) == u32(atomicPhysics::enums::ADKLaserPolarization::linearPolarization))
+                rateADK *= math::sqrt(3._X * nEffCubed * eFieldNorm_AU / (pi * ZCubed));
 
             // 1/ sim.unit.time()
-            return rateADK_AU * timeConversion;
+            return rateADK;
         }
 
     public:
@@ -125,7 +140,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
          * @param atomicStateDataBox access to atomic state property data
          * @param boundBoundTransitionDataBox access to bound-bound transition data
          *
-         * @return unit: 1/picongpu::sim.unit.time()
+         * @returns -1._X if the result is larger than the maximum value of float_X, unit: 1/picongpu::sim.unit.time()
          */
         template<
             typename T_EFieldType,
@@ -180,7 +195,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
          * @param atomicStateDataBox access to atomic state property data
          * @param boundBoundTransitionDataBox access to bound-bound transition data
          *
-         * @return unit: 1/picongpu::sim.unit.time()
+         * @returns -1._X if the result is larger than the maximum value of float_X, unit: 1/picongpu::sim.unit.time()
          */
         template<
             typename T_EFieldType,

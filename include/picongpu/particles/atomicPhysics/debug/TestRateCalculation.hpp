@@ -397,12 +397,14 @@ namespace picongpu::particles::atomicPhysics::debug
             float_X const maxEField = 1.541e-03;
             float_X const ipd = 0._X;
 
+            uint32_t const transitionIndex = 345u;
+
             float_X const rate = atomicPhysics::rateCalculation::
                 BoundFreeFieldTransitionRates<T_ADKLaserPolarization>::template maximumRateADKFieldIonization(
                     minEField,
                     maxEField,
                     ipd,
-                    u32(328u),
+                    transitionIndex,
                     chargeStateBox,
                     atomicStateBox,
                     boundFreeTransitionBox);
