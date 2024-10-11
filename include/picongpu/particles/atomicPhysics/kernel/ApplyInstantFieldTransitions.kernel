@@ -175,6 +175,10 @@ namespace picongpu::particles::atomicPhysics::kernel
             EFieldNormExtrema::find(worker, superCellIdx, eFieldBox, minEFieldSuperCell, maxEFieldSuperCell);
             worker.sync();
 
+            // debug only
+            std::cout << "\t minEFieldSuperCell: " << std::scientific << minEFieldSuperCell
+                      << " maxEFieldSuperCell:" << maxEFieldSuperCell << std::endl;
+
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
             PMACC_SMEM(worker, fieldIonizationLossRates, pmacc::memory::Array<float_X, T_numberAtomicStates>);
 
@@ -225,8 +229,8 @@ namespace picongpu::particles::atomicPhysics::kernel
                         uint32_t const transitionCollectionIndex = offset + transitionID;
 
                         // 1/picongpu::sim.unit.time()
-                        sumRateTransitions
-                            += atomicPhysics::rateCalculation::BoundFreeFieldTransitionRates<T_ADKLaserPolarization>::
+                        float_X const lossRate
+                            = atomicPhysics::rateCalculation::BoundFreeFieldTransitionRates<T_ADKLaserPolarization>::
                                 template maximumRateADKFieldIonization(
                                     minEFieldSuperCell,
                                     maxEFieldSuperCell,
@@ -235,6 +239,11 @@ namespace picongpu::particles::atomicPhysics::kernel
                                     chargeStateDataDataBox,
                                     atomicStateDataDataBox,
                                     boundFreeTransitionDataBox);
+
+                        // debug only
+                        sumRateTransitions += lossRate;
+                        std::cout << "\t\t transition: " << transitionCollectionIndex << " IPD: ";
+                        std::cout << ionizationPotentialDepression << " lossRate: " << lossRate << std::endl;
                     }
                     fieldIonizationLossRates[atomicStateCollectionIndex] = sumRateTransitions;
                 });

@@ -405,9 +405,14 @@ namespace picongpu::simulation::stage
 
                 // foundUnbound loop, ends when no ion found in IPD-unbound or instant ionization state
                 bool foundUnbound = true;
+                uint32_t unBoundLoopCounter = 0u;
                 do
                 {
+                    // debug only
+                    std::cout << "unBoundLoop: " << unBoundLoopCounter << std::endl;
+
                     resetFoundUnboundIon();
+
                     picongpu::atomicPhysics::IPDModel::
                         template calculateIPDInput<T_numberAtomicPhysicsIonSpecies, IPDIonSpecies, IPDElectronSpecies>(
                             mappingDesc,
@@ -429,6 +434,9 @@ namespace picongpu::simulation::stage
                         pmacc::math::operation::Or(),
                         linearizedFoundUnboundIonBox,
                         fieldGridLayoutFoundUnbound.productOfComponents()));
+
+                    // debug only
+                    ++unBoundLoopCounter;
                 } // end pressure ionization loop
                 while(foundUnbound);
             }
@@ -466,6 +474,19 @@ namespace picongpu::simulation::stage
             void operator()(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep) const
             {
                 pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
+
+                // debug only
+                using IonSpecies = pmacc::particles::meta::FindByNameOrType_t<VectorAllSpecies, CopperIons>;
+                using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
+                auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
+
+                particles::atomicPhysics::debug::TestRateCalculation<10u>()
+                    .testADKRateCalculation<AtomicDataType::ADKLaserPolarization>(
+                        atomicData.template getChargeStateDataDataBox<true>(),
+                        atomicData.template getAtomicStateDataDataBox<true>(),
+                        atomicData.template getBoundFreeTransitionDataBox<
+                            true,
+                            picongpu::particles::atomicPhysics::enums::TransitionOrdering::byLowerState>());
 
                 auto& perSuperCellElectronHistogramOverSubscribedField
                     = *dc.get<S_OverSubscribedField>("LocalElectronHistogramOverSubscribedField");

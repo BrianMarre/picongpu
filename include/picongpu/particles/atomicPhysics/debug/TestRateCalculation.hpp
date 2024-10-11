@@ -36,6 +36,7 @@
 #include "picongpu/particles/atomicPhysics/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics/rateCalculation/BoundBoundTransitionRates.hpp"
 #include "picongpu/particles/atomicPhysics/rateCalculation/BoundFreeCollisionalTransitionRates.hpp"
+#include "picongpu/particles/atomicPhysics/rateCalculation/BoundFreeFieldTransitionRates.hpp"
 #include "picongpu/particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp"
 
 #include <pmacc/algorithms/math.hpp>
@@ -70,7 +71,7 @@ namespace picongpu::particles::atomicPhysics::debug
         static constexpr uint8_t atomicNumber = 4u;
         using ConfigNumberDataType = uint64_t;
 
-        using S_ConfigNumber = picongpu::particles::atomicPhysics::stateRepresentation ::
+        using S_ConfigNumber = picongpu::particles::atomicPhysics::stateRepresentation::
             ConfigNumber<ConfigNumberDataType, numberLevels, atomicNumber>;
 
         static constexpr float_X energyElectron = 1000._X; // eV
@@ -79,6 +80,7 @@ namespace picongpu::particles::atomicPhysics::debug
 
         using S_BoundBoundBuffer
             = atomicData::BoundBoundTransitionDataBuffer<uint32_t, float_X, uint32_t, uint64_t, tranOrd::byLowerState>;
+        using S_BoundBoundBox = typename S_BoundBoundBuffer::DataBoxType;
         using S_BoundFreeBuffer = atomicData::BoundFreeTransitionDataBuffer<
             uint32_t,
             float_X,
@@ -86,16 +88,13 @@ namespace picongpu::particles::atomicPhysics::debug
             S_ConfigNumber,
             float_64,
             tranOrd::byLowerState>;
-        using S_BoundBoundBox
-            = atomicData::BoundBoundTransitionDataBox<uint32_t, float_X, uint32_t, uint64_t, tranOrd::byLowerState>;
-        using S_BoundFreeBox = atomicData::
-            BoundFreeTransitionDataBox<uint32_t, float_X, uint32_t, S_ConfigNumber, float_64, tranOrd::byLowerState>;
+        using S_BoundFreeBox = typename S_BoundFreeBuffer::DataBoxType;
 
         using S_ChargeStateBuffer = atomicData::ChargeStateDataBuffer<uint32_t, float_X, S_ConfigNumber::atomicNumber>;
-        using S_ChargeStateBox = atomicData::ChargeStateDataBox<uint32_t, float_X, S_ConfigNumber::atomicNumber>;
+        using S_ChargeStateBox = typename S_ChargeStateBuffer::DataBoxType;
 
         using S_AtomicStateBuffer = atomicData::AtomicStateDataBuffer<uint32_t, float_X, S_ConfigNumber, float_64>;
-        using S_AtomicStateBox = atomicData::AtomicStateDataBox<uint32_t, float_X, S_ConfigNumber, float_64>;
+        using S_AtomicStateBox = typename S_AtomicStateBuffer::DataBoxType;
 
         std::unique_ptr<S_ChargeStateBuffer> chargeStateBuffer;
         std::unique_ptr<S_AtomicStateBuffer> atomicStateBuffer;
@@ -104,8 +103,8 @@ namespace picongpu::particles::atomicPhysics::debug
 
         TestRateCalculation()
         {
-            chargeStateBuffer.reset(new S_ChargeStateBuffer());
             // charge state already specifies number of entries
+            chargeStateBuffer.reset(new S_ChargeStateBuffer());
 
             atomicStateBuffer.reset(new S_AtomicStateBuffer(4u));
             boundBoundBuffer.reset(new S_BoundBoundBuffer(1u));
@@ -119,7 +118,7 @@ namespace picongpu::particles::atomicPhysics::debug
          *
          * dataBuffers are filled by hand to bypass checks of atomicData
          */
-        ALPAKA_FN_HOST void setup()
+        void setup()
         {
             // charge states
             S_ChargeStateBox chargeStateHostBox = chargeStateBuffer->getHostDataBox();
@@ -199,7 +198,7 @@ namespace picongpu::particles::atomicPhysics::debug
          * @return true =^= SUCCESS, false =^= FAIL
          */
         template<typename T_Type>
-        ALPAKA_FN_HOST static bool testRelativeError(
+        static bool testRelativeError(
             T_Type const correctValue,
             T_Type const testValue,
             std::string const descriptionQuantity = "",
@@ -237,8 +236,8 @@ namespace picongpu::particles::atomicPhysics::debug
         }
 
     public:
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testCollisionalExcitationCrossSection()
+        //! @return true =^= test passed
+        bool testCollisionalExcitationCrossSection()
         {
             float_X const correctCrossSection = 3.456217425189e+02; // 1e6b
             float_X const crossSection = rateCalculation::BoundBoundTransitionRates<T_n_max>::
@@ -255,8 +254,8 @@ namespace picongpu::particles::atomicPhysics::debug
                 static_cast<float_X>(1e-5));
         }
 
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testCollisionalDeexcitationCrossSection()
+        //! @return true =^= test passed
+        bool testCollisionalDeexcitationCrossSection()
         {
             float_X const energyElectron = 1000._X;
             float_X const correctCrossSection = 1.814666351842e+01; // 1e6b
@@ -274,8 +273,8 @@ namespace picongpu::particles::atomicPhysics::debug
                 static_cast<float_X>(1.e-5));
         }
 
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testCollisionalIonizationCrossSection()
+        //! @return true =^= test passed
+        bool testCollisionalIonizationCrossSection()
         {
             float_X const correctCrossSection = 8.051678880120e-01; // 1e6b
             float_X const crossSection = rateCalculation::BoundFreeCollisionalTransitionRates<T_n_max, true>::
@@ -297,8 +296,8 @@ namespace picongpu::particles::atomicPhysics::debug
                     1e-3)); /// @todo find out why error is larger than for de-/excitation, Brian Marre, 2023
         }
 
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testCollisionalExcitationRate()
+        //! @return true =^= test passed
+        bool testCollisionalExcitationRate()
         {
             float_64 const correctRate = 6.472768268762e+16; // 1/s
             float_64 const rate
@@ -318,8 +317,8 @@ namespace picongpu::particles::atomicPhysics::debug
             return testRelativeError(correctRate, rate, "collisional excitation rate", 1e-5);
         }
 
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testCollisionalDeexcitationRate()
+        //! @return true =^= test passed
+        bool testCollisionalDeexcitationRate()
         {
             float_64 const correctRate = 3.398488386461e+15; // 1/s
             float_64 const rate
@@ -338,8 +337,8 @@ namespace picongpu::particles::atomicPhysics::debug
             return testRelativeError(correctRate, rate, "collisional deexcitation rate", 1e-5);
         }
 
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testSpontaneousRadiativeDeexcitationRate()
+        //! @return true =^= test passed
+        bool testSpontaneousRadiativeDeexcitationRate()
         {
             float_64 const correctRate = 5.691850311676e+06; // 1/s
             float_64 const rate
@@ -353,8 +352,8 @@ namespace picongpu::particles::atomicPhysics::debug
             return testRelativeError(correctRate, rate, "spontaneous radiative deexcitation rate", 1e-5);
         }
 
-        //! @return true =^= test passed, pass silently if correct
-        ALPAKA_FN_HOST bool testCollisionalIonizationRate()
+        //! @return true =^= test passed
+        bool testCollisionalIonizationRate()
         {
             float_64 const correctRate = 1.507910098065e+14; // 1/s
             float_64 const rate
@@ -381,7 +380,38 @@ namespace picongpu::particles::atomicPhysics::debug
                        /// 2023
         }
 
-        ALPAKA_FN_HOST bool testAll()
+        //! @return true =^= test passed
+        template<
+            atomicPhysics::enums::ADKLaserPolarization T_ADKLaserPolarization,
+            typename T_ChargeStateDataBox,
+            typename T_AtomicStateDataBox,
+            typename T_BoundFreeTransitionDataBox>
+        bool testADKRateCalculation(
+            T_ChargeStateDataBox const chargeStateBox,
+            T_AtomicStateDataBox const atomicStateBox,
+            T_BoundFreeTransitionDataBox const boundFreeTransitionBox)
+        {
+            // in sim.unit.eField()
+            float_X const minEField = 5.517e-05;
+            // in sim.unit.eField()
+            float_X const maxEField = 1.541e-03;
+            float_X const ipd = 0._X;
+
+            float_X const rate = atomicPhysics::rateCalculation::
+                BoundFreeFieldTransitionRates<T_ADKLaserPolarization>::template maximumRateADKFieldIonization(
+                    minEField,
+                    maxEField,
+                    ipd,
+                    u32(328u),
+                    chargeStateBox,
+                    atomicStateBox,
+                    boundFreeTransitionBox);
+
+            std::cout << "ADKTestRate: " << std::scientific << rate << std::fixed << std::endl;
+            return true;
+        }
+
+        bool testAll()
         {
             bool pass[7];
             pass[0] = testCollisionalExcitationCrossSection();
