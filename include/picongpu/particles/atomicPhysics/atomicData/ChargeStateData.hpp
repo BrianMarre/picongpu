@@ -168,7 +168,7 @@ namespace picongpu::particles::atomicPhysics::atomicData
     {
     public:
         using S_DataBuffer = DataBuffer<T_Number, T_Value>;
-        using S_ChargeStateDataBox = ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>;
+        using DataBoxType = ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>;
 
     private:
         std::unique_ptr<typename S_DataBuffer::BufferValue> bufferIonizationEnergy;
@@ -184,16 +184,16 @@ namespace picongpu::particles::atomicPhysics::atomicData
             bufferScreenedCharge.reset(new typename S_DataBuffer::BufferValue(layoutChargeStates, false));
         }
 
-        HINLINE S_ChargeStateDataBox getHostDataBox()
+        HINLINE DataBoxType getHostDataBox()
         {
-            return ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>(
+            return DataBoxType(
                 bufferIonizationEnergy->getHostBuffer().getDataBox(),
                 bufferScreenedCharge->getHostBuffer().getDataBox());
         }
 
-        HINLINE S_ChargeStateDataBox getDeviceDataBox()
+        HINLINE DataBoxType getDeviceDataBox()
         {
-            return ChargeStateDataBox<T_Number, T_Value, T_atomicNumber>(
+            return DataBoxType(
                 bufferIonizationEnergy->getDeviceBuffer().getDataBox(),
                 bufferScreenedCharge->getDeviceBuffer().getDataBox());
         }
