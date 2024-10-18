@@ -90,7 +90,7 @@ namespace pmacc
         /** get value at the given index
          *
          * @tparam T_MemoryIdxType Index type
-         * @param idx n-dimansional offset relative to the origin pointer
+         * @param idx n-dimensional offset relative to the origin pointer
          * @return reference to the value
          * @{
          */
@@ -111,7 +111,7 @@ namespace pmacc
         /** create a shared memory box
          *
          * This call synchronizes a block and must be called from all threads and
-         * not inside a if clauses
+         * not inside if clauses
          */
         template<typename T_Worker>
         DINLINE static SharedBox init(T_Worker const& worker)
