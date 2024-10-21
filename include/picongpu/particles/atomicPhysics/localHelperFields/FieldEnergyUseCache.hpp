@@ -29,7 +29,7 @@
 
 namespace picongpu::particles::atomicPhysics::localHelperFields
 {
-    /**
+    /** cache of the field energy use of a block of cells described by T_Extent, typically for all cells of a superCell
      *
      * @param T_Extent pmacc compile time vector describing extent of cache in number of cell
      * @param T_StorageType type to use for storage
@@ -55,7 +55,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
          *
          * @returns linear storage index corresponding to this cell
          */
-        static constexpr uint32_t linearIndex(CellIdx const cellIdx)
+        static constexpr uint32_t getLinearIndex(CellIdx const cellIdx)
         {
             uint32_t linearIndex = 0u;
             uint32_t stepWidth = 1u;
@@ -93,7 +93,32 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         {
             alpaka::atomicAdd(
                 worker.getAcc(),
-                &(this->fieldEnergyUsed[linearIndex(localCellIndex)]),
+                &(this->fieldEnergyUsed[getLinearIndex(localCellIndex)]),
+                rate,
+                ::alpaka::hierarchy::Threads{});
+        }
+
+        /** add to cache entry using atomics and direct access version
+         *
+         * @param worker object containing the device and block information
+         * @param linearCellIndex linear index of cell
+         * @param energy energy used, in eV
+         *
+         * @attention no range checks outside a debug compile, invalid memory write on failure
+         */
+        template<typename T_Worker>
+        HDINLINE void add(T_Worker const& worker, uint32_t const linearCellIndex, float_X const energyUsed)
+        {
+            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
+                if(linearCellIndex >= numberCells)
+                {
+                    printf("atomicPhysics ERROR: out of range in linearIndex() call to FieldEnergyUsedCachein\n");
+                    return;
+                }
+
+            alpaka::atomicAdd(
+                worker.getAcc(),
+                &(this->fieldEnergyUsed[linearCellIndex]),
                 rate,
                 ::alpaka::hierarchy::Threads{});
         }
@@ -111,8 +136,62 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         template<particles::atomicPhysics::enums::ChooseTransitionGroup T_ChooseTransitionGroup>
         HDINLINE void add(CellIdx const localCellIndex, float_X const energyUsed)
         {
-            rateEntries[linearIndex(localCellIndex)] += energyUsed;
-            return;
+            fieldEnergyUsed[getLinearIndex(localCellIndex)] += energyUsed;
+        }
+
+        /** add to cache entry, no atomics and direct access version
+         *
+         * @tparam T_ChooseTransitionGroup ChooseTransitionGroup to add rate to
+         *
+         * @param linearCellIndex linear index of cell
+         * @param energyUsed energy used, in eV
+         *
+         * @attention no range checks outside a debug compile, invalid memory write on failure
+         * @attention only use if only ever one thread accesses each rate cache entry!
+         * @attention direct access to 1D data storage, check data layout before use!
+         */
+        template<particles::atomicPhysics::enums::ChooseTransitionGroup T_ChooseTransitionGroup>
+        HDINLINE void add(uint32_t const linearCellIndex, float_X const energyUsed)
+        {
+            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
+                if(linearCellIndex >= numberCells)
+                {
+                    printf("atomicPhysics ERROR: out of range in linearIndex() call to FieldEnergyUsedCachein\n");
+                    return;
+                }
+
+            fieldEnergyUsed[linearCellIndex] += energyUsed;
+        }
+
+        /** get used field energy of cell
+         *
+         * @attention no range checks outside a debug compile, invalid memory read on failure
+         *
+         * @return unit: eV
+         */
+        HDINLINE StorageType energyUsed(CellIdx const cellIdx) const
+        {
+            return fieldEnergyUsed[getLinearIndex(cellIdx)];
+        }
+
+        /** get used field energy of cell, direct access version
+         *
+         * @attention no range checks outside a debug compile, invalid memory read on failure
+         * @attention direct access to 1D data storage, check data layout before use!
+         *
+         * @return unit: eV
+         */
+        HDINLINE StorageType energyUsed(uint32_t const linearCellIndex) const
+        {
+            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
+                if(cellIdx[i] >= extent[i])
+                {
+                    printf(
+                        "atomicPhysics ERROR: out of range in direct energyUsed() call to FieldEnergyUsedCachein\n");
+                    return 0u;
+                }
+
+            return fieldEnergyUsed[linearCellIndex];
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields

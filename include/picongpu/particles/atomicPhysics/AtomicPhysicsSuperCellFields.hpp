@@ -23,6 +23,7 @@
 #include "picongpu/particles/atomicPhysics/ParticleType.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/localHelperFields/ElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/FieldEnergyUseCacheField.hpp"
 #include "picongpu/particles/atomicPhysics/localHelperFields/FoundUnboundIonField.hpp"
 #include "picongpu/particles/atomicPhysics/localHelperFields/RejectionProbabilityCacheField.hpp"
 #include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
@@ -80,11 +81,16 @@ namespace picongpu::particles::atomicPhysics
                 = std::make_unique<localHelperFields::FoundUnboundIonField<picongpu::MappingDesc>>(mappingDesc);
             dataConnector.consume(std::move(foundUnboundIonField));
 
-            // rejection probability for each over-subscribed bin of the electron histogram
+            // local rejection probability for each over-subscribed bin of the electron histogram
             auto superCellRejectionProbabilityCacheField
                 = std::make_unique<localHelperFields::RejectionProbabilityCacheField<picongpu::MappingDesc>>(
                     mappingDesc);
             dataConnector.consume(std::move(superCellRejectionProbabilityCacheField));
+
+            // local field energy use cache
+            auto superCellFieldEnergyUseCacheField
+                = std::make_unique<localHelperFields::FieldEnergyUseCacheField<picongpu::MappingDesc>>(mappingDesc);
+            dataConnector.consume(std::move(superCellFieldEnergyUseCacheField));
         }
     };
 } // namespace picongpu::particles::atomicPhysics
