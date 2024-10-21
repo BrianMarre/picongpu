@@ -780,13 +780,13 @@ namespace picongpu
              * - FieldJ
              * - FieldTmp
              * [atomicPhysics:]
-             * - LocalTimeRemainingField
-             * - LocalTimeStepLengthField
+             * - TimeRemainingField
+             * - TimeStepLengthField
              * - LocalHistogramField
-             * - LocalRateCacheField
-             * - LocalElectronHistogramOverSubscribedField
-             * - LocalRejectionProbabilityCacheField
-             * - LocalFoundUnboundIonField
+             * - RateCacheField
+             * - ElectronHistogramOverSubscribedField
+             * - RejectionProbabilityCacheField
+             * - FoundUnboundIonField
              * [IPD:]
              * - LocalIPDSupportField(s)
              * - LocalIPDInputField(s)

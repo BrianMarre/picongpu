@@ -28,8 +28,7 @@ namespace picongpu::particles::creation::moduleInterfaces
      * @details functor returning whether entire superCell to should be skipped depending on additionalData or
      * superCell index
      *
-     * @example skip superCell if localTimeRemainingDataBox[additionalDataIndex](dataBox passed via additionalData) is
-     * > 0
+     * @example skip superCell if TimeRemainingDataBox[additionalDataIndex] is > 0, (dataBox passed via additionalData)
      *
      *  @note to skip test, use empty function
      */

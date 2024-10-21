@@ -73,7 +73,7 @@ namespace picongpu::particles::atomicPhysics::kernel
         bool T_electronicIonization,
         bool T_fieldIonization,
         s_enums::TransitionOrdering T_TransitionOrdering>
-    struct FillLocalRateCacheKernel_BoundFree
+    struct FillRateCacheKernel_BoundFree
     {
         template<
             typename T_AtomicStateNumberTransitionsBox,
@@ -113,7 +113,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_Worker const& worker,
             pmacc::DataSpace<picongpu::simDim> superCellFieldIdx,
             T_RateCache& rateCache,
-            T_LocalElectronHistogramDataBox const localElectronHistogramDataBox,
+            T_LocalElectronHistogramDataBox const electronHistogramDataBox,
             T_ChargeStateDataDataBox const chargeStateDataDataBox,
             T_AtomicStateDataDataBox const atomicStateDataDataBox,
             T_AtomicStateStartIndexBox const startIndexDataBox,
@@ -124,7 +124,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             auto forEachAtomicStateAndBin
                 = pmacc::lockstep::makeForEach<T_numberAtomicStates * T_numberBins, T_Worker>(worker);
 
-            auto& histogram = localElectronHistogramDataBox(superCellFieldIdx);
+            auto& histogram = electronHistogramDataBox(superCellFieldIdx);
 
             // picongpu::sim.unit.length()^3
             constexpr float_X volumeScalingFactor = pmacc::math::CT::volume<picongpu::SuperCellSize>::type::value
@@ -305,15 +305,15 @@ namespace picongpu::particles::atomicPhysics::kernel
 
         /** call operator
          *
-         * called by FillLocalRateCache atomic physics sub-stage
+         * called by FillRateCache atomic physics sub-stage
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
-         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
          * cells
-         * @param localRateCacheBox deviceDataBox giving access to the local rate cache of
+         * @param rateCacheBox deviceDataBox giving access to the local rate cache of
          *  all local superCells
-         * @param localElectronHistogramDataBox giving access to the local electron histograms
+         * @param electronHistogramDataBox giving access to the local electron histograms
          *  of all local superCells
          * @param chargeStateDataDataBox deviceDataBox giving access to charge state property data
          * @param atomicStateDataDataBox deviceDataBox giving access to atomic state property data
@@ -342,10 +342,10 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalRateCacheBox localRateCacheBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalRateCacheBox rateCacheBox,
             // Only used when electronic ionization is active:
-            [[maybe_unused]] T_LocalElectronHistogramDataBox const localElectronHistogramDataBox,
+            [[maybe_unused]] T_LocalElectronHistogramDataBox const electronHistogramDataBox,
             // Only used when field ionization is active:
             [[maybe_unused]] T_EFieldDataBox const eFieldBox,
             // The rest is only used when at least one form of ionization is activated but I'd argue that NOT having
@@ -372,7 +372,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
             // picongpu::sim.unit.time()
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
 
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
@@ -383,14 +383,14 @@ namespace picongpu::particles::atomicPhysics::kernel
                     superCellFieldIdx,
                     ipdInput...);
 
-            auto& rateCache = localRateCacheBox(superCellFieldIdx);
+            auto& rateCache = rateCacheBox(superCellFieldIdx);
 
             if constexpr(T_electronicIonization)
                 fillWithCollisonalIonization(
                     worker,
                     superCellFieldIdx,
                     rateCache,
-                    localElectronHistogramDataBox,
+                    electronHistogramDataBox,
                     chargeStateDataDataBox,
                     atomicStateDataDataBox,
                     startIndexDataBox,

@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements the local electron histogram field for each superCell
+/** @file implements a local histogram field for each superCell
  *
  */
 
@@ -99,7 +99,7 @@ namespace picongpu::particles::atomicPhysics::electronDistribution
         }
     };
 
-    /** holds a gridBuffer of the per-superCell localHistograms for atomicPhysics
+    /** holds a gridBuffer of the per-superCell histograms for atomicPhysics
      *
      * @attention histograms are uninitialized upon creation of the field, use .getDeviceBuffer().setValue() to init
      */
@@ -122,7 +122,7 @@ namespace picongpu::particles::atomicPhysics::electronDistribution
         //! required by ISimulationData
         std::string getUniqueId() override
         {
-            return histogramType + "_localHistogramField";
+            return histogramType + "_HistogramField";
         }
     };
 

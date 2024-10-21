@@ -37,13 +37,13 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalRejectionProbabilityCacheField
+    struct RejectionProbabilityCacheField
         : public SuperCellField<
               RejectionProbabilityCache<picongpu::atomicPhysics::ElectronHistogram::numberBins>,
               T_MappingDescription,
               false /*no guards*/>
     {
-        LocalRejectionProbabilityCacheField(T_MappingDescription const& mappingDesc)
+        RejectionProbabilityCacheField(T_MappingDescription const& mappingDesc)
             : SuperCellField<
                 RejectionProbabilityCache<picongpu::atomicPhysics::ElectronHistogram::numberBins>,
                 T_MappingDescription,
@@ -54,7 +54,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalRejectionProbabilityCacheField";
+            return "RejectionProbabilityCacheField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields

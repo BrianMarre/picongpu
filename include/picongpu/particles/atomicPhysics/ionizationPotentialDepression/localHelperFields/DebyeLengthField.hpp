@@ -37,9 +37,9 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::loc
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalDebyeLengthField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
+    struct DebyeLengthField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
     {
-        LocalDebyeLengthField(T_MappingDescription const& mappingDesc)
+        DebyeLengthField(T_MappingDescription const& mappingDesc)
             : SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
@@ -47,7 +47,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::loc
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalDebyeLengthField";
+            return "DebyeLengthField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::localHelperFields

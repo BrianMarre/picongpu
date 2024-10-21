@@ -107,7 +107,7 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param numberTransitionsBox deviceDataBox giving access to the number of
          *  bound-free transitions for each atomic state
          * @param startIndexBox deviceDataBox giving access to the start index of each
-         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
          * cells
          * @param eFieldBox deviceDataBox giving access to the device local eField Values
          * @param ionBox deviceDataBox giving access to the ion frames of all local superCells
@@ -123,9 +123,9 @@ namespace picongpu::particles::atomicPhysics::kernel
             typename T_AtomicStateBoundFreeNumberTransitionsDataBox,
             typename T_AtomicStateBoundFreeStartIndexBlockDataBox,
             typename T_BoundFreeTransitionDataBox,
-            typename T_LocalTimeRemainingBox,
+            typename T_TimeRemainingBox,
             typename T_EFieldBox,
-            typename T_LocalRateCacheBox,
+            typename T_RateCacheBox,
             typename T_IonBox,
             typename... T_IPDInput>
         HDINLINE void operator()(
@@ -137,9 +137,9 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_AtomicStateBoundFreeNumberTransitionsDataBox const numberTransitionsBox,
             T_AtomicStateBoundFreeStartIndexBlockDataBox const startIndexBox,
             T_BoundFreeTransitionDataBox const transitionDataBox,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_EFieldBox const eFieldBox,
-            T_LocalRateCacheBox localRateCacheBox,
+            T_TimeRemainingBox const timeRemainingBox,
+            T_EFieldBox eFieldBox,
+            T_RateCacheBox const rateCacheBox,
             T_IonBox ionBox,
             T_IPDInput const... ipdInput) const
         {
@@ -154,7 +154,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
             // end kernel if superCell already finished or no particles
@@ -162,7 +162,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                 return;
 
             auto rngGeneratorFloat = rngFactoryFloat(worker, superCellFieldIdx);
-            auto& rateCache = localRateCacheBox(superCellFieldIdx);
+            auto& rateCache = rateCacheBox(superCellFieldIdx);
 
             // FLYonPIC superCells must be independent therefore we need to use a support 1 particle shape
             using Field2Particle

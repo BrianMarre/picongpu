@@ -1,4 +1,4 @@
-/* Copyright 2024Brian Marre
+/* Copyright 2023 Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -17,7 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file implements bool storage superCellField if an unbound ion was found previously
+//! @file implements bool storage superCellField if histogram overSubscribed
 
 #pragma once
 
@@ -30,55 +30,51 @@
 
 namespace picongpu::particles::atomicPhysics::localHelperFields
 {
-    /** debug only, write foundUnboundionField to console
-     *
-     * @attention only creates output if atomicPhysics debug setting CPU_OUTPUT_ACTIVE == True
-     * @attention only useful if compiling for serial or cpu backend, otherwise will throw compile error if called by
-     *  DumpSuperCellDataToConsole kernel on device
-     */
-    struct PrintFoundUnboundToConsole
+    //! debug only, write electronHistogramOverSubcribed to console
+    struct PrintOverSubcriptionFieldToConsole
     {
         //! cpu version
         template<typename T_Acc>
         HDINLINE auto operator()(
             T_Acc const&,
-            uint32_t const foundUnbound,
+            uint32_t const overSubscribed,
             pmacc::DataSpace<picongpu::simDim> superCellIdx) const
             -> std::enable_if_t<std::is_same_v<alpaka::Dev<T_Acc>, alpaka::DevCpu>>
         {
-            if(foundUnbound)
-                printf("foundUnbound %s: True\n", superCellIdx.toString(",", "[]").c_str());
+            if(overSubscribed)
+                printf("overSubscribed %s: True\n", superCellIdx.toString(",", "[]").c_str());
             else
-                printf("foundUnbound %s: False\n", superCellIdx.toString(",", "[]").c_str());
+                printf("overSubscribed %s: False\n", superCellIdx.toString(",", "[]").c_str());
         }
 
         //! gpu version, does nothing
         template<typename T_Acc>
         HDINLINE auto operator()(
             T_Acc const&,
-            uint32_t const foundUnbound,
+            uint32_t const overSubscribed,
             pmacc::DataSpace<picongpu::simDim> superCellIdx) const
             -> std::enable_if_t<!std::is_same_v<alpaka::Dev<T_Acc>, alpaka::DevCpu>>
         {
         }
     };
 
-    /**superCell field
+    /** superCell field of the electronHistogram over subscribed state
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalFoundUnboundIonField : public SuperCellField<uint32_t, T_MappingDescription, /*no guards*/ false>
+    struct ElectronHistogramOverSubscribedField
+        : public SuperCellField<uint32_t, T_MappingDescription, false /*no guards*/>
     {
-        LocalFoundUnboundIonField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<uint32_t, T_MappingDescription, /*no guards*/ false>(mappingDesc)
+        ElectronHistogramOverSubscribedField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<uint32_t, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
 
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalFoundUnboundIonField";
+            return "ElectronHistogramOverSubscribedField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields

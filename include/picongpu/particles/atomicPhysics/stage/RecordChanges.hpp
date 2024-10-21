@@ -25,7 +25,7 @@
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/enums/ProcessClass.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/RecordChanges.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -58,16 +58,16 @@ namespace picongpu::particles::atomicPhysics::stage
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            auto& localElectronHistogramField
+            auto& electronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
-                    "Electron_localHistogramField");
+                    "Electron_HistogramField");
 
             auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
 
@@ -84,9 +84,9 @@ namespace picongpu::particles::atomicPhysics::stage
                 PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicExcitation())
                     .config(mapper.getGridDim(), ions)(
                         mapper,
-                        localTimeRemainingField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox(),
-                        localElectronHistogramField.getDeviceDataBox(),
+                        electronHistogramField.getDeviceDataBox(),
                         atomicData.template getAtomicStateDataDataBox<false>(),
                         atomicData.template getBoundBoundTransitionDataBox<
                             false,
@@ -104,9 +104,9 @@ namespace picongpu::particles::atomicPhysics::stage
                 PMACC_LOCKSTEP_KERNEL(RecordChanges_electronicDeexcitation())
                     .config(mapper.getGridDim(), ions)(
                         mapper,
-                        localTimeRemainingField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox(),
-                        localElectronHistogramField.getDeviceDataBox(),
+                        electronHistogramField.getDeviceDataBox(),
                         atomicData.template getAtomicStateDataDataBox<false>(),
                         atomicData.template getBoundBoundTransitionDataBox<
                             false,
@@ -124,9 +124,9 @@ namespace picongpu::particles::atomicPhysics::stage
                 PMACC_LOCKSTEP_KERNEL(RecordChanges_spontaneousDeexcitation())
                     .config(mapper.getGridDim(), ions)(
                         mapper,
-                        localTimeRemainingField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox(),
-                        localElectronHistogramField.getDeviceDataBox(),
+                        electronHistogramField.getDeviceDataBox(),
                         atomicData.template getAtomicStateDataDataBox<false>(),
                         atomicData.template getBoundBoundTransitionDataBox<
                             false,
@@ -146,9 +146,9 @@ namespace picongpu::particles::atomicPhysics::stage
                     IonSpecies::FrameType::frameSize>(
                     dc,
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData
                         .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
@@ -167,9 +167,9 @@ namespace picongpu::particles::atomicPhysics::stage
                     IonSpecies::FrameType::frameSize>(
                     dc,
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData
                         .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
@@ -189,9 +189,9 @@ namespace picongpu::particles::atomicPhysics::stage
                     IonSpecies::FrameType::frameSize>(
                     dc,
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),
                     atomicData
                         .template getAutonomousTransitionDataBox<false, s_enums::TransitionOrdering::byUpperState>());

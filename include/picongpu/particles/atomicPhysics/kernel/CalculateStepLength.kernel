@@ -46,9 +46,9 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param localTimeStepBox deviceDataBox giving access to localTimeStep superCellField values
+         * @param timeStepBox deviceDataBox giving access to localTimeStep superCellField values
          *  of all local superCells
-         * @param localTimeStepBox deviceDataBox giving access to superCell local rateCaches
+         * @param timeStepBox deviceDataBox giving access to superCell local rateCaches
          *  of all local superCells
          */
         template<
@@ -60,23 +60,23 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalTimeStepBox localTimeStepBox,
-            T_LocalRateCache localRateCacheBox) const
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalTimeStepBox timeStepBox,
+            T_LocalRateCache rateCacheBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
                 return;
 
-            auto& rateCache = localRateCacheBox(superCellFieldIdx);
+            auto& rateCache = rateCacheBox(superCellFieldIdx);
             // sim.unit.time()
-            float_X& timeStep = localTimeStepBox(superCellFieldIdx);
+            float_X& timeStep = timeStepBox(superCellFieldIdx);
 
             auto forEachAtomicState = pmacc::lockstep::makeForEach<T_numberAtomicStates, T_Worker>(worker);
 

@@ -27,9 +27,9 @@
 
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/CheckForOverSubscription.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/ElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RejectionProbabilityCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 
 #include <pmacc/Environment.hpp>
 #include <pmacc/mappings/kernel/AreaMapping.hpp>
@@ -56,23 +56,22 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
-            auto& localElectronHistogramField
+            auto& electronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
-                    "Electron_localHistogramField");
+                    "Electron_HistogramField");
 
-            auto& localElectronHistogramOverSubscribedField
-                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
-                              LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
-                    "LocalElectronHistogramOverSubscribedField");
+            auto& electronHistogramOverSubscribedField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::ElectronHistogramOverSubscribedField<
+                    picongpu::MappingDesc>>("ElectronHistogramOverSubscribedField");
 
-            auto& localRejectionProbabilityCacheField
-                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::LocalRejectionProbabilityCacheField<
-                    picongpu::MappingDesc>>("LocalRejectionProbabilityCacheField");
+            auto& rejectionProbabilityCacheField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::RejectionProbabilityCacheField<
+                    picongpu::MappingDesc>>("RejectionProbabilityCacheField");
 
             // macro for call of kernel for every superCell, see pull request #4321
             PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::CheckForOverSubscriptionKernel<
@@ -80,10 +79,10 @@ namespace picongpu::particles::atomicPhysics::stage
                                       T_numberAtomicPhysicsIonSpecies>())
                 .template config<picongpu::atomicPhysics::ElectronHistogram::numberBins>(mapper.getGridDim())(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    localElectronHistogramOverSubscribedField.getDeviceDataBox(),
-                    localRejectionProbabilityCacheField.getDeviceDataBox());
+                    timeRemainingField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox(),
+                    electronHistogramOverSubscribedField.getDeviceDataBox(),
+                    rejectionProbabilityCacheField.getDeviceDataBox());
 
             /// @todo implement photon histogram, Brian Marre, 2023
         }

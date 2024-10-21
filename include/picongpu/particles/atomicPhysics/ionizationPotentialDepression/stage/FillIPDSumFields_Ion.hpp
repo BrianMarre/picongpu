@@ -27,7 +27,7 @@
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/kernel/FillIPDSumFields_Ion.kernel"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/FillIPDSumFields_Ion.def"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -56,9 +56,9 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
         pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
         pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-        auto& localTimeRemainingField = *dc.get<
-            picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-            "LocalTimeRemainingField");
+        auto& timeRemainingField = *dc.get<
+            picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+            "TimeRemainingField");
 
         // pointer to memory, we will only work on device, no sync required
         // init pointer to particles and localSumFields
@@ -81,7 +81,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
         PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::FillIPDSumFieldsKernel_Ion<T_TemperatureFunctional>())
             .config(mapper.getGridDim(), ions)(
                 mapper,
-                localTimeRemainingField.getDeviceDataBox(),
+                timeRemainingField.getDeviceDataBox(),
                 ions.getDeviceParticlesBox(),
                 localSumWeightAllField.getDeviceDataBox(),
                 localSumTemperatureFunctionalField.getDeviceDataBox(),

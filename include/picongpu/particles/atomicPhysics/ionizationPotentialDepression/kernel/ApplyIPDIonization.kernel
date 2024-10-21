@@ -53,7 +53,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             // T_AdditionalData:
             //@{
             typename T_LocalTimeRemainingBox,
-            typename T_LocalFoundUnboundIonBox,
+            typename T_FoundUnboundIonBox,
             typename T_ChargeStateDataBox,
             typename T_AtomicStateDataBox,
             typename T_IPDIonizationStateDataBox,
@@ -64,7 +64,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             pmacc::DataSpace<picongpu::simDim> const superCellIndex,
             pmacc::DataSpace<picongpu::simDim> const,
             T_LocalTimeRemainingBox const,
-            T_LocalFoundUnboundIonBox const,
+            T_FoundUnboundIonBox const,
             T_ChargeStateDataBox const,
             T_AtomicStateDataBox const,
             T_IPDIonizationStateDataBox const,
@@ -99,10 +99,10 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
         HDINLINE static bool skipSuperCell(
             pmacc::DataSpace<picongpu::simDim> const,
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
             T_AdditionalStuff...)
         {
-            return (localTimeRemainingBox[superCellFieldIndex] <= 0._X);
+            return (timeRemainingBox[superCellFieldIndex] <= 0._X);
         }
     };
 
@@ -119,7 +119,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
         template<
             typename T_KernelState,
             typename T_LocalTimeRemainingBox,
-            typename T_LocalFoundUnboundIonBox,
+            typename T_FoundUnboundIonBox,
             typename T_ChargeStateDataBox,
             typename T_AtomicStateDataBox,
             typename T_IPDIonizationStateDataBox,
@@ -129,7 +129,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             T_KernelState& kernelState,
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
             T_LocalTimeRemainingBox const,
-            T_LocalFoundUnboundIonBox const,
+            T_FoundUnboundIonBox const,
             T_ChargeStateDataBox const,
             T_AtomicStateDataBox const,
             T_IPDIonizationStateDataBox const,
@@ -152,7 +152,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             typename T_Worker,
             typename T_Ion,
             typename T_LocalTimeRemainingBox,
-            typename T_LocalFoundUnboundIonBox,
+            typename T_FoundUnboundIonBox,
             typename T_AtomicStateDataBox,
             typename T_ChargeStateDataBox,
             typename T_IPDIonizationStateDataBox,
@@ -163,7 +163,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             KernelState& kernelState,
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
             T_LocalTimeRemainingBox const,
-            T_LocalFoundUnboundIonBox const,
+            T_FoundUnboundIonBox const,
             T_ChargeStateDataBox const chargeStateBox,
             T_AtomicStateDataBox const atomicStateBox,
             T_IPDIonizationStateDataBox const ipdIonizationStateBox,
@@ -251,7 +251,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
         template<
             typename T_KernelState,
             typename T_LocalTimeRemainingBox,
-            typename T_LocalFoundUnboundIonBox,
+            typename T_FoundUnboundIonBox,
             typename T_ChargeStateDataBox,
             typename T_AtomicStateDataBox,
             typename T_IPDIonizationStateDataBox,
@@ -261,13 +261,13 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             T_KernelState const kernelState,
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIndex,
             T_LocalTimeRemainingBox const,
-            T_LocalFoundUnboundIonBox localFoundUnboundIonBox,
+            T_FoundUnboundIonBox foundUnboundIonBox,
             T_ChargeStateDataBox const,
             T_AtomicStateDataBox const,
             T_IPDIonizationStateDataBox const,
             T_IPDInputBoxes const...)
         {
-            uint32_t& foundUnbound = localFoundUnboundIonBox(superCellFieldIndex);
+            uint32_t& foundUnbound = foundUnboundIonBox(superCellFieldIndex);
             foundUnbound = foundUnbound || u32(kernelState.foundUnbound);
         }
     };

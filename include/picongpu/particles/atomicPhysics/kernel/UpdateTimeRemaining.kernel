@@ -35,9 +35,9 @@ namespace picongpu::particles::atomicPhysics::kernel
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param localTimeRemainingBox deviceDataBox giving access to the local atomicPhysics time remaining for every
+         * @param timeRemainingBox deviceDataBox giving access to the local atomicPhysics time remaining for every
          *  superCell
-         * @param localTimeStepBox deviceDataBox giving access to local atomicPhysics time step length for every
+         * @param timeStepBox deviceDataBox giving access to local atomicPhysics time step length for every
          *  superCell
          */
         template<
@@ -48,8 +48,8 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox localTimeRemainingBox,
-            T_LocalTimeStepBox const localTimeStepBox) const
+            T_LocalTimeRemainingBox timeRemainingBox,
+            T_LocalTimeStepBox const timeStepBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -57,14 +57,14 @@ namespace picongpu::particles::atomicPhysics::kernel
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
             // sim.unit.time()
-            float_X& timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            float_X& timeRemaining = timeRemainingBox(superCellFieldIdx);
 
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
                 return;
 
             // sim.unit.time()
-            float_X const timeStep = localTimeStepBox(superCellFieldIdx);
+            float_X const timeStep = timeStepBox(superCellFieldIdx);
 
             auto onlyMaster = lockstep::makeMaster(worker);
 

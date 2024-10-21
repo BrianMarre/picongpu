@@ -54,8 +54,10 @@ namespace picongpu::particles::atomicPhysics::kernel
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
          * @param ionBox deviceDataBox giving access to the particle frames of all local superCells
-         * @param localElectronHistogramDataBox deviceDataBox giving access to the local
+         * @param electronHistogramDataBox deviceDataBox giving access to the local
          *  electron histograms of all local superCells
          * @param atomicStateBox deviceDataBox giving access to atomic state property data
          * @param transitionBox deviceDataBox giving access to transition property data,
@@ -74,9 +76,9 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
             T_IonBox ionBox,
-            T_LocalElectronHistogramDataBox localElectronHistogramDataBox,
+            T_LocalElectronHistogramDataBox electronHistogramDataBox,
             T_AtomicStateDataBox const atomicStateBox,
             T_TransitionDataBox const transitionBox,
             T_ChargeStateBoxAndIPDInput... chargeStateBoxAndIPDInput) const
@@ -116,7 +118,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
 
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
@@ -125,7 +127,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                 return;
 
             // get histogram for current superCell
-            [[maybe_unused]] T_Histogram& electronHistogram = localElectronHistogramDataBox(superCellFieldIdx);
+            [[maybe_unused]] T_Histogram& electronHistogram = electronHistogramDataBox(superCellFieldIdx);
 
             // eV
             [[maybe_unused]] float_X ionizationPotentialDepression = 0._X;

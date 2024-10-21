@@ -59,9 +59,9 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalTimeStepField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
+    struct TimeStepField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
     {
-        LocalTimeStepField(T_MappingDescription const& mappingDesc)
+        TimeStepField(T_MappingDescription const& mappingDesc)
             : SuperCellField<float_X, T_MappingDescription, false /*no guards*/>(mappingDesc)
         {
         }
@@ -69,7 +69,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalTimeStepField";
+            return "TimeStepField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields

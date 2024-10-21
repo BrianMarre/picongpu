@@ -25,8 +25,8 @@
 #pragma once
 
 #include "picongpu/defines.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRateCacheField.hpp"
 #include "picongpu/particles/atomicPhysics/localHelperFields/RateCache.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RateCacheField.hpp"
 #include "picongpu/particles/param.hpp"
 #include "picongpu/particles/traits/GetNumberAtomicStates.hpp"
 
@@ -43,7 +43,7 @@ namespace picongpu::particles::atomicPhysics::stage
      * @tparam T_IonSpecies ion species type
      */
     template<typename T_IonSpecies>
-    struct ResetLocalRateCache
+    struct ResetRateCache
     {
         // might be alias, from here on out no more
         //! resolved type of alias T_ionSpecies
@@ -54,14 +54,13 @@ namespace picongpu::particles::atomicPhysics::stage
         {
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localRateCacheField = *dc.get<
-                particles::atomicPhysics::localHelperFields::LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                IonSpecies::FrameType::getName() + "_localRateCacheField");
+            auto& rateCacheField = *dc.get<
+                particles::atomicPhysics::localHelperFields::RateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_rateCacheField");
 
             // rate cache inits to all zeros
-            localRateCacheField.getDeviceBuffer().setValue(
-                picongpu::particles::atomicPhysics::localHelperFields::RateCache<
-                    picongpu::traits::GetNumberAtomicStates<IonSpecies>::value>());
+            rateCacheField.getDeviceBuffer().setValue(picongpu::particles::atomicPhysics::localHelperFields::RateCache<
+                                                      picongpu::traits::GetNumberAtomicStates<IonSpecies>::value>());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage

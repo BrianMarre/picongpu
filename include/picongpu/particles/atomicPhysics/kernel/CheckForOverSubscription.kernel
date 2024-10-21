@@ -47,7 +47,7 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param rngFactory factory for uniformly distributed random number generator
-         * @param localHistogramBox deviceDataBox giving access to localHistograms for
+         * @param histogramBox deviceDataBox giving access to localHistograms for
          *  all local superCells
          * @param localElectronHistogramOverSubscribed deviceDataBox giving access to
          *  histogram over subscription switch for each local superCell
@@ -64,8 +64,8 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalHistogramDataBox localHistogramBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalHistogramDataBox histogramBox,
             T_LocalElectronHistogramOverSubscribedDataBox localElectronHistogramOverSubscribedBox,
             T_LocalRejectionProbabilityCacheDataBox localRejectionProbabilityCacheBox) const
         {
@@ -76,7 +76,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
                 return;
@@ -84,7 +84,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             auto forEachBin = pmacc::lockstep::makeForEach<T_Histogram::numberBins, T_Worker>(worker);
             auto onlyMaster = pmacc::lockstep::makeMaster<T_Worker>(worker);
 
-            T_Histogram& histogram = localHistogramBox(superCellFieldIdx);
+            T_Histogram& histogram = histogramBox(superCellFieldIdx);
 
             uint32_t& histogramOverSubscribed = localElectronHistogramOverSubscribedBox(superCellFieldIdx);
 

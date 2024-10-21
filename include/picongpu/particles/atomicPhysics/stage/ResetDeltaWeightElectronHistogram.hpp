@@ -25,7 +25,7 @@
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/ResetDeltaWeightElectronHistogram.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/atomicPhysics/param.hpp"
 
 #include <pmacc/Environment.hpp>
@@ -53,14 +53,14 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
-            auto& localElectronHistogramField
+            auto& electronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
-                    "Electron_localHistogramField");
+                    "Electron_HistogramField");
 
             // macro for call of kernel for every superCell
             PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::ResetDeltaWeightElectronHistogramKernel<
@@ -68,8 +68,8 @@ namespace picongpu::particles::atomicPhysics::stage
                                       T_numberAtomicPhysicsIonSpecies>())
                 .template config<picongpu::atomicPhysics::ElectronHistogram::numberBins>(mapper.getGridDim())(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localElectronHistogramField.getDeviceDataBox());
+                    timeRemainingField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox());
 
             /// @todo implement photon histogram, Brian Marre, 2023
         }

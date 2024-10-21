@@ -30,7 +30,7 @@
 #include "picongpu/particles/atomicPhysics/enums/ProcessClassGroup.hpp"
 #include "picongpu/particles/atomicPhysics/enums/TransitionOrdering.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/SpawnIonizationMacroElectrons.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 #include "picongpu/particles/traits/GetIonizationElectronSpecies.hpp"
 
@@ -68,9 +68,9 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
             auto& electrons = *dc.get<IonizationElectronSpecies>(IonizationElectronSpecies::FrameType::getName());
@@ -90,7 +90,7 @@ namespace picongpu::particles::atomicPhysics::stage
                     .config(mapper.getGridDim(), ions)(
                         mapper,
                         idProvider->getDeviceGenerator(),
-                        localTimeRemainingField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox(),
                         electrons.getDeviceParticlesBox(),
                         atomicData.template getAtomicStateDataDataBox<false>(),
@@ -110,7 +110,7 @@ namespace picongpu::particles::atomicPhysics::stage
                     dc,
                     mapper,
                     idProvider->getDeviceGenerator(),
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
                     electrons.getDeviceParticlesBox(),
                     atomicData.template getAtomicStateDataDataBox<false>(),

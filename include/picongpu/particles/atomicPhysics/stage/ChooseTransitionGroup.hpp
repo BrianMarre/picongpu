@@ -26,9 +26,9 @@
 
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/ChooseTransitionGroup.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRateCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RateCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeStepField.hpp"
 #include "picongpu/particles/param.hpp"
 #include "picongpu/particles/traits/GetAtomicDataType.hpp"
 
@@ -64,17 +64,17 @@ namespace picongpu::particles::atomicPhysics::stage
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
-            auto& localTimeStepField = *dc.get<
-                picongpu::particles::atomicPhysics ::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
-                "LocalTimeStepField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
+            auto& timeStepField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::TimeStepField<picongpu::MappingDesc>>(
+                    "TimeStepField");
             using RateCacheType = typename picongpu::particles::atomicPhysics::localHelperFields::
-                LocalRateCacheField<picongpu::MappingDesc, IonSpecies>::entryType;
-            auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
-                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                IonSpecies::FrameType::getName() + "_localRateCacheField");
+                RateCacheField<picongpu::MappingDesc, IonSpecies>::entryType;
+            auto& rateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
+                                               RateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_rateCacheField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
             RngFactoryFloat rngFactoryFloat = RngFactoryFloat{currentStep};
@@ -92,9 +92,9 @@ namespace picongpu::particles::atomicPhysics::stage
                 .config(mapper.getGridDim(), ions)(
                     mapper,
                     rngFactoryFloat,
-                    localTimeStepField.getDeviceDataBox(),
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox(),
+                    timeStepField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
+                    rateCacheField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox());
         }
     };

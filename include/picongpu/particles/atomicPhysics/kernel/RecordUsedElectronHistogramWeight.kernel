@@ -43,8 +43,10 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
          * @param ionBox deviceDataBox giving access to the particle frames of all local superCells
-         * @param localElectronHistogramDataBox deviceDataBox giving access to the local
+         * @param electronHistogramDataBox deviceDataBox giving access to the local
          *  electron histograms of all local superCells
          */
         template<
@@ -56,9 +58,9 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
             T_IonBox const ionBox,
-            T_LocalElectronHistogramDataBox localElectronHistogramDataBox) const
+            T_LocalElectronHistogramDataBox electronHistogramDataBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
 
@@ -67,7 +69,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
             // end kernel if no particles or superCell already finished
@@ -75,7 +77,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                 return;
 
             // get histogram for current superCell
-            T_Histogram& electronHistogram = localElectronHistogramDataBox(superCellFieldIdx);
+            T_Histogram& electronHistogram = electronHistogramDataBox(superCellFieldIdx);
 
             forEachLocalIonBoxEntry(
                 [&electronHistogram](T_Worker const& worker, auto& ion)

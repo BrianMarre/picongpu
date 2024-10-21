@@ -40,21 +40,21 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param localRateCacheBox deviceDataBox giving access to the local rate cache of
+         * @param rateCacheBox deviceDataBox giving access to the local rate cache of
          *  all local superCells
          */
-        template<typename T_Worker, typename T_AreaMapping, typename T_LocalRateCacheBox>
+        template<typename T_Worker, typename T_AreaMapping, typename T_RateCacheBox>
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalRateCacheBox const localRateCacheBox) const
+            T_RateCacheBox const rateCacheBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
-            auto& rateCache = localRateCacheBox(superCellFieldIdx);
+            auto& rateCache = rateCacheBox(superCellFieldIdx);
 
             rateCache.printToConsole(worker.getAcc(), superCellFieldIdx);
         }

@@ -50,7 +50,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param localTimeRemainingBox deviceDataBox containing local atomicPhysics step
+         * @param timeRemainingBox deviceDataBox containing local atomicPhysics step
          *  time remaining for every superCell
          * @param localSumWeightAllBox deviceDataBox giving access to the sum of weights of macro particles for all
          *  local superCells
@@ -62,11 +62,11 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
          *  macro particles for all local superCells
          * @param localSumChargeNumberSquaredBox deviceDataBox giving access to the weighted sum of the charge number
          *  squared of ion macro particles for all local superCells
-         * @param localTemperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
+         * @param temperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
          *  local superCells, in sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2, not weighted
-         * @param localZStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
+         * @param zStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
          *  for all local superCells, unitless, not weighted
-         * @param localDebyeLengthBox deviceDataBox giving access to the local debye length for all local superCells,
+         * @param debyeLengthBox deviceDataBox giving access to the local debye length for all local superCells,
          *  sim.unit.length(), not weighted
          */
         template<
@@ -79,20 +79,20 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             typename T_SumChargeNumberIonsFieldDataBox,
             typename T_SumChargeNumberSquaredIonsFieldDataBox,
             typename T_LocalTemperatureFieldDataBox,
-            typename T_LocalZStarFieldDataBox,
+            typename T_ZStarFieldDataBox,
             typename T_LocaDebyeLengthFieldDataBox>
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingDataBox const localTimeRemainingBox,
+            T_LocalTimeRemainingDataBox const timeRemainingBox,
             T_SumWeightAllFieldDataBox const localSumWeightAllBox,
             T_SumTemperatureFunctionalFieldDataBox const localSumTemperatureFunctionalBox,
             T_SumWeightElectronFieldBox const localSumWeightElectronBox,
             T_SumChargeNumberIonsFieldDataBox const localSumChargeNumberBox,
             T_SumChargeNumberSquaredIonsFieldDataBox const localSumChargeNumberSquaredBox,
-            T_LocalTemperatureFieldDataBox localTemperatureEnergyBox,
-            T_LocalZStarFieldDataBox localZStarBox,
-            T_LocaDebyeLengthFieldDataBox localDebyeLengthBox) const
+            T_LocalTemperatureFieldDataBox temperatureEnergyBox,
+            T_ZStarFieldDataBox zStarBox,
+            T_LocaDebyeLengthFieldDataBox debyeLengthBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
@@ -100,7 +100,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
             // sim.unit.time()
-            float_X const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            float_X const timeRemaining = timeRemainingBox(superCellFieldIdx);
 
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
@@ -124,11 +124,11 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             // IPD input parameter
             //{
             // sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2, not weighted
-            float_X& localTemperatureTimesk_Boltzman = localTemperatureEnergyBox(superCellFieldIdx);
+            float_X& localTemperatureTimesk_Boltzman = temperatureEnergyBox(superCellFieldIdx);
             // unitless, non weighted
-            float_X& localZStar = localZStarBox(superCellFieldIdx);
+            float_X& localZStar = zStarBox(superCellFieldIdx);
             // sim.unit.length(), non weighted
-            float_X& localDebyeLength = localDebyeLengthBox(superCellFieldIdx);
+            float_X& localDebyeLength = debyeLengthBox(superCellFieldIdx);
             //}
 
             const auto onlyMaster = lockstep::makeMaster(worker);

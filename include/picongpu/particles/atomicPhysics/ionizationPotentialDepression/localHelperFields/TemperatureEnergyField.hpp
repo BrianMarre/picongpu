@@ -27,19 +27,19 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::localHelperFields
 {
-    /**superCell field of local z^* = average(q^2)/average(q)   ;q ... charge number of ion
+    /**superCell field of local temperature * k_Boltzman
      *
-     * @details unitless, not weighted
+     * unit: eV, not weighted
      *
-     * @note required for calculating the local ionization potential depression(IPD) and filled by
+     * @details required for calculating the local ionization potential depression(IPD) and filled by
      *  calculateIPDInput kernel.
      *
      * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalZStarField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
+    struct TemperatureEnergyField : public SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>
     {
-        LocalZStarField(T_MappingDescription const& mappingDesc)
+        TemperatureEnergyField(T_MappingDescription const& mappingDesc)
             : SuperCellField<float_X, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
@@ -47,7 +47,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::loc
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalZStarField";
+            return "TemperatureEnergyField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::localHelperFields

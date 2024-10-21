@@ -29,7 +29,7 @@
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/CalculateIPDInput.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/FillIPDSumFields_Electron.def"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/FillIPDSumFields_Ion.def"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalFoundUnboundIonField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/FoundUnboundIonField.hpp"
 
 #include <pmacc/meta/ForEach.hpp>
 #include <pmacc/particles/traits/FilterByFlag.hpp>
@@ -114,22 +114,21 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             // create IPD input Fields
             //@{
             // in sim.unit.length(), not weighted
-            auto localDebyeLengthField
-                = std::make_unique<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
-                    mappingDesc);
-            dataConnector.consume(std::move(localDebyeLengthField));
+            auto debyeLengthField
+                = std::make_unique<s_IPD::localHelperFields::DebyeLengthField<picongpu::MappingDesc>>(mappingDesc);
+            dataConnector.consume(std::move(debyeLengthField));
 
             // z^star IPD input field, z^star = = average(q^2) / average(q) ;for q charge number of ion, unitless,
             //  not weighted
-            auto localZStarField
-                = std::make_unique<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>(mappingDesc);
-            dataConnector.consume(std::move(localZStarField));
+            auto zStarField
+                = std::make_unique<s_IPD::localHelperFields::ZStarField<picongpu::MappingDesc>>(mappingDesc);
+            dataConnector.consume(std::move(zStarField));
 
             // local k_Boltzman * Temperature field, in eV
-            auto localTemperatureEnergyField
-                = std::make_unique<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
+            auto temperatureEnergyField
+                = std::make_unique<s_IPD::localHelperFields::TemperatureEnergyField<picongpu::MappingDesc>>(
                     mappingDesc);
-            dataConnector.consume(std::move(localTemperatureEnergyField));
+            dataConnector.consume(std::move(temperatureEnergyField));
             //@}
         }
 
@@ -186,11 +185,11 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 
         /** calculate ionization potential depression
          *
-         * @param localTemperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
+         * @param temperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
          *  local superCells, in sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2, not weighted
-         * @param localZStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
+         * @param zStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
          *  for all local superCells, unitless, not weighted
-         * @param localDebyeLengthBox deviceDataBox giving access to the local debye length for all local superCells,
+         * @param debyeLengthBox deviceDataBox giving access to the local debye length for all local superCells,
          *  sim.unit.length(), not weighted
          * @param superCellFieldIdx index of superCell in superCellField(without guards)
          *
@@ -198,14 +197,14 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
          */
         template<
             uint8_t T_atomicNumber,
-            typename T_LocalDebyeLengthBox,
-            typename T_LocalTemperatureEnergyBox,
-            typename T_LocalZStarBox>
+            typename T_DebyeLengthBox,
+            typename T_TemperatureEnergyBox,
+            typename T_ZStarBox>
         HDINLINE static float_X calculateIPD(
             pmacc::DataSpace<simDim> const superCellFieldIdx,
-            T_LocalDebyeLengthBox const localDebyeLengthBox,
-            T_LocalTemperatureEnergyBox const localTemperatureEnergyBox,
-            T_LocalZStarBox const localZStarBox)
+            T_DebyeLengthBox const debyeLengthBox,
+            T_TemperatureEnergyBox const temperatureEnergyBox,
+            T_ZStarBox const zStarBox)
         {
             // eV/(sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2)
             constexpr float_X eV = sim.pic.get_eV();
@@ -221,16 +220,16 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
                 / (4._X * static_cast<float_X>(picongpu::PI) * picongpu::sim.pic.getEps0());
 
             // eV, not weighted
-            float_X const temperatureTimesk_Boltzman = localTemperatureEnergyBox(superCellFieldIdx);
+            float_X const temperatureTimesk_Boltzman = temperatureEnergyBox(superCellFieldIdx);
             // sim.unit.length(), not weighted
-            float_X const debyeLength = localDebyeLengthBox(superCellFieldIdx);
+            float_X const debyeLength = debyeLengthBox(superCellFieldIdx);
 
             // (eV * sim.unit.length()) / (eV * sim.unit.length()), not weighted
             // unitless, not weighted
             float_X const K = constFactor / (temperatureTimesk_Boltzman * debyeLength);
 
             // unitless, not weighted
-            float_X const zStar = localZStarBox(superCellFieldIdx);
+            float_X const zStar = zStarBox(superCellFieldIdx);
 
             // eV, not weighted
             return temperatureTimesk_Boltzman * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
@@ -243,22 +242,20 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             pmacc::AreaMapping<CORE + BORDER, picongpu::MappingDesc>& mapper,
             T_KernelInput... kernelInput)
         {
-            auto& localDebyeLengthField
-                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
-                    "LocalDebyeLengthField");
-            auto& localTemperatureEnergyField
-                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
-                    "LocalTemperatureEnergyField");
-            auto& localZStarField
-                = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
+            auto& debyeLengthField
+                = *dc.get<s_IPD::localHelperFields::DebyeLengthField<picongpu::MappingDesc>>("DebyeLengthField");
+            auto& temperatureEnergyField
+                = *dc.get<s_IPD::localHelperFields::TemperatureEnergyField<picongpu::MappingDesc>>(
+                    "TemperatureEnergyField");
+            auto& zStarField = *dc.get<s_IPD::localHelperFields::ZStarField<picongpu::MappingDesc>>("ZStarField");
 
             PMACC_LOCKSTEP_KERNEL(T_Kernel())
                 .template config<T_chunkSize>(mapper.getGridDim())(
                     mapper,
                     kernelInput...,
-                    localDebyeLengthField.getDeviceDataBox(),
-                    localTemperatureEnergyField.getDeviceDataBox(),
-                    localZStarField.getDeviceDataBox());
+                    debyeLengthField.getDeviceDataBox(),
+                    temperatureEnergyField.getDeviceDataBox(),
+                    zStarField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression

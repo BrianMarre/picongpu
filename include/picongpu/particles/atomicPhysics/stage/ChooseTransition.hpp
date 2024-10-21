@@ -30,9 +30,8 @@
 #include "picongpu/particles/atomicPhysics/kernel/ChooseTransition_BoundBound.kernel"
 #include "picongpu/particles/atomicPhysics/kernel/ChooseTransition_CollisionalBoundFree.kernel"
 #include "picongpu/particles/atomicPhysics/kernel/ChooseTransition_FieldBoundFree.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRateCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RateCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -71,18 +70,18 @@ namespace picongpu::particles::atomicPhysics::stage
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
             auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
-            auto& localElectronHistogramField
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
+            auto& electronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
-                    "Electron_localHistogramField");
+                    "Electron_HistogramField");
             using RateCache = typename picongpu::particles::atomicPhysics::localHelperFields::
-                LocalRateCacheField<picongpu::MappingDesc, IonSpecies>::entryType;
-            auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
-                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                IonSpecies::FrameType::getName() + "_localRateCacheField");
+                RateCacheField<picongpu::MappingDesc, IonSpecies>::entryType;
+            auto& rateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
+                                               RateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_rateCacheField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
@@ -109,9 +108,9 @@ namespace picongpu::particles::atomicPhysics::stage
                         atomicData.template getBoundBoundTransitionDataBox<
                             false,
                             s_enums::TransitionOrdering::byLowerState>(),
-                        localTimeRemainingField.getDeviceDataBox(),
-                        localElectronHistogramField.getDeviceDataBox(),
-                        localRateCacheField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
+                        electronHistogramField.getDeviceDataBox(),
+                        rateCacheField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox());
             }
 
@@ -134,9 +133,9 @@ namespace picongpu::particles::atomicPhysics::stage
                         atomicData.template getBoundBoundTransitionDataBox<
                             false,
                             s_enums::TransitionOrdering::byUpperState>(),
-                        localTimeRemainingField.getDeviceDataBox(),
-                        localElectronHistogramField.getDeviceDataBox(),
-                        localRateCacheField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
+                        electronHistogramField.getDeviceDataBox(),
+                        rateCacheField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox());
             }
 
@@ -161,9 +160,9 @@ namespace picongpu::particles::atomicPhysics::stage
                     atomicData.template getBoundFreeStartIndexBlockDataBox<false>(),
                     atomicData
                         .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localElectronHistogramField.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox(),
+                    rateCacheField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox());
             }
 
@@ -191,9 +190,9 @@ namespace picongpu::particles::atomicPhysics::stage
                     atomicData.template getBoundFreeStartIndexBlockDataBox<false>(),
                     atomicData
                         .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     fieldE.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox(),
+                    rateCacheField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox());
             }
 
@@ -209,8 +208,8 @@ namespace picongpu::particles::atomicPhysics::stage
                         atomicData.template getAutonomousTransitionDataBox<
                             false,
                             s_enums::TransitionOrdering::byUpperState>(),
-                        localTimeRemainingField.getDeviceDataBox(),
-                        localRateCacheField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
+                        rateCacheField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox());
             }
         }

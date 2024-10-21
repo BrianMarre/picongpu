@@ -28,7 +28,7 @@
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/LocalIPDInputFields.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/SumFields.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/kernel/CalculateIPDInput.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 
 #include <string>
 
@@ -52,9 +52,9 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& localSumWeightAllField
                 = *dc.get<s_IPD::localHelperFields::SumWeightAllField<picongpu::MappingDesc>>("SumWeightAllField");
@@ -73,28 +73,26 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
                 = *dc.get<s_IPD::localHelperFields::SumChargeNumberSquaredIonsField<picongpu::MappingDesc>>(
                     "SumChargeNumberSquaredIonsField");
 
-            auto& localTemperatureEnergyField
-                = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
-                    "LocalTemperatureEnergyField");
-            auto& localZStarField
-                = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
-            auto& localDebyeLengthField
-                = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>(
-                    "LocalDebyeLengthField");
+            auto& temperatureEnergyField
+                = *dc.get<s_IPD::localHelperFields::TemperatureEnergyField<picongpu::MappingDesc>>(
+                    "TemperatureEnergyField");
+            auto& zStarField = *dc.get<s_IPD::localHelperFields::ZStarField<picongpu::MappingDesc>>("ZStarField");
+            auto& debyeLengthField
+                = *dc.get<s_IPD::localHelperFields::DebyeLengthField<picongpu::MappingDesc>>("DebyeLengthField");
 
             // macro for kernel call
             PMACC_LOCKSTEP_KERNEL(s_IPD::kernel::CalculateIPDInputKernel<T_numberAtomicPhysicsIonSpecies>())
                 .template config<1u>(mapper.getGridDim())(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     localSumWeightAllField.getDeviceDataBox(),
                     localSumTemperatureFunctionalField.getDeviceDataBox(),
                     localSumWeightElectronField.getDeviceDataBox(),
                     localSumChargeNumberIonsField.getDeviceDataBox(),
                     localSumChargeNumberSquaredIonsField.getDeviceDataBox(),
-                    localTemperatureEnergyField.getDeviceDataBox(),
-                    localZStarField.getDeviceDataBox(),
-                    localDebyeLengthField.getDeviceDataBox());
+                    temperatureEnergyField.getDeviceDataBox(),
+                    zStarField.getDeviceDataBox(),
+                    debyeLengthField.getDeviceDataBox());
         }
     };
 

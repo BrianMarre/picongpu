@@ -17,13 +17,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-//! @file resetLocalTimeStepField sub-stage of atomicPhysics
+//! @file resetTimeStepField sub-stage of atomicPhysics
 
 #pragma once
 
-#include "picongpu/particles/atomicPhysics/kernel/ResetLocalTimeStepField.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics/kernel/ResetTimeStepField.kernel"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeStepField.hpp"
 
 #include <pmacc/mappings/kernel/AreaMapping.hpp>
 
@@ -37,7 +37,7 @@ namespace picongpu::particles::atomicPhysics::stage
      *  atomicPhysics kernels if no atomic physics species is present.
      */
     template<uint32_t T_numberAtomicPhysicsIonSpecies>
-    struct ResetLocalTimeStepField
+    struct ResetTimeStepField
     {
         //! call of kernel for every superCell
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
@@ -47,27 +47,27 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             // pointers to memory, we will only work on device, no sync required
-            //      pointer to localTimeRemainingField
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
-            //      pointer to localTimeStepFieldField
-            auto& localTimeStepField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
-                "LocalTimeStepField");
+            //      pointer to timeRemainingField
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
+            //      pointer to timeStepFieldField
+            auto& timeStepField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::TimeStepField<picongpu::MappingDesc>>(
+                    "TimeStepField");
 
             // macro for call of kernel
-            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::ResetLocalTimeStepFieldKernel<
+            PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::ResetTimeStepFieldKernel<
                                       T_numberAtomicPhysicsIonSpecies>())
                 .template config<1u>(mapper.getGridDim())(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localTimeStepField.getDeviceDataBox());
+                    timeRemainingField.getDeviceDataBox(),
+                    timeStepField.getDeviceDataBox());
         }
     };
 
     template<>
-    struct ResetLocalTimeStepField<0u>
+    struct ResetTimeStepField<0u>
     {
         HINLINE void operator()(picongpu::MappingDesc const mappingDesc) const
         {

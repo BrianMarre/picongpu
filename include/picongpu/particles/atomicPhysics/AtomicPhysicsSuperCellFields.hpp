@@ -22,12 +22,12 @@
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/ParticleType.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalFoundUnboundIonField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeStepField.hpp"
-#include "picongpu/particles/atomicPhysics/stage/CreateLocalRateCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/ElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/FoundUnboundIonField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RejectionProbabilityCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics/stage/CreateRateCacheField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/meta/ForEach.hpp>
@@ -55,35 +55,36 @@ namespace picongpu::particles::atomicPhysics
             // local rate cache, create in pre-stage call for each species
             pmacc::meta::ForEach<
                 ListAtomicPhysicsSpecies,
-                particles::atomicPhysics::stage::CreateLocalRateCacheField<boost::mpl::_1>>
-                ForEachIonSpeciesCreateLocalRateCacheField;
-            ForEachIonSpeciesCreateLocalRateCacheField(dataConnector, mappingDesc);
+                particles::atomicPhysics::stage::CreateRateCacheField<boost::mpl::_1>>
+                ForEachIonSpeciesCreateRateCacheField;
+            ForEachIonSpeciesCreateRateCacheField(dataConnector, mappingDesc);
 
             // local time remaining field
-            auto localSuperCellTimeRemainingField
-                = std::make_unique<localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(mappingDesc);
-            dataConnector.consume(std::move(localSuperCellTimeRemainingField));
+            auto superCellTimeRemainingField
+                = std::make_unique<localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(mappingDesc);
+            dataConnector.consume(std::move(superCellTimeRemainingField));
 
             // local time step field
-            auto localSuperCellTimeStepField
-                = std::make_unique<localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(mappingDesc);
-            dataConnector.consume(std::move(localSuperCellTimeStepField));
+            auto superCellTimeStepField
+                = std::make_unique<localHelperFields::TimeStepField<picongpu::MappingDesc>>(mappingDesc);
+            dataConnector.consume(std::move(superCellTimeStepField));
 
             // local electron histogram over subscribed switch
-            auto localSuperCellElectronHistogramOverSubscribedField = std::make_unique<
-                localHelperFields::LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(mappingDesc);
-            dataConnector.consume(std::move(localSuperCellElectronHistogramOverSubscribedField));
-
-            // local storage for FoundUnboundIonField
-            auto localFoundUnboundIonField
-                = std::make_unique<localHelperFields::LocalFoundUnboundIonField<picongpu::MappingDesc>>(mappingDesc);
-            dataConnector.consume(std::move(localFoundUnboundIonField));
-
-            // rejection probability for each over-subscribed bin of the local electron histogram
-            auto localSuperCellRejectionProbabilityCacheField
-                = std::make_unique<localHelperFields::LocalRejectionProbabilityCacheField<picongpu::MappingDesc>>(
+            auto superCellElectronHistogramOverSubscribedField
+                = std::make_unique<localHelperFields::ElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
                     mappingDesc);
-            dataConnector.consume(std::move(localSuperCellRejectionProbabilityCacheField));
+            dataConnector.consume(std::move(superCellElectronHistogramOverSubscribedField));
+
+            // local storage for foundUnboundIon switch
+            auto foundUnboundIonField
+                = std::make_unique<localHelperFields::FoundUnboundIonField<picongpu::MappingDesc>>(mappingDesc);
+            dataConnector.consume(std::move(foundUnboundIonField));
+
+            // rejection probability for each over-subscribed bin of the electron histogram
+            auto superCellRejectionProbabilityCacheField
+                = std::make_unique<localHelperFields::RejectionProbabilityCacheField<picongpu::MappingDesc>>(
+                    mappingDesc);
+            dataConnector.consume(std::move(superCellRejectionProbabilityCacheField));
         }
     };
 } // namespace picongpu::particles::atomicPhysics

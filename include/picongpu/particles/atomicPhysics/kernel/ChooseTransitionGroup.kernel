@@ -96,10 +96,10 @@ namespace picongpu::particles::atomicPhysics::kernel
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param rngFactoryFloat factory for uniformly distributed random number generator for float_X in [0,1)
-         * @param localTimeStepBox deviceDataBox giving access to the atomic physics time
-         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * @param timeStepBox deviceDataBox giving access to the atomic physics time
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
          * cells
-         * @param localRateCacheBox deviceDataBox giving access the local rate cache of all local super cells
+         * @param rateCacheBox deviceDataBox giving access the local rate cache of all local super cells
          * @param ionBox deviceDataBox giving access to all ion frames of a species of all local superCells
          */
         template<
@@ -114,9 +114,9 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             T_RngGeneratorFactoryFloat rngFactoryFloat,
-            T_TimeStepDataBox const localTimeStepBox,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalRateCacheBox localRateCacheBox,
+            T_TimeStepDataBox const timeStepBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalRateCacheBox rateCacheBox,
             T_IonBox ionBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
@@ -125,15 +125,15 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             auto forEachLocalIonBoxEntry = pmacc::particles::algorithm::acc::makeForEach(worker, ionBox, superCellIdx);
 
             // end kernel if superCell already finished or if contains no ions
             if((timeRemaining <= 0._X) || (!forEachLocalIonBoxEntry.hasParticles()))
                 return;
 
-            auto const timeStep = localTimeStepBox(superCellFieldIdx);
-            T_RateCache& rateCache = localRateCacheBox(superCellFieldIdx);
+            auto const timeStep = timeStepBox(superCellFieldIdx);
+            T_RateCache& rateCache = rateCacheBox(superCellFieldIdx);
             auto rngGenerator = rngFactoryFloat(worker, superCellFieldIdx);
 
             // choose transition type randomly

@@ -23,8 +23,8 @@
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/LocalIPDInputFields.hpp"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/kernel/ApplyIPDIonization.kernel"
 #include "picongpu/particles/atomicPhysics/ionizationPotentialDepression/stage/ApplyIPDIonization.def"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalFoundUnboundIonField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/FoundUnboundIonField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 #include "picongpu/particles/traits/GetAtomicDataType.hpp"
 #include "picongpu/particles/traits/GetIonizationElectronSpecies.hpp"
@@ -54,12 +54,12 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
         pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
         pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-        auto& localTimeRemainingField
-            = *dc.get<atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
-        auto& localFoundUnboundIonField
-            = *dc.get<atomicPhysics::localHelperFields::LocalFoundUnboundIonField<picongpu::MappingDesc>>(
-                "LocalFoundUnboundIonField");
+        auto& timeRemainingField
+            = *dc.get<atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
+        auto& foundUnboundIonField
+            = *dc.get<atomicPhysics::localHelperFields::FoundUnboundIonField<picongpu::MappingDesc>>(
+                "FoundUnboundIonField");
 
         auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
         auto& electrons = *dc.get<IonizationElectronSpecies>(IonizationElectronSpecies::FrameType::getName());
@@ -67,13 +67,12 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
         auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
 
         // ipd input fields
-        auto& localDebyeLengthField
-            = *dc.get<s_IPD::localHelperFields::LocalDebyeLengthField<picongpu::MappingDesc>>("LocalDebyeLengthField");
-        auto& localTemperatureEnergyField
-            = *dc.get<s_IPD::localHelperFields::LocalTemperatureEnergyField<picongpu::MappingDesc>>(
-                "LocalTemperatureEnergyField");
-        auto& localZStarField
-            = *dc.get<s_IPD::localHelperFields::LocalZStarField<picongpu::MappingDesc>>("LocalZStarField");
+        auto& debyeLengthField
+            = *dc.get<s_IPD::localHelperFields::DebyeLengthField<picongpu::MappingDesc>>("DebyeLengthField");
+        auto& temperatureEnergyField
+            = *dc.get<s_IPD::localHelperFields::TemperatureEnergyField<picongpu::MappingDesc>>(
+                "TemperatureEnergyField");
+        auto& zStarField = *dc.get<s_IPD::localHelperFields::ZStarField<picongpu::MappingDesc>>("ZStarField");
         auto idProvider = dc.get<IdProvider>("globalId");
 
         // macro for call of kernel on every superCell, see pull request #4321
@@ -83,14 +82,14 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::sta
                 idProvider->getDeviceGenerator(),
                 ions.getDeviceParticlesBox(),
                 electrons.getDeviceParticlesBox(),
-                localTimeRemainingField.getDeviceDataBox(),
-                localFoundUnboundIonField.getDeviceDataBox(),
+                timeRemainingField.getDeviceDataBox(),
+                foundUnboundIonField.getDeviceDataBox(),
                 atomicData.template getChargeStateDataDataBox</*on device*/ false>(),
                 atomicData.template getAtomicStateDataDataBox</*on device*/ false>(),
                 atomicData.template getIPDIonizationStateDataBox</*on device*/ false>(),
-                localDebyeLengthField.getDeviceDataBox(),
-                localTemperatureEnergyField.getDeviceDataBox(),
-                localZStarField.getDeviceDataBox());
+                debyeLengthField.getDeviceDataBox(),
+                temperatureEnergyField.getDeviceDataBox(),
+                zStarField.getDeviceDataBox());
 
         // no need to call fillAllGaps, since we do not leave any gaps
 

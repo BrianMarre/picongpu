@@ -1,4 +1,4 @@
-/* Copyright 2022-2023 Brian Marre
+/* Copyright 2024Brian Marre
  *
  * This file is part of PIConGPU.
  *
@@ -17,10 +17,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-/** @file implements the local timeRemainingField for each superCell
- *
- * timeRemaining for the current atomicPhysics step in each superCell
- */
+//! @file implements bool storage superCellField if an unbound ion was found previously
 
 #pragma once
 
@@ -33,52 +30,55 @@
 
 namespace picongpu::particles::atomicPhysics::localHelperFields
 {
-    /** debug only, write timeRemaining to console
+    /** debug only, write foundUnboundionField to console
      *
-     * @attention only creates ouptut if atomicPhysics debug setting CPU_OUTPUT_ACTIVE == True
+     * @attention only creates output if atomicPhysics debug setting CPU_OUTPUT_ACTIVE == True
      * @attention only useful if compiling for serial or cpu backend, otherwise will throw compile error if called by
      *  DumpSuperCellDataToConsole kernel on device
      */
-    struct PrintTimeRemaingToConsole
+    struct PrintFoundUnboundToConsole
     {
         //! cpu version
         template<typename T_Acc>
         HDINLINE auto operator()(
             T_Acc const&,
-            float_X const timeRemaining,
+            uint32_t const foundUnbound,
             pmacc::DataSpace<picongpu::simDim> superCellIdx) const
             -> std::enable_if_t<std::is_same_v<alpaka::Dev<T_Acc>, alpaka::DevCpu>>
         {
-            printf("timeRemaining %s: %.8e\n", superCellIdx.toString(",", "[]").c_str(), timeRemaining);
+            if(foundUnbound)
+                printf("foundUnbound %s: True\n", superCellIdx.toString(",", "[]").c_str());
+            else
+                printf("foundUnbound %s: False\n", superCellIdx.toString(",", "[]").c_str());
         }
 
-        //! gpu version does nothing
+        //! gpu version, does nothing
         template<typename T_Acc>
         HDINLINE auto operator()(
             T_Acc const&,
-            float_X const timeRemaining,
+            uint32_t const foundUnbound,
             pmacc::DataSpace<picongpu::simDim> superCellIdx) const
             -> std::enable_if_t<!std::is_same_v<alpaka::Dev<T_Acc>, alpaka::DevCpu>>
         {
         }
     };
 
-    /** holds a gridBuffer of the per-superCell timeRemaining:float_X for atomicPhysics
+    /**superCell field
      *
-     * unit: sim.unit.time()
+     * @tparam T_MappingDescription description of local mapping from device to grid
      */
     template<typename T_MappingDescription>
-    struct LocalTimeRemainingField : public SuperCellField<float_X, T_MappingDescription, false /*no guards*/>
+    struct FoundUnboundIonField : public SuperCellField<uint32_t, T_MappingDescription, /*no guards*/ false>
     {
-        LocalTimeRemainingField(T_MappingDescription const& mappingDesc)
-            : SuperCellField<float_X, T_MappingDescription, false /*no guards*/>(mappingDesc)
+        FoundUnboundIonField(T_MappingDescription const& mappingDesc)
+            : SuperCellField<uint32_t, T_MappingDescription, /*no guards*/ false>(mappingDesc)
         {
         }
 
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "LocalTimeRemainingField";
+            return "FoundUnboundIonField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields

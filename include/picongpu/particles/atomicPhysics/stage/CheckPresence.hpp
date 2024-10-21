@@ -26,8 +26,8 @@
 
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/CheckPresence.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRateCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RateCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 #include "picongpu/particles/traits/GetAtomicDataType.hpp"
 
@@ -41,7 +41,7 @@ namespace picongpu::particles::atomicPhysics::stage
      *
      * @tparam T_IonSpecies ion species type
      *
-     * @attention assumes localRateCacheField to have been reset before
+     * @attention assumes rateCacheField to have been reset before
      */
     template<typename T_IonSpecies>
     struct CheckPresence
@@ -57,24 +57,24 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
             // pointers to memory, we will only work on device, no sync required
-            //      pointer to localRateCache
-            auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
-                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                IonSpecies::FrameType::getName() + "_localRateCacheField");
+            //      pointer to rateCache
+            auto& rateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
+                                               RateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_rateCacheField");
 
             PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::CheckPresenceKernel())
                 .config(mapper.getGridDim(), ions)(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
-                    localRateCacheField.getDeviceDataBox());
+                    rateCacheField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage

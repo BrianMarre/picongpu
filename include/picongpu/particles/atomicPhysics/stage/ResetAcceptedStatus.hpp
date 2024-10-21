@@ -22,7 +22,7 @@
 #pragma once
 
 #include "picongpu/particles/atomicPhysics/kernel/ResetAcceptedStatus.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -49,16 +49,16 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
             PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::ResetAcceptedStatusKernel())
                 .config(
                     mapper.getGridDim(),
-                    ions)(mapper, localTimeRemainingField.getDeviceDataBox(), ions.getDeviceParticlesBox());
+                    ions)(mapper, timeRemainingField.getDeviceDataBox(), ions.getDeviceParticlesBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage

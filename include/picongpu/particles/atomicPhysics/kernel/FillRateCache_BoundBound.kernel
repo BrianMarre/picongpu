@@ -66,7 +66,7 @@ namespace picongpu::particles::atomicPhysics::kernel
         bool T_electronicDeexcitation,
         bool T_spontaneousDeexcitation,
         s_enums::TransitionOrdering T_TransitionOrdering>
-    struct FillLocalRateCacheKernel_BoundBound
+    struct FillRateCacheKernel_BoundBound
     {
         template<
             typename T_AtomicStateStartIndexBox,
@@ -95,15 +95,15 @@ namespace picongpu::particles::atomicPhysics::kernel
 
         /** call operator
          *
-         * called by FillLocalRateCache atomic physics sub-stage
+         * called by FillRateCache atomic physics sub-stage
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areaMapping mapping of blockIndex to block superCell index
-         * @param localTimeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
          * cells
-         * @param localRateCacheBox deviceDataBox giving access to the local rate cache of
+         * @param rateCacheBox deviceDataBox giving access to the local rate cache of
          *  all local superCells
-         * @param localElectronHistogramDataBox giving access to the local electron histograms
+         * @param electronHistogramDataBox giving access to the local electron histograms
          *  of all local superCells
          * @param atomicStateDataDataBox deviceDataBox giving access to atomic state property data
          * @param startIndexDataBox deviceDataBox giving access to the start index of each atomic states'
@@ -125,9 +125,9 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalRateCacheBox localRateCacheBox,
-            T_LocalElectronHistogramDataBox const localElectronHistogramDataBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalRateCacheBox rateCacheBox,
+            T_LocalElectronHistogramDataBox const electronHistogramDataBox,
             T_AtomicStateDataDataBox const atomicStateDataDataBox,
             T_AtomicStateStartIndexBox const startIndexDataBox,
             T_AtomicStateNumberTransitionsBox const numberTransitionsDataBox,
@@ -146,7 +146,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
 
             // end kernelif superCell already finished
             if(timeRemaining <= 0._X)
@@ -155,8 +155,8 @@ namespace picongpu::particles::atomicPhysics::kernel
             auto forEachAtomicStateAndBin
                 = pmacc::lockstep::makeForEach<T_numberAtomicStates * T_numberBins, T_Worker>(worker);
 
-            auto& rateCache = localRateCacheBox(superCellFieldIdx);
-            auto& histogram = localElectronHistogramDataBox(superCellFieldIdx);
+            auto& rateCache = rateCacheBox(superCellFieldIdx);
+            auto& histogram = electronHistogramDataBox(superCellFieldIdx);
 
 
             // sim.unit.length()^3

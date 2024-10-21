@@ -42,8 +42,9 @@ namespace picongpu::particles::atomicPhysics::kernel
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param rngFactory factory for uniformly distributed random number generator
-         * @param localHistogramBox deviceDataBox giving access to localHistograms for
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
+         * @param histogramBox deviceDataBox giving access to localHistograms for
          *  all local superCells
          */
         template<
@@ -54,22 +55,22 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalHistogramDataBox localHistogramBox) const
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalHistogramDataBox histogramBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
                 return;
 
             auto forEachBin = pmacc::lockstep::makeForEach<T_Histogram::numberBins, T_Worker>(worker);
 
-            T_Histogram& histogram = localHistogramBox(superCellFieldIdx);
+            T_Histogram& histogram = histogramBox(superCellFieldIdx);
 
             forEachBin([&worker, &histogram](uint32_t const binIndex) { histogram.setDeltaWeight(binIndex, 0._X); });
         }

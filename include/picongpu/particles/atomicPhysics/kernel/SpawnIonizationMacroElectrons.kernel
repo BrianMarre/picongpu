@@ -76,6 +76,8 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block information,
          *  passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
          * @param ionBox deviceDataBox giving access to the particle frames of T_IonSpecies
          *  of all local superCells
          * @param ionizationElectronBox deviceDataBox giving access to the particle frames
@@ -100,7 +102,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             IdGenerator idGen,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
             T_IonBox ionBox,
             T_IonizationElectronBox ionizationElectronBox,
             T_AtomicStateDataBox atomicStateBox,
@@ -128,7 +130,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             auto onlyMaster = pmacc::lockstep::makeMaster(worker);
 
             IonFramePtr ionFrame = ionBox.getLastFrame(superCellIdx);
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
 
             // end kernel if superCell already finished or no ions in superCell --> no bound electrons to ionize
             if((timeRemaining <= 0._X) || (!ionFrame.isValid()))

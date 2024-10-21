@@ -50,7 +50,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
      * @tparam T_IonSpecies resolved type of ion species
      */
     template<typename T_MappingDescription, typename T_IonSpecies>
-    struct LocalRateCacheField
+    struct RateCacheField
         : public SuperCellField<
               RateCache<picongpu::traits::GetNumberAtomicStates<T_IonSpecies>::value>,
               T_MappingDescription,
@@ -58,7 +58,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
     {
         using FrameType = typename T_IonSpecies::FrameType;
 
-        LocalRateCacheField(T_MappingDescription const& mappingDesc)
+        RateCacheField(T_MappingDescription const& mappingDesc)
             : SuperCellField<
                 RateCache<picongpu::traits::GetNumberAtomicStates<T_IonSpecies>::value>,
                 T_MappingDescription,
@@ -69,7 +69,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return FrameType::getName() + "_localRateCacheField";
+            return FrameType::getName() + "_rateCacheField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields

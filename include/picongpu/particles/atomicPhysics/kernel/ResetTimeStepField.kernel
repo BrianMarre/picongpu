@@ -33,7 +33,7 @@ namespace picongpu::particles::atomicPhysics::kernel
      *  atomicPhysics kernels if no atomic physics species is present.
      */
     template<uint32_t T_numberAtomicPhysicsIonSpecies>
-    struct ResetLocalTimeStepFieldKernel
+    struct ResetTimeStepFieldKernel
     {
         /** call operator
          *
@@ -41,9 +41,9 @@ namespace picongpu::particles::atomicPhysics::kernel
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
-         * @param localTimeRemainingBox deviceDataBox containing local atomicPhysics step
+         * @param timeRemainingBox deviceDataBox containing local atomicPhysics step
          *  time remaining for every superCell
-         * @param localTimeStepBox deviceDataBox containing local atomicPhysics time step
+         * @param timeStepBox deviceDataBox containing local atomicPhysics time step
          *  length for every superCell
          */
         template<
@@ -54,20 +54,20 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalTimeStepBox localTimeStepBox) const
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalTimeStepBox timeStepBox) const
         {
             // atomicPhysics superCellFields have no guard, but areMapping includes a guard
             //  -> must subtract guard to get correct superCellFieldIdx
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
                 return;
 
-            auto& timeStep = localTimeStepBox(superCellFieldIdx);
+            auto& timeStep = timeStepBox(superCellFieldIdx);
 
             auto onlyMaster = lockstep::makeMaster(worker);
 
@@ -76,7 +76,7 @@ namespace picongpu::particles::atomicPhysics::kernel
     };
 
     template<>
-    struct ResetLocalTimeStepFieldKernel<0u>
+    struct ResetTimeStepFieldKernel<0u>
     {
         template<
             typename T_Worker,
@@ -86,8 +86,8 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
-            T_LocalTimeStepBox localTimeStepBox) const
+            T_LocalTimeRemainingBox const timeRemainingBox,
+            T_LocalTimeStepBox timeStepBox) const
         {
         }
     };

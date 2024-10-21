@@ -27,9 +27,9 @@
 #pragma once
 
 #include "picongpu/particles/atomicPhysics/kernel/CalculateStepLength.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRateCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RateCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeStepField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -40,8 +40,8 @@ namespace picongpu::particles::atomicPhysics::stage
 {
     /** @class atomic physics sub-stage for finding atomic physics step length
      *
-     * @attention assumes localTimeStepField to have been reset before
-     * @attention assumes localRateCacheField to have been filled before
+     * @attention assumes timeStepField to have been reset before
+     * @attention assumes rateCacheField to have been filled before
      *
      * @tparam T_IonSpecies ion species type
      */
@@ -59,19 +59,19 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             // pointers to memory, we will only work on device, no sync required
-            //      pointer to localRateCache
-            auto& localRateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
-                                                    LocalRateCacheField<picongpu::MappingDesc, IonSpecies>>(
-                IonSpecies::FrameType::getName() + "_localRateCacheField");
-            //      pointer to localTimeStepField
-            auto& localTimeStepField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
-                "LocalTimeStepField");
+            //      pointer to rateCache
+            auto& rateCacheField = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
+                                               RateCacheField<picongpu::MappingDesc, IonSpecies>>(
+                IonSpecies::FrameType::getName() + "_rateCacheField");
+            //      pointer to timeStepField
+            auto& timeStepField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::TimeStepField<picongpu::MappingDesc>>(
+                    "TimeStepField");
 
             constexpr uint32_t numberAtomicStatesOfSpecies
                 = picongpu::traits::GetNumberAtomicStates<IonSpecies>::value;
@@ -81,9 +81,9 @@ namespace picongpu::particles::atomicPhysics::stage
                 picongpu::particles::atomicPhysics::kernel::CalculateStepLengthKernel<numberAtomicStatesOfSpecies>())
                 .template config<IonSpecies::FrameType::frameSize>(mapper.getGridDim())(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localTimeStepField.getDeviceDataBox(),
-                    localRateCacheField.getDeviceDataBox());
+                    timeRemainingField.getDeviceDataBox(),
+                    timeStepField.getDeviceDataBox(),
+                    rateCacheField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage

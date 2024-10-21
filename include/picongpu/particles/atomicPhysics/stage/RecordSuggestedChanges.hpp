@@ -24,7 +24,7 @@
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/RecordUsedElectronHistogramWeight.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -62,16 +62,16 @@ namespace picongpu::particles::atomicPhysics::stage
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            auto& localElectronHistogramField
+            auto& electronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
-                    "Electron_localHistogramField");
+                    "Electron_HistogramField");
 
             // electronic collisional transition channel active
             if constexpr(
@@ -84,9 +84,9 @@ namespace picongpu::particles::atomicPhysics::stage
                         picongpu::atomicPhysics::ElectronHistogram>())
                     .config(mapper.getGridDim(), ions)(
                         mapper,
-                        localTimeRemainingField.getDeviceDataBox(),
+                        timeRemainingField.getDeviceDataBox(),
                         ions.getDeviceParticlesBox(),
-                        localElectronHistogramField.getDeviceDataBox());
+                        electronHistogramField.getDeviceDataBox());
             }
 
             /// @todo implement photonic collisional interactions, Brian Marre, 2023

@@ -21,9 +21,9 @@
 
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/RollForOverSubscription.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalElectronHistogramOverSubscribedField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalRejectionProbabilityCacheField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/ElectronHistogramOverSubscribedField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/RejectionProbabilityCacheField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/particles/meta/FindByNameOrType.hpp>
@@ -61,20 +61,19 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            auto& localRejectionProbabilityCacheField
-                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::LocalRejectionProbabilityCacheField<
-                    picongpu::MappingDesc>>("LocalRejectionProbabilityCacheField");
+            auto& rejectionProbabilityCacheField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::RejectionProbabilityCacheField<
+                    picongpu::MappingDesc>>("RejectionProbabilityCacheField");
 
-            auto& localElectronHistogramOverSubscribedField
-                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::
-                              LocalElectronHistogramOverSubscribedField<picongpu::MappingDesc>>(
-                    "LocalElectronHistogramOverSubscribedField");
+            auto& electronHistogramOverSubscribedField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::ElectronHistogramOverSubscribedField<
+                    picongpu::MappingDesc>>("ElectronHistogramOverSubscribedField");
 
             RngFactoryFloat rngFactory = RngFactoryFloat{currentStep};
 
@@ -84,10 +83,10 @@ namespace picongpu::particles::atomicPhysics::stage
                 .config(mapper.getGridDim(), ions)(
                     mapper,
                     rngFactory,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localElectronHistogramOverSubscribedField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
+                    electronHistogramOverSubscribedField.getDeviceDataBox(),
                     ions.getDeviceParticlesBox(),
-                    localRejectionProbabilityCacheField.getDeviceDataBox());
+                    rejectionProbabilityCacheField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage

@@ -50,6 +50,8 @@ namespace picongpu::particles::atomicPhysics::kernel
          *  passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param rngFactory random number generator factory
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
          * @param localElectronHistogramOverSubscribedBox deviceDataBox giving access to
          *  the histogram oversubscribed switch of all local superCells
          * @param ionBox deviceDataBox giving access to the particle frames of all local superCells
@@ -69,7 +71,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_AreaMapping const areaMapping,
             /// const?, @todo Brian Marre, 2023
             T_RngGeneratorFactoryFloat rngFactory,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
             T_LocalElectronHistogramOverSubscribedDataBox const localElectronHistogramOverSubscribedBox,
             T_IonBox ionBox,
             T_LocalRejectionProbabilityCacheDataBox localRejectionProbabilityCacheBox) const
@@ -82,7 +84,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             bool const histogramOverSubscribed
                 = static_cast<bool>(localElectronHistogramOverSubscribedBox(superCellFieldIdx));
 

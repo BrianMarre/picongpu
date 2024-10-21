@@ -23,8 +23,8 @@
 
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/UpdateTimeRemaining.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeStepField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeStepField.hpp"
 
 #include <pmacc/mappings/kernel/AreaMapping.hpp>
 
@@ -49,21 +49,21 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             // pointers to memory, we will only work on device, no sync required
-            //      pointer to localTimeRemainingField
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
-            //      pointer to localTimeStepFieldField
-            auto& localTimeStepField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeStepField<picongpu::MappingDesc>>(
-                "LocalTimeStepField");
+            //      pointer to timeRemainingField
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
+            //      pointer to timeStepFieldField
+            auto& timeStepField
+                = *dc.get<picongpu::particles::atomicPhysics::localHelperFields::TimeStepField<picongpu::MappingDesc>>(
+                    "TimeStepField");
 
             // macro for kernel call
             PMACC_LOCKSTEP_KERNEL(picongpu::particles::atomicPhysics::kernel::UpdateTimeRemainingKernel())
                 .template config<1u>(mapper.getGridDim())(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
-                    localTimeStepField.getDeviceDataBox());
+                    timeRemainingField.getDeviceDataBox(),
+                    timeStepField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage

@@ -45,6 +45,8 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block
          *  information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
+         * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
+         * cells
          * @param ionBox deviceDataBox pointing to the particle frames of the species
          *   T_IonSpecies of all local superCells
          */
@@ -52,7 +54,7 @@ namespace picongpu::particles::atomicPhysics::kernel
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const localTimeRemainingBox,
+            T_LocalTimeRemainingBox const timeRemainingBox,
             T_IonBox const ionBox) const
         {
             pmacc::DataSpace<simDim> const superCellIdx = areaMapping.getSuperCellIndex(worker.blockDomIdxND());
@@ -61,7 +63,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
                 = superCellIdx - areaMapping.getGuardingSuperCells();
 
-            auto const timeRemaining = localTimeRemainingBox(superCellFieldIdx);
+            auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
             // end kernel if superCell already finished
             if(timeRemaining <= 0._X)
                 return;

@@ -28,7 +28,7 @@
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
 #include "picongpu/particles/atomicPhysics/kernel/DecelerateElectrons.kernel"
-#include "picongpu/particles/atomicPhysics/localHelperFields/LocalTimeRemainingField.hpp"
+#include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
 #include <pmacc/Environment.hpp>
@@ -63,17 +63,17 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::AreaMapping<CORE + BORDER, MappingDesc> mapper(mappingDesc);
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
-            auto& localTimeRemainingField = *dc.get<
-                picongpu::particles::atomicPhysics::localHelperFields::LocalTimeRemainingField<picongpu::MappingDesc>>(
-                "LocalTimeRemainingField");
+            auto& timeRemainingField = *dc.get<
+                picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
+                "TimeRemainingField");
 
             // pointer to memory, we will only work on device, no sync required
-            // init pointer to electrons and localElectronHistogramField
+            // init pointer to electrons and electronHistogramField
             auto& electrons = *dc.get<ElectronSpecies>(ElectronSpecies::FrameType::getName());
-            auto& localElectronHistogramField
+            auto& electronHistogramField
                 = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
-                    "Electron_localHistogramField");
+                    "Electron_HistogramField");
 
             using DecelerateElectrons = picongpu::particles::atomicPhysics::kernel ::
                 DecelerateElectronsKernel<ElectronSpecies, picongpu::atomicPhysics::ElectronHistogram>;
@@ -82,9 +82,9 @@ namespace picongpu::particles::atomicPhysics::stage
             PMACC_LOCKSTEP_KERNEL(DecelerateElectrons())
                 .config(mapper.getGridDim(), electrons)(
                     mapper,
-                    localTimeRemainingField.getDeviceDataBox(),
+                    timeRemainingField.getDeviceDataBox(),
                     electrons.getDeviceParticlesBox(),
-                    localElectronHistogramField.getDeviceDataBox());
+                    electronHistogramField.getDeviceDataBox());
         }
     };
 } // namespace picongpu::particles::atomicPhysics::stage
