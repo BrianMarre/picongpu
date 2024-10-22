@@ -30,6 +30,7 @@ namespace picongpu::particles::atomicPhysics
 {
     namespace enums
     {
+        //! enum of different physics based groups of transitions
         enum struct ProcessClassGroup : uint8_t
         {
             boundBoundBased = 0u,
@@ -37,8 +38,9 @@ namespace picongpu::particles::atomicPhysics
             autonomousBased = 2u,
             ionizing = 3u,
             electronicCollisional = 4u,
-            upward = 5u,
-            downward = 6u
+            electricFieldBased = 5u,
+            upward = 6u,
+            downward = 7u
         };
     } // namespace enums
 
@@ -55,6 +57,8 @@ namespace picongpu::particles::atomicPhysics
             return "ionizing";
         if constexpr(u8(T_ProcessClassGroup) == u8(enums::ProcessClassGroup::electronicCollisional))
             return "electronicCollisional";
+        if constexpr(u8(T_ProcessClassGroup) == u8(enums::ProcessClassGroup::electricFieldBased))
+            return "electricFieldBased";
         if constexpr(u8(T_ProcessClassGroup) == u8(enums::ProcessClassGroup::upward))
             return "upward";
         if constexpr(u8(T_ProcessClassGroup) == u8(enums::ProcessClassGroup::downward))

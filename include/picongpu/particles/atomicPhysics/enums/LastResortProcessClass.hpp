@@ -64,6 +64,15 @@ namespace picongpu::particles::atomicPhysics::enums
     };
 
     template<>
+    struct LastResort<ChooseTransitionGroup::fieldBoundFreeUpward>
+    {
+        static constexpr uint8_t processClass()
+        {
+            return u8(ProcessClass::noChange);
+        }
+    };
+
+    template<>
     struct LastResort<ChooseTransitionGroup::autonomousDownward>
     {
         static constexpr uint8_t processClass()

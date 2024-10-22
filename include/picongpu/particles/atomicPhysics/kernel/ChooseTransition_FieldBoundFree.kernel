@@ -121,8 +121,7 @@ namespace picongpu::particles::atomicPhysics::kernel
          *
          * called by ChooseTransition atomic physics sub-stage
          *
-         * @param worker object containing the device and block
-         *  information, passed by PMACC_KERNEL call
+         * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param rngFactoryFloat factory for uniformly distributed random number generator, for float_X [0,1)
          * @param chargeStateDataDataBox deviceDataBox giving access to charge state property data
@@ -256,11 +255,11 @@ namespace picongpu::particles::atomicPhysics::kernel
                         }
                     }
 
-                    /* particle position maximum rate below superCell maximum -> need to do noChange Transition for
-                     *  correct division into other channels. */
+                    /* ADK rate for particle cell E-Field below superCell maximum ADK rate
+                     * -> need to do noChange Transition for correct division into other channels. */
                     ion[processClass_] = u8(s_enums::ProcessClass::noChange);
                     // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange
-                    //  and accepted_ = true prevents it being worked on by ChooseTransitionKernels
+                    // no-change transitions are not bin based therefore we don't set a bin, old values are ignored
                     ion[accepted_] = true;
                 });
         }

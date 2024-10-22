@@ -23,7 +23,8 @@
 
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/electronDistribution/LocalHistogramField.hpp"
-#include "picongpu/particles/atomicPhysics/kernel/RecordUsedElectronHistogramWeight.kernel"
+#include "picongpu/particles/atomicPhysics/kernel/RecordSuggestedChanges.kernel"
+#include "picongpu/particles/atomicPhysics/localHelperFields/FieldEnergyUseCacheField.hpp"
 #include "picongpu/particles/atomicPhysics/localHelperFields/TimeRemainingField.hpp"
 #include "picongpu/particles/param.hpp"
 
@@ -61,37 +62,45 @@ namespace picongpu::particles::atomicPhysics::stage
             pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
             using AtomicDataType = typename picongpu::traits::GetAtomicDataType<IonSpecies>::type;
+            auto& atomicData = *dc.get<AtomicDataType>(IonSpecies::FrameType::getName() + "_atomicData");
 
             auto& timeRemainingField = *dc.get<
                 picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>>(
                 "TimeRemainingField");
-
-            auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
-
             auto& electronHistogramField
-                = *dc.get<picongpu::particles::atomicPhysics::electronDistribution::
+                = *dc.get<particles::atomicPhysics::electronDistribution::
                               LocalHistogramField<picongpu::atomicPhysics::ElectronHistogram, picongpu::MappingDesc>>(
                     "Electron_HistogramField");
+            auto& fieldEnergyUseCacheField = *dc.get<
+                particles::atomicPhysics::localHelperFields::FieldEnergyUseCacheField<picongpu::MappingDesc>>(
+                "FieldEnergyUseCacheField");
+            auto& ions = *dc.get<IonSpecies>(IonSpecies::FrameType::getName());
 
-            // electronic collisional transition channel active
-            if constexpr(
-                AtomicDataType::switchElectronicExcitation || AtomicDataType::switchElectronicDeexcitation
-                || AtomicDataType::switchElectronicIonization)
+            using IPDModel = picongpu::atomicPhysics::IPDModel;
+
+            constexpr bool atLeastOneElectronicCollisionalChannelActive = AtomicDataType::switchElectronicExcitation
+                || AtomicDataType::switchElectronicDeexcitation || AtomicDataType::switchElectronicIonization;
+            constexpr bool fieldIonizationActive = AtomicDataType::switchFieldIonization;
+
+            if constexpr(atLeastOneElectronicCollisionalChannelActive || fieldIonizationActive)
             {
-                // macro for kernel call for every superCell
-                PMACC_LOCKSTEP_KERNEL(
-                    picongpu::particles::atomicPhysics::kernel::RecordUsedElectronHistogramWeightKernel<
-                        picongpu::atomicPhysics::ElectronHistogram>())
-                    .config(mapper.getGridDim(), ions)(
-                        mapper,
-                        timeRemainingField.getDeviceDataBox(),
-                        ions.getDeviceParticlesBox(),
-                        electronHistogramField.getDeviceDataBox());
+                IPDModel::template callKernelWithIPDInput<
+                    particles::atomicPhysics::kernel::RecordSuggestedChangesKernel<
+                        atLeastOneElectronicCollisionalChannelActive,
+                        fieldIonizationActive> IonSpecies::FrameType::frameSize>(
+                    dc,
+                    mapper,
+                    atomicData.template getChargeStateDataDataBox<false>(),
+                    atomicData.template getAtomicStateDataDataBox<false>(),
+                    atomicData
+                        .template getBoundFreeTransitionDataBox<false, s_enums::TransitionOrdering::byLowerState>(),
+                    timeRemainingField.getDeviceDataBox(),
+                    electronHistogramField.getDeviceDataBox(),
+                    fieldEnergyUseCacheField.getDeviceDataBox(),
+                    ions.getDeviceParticlesBox());
             }
 
             /// @todo implement photonic collisional interactions, Brian Marre, 2023
-
-            /// @todo implement field ionization field energy accounting, Brian Marre, 2023
         }
     };
 

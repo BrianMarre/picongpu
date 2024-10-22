@@ -49,34 +49,35 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         // eV
         StorageType fieldEnergyUsed[numberCells] = {0._X};
 
-        /** get linear storage index
-         *
-         * @param cellIdx, vector index of cell
-         *
-         * @returns linear storage index corresponding to this cell
-         */
-        static constexpr uint32_t getLinearIndex(CellIdx const cellIdx)
+        //! @returns passes silently if ok
+        HDINLINE static void checkWithinExtent(CellIdx const& extent, CellIdx const& cellIdx)
         {
-            uint32_t linearIndex = 0u;
-            uint32_t stepWidth = 1u;
-            constexpr CellIdx extent = Extent::toRT();
-
-            constexpr uint8_t iExtent = dim;
-            PMACC_UNROLL(iExtent)
-            for(uint32_t i = 0u; i < iExtent; ++i)
+            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
             {
-                if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
+                constexpr uint32_t iExtent = dim;
+                PMACC_UNROLL(iExtent)
+                for(uin8_t i = 0u; i < dim; ++i)
+                {
                     if(cellIdx[i] >= extent[i])
                     {
-                        printf("atomicPhysics ERROR: out of range in linearIndex() call to FieldEnergyUsedCachein\n");
-                        return 0u;
+                        printf(
+                            "atomicPhysics ERROR: out of range in cellIndex based call to FieldEnergyUsedCachein\n");
                     }
-
-                linearIndex += stepWidth * cellIdx;
-                stepWidth *= superCellSize[i];
+                }
             }
+        }
 
-            return linearIndex;
+        //! @returns passes silently if ok
+        HDINLINE static void checkWithinLinearExtent(uint32_t const linearCellIndex)
+        {
+            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
+            {
+                if(linearCellIndex >= numberCells)
+                {
+                    printf(
+                        "atomicPhysics ERROR: out of range in linearCellIndex based call to FieldEnergyUsedCachein\n");
+                }
+            }
         }
 
     public:
@@ -91,9 +92,12 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         template<typename T_Worker>
         HDINLINE void add(T_Worker const& worker, CellIdx const localCellIndex, float_X const energyUsed)
         {
+            checkWithinExtent(Extent : toRT(), localCellIndex);
+
             alpaka::atomicAdd(
                 worker.getAcc(),
-                &(this->fieldEnergyUsed[getLinearIndex(localCellIndex)]),
+                &(this->fieldEnergyUsed[pmacc::math::linearize(Extent
+                                                               : toRT(), localCellIndex)]),
                 rate,
                 ::alpaka::hierarchy::Threads{});
         }
@@ -109,12 +113,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         template<typename T_Worker>
         HDINLINE void add(T_Worker const& worker, uint32_t const linearCellIndex, float_X const energyUsed)
         {
-            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
-                if(linearCellIndex >= numberCells)
-                {
-                    printf("atomicPhysics ERROR: out of range in linearIndex() call to FieldEnergyUsedCachein\n");
-                    return;
-                }
+            checkWithinLinearExtent(linearCellIndex);
 
             alpaka::atomicAdd(
                 worker.getAcc(),
@@ -136,7 +135,9 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         template<particles::atomicPhysics::enums::ChooseTransitionGroup T_ChooseTransitionGroup>
         HDINLINE void add(CellIdx const localCellIndex, float_X const energyUsed)
         {
-            fieldEnergyUsed[getLinearIndex(localCellIndex)] += energyUsed;
+            checkWithinExtent(Extent : toRT(), localCellIndex);
+
+            fieldEnergyUsed[pmacc::math::linearize(Extent : toRT(), localCellIndex)] += energyUsed;
         }
 
         /** add to cache entry, no atomics and direct access version
@@ -153,12 +154,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         template<particles::atomicPhysics::enums::ChooseTransitionGroup T_ChooseTransitionGroup>
         HDINLINE void add(uint32_t const linearCellIndex, float_X const energyUsed)
         {
-            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
-                if(linearCellIndex >= numberCells)
-                {
-                    printf("atomicPhysics ERROR: out of range in linearIndex() call to FieldEnergyUsedCachein\n");
-                    return;
-                }
+            checkWithinLinearExtent(linearCellIndex);
 
             fieldEnergyUsed[linearCellIndex] += energyUsed;
         }
@@ -171,7 +167,9 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
          */
         HDINLINE StorageType energyUsed(CellIdx const cellIdx) const
         {
-            return fieldEnergyUsed[getLinearIndex(cellIdx)];
+            checkWithinExtent(Extent : toRT(), localCellIndex);
+
+            return fieldEnergyUsed[pmacc::math::linearize(Extent : toRT(), localCellIndex)];
         }
 
         /** get used field energy of cell, direct access version
@@ -183,13 +181,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
          */
         HDINLINE StorageType energyUsed(uint32_t const linearCellIndex) const
         {
-            if constexpr(picongpu::atomicPhysics::debug::fieldEnergyUsedCache::CELL_INDEX_RANGE_CHECKS)
-                if(cellIdx[i] >= extent[i])
-                {
-                    printf(
-                        "atomicPhysics ERROR: out of range in direct energyUsed() call to FieldEnergyUsedCachein\n");
-                    return 0u;
-                }
+            checkWithinLinearExtent(linearCellIndex);
 
             return fieldEnergyUsed[linearCellIndex];
         }
