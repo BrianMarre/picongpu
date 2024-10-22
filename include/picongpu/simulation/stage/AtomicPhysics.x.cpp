@@ -107,7 +107,7 @@ namespace picongpu::simulation::stage
                 = particles::atomicPhysics::localHelperFields::FoundUnboundIonField<picongpu::MappingDesc>;
 
             // species Lists
-            //{
+            //@{
             using AtomicPhysicsElectronSpecies = T_AtomicPhysicsElectronSpecies;
             using OnlyIPDElectronSpecies = T_OnlyIPDElectronSpecies;
             using AtomicPhysicsIonSpecies = T_AtomicPhysicsIonSpecies;
@@ -117,7 +117,7 @@ namespace picongpu::simulation::stage
             using IPDElectronSpecies = MakeSeq_t<AtomicPhysicsElectronSpecies, OnlyIPDElectronSpecies>;
             //! list of all ion species for IPD
             using IPDIonSpecies = MakeSeq_t<AtomicPhysicsIonSpecies, OnlyIPDIonSpecies>;
-            //}
+            //@}
 
             //! set local timeRemaining to PIC-time step
             HINLINE static void setTimeRemaining()
@@ -148,7 +148,7 @@ namespace picongpu::simulation::stage
 
             //! print electron histogram to console, debug only
             template<bool T_printOnlyOverSubscribed>
-            HINLINE static void printHistogramToConsole(picongpu::MappingDesc const mappingDesc)
+            HINLINE static void printHistogramToConsole(picongpu::MappingDesc const& mappingDesc)
             {
                 picongpu::particles::atomicPhysics::stage::DumpSuperCellDataToConsole<
                     picongpu::particles::atomicPhysics::electronDistribution::
@@ -158,7 +158,7 @@ namespace picongpu::simulation::stage
             }
 
             //! print ElectronHistogramOverSubscribedField to console, debug only
-            HINLINE static void printOverSubscriptionFieldToConsole(picongpu::MappingDesc const mappingDesc)
+            HINLINE static void printOverSubscriptionFieldToConsole(picongpu::MappingDesc const& mappingDesc)
             {
                 picongpu::particles::atomicPhysics::stage::DumpSuperCellDataToConsole<
                     picongpu::particles::atomicPhysics::localHelperFields::ElectronHistogramOverSubscribedField<
@@ -169,7 +169,7 @@ namespace picongpu::simulation::stage
             }
 
             //! print rejectionProbabilityCache to console, debug only
-            HINLINE static void printRejectionProbabilityCacheToConsole(picongpu::MappingDesc const mappingDesc)
+            HINLINE static void printRejectionProbabilityCacheToConsole(picongpu::MappingDesc const& mappingDesc)
             {
                 picongpu::particles::atomicPhysics::stage::DumpSuperCellDataToConsole<
                     picongpu::particles::atomicPhysics::localHelperFields ::RejectionProbabilityCacheField<
@@ -179,7 +179,7 @@ namespace picongpu::simulation::stage
             }
 
             //! print local time remaining to console, debug only
-            HINLINE static void printTimeRemaingToConsole(picongpu::MappingDesc const mappingDesc)
+            HINLINE static void printTimeRemaingToConsole(picongpu::MappingDesc const& mappingDesc)
             {
                 picongpu::particles::atomicPhysics::stage::DumpSuperCellDataToConsole<
                     picongpu::particles::atomicPhysics::localHelperFields::TimeRemainingField<picongpu::MappingDesc>,
@@ -189,7 +189,7 @@ namespace picongpu::simulation::stage
             }
 
             //! print local time step to console, debug only
-            HINLINE static void printTimeStepToConsole(picongpu::MappingDesc const mappingDesc)
+            HINLINE static void printTimeStepToConsole(picongpu::MappingDesc const& mappingDesc)
             {
                 picongpu::particles::atomicPhysics::stage::DumpSuperCellDataToConsole<
                     picongpu::particles::atomicPhysics::localHelperFields::TimeStepField<picongpu::MappingDesc>,
@@ -198,7 +198,7 @@ namespace picongpu::simulation::stage
                     "TimeStepField");
             }
 
-            void resetAcceptStatus(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void resetAcceptStatus(picongpu::MappingDesc const& mappingDesc)
             {
                 // particle[accepted_] = false, in each macro ion
                 using ForEachIonSpeciesResetAcceptedStatus = pmacc::meta::ForEach<
@@ -207,7 +207,7 @@ namespace picongpu::simulation::stage
                 ForEachIonSpeciesResetAcceptedStatus{}(mappingDesc);
             }
 
-            void debugForceConstantElectronTemperature([[maybe_unused]] uint32_t const currentStep) const
+            HINLINE static void debugForceConstantElectronTemperature([[maybe_unused]] uint32_t const currentStep)
             {
                 if constexpr(picongpu::atomicPhysics::debug::scFlyComparison::FORCE_CONSTANT_ELECTRON_TEMPERATURE)
                 {
@@ -219,7 +219,7 @@ namespace picongpu::simulation::stage
                 };
             }
 
-            void binElectronsToEnergyHistogram(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void binElectronsToEnergyHistogram(picongpu::MappingDesc const& mappingDesc)
             {
                 using ForEachElectronSpeciesBinElectrons = pmacc::meta::ForEach<
                     AtomicPhysicsElectronSpecies,
@@ -233,7 +233,7 @@ namespace picongpu::simulation::stage
             }
 
             //! calculate ionization potential depression parameters for every superCell
-            void calculateIPDInput(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep) const
+            HINLINE static void calculateIPDInput(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep)
             {
                 picongpu::atomicPhysics::IPDModel::
                     template calculateIPDInput<T_numberAtomicPhysicsIonSpecies, IPDIonSpecies, IPDElectronSpecies>(
@@ -242,7 +242,7 @@ namespace picongpu::simulation::stage
             }
 
             //! reset each superCell's time step
-            void resetTimeStep(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void resetTimeStep(picongpu::MappingDesc const& mappingDesc)
             {
                 // timeStep = localTimeRemaining
                 picongpu::particles::atomicPhysics::stage::ResetTimeStepField<T_numberAtomicPhysicsIonSpecies>()(
@@ -250,7 +250,7 @@ namespace picongpu::simulation::stage
             }
 
             //! reset each superCell's rate cache
-            void resetRateCache() const
+            HINLINE static void resetRateCache()
             {
                 using ForEachIonSpeciesResetLocalRateCache = pmacc::meta::ForEach<
                     AtomicPhysicsIonSpecies,
@@ -259,7 +259,7 @@ namespace picongpu::simulation::stage
             }
 
             //! check which atomic states are actually present in each superCell
-            void checkPresence(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void checkPresence(picongpu::MappingDesc const& mappingDesc)
             {
                 using ForEachIonSpeciesCheckPresenceOfAtomicStates = pmacc::meta::
                     ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics::stage::CheckPresence<boost::mpl::_1>>;
@@ -267,7 +267,7 @@ namespace picongpu::simulation::stage
             }
 
             //! fill each superCell's rate cache
-            void fillRateCache(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void fillRateCache(picongpu::MappingDesc const& mappingDesc)
             {
                 using ForEachIonSpeciesFillRateCache = pmacc::meta::
                     ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics::stage::FillRateCache<boost::mpl::_1>>;
@@ -282,7 +282,7 @@ namespace picongpu::simulation::stage
             }
 
             //! min(1/(-R_ii)) * alpha, calculate local atomicPhysics time step length
-            void calculateSubStepLength(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void calculateSubStepLength(picongpu::MappingDesc const& mappingDesc)
             {
                 using ForEachIonSpeciesCalculateStepLength = pmacc::meta::ForEach<
                     AtomicPhysicsIonSpecies,
@@ -290,7 +290,7 @@ namespace picongpu::simulation::stage
                 ForEachIonSpeciesCalculateStepLength{}(mappingDesc);
             }
 
-            void chooseTransition(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep) const
+            HINLINE static void chooseTransition(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep)
             {
                 // randomly roll transition for each not yet accepted macro ion
                 using ForEachIonSpeciesChooseTransitionGroup = pmacc::meta::ForEach<
@@ -305,7 +305,7 @@ namespace picongpu::simulation::stage
             }
 
             // record all shared resources usage by accepted transitions
-            void recordSuggestedChanges(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void recordSuggestedChanges(picongpu::MappingDesc const& mappingDesc)
             {
                 picongpu::particles::atomicPhysics::stage::ResetDeltaWeightElectronHistogram<
                     T_numberAtomicPhysicsIonSpecies>{}(mappingDesc);
@@ -317,10 +317,10 @@ namespace picongpu::simulation::stage
 
             // check if an electron histogram bin () is over subscription --> superCellOversubScriptionField
             template<typename T_SuperCellOversubScriptionField, typename T_DeviceReduce>
-            bool isAnElectronHistogramOverSubscribed(
+            HINLINE static bool isAnElectronHistogramOverSubscribed(
                 picongpu::MappingDesc const& mappingDesc,
                 T_SuperCellOversubScriptionField& perSuperCellElectronHistogramOverSubscribedField,
-                T_DeviceReduce& deviceReduce) const
+                T_DeviceReduce& deviceReduce)
             {
                 DataSpace<picongpu::simDim> const fieldGridLayoutOverSubscription
                     = perSuperCellElectronHistogramOverSubscribedField.getGridLayout().sizeWithoutGuardND();
@@ -351,9 +351,9 @@ namespace picongpu::simulation::stage
                 return isOverSubscribed;
             }
 
-            void randomlyRejectTransitionFromOverSubscribedBins(
+            HINLINE static void randomlyRejectTransitionFromOverSubscribedBins(
                 picongpu::MappingDesc const& mappingDesc,
-                uint32_t const currentStep) const
+                uint32_t const currentStep)
             {
                 using ForEachIonSpeciesRollForOverSubscription = pmacc::meta::ForEach<
                     AtomicPhysicsIonSpecies,
@@ -365,14 +365,14 @@ namespace picongpu::simulation::stage
              *
              * @note may already update the atomic state since the following kernels DecelerateElectrons and
              * SpawnIonizationElectrons only use the transitionIndex particle attribute */
-            void recordChanges(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void recordChanges(picongpu::MappingDesc const& mappingDesc)
             {
                 using ForEachIonSpeciesRecordChanges = pmacc::meta::
                     ForEach<AtomicPhysicsIonSpecies, particles::atomicPhysics::stage::RecordChanges<boost::mpl::_1>>;
                 ForEachIonSpeciesRecordChanges{}(mappingDesc);
             }
 
-            void updateElectrons(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep) const
+            HINLINE static void updateElectrons(picongpu::MappingDesc const& mappingDesc, uint32_t const currentStep)
             {
                 /** @note DecelerateElectrons must be called before SpawnIonizationElectrons such that we only
                  * change electrons that actually contributed to the histogram*/
@@ -388,10 +388,10 @@ namespace picongpu::simulation::stage
             }
 
             template<typename T_DeviceReduce>
-            void doIPDIonization(
+            HINLINE static void doIPDIonization(
                 picongpu::MappingDesc const& mappingDesc,
                 uint32_t const currentStep,
-                T_DeviceReduce& deviceReduce) const
+                T_DeviceReduce& deviceReduce)
             {
                 pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
 
@@ -424,7 +424,7 @@ namespace picongpu::simulation::stage
                 while(foundUnbound);
             }
 
-            void updateTimeRemaining(picongpu::MappingDesc const& mappingDesc) const
+            HINLINE static void updateTimeRemaining(picongpu::MappingDesc const& mappingDesc)
             {
                 // timeRemaining -= timeStep
                 picongpu::particles::atomicPhysics::stage::UpdateTimeRemaining<T_numberAtomicPhysicsIonSpecies>()(
@@ -432,7 +432,9 @@ namespace picongpu::simulation::stage
             }
 
             template<typename T_DeviceReduce>
-            bool isSubSteppingFinished(picongpu::MappingDesc const& mappingDesc, T_DeviceReduce& deviceReduce) const
+            HINLINE static bool isSubSteppingFinished(
+                picongpu::MappingDesc const& mappingDesc,
+                T_DeviceReduce& deviceReduce)
             {
                 pmacc::DataConnector& dc = pmacc::Environment<>::get().DataConnector();
                 auto& localTimeRemainingField = *dc.get<S_TimeRemainingField>("TimeRemainingField");
