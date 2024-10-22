@@ -20,6 +20,7 @@
 #pragma once
 
 #include "picongpu/defines.hpp"
+#include "picongpu/particles/atomicPhysics/KernelIndexation.hpp"
 
 #include <pmacc/lockstep/ForEach.hpp>
 
@@ -30,48 +31,39 @@ namespace picongpu::particles::atomicPhysics::kernel
     /** reset deltaWeight entry of all electron histogram bins to 0
      *
      * @tparam T_Histogram histogram type
-     * @tparam T_numberAtomicPhysicsIonSpecies specialization template parameter used to prevent compilation of all
-     *  atomicPhysics kernels if no atomic physics species is present.
+     * @tparam T_numberAtomicPhysicsIonSpecies specialization template parameter only used to prevent compilation of
+     * all atomicPhysics kernels if no atomic physics species is present.
      */
     template<typename T_Histogram, uint32_t T_numberAtomicPhysicsIonSpecies>
     struct ResetDeltaWeightElectronHistogramKernel
     {
         /** call operator
          *
-         * called by checkForOverSubscription atomic physics sub-stage
+         * called by ResetSharedRessources atomic physics sub-stage
          *
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param timeRemainingBox deviceDataBox giving access to the local time remaining of all local super
          * cells
-         * @param histogramBox deviceDataBox giving access to localHistograms for
-         *  all local superCells
+         * @param histogramBox deviceDataBox giving access to localHistograms for all local superCells
          */
-        template<
-            typename T_Worker,
-            typename T_AreaMapping,
-            typename T_LocalTimeRemainingBox,
-            typename T_LocalHistogramDataBox>
+        template<typename T_Worker, typename T_AreaMapping, typename T_TimeRemainingBox, typename T_HistogramDataBox>
         HDINLINE void operator()(
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
-            T_LocalTimeRemainingBox const timeRemainingBox,
-            T_LocalHistogramDataBox histogramBox) const
+            T_TimeRemainingBox const timeRemainingBox,
+            T_HistogramDataBox histogramBox) const
         {
-            // atomicPhysics superCellFields have no guard, but areMapping includes a guard
-            //  -> must subtract guard to get correct superCellFieldIdx
-            pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx
-                = areaMapping.getSuperCellIndex(worker.blockDomIdxND()) - areaMapping.getGuardingSuperCells();
+            auto const superCellFieldIdx = KernelIndexation::getSuperCellFieldIndex(worker, areaMapping);
 
             auto const timeRemaining = timeRemainingBox(superCellFieldIdx);
-            // end kernel if superCell already finished
-            if(timeRemaining <= 0._X)
+
+            bool const superCellAlreadyFinished = timeRemaining <= 0._X;
+            if(superCellAlreadyFinished)
                 return;
 
             auto forEachBin = pmacc::lockstep::makeForEach<T_Histogram::numberBins, T_Worker>(worker);
-
             T_Histogram& histogram = histogramBox(superCellFieldIdx);
-
             forEachBin([&worker, &histogram](uint32_t const binIndex) { histogram.setDeltaWeight(binIndex, 0._X); });
         }
     };

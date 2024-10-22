@@ -96,7 +96,7 @@ namespace picongpu::particles::atomicPhysics::localHelperFields
         // required by ISimulationData
         std::string getUniqueId() override
         {
-            return "FieldEnergyUsedCache";
+            return "FieldEnergyUseCacheField";
         }
     };
 } // namespace picongpu::particles::atomicPhysics::localHelperFields
