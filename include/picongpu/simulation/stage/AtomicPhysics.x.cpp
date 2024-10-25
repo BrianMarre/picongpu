@@ -65,6 +65,11 @@
 
 #include <iostream>
 
+// debug only
+namespace picongpu::atomicPhysics::debug
+{
+    bool constexpr WRITE_PERFORMANCE_STATS = true;
+} // namespace picongpu::atomicPhysics::debug
 
 namespace picongpu::simulation::stage
 {
@@ -475,6 +480,9 @@ namespace picongpu::simulation::stage
 
                 // atomicPhysics sub-stepping loop
                 bool isSubSteppingComplete = false;
+                uint32_t subStepCounter = 0u;
+                uint32_t overSubscriptionLoopCounter = 0u;
+                uint32_t rejectionLoopCounter = 0u;
                 while(!isSubSteppingComplete)
                 {
                     resetAcceptStatus(mappingDesc);
@@ -524,7 +532,9 @@ namespace picongpu::simulation::stage
                                 mappingDesc,
                                 perSuperCellElectronHistogramOverSubscribedField,
                                 deviceLocalReduce);
+                            ++rejectionLoopCounter;
                         } // end remove over subscription loop
+                        ++overSubscriptionLoopCounter;
                     } // end choose transition loop
 
                     if constexpr(picongpu::atomicPhysics::debug::timeRemaining::PRINT_TO_CONSOLE)
@@ -537,7 +547,17 @@ namespace picongpu::simulation::stage
                     doIPDIonization(mappingDesc, currentStep, deviceLocalReduce);
                     updateTimeRemaining(mappingDesc);
                     isSubSteppingComplete = isSubSteppingFinished(mappingDesc, deviceLocalReduce);
+                    ++subStepCounter;
                 } // end atomicPhysics sub-stepping loop
+
+                if constexpr(picongpu::atomicPhysics::debug::WRITE_PERFORMANCE_STATS)
+                {
+                    std::string result = "[Step]: " + std::to_string(currentStep)
+                        + " [subSteps]: " + std::to_string(subStepCounter)
+                        + " [overSubscription]: " + std::to_string(overSubscriptionLoopCounter - subStepCounter)
+                        + " [rejection]: " + std::to_string(rejectionLoopCounter);
+                    std::cout << result << std::endl;
+                }
             }
         };
 
