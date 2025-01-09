@@ -223,32 +223,28 @@ class MemoryCalculator(pydantic.BaseModel):
         """
         self._check_cell_extent(super_cell_extent * self.super_cell_size)
 
-        number_cells_per_supercell = np.prod(self.super_cell_size)
+        number_cells_per_supercell = int(np.prod(self.super_cell_size))
+        # bytes
         size_float_X = MemoryCalculator.get_value_size(self.precision)
+        # bytes
+        size_uint32 = np.uint32().itemsize
+
+        number_process_class_groups_in_rate_cache = 5
 
         # bytes
         size_rate_caches = 0
         for number_states in number_atomic_states_by_atomic_physics_ion_species:
-            size_rate_caches += size_float_X * number_states * 5 + number_states * 4
+            size_rate_caches += number_states * (size_float_X * number_process_class_groups_in_rate_cache + size_uint32)
 
         size_rejection_probability_cache_cell = size_float_X * number_cells_per_supercell
         size_rejection_probability_cache_bin = size_float_X * number_electron_histogram_bins
         size_field_energy_use_cache = size_float_X * number_cells_per_supercell
 
         size_electron_histogram = 3 * size_float_X * number_electron_histogram_bins + size_float_X
-        size_shared_ressources_over_subscribed = 4
-        size_shared_found_unbound = 4
+        size_shared_ressources_over_subscribed = size_uint32
+        size_shared_found_unbound = size_uint32
         size_time_remaining = size_float_X
         size_time_step = size_float_X
-
-        ipd_sum_weight_all = size_float_X
-        ipd_sum_weight_electrons = size_float_X
-        ipd_sum_temperature_functional = size_float_X
-        ipd_sum_charge_number_ions = size_float_X
-        ipd_sum_charge_number_ions_squared = size_float_X
-        ipd_debye_length = size_float_X
-        ipd_zstar = size_float_X
-        ipd_temperature_energy = size_float_X
 
         per_super_cell_memory = (
             size_rate_caches
@@ -261,6 +257,15 @@ class MemoryCalculator(pydantic.BaseModel):
             + size_time_remaining
             + size_time_step
         )
+
+        ipd_sum_weight_all = size_float_X
+        ipd_sum_weight_electrons = size_float_X
+        ipd_sum_temperature_functional = size_float_X
+        ipd_sum_charge_number_ions = size_float_X
+        ipd_sum_charge_number_ions_squared = size_float_X
+        ipd_debye_length = size_float_X
+        ipd_zstar = size_float_X
+        ipd_temperature_energy = size_float_X
 
         if ipd_active:
             per_super_cell_memory += (
