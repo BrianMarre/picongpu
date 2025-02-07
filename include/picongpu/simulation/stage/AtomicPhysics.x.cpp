@@ -682,6 +682,7 @@ namespace picongpu::simulation::stage
 
                 // atomicPhysics sub-stepping loop
                 bool isSubSteppingComplete = false;
+                uint32_t subStepCounter = 0u;
                 while(!isSubSteppingComplete)
                 {
                     resetAcceptedStatus(mappingDesc);
@@ -699,6 +700,7 @@ namespace picongpu::simulation::stage
 
                     // choose transition loop
                     bool isHistogramOverSubscribed = true;
+                    uint32_t chooseTransitionLoopCounter = 0u;
                     while(isHistogramOverSubscribed)
                     {
                         chooseTransition(mappingDesc, currentStep);
@@ -710,6 +712,7 @@ namespace picongpu::simulation::stage
                             deviceLocalReduce);
                         isHistogramOverSubscribed = isOverSubscribed;
 
+                        uint32_t removeOversubcriptionLoopCounter = 0u;
                         while(isOverSubscribed)
                         {
                             // at least one superCell electron histogram over-subscribed
@@ -720,10 +723,26 @@ namespace picongpu::simulation::stage
                                 mappingDesc,
                                 perSuperCellSharedResourcesOverSubscribedField,
                                 deviceLocalReduce);
+
+                            // debug only
+                            ++removeOversubcriptionLoopCounter;
+                            if(removeOversubcriptionLoopCounter >= 10)
+                            {
+                                printf("too many remove OverSubscription");
+                                break;
+                            }
                         } // end remove over subscription loop
 
                         if constexpr(debug::kernel::rollForOverSubscription::PRINT_DEBUG_TO_CONSOLE)
                             std::cout << "[rejection loop complete]" << std::endl;
+
+                        // debug only
+                        ++chooseTransitionLoopCounter;
+                        if(chooseTransitionLoopCounter >= 100)
+                        {
+                            printf("too many choose transition");
+                            break;
+                        }
                     } // end choose transition loop
 
                     printTimeRemainingToConsole(mappingDesc);
@@ -735,6 +754,14 @@ namespace picongpu::simulation::stage
                     updateElectricField(mappingDesc);
                     updateTimeRemaining(mappingDesc);
                     isSubSteppingComplete = isSubSteppingFinished(mappingDesc, deviceLocalReduce);
+
+                    // debug only
+                    ++subStepCounter;
+                    if(subStepCounter >= 2000u)
+                    {
+                        printf("too many sub steps, aborting");
+                        break;
+                    }
                 } // end atomicPhysics sub-stepping loop
 
                 // ensure no unbound states are visible to the rest of the loop
