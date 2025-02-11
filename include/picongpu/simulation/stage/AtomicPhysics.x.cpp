@@ -554,7 +554,8 @@ namespace picongpu::simulation::stage
 
                 // pressure ionization loop, ends when no ion in unbound state anymore
                 bool foundUnbound = true;
-                do
+                uint32_t pressureIonizationLoopCounter = 0u;
+                while(foundUnbound)
                 {
                     resetFoundUnboundIon(foundUnboundIonField);
                     calculateIPDInput(mappingDesc, currentStep);
@@ -570,8 +571,15 @@ namespace picongpu::simulation::stage
                         pmacc::math::operation::Or(),
                         linearizedFoundUnboundIonBox,
                         fieldGridLayoutFoundUnbound.productOfComponents()));
+
+                    // debug only
+                    ++pressureIonizationLoopCounter;
+                    if (pressureIonizationLoopCounter > 10)
+                    {
+                        std::cout << "pressureIonization" << std::endl;
+                        break;
+                    }
                 } // end pressure ionization loop
-                while(foundUnbound);
             }
 
             template<typename T_DeviceReduce>
@@ -591,8 +599,9 @@ namespace picongpu::simulation::stage
                     = *dc.get<OverSubscribedField>("SharedResourcesOverSubscribedField");
 
                 // instant Transition loop, ends when no ion in state with instant transition anymore
-                bool foundInstantTransitionIon;
-                do
+                bool foundInstantTransitionIon = true;
+                uint32_t instantTransitionLoopCounter = 0u;
+                while(foundInstantTransitionIon)
                 {
                     resetFoundUnboundIon(foundUnboundIonField);
                     chooseInstantTransition(mappingDesc, currentStep);
@@ -603,6 +612,7 @@ namespace picongpu::simulation::stage
                         perSuperCellSharedResourcesOverSubscribedField,
                         deviceLocalReduce);
 
+                    uint32_t fieldOversubscribedLoopCounter = 0u;
                     while(isFieldOverSubscribed)
                     {
                         // at least one cell's field energy over-subscribed
@@ -613,6 +623,14 @@ namespace picongpu::simulation::stage
                             mappingDesc,
                             perSuperCellSharedResourcesOverSubscribedField,
                             deviceLocalReduce);
+
+                        // debug only
+                        ++fieldOversubscribedLoopCounter;
+                        if(fieldOversubscribedLoopCounter > 10)
+                        {
+                            std::cout << "fieldOversubscribed" << std::endl;
+                            break;
+                        }
                     } // end remove over subscription loop
 
                     updateIonAtomicState(mappingDesc);
@@ -627,8 +645,15 @@ namespace picongpu::simulation::stage
                         pmacc::math::operation::Or(),
                         linearizedFoundUnboundIonBox,
                         fieldGridLayoutFoundUnbound.productOfComponents()));
+
+                    // debug only
+                    ++instantTransitionLoopCounter;
+                    if(instantTransitionLoopCounter > 10)
+                    {
+                        std::cout << "instantTransitions" << std::endl;
+                        break;
+                    }
                 } // end instant transition loop
-                while(foundInstantTransitionIon);
             }
 
             HINLINE static void updateTimeRemaining(picongpu::MappingDesc const& mappingDesc)
@@ -682,7 +707,6 @@ namespace picongpu::simulation::stage
 
                 // atomicPhysics sub-stepping loop
                 bool isSubSteppingComplete = false;
-                uint32_t subStepCounter = 0u;
                 while(!isSubSteppingComplete)
                 {
                     resetAcceptedStatus(mappingDesc);
@@ -700,7 +724,6 @@ namespace picongpu::simulation::stage
 
                     // choose transition loop
                     bool isHistogramOverSubscribed = true;
-                    uint32_t chooseTransitionLoopCounter = 0u;
                     while(isHistogramOverSubscribed)
                     {
                         chooseTransition(mappingDesc, currentStep);
@@ -712,7 +735,6 @@ namespace picongpu::simulation::stage
                             deviceLocalReduce);
                         isHistogramOverSubscribed = isOverSubscribed;
 
-                        uint32_t removeOversubcriptionLoopCounter = 0u;
                         while(isOverSubscribed)
                         {
                             // at least one superCell electron histogram over-subscribed
@@ -723,26 +745,10 @@ namespace picongpu::simulation::stage
                                 mappingDesc,
                                 perSuperCellSharedResourcesOverSubscribedField,
                                 deviceLocalReduce);
-
-                            // debug only
-                            ++removeOversubcriptionLoopCounter;
-                            if(removeOversubcriptionLoopCounter >= 10)
-                            {
-                                printf("too many remove OverSubscription");
-                                break;
-                            }
                         } // end remove over subscription loop
 
                         if constexpr(debug::kernel::rollForOverSubscription::PRINT_DEBUG_TO_CONSOLE)
                             std::cout << "[rejection loop complete]" << std::endl;
-
-                        // debug only
-                        ++chooseTransitionLoopCounter;
-                        if(chooseTransitionLoopCounter >= 100)
-                        {
-                            printf("too many choose transition");
-                            break;
-                        }
                     } // end choose transition loop
 
                     printTimeRemainingToConsole(mappingDesc);
@@ -754,14 +760,6 @@ namespace picongpu::simulation::stage
                     updateElectricField(mappingDesc);
                     updateTimeRemaining(mappingDesc);
                     isSubSteppingComplete = isSubSteppingFinished(mappingDesc, deviceLocalReduce);
-
-                    // debug only
-                    ++subStepCounter;
-                    if(subStepCounter >= 2000u)
-                    {
-                        printf("too many sub steps, aborting");
-                        break;
-                    }
                 } // end atomicPhysics sub-stepping loop
 
                 // ensure no unbound states are visible to the rest of the loop
