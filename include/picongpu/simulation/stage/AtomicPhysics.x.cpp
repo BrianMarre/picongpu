@@ -249,7 +249,7 @@ namespace picongpu::simulation::stage
             template<typename T_FoundUnboundIonField>
             HINLINE static void resetFoundUnboundIon(T_FoundUnboundIonField& foundUnboundIonField)
             {
-                foundUnboundIonField.getDeviceBuffer().setValue(0._X);
+                foundUnboundIonField.getDeviceBuffer().setValue(static_cast<uint32_t>(false));
             };
 
             //! reset SharedResourcesOverSubscribedField on device side
@@ -571,14 +571,6 @@ namespace picongpu::simulation::stage
                         pmacc::math::operation::Or(),
                         linearizedFoundUnboundIonBox,
                         fieldGridLayoutFoundUnbound.productOfComponents()));
-
-                    // debug only
-                    ++pressureIonizationLoopCounter;
-                    if (pressureIonizationLoopCounter > 10)
-                    {
-                        std::cout << "pressureIonization" << std::endl;
-                        break;
-                    }
                 } // end pressure ionization loop
             }
 
@@ -650,7 +642,7 @@ namespace picongpu::simulation::stage
                     ++instantTransitionLoopCounter;
                     if(instantTransitionLoopCounter > 10)
                     {
-                        std::cout << "instantTransitions" << std::endl;
+                        std::cout << "instantTransitions: " << instantTransitionLoopCounter << std::endl;
                         break;
                     }
                 } // end instant transition loop
