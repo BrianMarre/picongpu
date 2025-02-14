@@ -24,6 +24,7 @@
 #include "picongpu/particles/atomicPhysics/CheckSetOfAtomicDataBoxes.hpp"
 #include "picongpu/particles/atomicPhysics/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics/EFieldCache.hpp"
+#include "picongpu/particles/atomicPhysics/FieldEnergy.hpp"
 #include "picongpu/particles/atomicPhysics/KernelIndexation.hpp"
 #include "picongpu/particles/atomicPhysics/enums/ChooseTransitionGroup.hpp"
 #include "picongpu/particles/atomicPhysics/enums/ProcessClass.hpp"
@@ -70,8 +71,8 @@ namespace picongpu::particles::atomicPhysics::kernel
          * @param worker object containing the device and block information, passed by PMACC_KERNEL call
          * @param areMapping mapping of blockIndex to block superCell index
          * @param rngFactoryFloat factory for uniformly distributed random number generator, for float_X [0,1)
-         * @param chargeStateDataDataBox deviceDataBox giving access to charge state property data
-         * @param atomicStateDataDataBox deviceDataBox giving access to atomic state property data
+         * @param chargeStateBox deviceDataBox giving access to charge state property data
+         * @param atomicStateBox deviceDataBox giving access to atomic state property data
          * @param boundFreeTransitionDataBox deviceDataBox giving access to bound free transition data
          * @param numberTransitionsBox deviceDataBox giving access to the number of
          *  bound-free transitions for each atomic state
@@ -101,11 +102,11 @@ namespace picongpu::particles::atomicPhysics::kernel
             T_Worker const& worker,
             T_AreaMapping const areaMapping,
             T_RngGeneratorFactoryFloat rngFactoryFloat,
-            T_ChargeStateDataDataBox const chargeStateDataDataBox,
-            T_AtomicStateDataDataBox const atomicStateDataDataBox,
+            T_ChargeStateDataDataBox const chargeStateBox,
+            T_AtomicStateDataDataBox const atomicStateBox,
             T_AtomicStateBoundFreeNumberTransitionsDataBox const numberTransitionsBox,
             T_AtomicStateBoundFreeStartIndexBlockDataBox const startIndexBox,
-            T_BoundFreeTransitionDataBox const transitionDataBox,
+            T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox,
             T_TimeRemainingBox const timeRemainingBox,
             T_EFieldBox eFieldBox,
             T_RateCacheBox const rateCacheBox,
@@ -142,78 +143,109 @@ namespace picongpu::particles::atomicPhysics::kernel
             forEachLocalIonBoxEntry(
                 [&](T_Worker const& worker, auto& ion)
                 {
-                    // debug
-                    checkForInvalidChooseTransitionGroup(ion);
+                // debug
+                checkForInvalidChooseTransitionGroup(ion);
 
-                    // reject already accepted macro-ions and other transitionTypes
-                    bool const selectedFieldBoundFreeUpwardTransition
-                        = (ion[transitionIndex_] == u32(s_enums::ChooseTransitionGroup::fieldBoundFreeUpward));
-                    if(ion[accepted_] || !selectedFieldBoundFreeUpwardTransition)
-                        return;
+                // reject already accepted macro-ions and other transitionTypes
+                bool const selectedFieldBoundFreeUpwardTransition
+                    = (ion[transitionIndex_] == u32(s_enums::ChooseTransitionGroup::fieldBoundFreeUpward));
+                if(ion[accepted_] || !selectedFieldBoundFreeUpwardTransition)
+                    return;
 
-                    auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
+                auto const atomicStateCollectionIndex = ion[atomicStateCollectionIndex_];
+                auto const weight = ion[weighting_];
 
-                    VectorIdx const localCellIndex
-                        = pmacc::math::mapToND(picongpu::SuperCellSize::toRT(), static_cast<int>(ion[localCellIdx_]));
-                    // unit: unit_eField
-                    float_X eFieldNormCell = pmacc::math::l2norm(eFieldCache(localCellIndex));
+                VectorIdx const localCellIndex
+                    = pmacc::math::mapToND(picongpu::SuperCellSize::toRT(), static_cast<int>(ion[localCellIdx_]));
 
-                    // get possible transitions' collectionIndices
-                    uint32_t const numberTransitions
-                        = numberTransitionsBox.numberOfTransitionsUp(atomicStateCollectionIndex);
-                    uint32_t const startIndexTransitionBlock
-                        = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
+                // unit: unit_eField
+                float_X eFieldNormCell = pmacc::math::l2norm(eFieldCache(localCellIndex));
 
-                    // get random number
-                    float_X const r = rngGeneratorFloat();
+                // unit_energy
+                float_X const eFieldEnergy = FieldEnergy::getEFieldEnergy(eFieldNormCell * eFieldNormCell);
 
-                    float_X cumSum = 0._X;
-                    for(uint32_t transitionID = 0u; transitionID < numberTransitions; ++transitionID)
+                // get possible transitions' collectionIndices
+                uint32_t const numberTransitions
+                    = numberTransitionsBox.numberOfTransitionsUp(atomicStateCollectionIndex);
+                uint32_t const startIndexTransitionBlock
+                    = startIndexBox.startIndexBlockTransitionsUp(atomicStateCollectionIndex);
+
+                // get random number
+                float_X const r = rngGeneratorFloat();
+
+                // 1/unit_time
+                auto const stateTotalLossRate = rateCache.rate(
+                    u32(s_enums::ChooseTransitionGroup::fieldBoundFreeUpward),
+                    atomicStateCollectionIndex);
+
+                if stateTotalLossRate
+                    == 0._X
                     {
-                        uint32_t const transitionCollectionIndex = transitionID + startIndexTransitionBlock;
+                        ion[processClass_] = u8(s_enums::ProcessClass::noChange);
+                        // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange
+                        // no-change transitions are not bin based therefore we don't set a bin, old values are ignored
+                        ion[accepted_] = true;
+                        return;
+                    }
+
+                float_X cumSum = 0._X;
+                for(uint32_t transitionID = 0u; transitionID < numberTransitions; ++transitionID)
+                {
+                    uint32_t const transitionCollectionIndex = transitionID + startIndexTransitionBlock;
+
+                    // eV
+                        float_X const ionizationEnergy = DeltaEnergyTransition::get(
+                            transitionCollectionIndex,
+                            atomicStateBox,
+                            boundFreeTransitionDataBox,
+                            ionizationPotentialDepression,
+                            chargeStateDataBox));
 
                         // unit: 1/unit_time
-                        float_X const rateTransition
-                            = atomicPhysics::rateCalculation::BoundFreeFieldTransitionRates<T_ADKLaserPolarization>::
-                                template rateADKFieldIonization<float_X>(
+                        float_X const rateTransition = 0._X;
+
+                        bool const isPossibleTransition
+                            = (weight * picongpu::sim.pic.conv().eV2Joule(ionizationEnergy) <= eFieldEnergy);
+                        if(isPossibleTransition)
+                        {
+                            rateTransition = atomicPhysics::rateCalculation::
+                                BoundFreeFieldTransitionRates<T_ADKLaserPolarization>::template rateADKFieldIonization<
+                                    float_X>(
                                     eFieldNormCell,
                                     ionizationPotentialDepression,
                                     transitionCollectionIndex,
-                                    chargeStateDataDataBox,
-                                    atomicStateDataDataBox,
-                                    transitionDataBox);
+                                    chargeStateBox,
+                                    atomicStateBox,
+                                    boundFreeTransitionDataBox);
 
-                        if constexpr(picongpu::atomicPhysics::debug::kernel::chooseTransition::
-                                         CHECK_FOR_INFINITE_FIELD_IONIZATION_RATES)
-                            if(rateTransition < 0._X)
-                                printf("atomicPhysics ERROR: encountered infinite transition rate in non instant "
-                                       "transition ion");
+                            if constexpr(picongpu::atomicPhysics::debug::kernel::chooseTransition::
+                                             CHECK_FOR_INFINITE_FIELD_IONIZATION_RATES)
+                                if(rateTransition < 0._X)
+                                    printf("atomicPhysics ERROR: encountered infinite transition rate in non instant "
+                                           "transition ion");
 
-                        cumSum += rateTransition
-                            / rateCache.rate(
-                                u32(s_enums::ChooseTransitionGroup::fieldBoundFreeUpward),
-                                atomicStateCollectionIndex);
+                            cumSum += rateTransition / stateTotalLossRate;
 
-                        // inclusive limit, to make sure that r==1 is assigned a transition
-                        if(r <= cumSum)
-                        {
-                            // found chosen transition
-                            ion[processClass_] = u8(s_enums::ProcessClass::fieldIonization);
-                            ion[transitionIndex_] = transitionCollectionIndex;
-                            // field ionizations are not bin based therefore we do not set a bin, and old values are
-                            // ignored
-                            ion[accepted_] = true;
-                            return;
+                            // inclusive limit, to make sure that r==1 is assigned a transition
+                            if(r <= cumSum)
+                            {
+                                // found chosen transition
+                                ion[processClass_] = u8(s_enums::ProcessClass::fieldIonization);
+                                ion[transitionIndex_] = transitionCollectionIndex;
+                                // field ionizations are not bin based therefore we do not set a bin, and old values
+                                // are ignored
+                                ion[accepted_] = true;
+                                return;
+                            }
                         }
-                    }
 
-                    /* ADK rate for particle cell E-Field below superCell maximum ADK rate
-                     * -> need to do noChange Transition for correct division into other channels. */
-                    ion[processClass_] = u8(s_enums::ProcessClass::noChange);
-                    // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange
-                    // no-change transitions are not bin based therefore we don't set a bin, old values are ignored
-                    ion[accepted_] = true;
+                        /* ADK rate for particle cell E-Field below superCell maximum ADK rate
+                         * -> need to do noChange Transition for correct division into other channels. */
+                        ion[processClass_] = u8(s_enums::ProcessClass::noChange);
+                        // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange
+                        // no-change transitions are not bin based therefore we don't set a bin, old values are ignored
+                        ion[accepted_] = true;
                 });
         }
-    };
-} // namespace picongpu::particles::atomicPhysics::kernel
+        };
+    } // namespace picongpu::particles::atomicPhysics::kernel
