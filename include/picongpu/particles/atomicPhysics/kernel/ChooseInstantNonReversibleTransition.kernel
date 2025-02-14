@@ -258,10 +258,10 @@ namespace picongpu::particles::atomicPhysics::kernel
                         // eV
                         float_X const ionizationEnergy = DeltaEnergyTransition::get(
                             transitionCollectionIndex,
-                            atomicStateDataBox,
-                            boundFreeTransitionDataBox,
+                            atomicStateBox,
+                            boundFreeTransitionBox,
                             ionizationPotentialDepression,
-                            chargeStateDataBox));
+                            chargeStateBox);
 
                         // 1/ unit_time
                         auto transitionRate = 0.;
@@ -308,10 +308,10 @@ namespace picongpu::particles::atomicPhysics::kernel
                         // eV
                         float_X const ionizationEnergy = DeltaEnergyTransition::get(
                             transitionCollectionIndex,
-                            atomicStateDataBox,
-                            boundFreeTransitionDataBox,
+                            atomicStateBox,
+                            boundFreeTransitionBox,
                             ionizationPotentialDepression,
-                            chargeStateDataBox));
+                            chargeStateBox);
 
                         float_X transitionRate = 0._X;
 

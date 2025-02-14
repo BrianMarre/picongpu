@@ -554,7 +554,6 @@ namespace picongpu::simulation::stage
 
                 // pressure ionization loop, ends when no ion in unbound state anymore
                 bool foundUnbound = true;
-                uint32_t pressureIonizationLoopCounter = 0u;
                 while(foundUnbound)
                 {
                     resetFoundUnboundIon(foundUnboundIonField);
@@ -592,7 +591,6 @@ namespace picongpu::simulation::stage
 
                 // instant Transition loop, ends when no ion in state with instant transition anymore
                 bool foundInstantTransitionIon = true;
-                uint32_t instantTransitionLoopCounter = 0u;
                 while(foundInstantTransitionIon)
                 {
                     resetFoundUnboundIon(foundUnboundIonField);
@@ -604,7 +602,6 @@ namespace picongpu::simulation::stage
                         perSuperCellSharedResourcesOverSubscribedField,
                         deviceLocalReduce);
 
-                    uint32_t fieldOversubscribedLoopCounter = 0u;
                     while(isFieldOverSubscribed)
                     {
                         // at least one cell's field energy over-subscribed
@@ -615,14 +612,6 @@ namespace picongpu::simulation::stage
                             mappingDesc,
                             perSuperCellSharedResourcesOverSubscribedField,
                             deviceLocalReduce);
-
-                        // debug only
-                        ++fieldOversubscribedLoopCounter;
-                        if(fieldOversubscribedLoopCounter > 10)
-                        {
-                            std::cout << "fieldOversubscribed" << std::endl;
-                            break;
-                        }
                     } // end remove over subscription loop
 
                     updateIonAtomicState(mappingDesc);
@@ -637,14 +626,6 @@ namespace picongpu::simulation::stage
                         pmacc::math::operation::Or(),
                         linearizedFoundUnboundIonBox,
                         fieldGridLayoutFoundUnbound.productOfComponents()));
-
-                    // debug only
-                    ++instantTransitionLoopCounter;
-                    if(instantTransitionLoopCounter > 10)
-                    {
-                        std::cout << "instantTransitions: " << instantTransitionLoopCounter << std::endl;
-                        break;
-                    }
                 } // end instant transition loop
             }
 

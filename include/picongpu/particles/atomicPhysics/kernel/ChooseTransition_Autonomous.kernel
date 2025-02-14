@@ -159,9 +159,9 @@ namespace picongpu::particles::atomicPhysics::kernel
 
                     auto const stateTotalLossRate = rateCache.rate(
                         u32(s_enums::ChooseTransitionGroup::autonomousDownward),
-                        atomicStateCollectionIndex)
+                        atomicStateCollectionIndex);
 
-                                                        if(stateTotalLossRate == 0._X)
+                    if(stateTotalLossRate == 0._X)
                     {
                         ion[processClass_] = u8(s_enums::ProcessClass::noChange);
                         // no need to set ion[transitionIndex_] since already uniquely known by processClass = noChange

@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include "pciongpu/particles/atomicPhysics/kernel/FieldEnergy.hpp"
 #include "picongpu/defines.hpp"
+#include "picongpu/particles/atomicPhysics/FieldEnergy.hpp"
 
 #include <cstdint>
 

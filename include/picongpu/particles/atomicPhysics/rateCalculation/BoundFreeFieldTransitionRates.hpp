@@ -22,8 +22,8 @@
 #include "picongpu/defines.hpp"
 #include "picongpu/particles/atomicPhysics/ConvertEnum.hpp"
 #include "picongpu/particles/atomicPhysics/DeltaEnergyTransition.hpp"
+#include "picongpu/particles/atomicPhysics/FieldEnergy.hpp"
 #include "picongpu/particles/atomicPhysics/enums/ADKLaserPolarization.hpp"
-#include "picongpu/particles/atomicPhysics/kernel/FieldEnergy.hpp"
 #include "picongpu/particles/atomicPhysics/stateRepresentation/ConfigNumber.hpp"
 
 #include <pmacc/algorithms/math.hpp>
@@ -202,7 +202,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
                 atomicStateDataBox,
                 boundFreeTransitionDataBox,
                 ionizationPotentialDepression,
-                chargeStateDataBox));
+                chargeStateDataBox);
 
             if((eFieldNorm == 0._X) || (eFieldEnergy < picongpu::sim.pic.conv().eV2Joule(ionizationEnergy)))
                 return static_cast<T_ReturnType>(0.);
@@ -253,7 +253,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
             // unit_energy
-            float_X const maxEFieldEnergy = FieldEnergy::getEFieldEnergy(pmacc::math::l2norm2(eFieldBox(cellIndex)));
+            float_X const maxEFieldEnergy = FieldEnergy::getEFieldEnergy(maxEFieldNorm * maxEFieldNorm);
 
             // eV
             float_X const ionizationEnergy = DeltaEnergyTransition::get(
@@ -261,7 +261,7 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
                 atomicStateDataBox,
                 boundFreeTransitionDataBox,
                 ionizationPotentialDepression,
-                chargeStateDataBox));
+                chargeStateDataBox);
 
             if((maxEFieldNorm == 0._X) || (maxEFieldEnergy < picongpu::sim.pic.conv().eV2Joule(ionizationEnergy)))
                 return static_cast<T_ReturnType>(0.);
