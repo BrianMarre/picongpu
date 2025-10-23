@@ -16,7 +16,7 @@ import scipy.special as scipy
 
 class BoundBoundTransitions:
     @staticmethod
-    def _gaunt(U, cxin1, cxin2, cxin3, cxin4, cxin5):
+    def _gauntChung(U, cxin1, cxin2, cxin3, cxin4, cxin5):
         """calculate gaunt factor
 
         @param U     float (energy interacting electron)/(delta Energy Transition), unitless
@@ -29,10 +29,23 @@ class BoundBoundTransitions:
         @return unitless
         """
 
-        if U < 1.0:
-            return 0.0
-        else:
-            return cxin1 * np.log(U) + cxin2 + cxin3 / (U + cxin5) + cxin4 / (U + cxin5) ** 2
+        return cxin1 * np.log(U) + cxin2 + cxin3 / (U + cxin5) + cxin4 / (U + cxin5) ** 2
+
+    @staticmethod
+    def _gauntMewe(U):
+        """calculate gaunt factor
+
+        @param U     float (energy interacting electron)/(delta Energy Transition), unitless
+        @param cxin1 float gaunt approximation coefficient 1, unitless
+        @param cxin2 float gaunt approximation coefficient 2, unitless
+        @param cxin3 float gaunt approximation coefficient 3, unitless
+        @param cxin4 float gaunt approximation coefficient 4, unitless
+        @param cxin5 float gaunt approximation coefficient 5, unitless
+
+        @return unitless
+        """
+
+        return 0.28 * np.log(U) + 0.15
 
     @staticmethod
     def _multiplicity(levelVector):
@@ -71,36 +84,58 @@ class BoundBoundTransitions:
 
         @return unit 1e6b, 10^-22 m^2
         """
-        if energyDiffLowerUpper > energyElectron:
-            return 0.0
 
-        U = energyElectron / energyDiffLowerUpper  # unitless
+        U = energyElectron / energyDiffLowerUpper
+
+        # constants
         E_Rydberg = const.physical_constants["Rydberg constant times hc in eV"][0]  # eV
-
         a0 = const.physical_constants["Bohr radius"][0]  # m
         c0 = 8 * (np.pi * a0) ** 2 / np.sqrt(3.0)  # m^2
 
-        crossSection_butGaunt = (
-            c0
-            * (E_Rydberg / energyDiffLowerUpper) ** 2
-            * collisionalOscillatorStrength
-            * (energyDiffLowerUpper / energyElectron)
-            / 1e-22
-        )
-        # 1e6b
-        #! @attention differs from original publication
+        if isinstance(U, np.ndarray) and U.ndim > 0:
+            crossSection = np.empty(len(U))
 
-        if excitation:
-            return crossSection_butGaunt * BoundBoundTransitions._gaunt(U, cxin1, cxin2, cxin3, cxin4, cxin5)  # 1e6b
-        else:
-            statisticalRatio = BoundBoundTransitions._multiplicity(
-                lowerStateLevelVector
-            ) / BoundBoundTransitions._multiplicity(upperStateLevelVector)  # unitless
-            return (
-                statisticalRatio
-                * crossSection_butGaunt
-                * BoundBoundTransitions._gaunt(U + 1.0, cxin1, cxin2, cxin3, cxin4, cxin5)
+            crossSection[U >= 1.0] = (
+                c0
+                * (E_Rydberg / energyDiffLowerUpper) ** 2
+                * collisionalOscillatorStrength
+                * (energyDiffLowerUpper / energyElectron[U >= 1.0])
+                / 1e-22
             )  # 1e6b
+            crossSection[U < 1.0] = 0.0
+
+        else:
+            if U >= 1.0:
+                crossSection = (
+                    c0
+                    * (E_Rydberg / energyDiffLowerUpper) ** 2
+                    * collisionalOscillatorStrength
+                    * (energyDiffLowerUpper / energyElectron)
+                    / 1e-22
+                )  # 1e6b
+            else:
+                crossSection = 0.0
+
+        statisticalRatio = BoundBoundTransitions._multiplicity(
+            lowerStateLevelVector
+        ) / BoundBoundTransitions._multiplicity(upperStateLevelVector)  # unitless
+
+        if cxin1 == 0 and cxin2 == 0 and cxin3 == 0 and cxin4 == 0 and cxin5 == 0:
+            #! @detail Mewe gaunt factor from original FLYCHK publication
+            if excitation:
+                crossSection *= BoundBoundTransitions._gauntMewe(U)
+            else:
+                crossSection *= BoundBoundTransitions._gauntMewe(U + 1.0) * statisticalRatio
+        else:
+            #! @detail chung gaunt factor from 2007 publication if constants are specified
+            if excitation:
+                crossSection *= BoundBoundTransitions._gauntChung(U, cxin1, cxin2, cxin3, cxin4, cxin5)
+            else:
+                crossSection *= (
+                    BoundBoundTransitions._gauntChung(U, cxin1, cxin2, cxin3, cxin4, cxin5) * statisticalRatio
+                )
+
+        return crossSection
 
     @staticmethod
     def rateCollisionalBoundBoundTransition(
