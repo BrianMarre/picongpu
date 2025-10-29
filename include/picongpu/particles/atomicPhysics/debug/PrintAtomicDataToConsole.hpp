@@ -101,9 +101,8 @@ namespace picongpu::particles::atomicPhysics::debug
     ALPAKA_FN_HOST void printAtomicStateDataHeader()
     {
         std::cout << "AtomicState Data" << std::endl;
-        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, multiplicity, "
-                     "IPDIonizationState[index, "
-                     "chargeState, configNumber]"
+        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, screenedCharge, multiplicity, "
+                     "IPDIonizationState[index, chargeState, configNumber]"
                   << std::endl;
         std::cout << "\t b/f/a: [#TransitionsUp/]#TransitionsDown, [startIndexUp/]startIndexDown" << std::endl;
     }
@@ -233,7 +232,11 @@ namespace picongpu::particles::atomicPhysics::debug
         using S_ConfigNumber = stateRepresentation::
             ConfigNumber<uint64_t, T_AtomicData::ConfigNumber::numberLevels, T_AtomicData::ConfigNumber::atomicNumber>;
 
+<<<<<<< HEAD
         printAtomicStateDataHeader();
+=======
+
+>>>>>>> d60b5143b (add per atomic state screened charge)
         for(uint32_t stateCollectionIndex = 0u; stateCollectionIndex < numberAtomicStates; stateCollectionIndex++)
         {
             uint64_t const stateConfigNumber
@@ -250,7 +253,8 @@ namespace picongpu::particles::atomicPhysics::debug
             std::cout << "\t" << stateCollectionIndex << " : [" << stateConfigNumber << ", "
                       << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", "
                       << precisionCast<uint16_t>(stateLevelVector).toString(",", "()")
-                      << "]: " << atomicStateDataBox.energy(stateCollectionIndex) << ", " << multiplicity << ",\t"
+                      << "]: " << atomicStateDataBox.energy(stateCollectionIndex) << ", "
+                      << atomicStateDataBox.screenedCharge(stateCollectionIndex) << ", " << multiplicity << ",\t"
                       << "[" << ipdIonizationStateCollectionIndex << ", "
                       << static_cast<uint16_t>(chargeStateIPDIonizationVector) << ", "
                       << precisionCast<uint16_t>(levelVectorIPDIonizationState).toString(",", "()") << "]"
