@@ -32,11 +32,20 @@ namespace picongpu::particles::atomicPhysics::debug
 {
     namespace enums = picongpu::particles::atomicPhysics::enums;
 
-    template<bool T_up, typename T_NumberTransitionsDataBox>
+    /** debug only, get number of Transitions of given charge state
+     *
+     * @tparam T_up true =^= sum over upward transitions, false =^= sum over downward transitions
+     *
+     * @param numberAtomicStatesOfChargeState number of entries of the charge state's block of atomic states in the
+     * list of atomic states
+     * @param startIndexBlockAtomicStates first index of the charge state's block of atomic states in the list of
+     * atomic states
+     */
+    template<bool T_up>
     ALPAKA_FN_HOST uint32_t getNumberTransitionsUpOfChargeState(
         uint32_t const numberAtomicStatesOfChargeState,
         uint32_t const startIndexBlockAtomicStatesOfChargeState,
-        T_NumberTransitionsDataBox numberTransitionsBox)
+        auto numberTransitionsBox)
     {
         uint32_t numberTransitions = 0u;
         for(uint32_t state = 0u; state < numberAtomicStatesOfChargeState; state++)
@@ -54,16 +63,74 @@ namespace picongpu::particles::atomicPhysics::debug
         return numberTransitions;
     }
 
-    /** debug only, write atomic data to console
-     *
-     * @attention must be called serially!
-     */
-    template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
-    ALPAKA_FN_HOST std::unique_ptr<T_AtomicData> printAtomicDataToConsole(std::unique_ptr<T_AtomicData> atomicData)
+    //! print all data stored by charge state
+    ALPAKA_FN_HOST void printByChargeStateStoredData(
+        uint8_t const chargeState,
+        auto chargeStateDataBox,
+        auto chargeStateOrgaBox)
     {
-        std::cout << std::endl << "**AtomicData DEBUG Output**" << std::endl;
+        std::cout << "\t" << static_cast<uint16_t>(chargeState) << ":( "
+                  << chargeStateDataBox.ionizationEnergy(chargeState) << ", "
+                  << chargeStateDataBox.screenedCharge(chargeState) << " ) [ "
+                  << chargeStateOrgaBox.numberAtomicStates(chargeState) << ", "
+                  << chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState) << " ], ";
+    }
 
-        // process configuration
+    /** print the number of transitions of the charge state
+     *
+     * @param chargeState
+     * @param chargeStateOrgaBox host data box giving access to the organizational data of each charge state
+     * @param boundBoundNumberTransitionsBox host data box giving access to the number of up- and downward bound-bound
+     *  transitions of each atomic state
+     * @param boundFreeNumberTransitionsBox host data box giving access to the number of up- and downward bound-free
+     *  transitions of each atomic state
+     * @param autonomousNumberTransitionsBox host data box giving access to the number of downward autonomous
+     * transitions of each atomic state
+     */
+    ALPAKA_FN_HOST void printNumberOfTransitionsOfChargeState(
+        uint8_t const chargeState,
+        auto chargeStateOrgaBox,
+        auto boundBoundNumberTransitionsBox,
+        auto boundFreeNumberTransitionsBox,
+        auto autonomousNumberTransitionsBox)
+    {
+        uint32_t numberAtomicStatesOfChargeState = chargeStateOrgaBox.numberAtomicStates(chargeState);
+        uint32_t startIndexBlockOfChargeState = chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState);
+
+        std::cout << "b:["
+                  << getNumberTransitionsUpOfChargeState<true>(
+                         numberAtomicStatesOfChargeState,
+                         startIndexBlockOfChargeState,
+                         boundBoundNumberTransitionsBox)
+                  << " / "
+                  << getNumberTransitionsUpOfChargeState<false>(
+                         numberAtomicStatesOfChargeState,
+                         startIndexBlockOfChargeState,
+                         boundBoundNumberTransitionsBox)
+                  << "], ";
+        std::cout << "f:["
+                  << getNumberTransitionsUpOfChargeState<true>(
+                         numberAtomicStatesOfChargeState,
+                         startIndexBlockOfChargeState,
+                         boundFreeNumberTransitionsBox)
+                  << " / "
+                  << getNumberTransitionsUpOfChargeState<false>(
+                         numberAtomicStatesOfChargeState,
+                         startIndexBlockOfChargeState,
+                         boundFreeNumberTransitionsBox)
+                  << "], ";
+        std::cout << "a:["
+                  << getNumberTransitionsUpOfChargeState<false>(
+                         numberAtomicStatesOfChargeState,
+                         startIndexBlockOfChargeState,
+                         autonomousNumberTransitionsBox)
+                  << "]";
+    }
+
+    //! print active process classes
+    template<typename T_AtomicData>
+    ALPAKA_FN_HOST void printProcessConfiguration()
+    {
         std::cout << "process configuration:" << std::endl;
         std::cout << "\t Electronic Excitation:    " << ((T_AtomicData::switchElectronicExcitation) ? "true" : "false")
                   << std::endl;
@@ -77,6 +144,18 @@ namespace picongpu::particles::atomicPhysics::debug
                   << std::endl;
         std::cout << "\t Field Ionization:         " << ((T_AtomicData::switchFieldIonization) ? "true" : "false")
                   << std::endl;
+    }
+
+    /** debug only, write atomic data to console
+     *
+     * @attention must be called serially!
+     */
+    template<typename T_AtomicData, bool T_printTransitionData, bool T_printInverseTransitions>
+    ALPAKA_FN_HOST std::unique_ptr<T_AtomicData> printAtomicDataToConsole(std::unique_ptr<T_AtomicData> atomicData)
+    {
+        std::cout << std::endl << "**AtomicData DEBUG Output**" << std::endl;
+
+        printProcessConfiguration<T_AtomicData>();
 
         uint32_t const numberAtomicStates = atomicData->getNumberAtomicStates();
         uint32_t const numberBoundBoundTransitions = atomicData->getNumberBoundBoundTransitions();
@@ -104,85 +183,35 @@ namespace picongpu::particles::atomicPhysics::debug
                   << "a:[#TransitionsDown]" << std::endl;
         for(uint8_t chargeState = 0u; chargeState < T_AtomicData::ConfigNumber::atomicNumber; chargeState++)
         {
-            uint32_t numberAtomicStatesOfChargeState = chargeStateOrgaBox.numberAtomicStates(chargeState);
-            uint32_t startIndexBlockOfChargeState = chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState);
+            printByChargeStateStoredData(chargeState, chargeStateDataBox, chargeStateOrgaBox);
 
-            std::cout << "\t" << static_cast<uint16_t>(chargeState) << ":( "
-                      << chargeStateDataBox.ionizationEnergy(chargeState) << ", "
-                      << chargeStateDataBox.screenedCharge(chargeState) << " ) [ " << numberAtomicStatesOfChargeState
-                      << ", " << startIndexBlockOfChargeState << " ], ";
+            printNumberOfTransitionsOfChargeState(
+                chargeState,
+                chargeStateOrgaBox,
+                boundBoundNumberTransitionsBox,
+                boundFreeNumberTransitionsBox,
+                autonomousNumberTransitionsBox);
 
-            std::cout << "b:["
-                      << getNumberTransitionsUpOfChargeState<true>(
-                             numberAtomicStatesOfChargeState,
-                             startIndexBlockOfChargeState,
-                             boundBoundNumberTransitionsBox)
-                      << " / "
-                      << getNumberTransitionsUpOfChargeState<false>(
-                             numberAtomicStatesOfChargeState,
-                             startIndexBlockOfChargeState,
-                             boundBoundNumberTransitionsBox)
-                      << "], ";
-            std::cout << "f:["
-                      << getNumberTransitionsUpOfChargeState<true>(
-                             numberAtomicStatesOfChargeState,
-                             startIndexBlockOfChargeState,
-                             boundFreeNumberTransitionsBox)
-                      << " / "
-                      << getNumberTransitionsUpOfChargeState<false>(
-                             numberAtomicStatesOfChargeState,
-                             startIndexBlockOfChargeState,
-                             boundFreeNumberTransitionsBox)
-                      << "], ";
-            std::cout << "a:["
-                      << getNumberTransitionsUpOfChargeState<false>(
-                             numberAtomicStatesOfChargeState,
-                             startIndexBlockOfChargeState,
-                             autonomousNumberTransitionsBox)
-                      << "]" << std::endl;
+            std::cout << std::endl;
         }
 
-        //      completely ionized state
-        uint32_t numberAtomicStatesCompletelyIonizedState
-            = chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber);
-        uint32_t startIndexBlockCompletelyIonizedState
-            = chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::ConfigNumber::atomicNumber);
-
+        // write sensible charge state data defaults for completely ionized state
         std::cout << "\t" << static_cast<uint16_t>(T_AtomicData::ConfigNumber::atomicNumber) << ":( "
                   << "na"
                   << ", "
                   << "na"
-                  << " ) [ " << numberAtomicStatesCompletelyIonizedState << ", "
-                  << startIndexBlockCompletelyIonizedState << " ], ";
+                  << " ) [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber) << ", "
+                  << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
+                  << " ], ";
 
-        std::cout << "b:["
-                  << getNumberTransitionsUpOfChargeState<true>(
-                         numberAtomicStatesCompletelyIonizedState,
-                         startIndexBlockCompletelyIonizedState,
-                         boundBoundNumberTransitionsBox)
-                  << " / "
-                  << getNumberTransitionsUpOfChargeState<false>(
-                         numberAtomicStatesCompletelyIonizedState,
-                         startIndexBlockCompletelyIonizedState,
-                         boundBoundNumberTransitionsBox)
-                  << "], ";
-        std::cout << "f:["
-                  << getNumberTransitionsUpOfChargeState<true>(
-                         numberAtomicStatesCompletelyIonizedState,
-                         startIndexBlockCompletelyIonizedState,
-                         boundFreeNumberTransitionsBox)
-                  << " / "
-                  << getNumberTransitionsUpOfChargeState<false>(
-                         numberAtomicStatesCompletelyIonizedState,
-                         startIndexBlockCompletelyIonizedState,
-                         boundFreeNumberTransitionsBox)
-                  << "], ";
-        std::cout << "a:["
-                  << getNumberTransitionsUpOfChargeState<false>(
-                         numberAtomicStatesCompletelyIonizedState,
-                         startIndexBlockCompletelyIonizedState,
-                         autonomousNumberTransitionsBox)
-                  << "]" << std::endl;
+        printNumberOfTransitionsOfChargeState(
+            T_AtomicData::ConfigNumber::atomicNumber,
+            chargeStateOrgaBox,
+            boundBoundNumberTransitionsBox,
+            boundFreeNumberTransitionsBox,
+            autonomousNumberTransitionsBox);
+
+        std::cout << std::endl;
 
         // AtomicState data
         auto atomicStateDataBox = atomicData->template getAtomicStateDataDataBox<true>(); // true: get hostDataBox
