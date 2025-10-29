@@ -226,7 +226,7 @@ namespace picongpu::particles::atomicPhysics::debug
 
         // state data
         std::cout << "AtomicState Data" << std::endl;
-        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, multiplicity, "
+        std::cout << "index : [ConfigNumber, chargeState, levelVector]: E_overGround, screenedCharge, multiplicity, "
                      "IPDIonizationState[index, "
                      "chargeState, configNumber]"
                   << std::endl;
@@ -247,7 +247,8 @@ namespace picongpu::particles::atomicPhysics::debug
             std::cout << "\t" << stateCollectionIndex << " : [" << stateConfigNumber << ", "
                       << static_cast<uint16_t>(S_ConfigNumber::getChargeState(stateConfigNumber)) << ", "
                       << precisionCast<uint16_t>(stateLevelVector).toString(",", "()")
-                      << "]: " << atomicStateDataBox.energy(stateCollectionIndex) << ", " << multiplicity << ",\t"
+                      << "]: " << atomicStateDataBox.energy(stateCollectionIndex) << ", "
+                      << atomicStateDataBox.screenedCharge(stateCollectionIndex) << ", " << multiplicity << ",\t"
                       << "[" << ipdIonizationStateCollectionIndex << ", "
                       << static_cast<uint16_t>(chargeStateIPDIonizationVector) << ", "
                       << precisionCast<uint16_t>(levelVectorIPDIonizationState).toString(",", "()") << "]"

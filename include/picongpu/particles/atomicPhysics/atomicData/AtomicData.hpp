@@ -334,12 +334,14 @@ namespace picongpu::particles::atomicPhysics::atomicData
 
             uint64_t stateConfigNumber;
             TypeValue energyOverGround;
+            TypeValue screenedCharge;
 
-            while(file >> stateConfigNumber >> energyOverGround)
+            while(file >> stateConfigNumber >> energyOverGround >> screenedCharge)
             {
                 S_AtomicStateTuple item = std::make_tuple(
                     static_cast<Idx>(stateConfigNumber), // unitless
-                    energyOverGround); // [eV]
+                    energyOverGround, // [eV]
+                    screenedCharge); // [e]
 
                 atomicStateList.push_back(item);
 
