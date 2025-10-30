@@ -242,13 +242,13 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             // = unitless, not weighted
             float_X const K = (pmacc::math::isApproxZero(temperatureTimesk_Boltzman * debyeLength))
                                   ? 0._X
-                                  : constFactor / (temperatureTimesk_Boltzman * debyeLength);
+                                  : constFactor * (chargeState + 1) / (temperatureTimesk_Boltzman * debyeLength);
 
             // UNIT_ENERGY/eV
             constexpr float_X eV = sim.pic.get_eV();
 
             // eV, not weighted
-            return temperatureTimesk_Boltzman / eV * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
+            return temperatureTimesk_Boltzman / eV * (math::pow((3 * (zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
                    / (2._X * (zStar + 1._X));
         }
 
