@@ -124,12 +124,12 @@ namespace picongpu::particles::atomicPhysics::debug
         {
             // charge states
             S_ChargeStateBox chargeStateHostBox = chargeStateBuffer->getHostDataBox();
-            //      ionizationEnergy = 100 eV, screened charge = 5 e
-            auto tupleChargeState_1 = std::make_tuple(u8(0u), 100._X, 5._X);
-            //      ionizationEnergy = 5 eV, screened charge = 5 e
-            auto tupleChargeState_2 = std::make_tuple(u8(1u), 5._X, 5._X);
-            //      ionizationEnergy = 100 eV, screened charge = 5 e
-            auto tupleChargeState_3 = std::make_tuple(u8(2u), 100._X, 5._X);
+            //      ionizationEnergy = 100 eV
+            auto tupleChargeState_1 = std::make_tuple(u8(0u), 100._X);
+            //      ionizationEnergy = 5 eV
+            auto tupleChargeState_2 = std::make_tuple(u8(1u), 5._X);
+            //      ionizationEnergy = 100 eV
+            auto tupleChargeState_3 = std::make_tuple(u8(2u), 100._X);
 
             chargeStateHostBox.store(u8(0u), tupleChargeState_1);
             chargeStateHostBox.store(u8(1u), tupleChargeState_2);

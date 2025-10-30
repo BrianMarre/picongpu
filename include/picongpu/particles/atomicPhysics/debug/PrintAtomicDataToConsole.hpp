@@ -69,9 +69,8 @@ namespace picongpu::particles::atomicPhysics::debug
         auto chargeStateDataBox,
         auto chargeStateOrgaBox)
     {
-        std::cout << "\t" << static_cast<uint16_t>(chargeState) << ":( "
-                  << chargeStateDataBox.ionizationEnergy(chargeState) << ", "
-                  << chargeStateDataBox.screenedCharge(chargeState) << " ) [ "
+        std::cout << "\t" << static_cast<uint16_t>(chargeState) << ": "
+                  << chargeStateDataBox.ionizationEnergy(chargeState) << " [ "
                   << chargeStateOrgaBox.numberAtomicStates(chargeState) << ", "
                   << chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState) << " ], ";
     }
@@ -177,7 +176,7 @@ namespace picongpu::particles::atomicPhysics::debug
         auto autonomousNumberTransitionsBox = atomicData->template getAutonomousNumberTransitionsDataBox<true>();
 
         std::cout << "ChargeState Data" << std::endl;
-        std::cout << "index : (E_ionization[eV], Z_screened[e]) [#AtomicStates, startIndexBlock], "
+        std::cout << "index : E_ionization[eV] [#AtomicStates, startIndexBlock], "
                   << "b:[#TransitionsUp / #TransitionsDown], "
                   << "f:[#TransitionsUp / #TransitionsDown], "
                   << "a:[#TransitionsDown]" << std::endl;

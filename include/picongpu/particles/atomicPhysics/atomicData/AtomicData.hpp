@@ -289,7 +289,7 @@ namespace picongpu::particles::atomicPhysics::atomicData
             uint32_t chargeState;
             uint8_t numberChargeStates = 0u;
 
-            while(file >> chargeState >> ionizationEnergy >> screenedCharge)
+            while(file >> chargeState >> ionizationEnergy)
             {
                 if(chargeState == u32(T_ConfigNumber::atomicNumber))
                     throw std::runtime_error(
@@ -297,10 +297,8 @@ namespace picongpu::particles::atomicPhysics::atomicData
                         + " should not be included in input file for Z = "
                         + std::to_string(T_ConfigNumber::atomicNumber));
 
-                S_ChargeStateTuple item = std::make_tuple(
-                    u8(chargeState),
-                    ionizationEnergy, // [eV]
-                    screenedCharge); // [e]
+                S_ChargeStateTuple item = std::make_tuple(u8(chargeState),
+                                                          ionizationEnergy); // [eV]
 
                 chargeStateList.push_back(item);
 
