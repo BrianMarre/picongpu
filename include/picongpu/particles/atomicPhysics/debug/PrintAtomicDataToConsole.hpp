@@ -67,7 +67,7 @@ namespace picongpu::particles::atomicPhysics::debug
     ALPAKA_FN_HOST void printChargeStateDataHeader()
     {
         std::cout << "ChargeState Data" << std::endl;
-        std::cout << "index : (E_ionization[eV], Z_screened[e]) [#AtomicStates, startIndexBlock], "
+        std::cout << "index : E_ionization[eV] [#AtomicStates, startIndexBlock], "
                   << "b:[#TransitionsUp / #TransitionsDown], "
                   << "f:[#TransitionsUp / #TransitionsDown], "
                   << "a:[#TransitionsDown]" << std::endl;
@@ -81,9 +81,9 @@ namespace picongpu::particles::atomicPhysics::debug
     {
         if(chargeState == T_AtomicData::ConfigNumber::atomicNumber)
         {
-            std::cout << "\t" << static_cast<uint16_t>(T_AtomicData::ConfigNumber::atomicNumber) << ":( "
-                      << "na" << ", " << "na"
-                      << " ) [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
+            std::cout << "\t" << static_cast<uint16_t>(T_AtomicData::ConfigNumber::atomicNumber) << ": "
+                      << "na"
+                      << " [ " << chargeStateOrgaBox.numberAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
                       << ", "
                       << chargeStateOrgaBox.startIndexBlockAtomicStates(T_AtomicData::ConfigNumber::atomicNumber)
                       << " ], ";
@@ -92,7 +92,6 @@ namespace picongpu::particles::atomicPhysics::debug
         {
             std::cout << "\t" << static_cast<uint16_t>(chargeState) << ":( "
                       << chargeStateDataBox.ionizationEnergy(chargeState) << ", "
-                      << chargeStateDataBox.screenedCharge(chargeState) << " ) [ "
                       << chargeStateOrgaBox.numberAtomicStates(chargeState) << ", "
                       << chargeStateOrgaBox.startIndexBlockAtomicStates(chargeState) << " ], ";
         }
@@ -232,11 +231,7 @@ namespace picongpu::particles::atomicPhysics::debug
         using S_ConfigNumber = stateRepresentation::
             ConfigNumber<uint64_t, T_AtomicData::ConfigNumber::numberLevels, T_AtomicData::ConfigNumber::atomicNumber>;
 
-<<<<<<< HEAD
         printAtomicStateDataHeader();
-=======
-
->>>>>>> d60b5143b (add per atomic state screened charge)
         for(uint32_t stateCollectionIndex = 0u; stateCollectionIndex < numberAtomicStates; stateCollectionIndex++)
         {
             uint64_t const stateConfigNumber

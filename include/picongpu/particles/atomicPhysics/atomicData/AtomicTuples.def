@@ -31,8 +31,7 @@ namespace picongpu::particles::atomicPhysics::atomicData
     template<typename T_Value>
     using ChargeStateTuple = std::tuple<
         uint8_t, // charge state
-        T_Value, // ionization energy [eV]
-        T_Value>; // screened charge [e]
+        T_Value>; // ionization energy [eV]
 
     template<typename T_Value, typename T_Idx>
     using AtomicStateTuple = std::tuple<
