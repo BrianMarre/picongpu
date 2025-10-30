@@ -216,8 +216,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             //  * sim.unit.time()^(-2) * sim.unit.length()^3 * sim.unit.mass()^1 = eV * sim.unit.length()
             // eV * sim.unit.length()
             constexpr float_X constFactor
-                = eV * static_cast<float_X>(T_atomicNumber)
-                  * pmacc::math::cPow(picongpu::sim.pic.getElectronCharge(), 2u)
+                = eV * pmacc::math::cPow(picongpu::sim.pic.getElectronCharge(), 2u)
                   / (4._X * static_cast<float_X>(picongpu::PI) * picongpu::sim.pic.getEps0());
 
             // eV, not weighted
@@ -229,13 +228,13 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             // unitless, not weighted
             float_X const K = (pmacc::math::isApproxZero(temperatureTimesk_Boltzman * debyeLength))
                                   ? 0._X
-                                  : constFactor / (temperatureTimesk_Boltzman * debyeLength);
+                                  : constFactor * (chargeState + 1) / (temperatureTimesk_Boltzman * debyeLength);
 
             // unitless, not weighted
             float_X const zStar = zStarBox(superCellFieldIdx);
 
             // eV, not weighted
-            return temperatureTimesk_Boltzman * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
+            return temperatureTimesk_Boltzman * (math::pow(((3 * (zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
                    / (2._X * (zStar + 1._X));
         }
 
