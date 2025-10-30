@@ -89,9 +89,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             auto& fieldEnergyUseCache = fieldEnergyUseCacheBox(superCellFieldIdx);
 
             float_X const ionizationPotentialDepression
-                = T_IPDModel::template calculateIPD<T_ChargeStateDataDataBox::atomicNumber>(
-                    superCellFieldIdx,
-                    ipdInput...);
+                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
 
             forEachLocalIonBoxEntry(
                 [&](T_Worker const& worker, auto& ion)

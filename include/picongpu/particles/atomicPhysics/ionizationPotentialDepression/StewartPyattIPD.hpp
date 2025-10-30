@@ -183,14 +183,14 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             ForEachIonSpeciesApplyIPDIonization{}(mappingDesc);
         };
 
-        /** calculate ionization potential depression
+        /** get ionization potential depression
          *
          * @param temperatureEnergyBox deviceDataBox giving access to the local temperature * k_Boltzman for all
-         *  local superCells, in sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2, not weighted
+         *  local superCells, in UNIT_ENERGY, not weighted
          * @param zStarBox deviceDataBox giving access to the local z^Star value, = average(q^2) / average(q),
          *  for all local superCells, unitless, not weighted
          * @param debyeLengthBox deviceDataBox giving access to the local debye length for all local superCells,
-         *  sim.unit.length(), not weighted
+         *  UNIT_LENGTH, not weighted
          * @param superCellFieldIdx index of superCell in superCellField(without guards)
          *
          * @return unit: eV, not weighted
@@ -200,42 +200,55 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             typename T_DebyeLengthBox,
             typename T_TemperatureEnergyBox,
             typename T_ZStarBox>
-        HDINLINE static float_X calculateIPD(
+        HDINLINE static float_X getIPD(
             pmacc::DataSpace<simDim> const superCellFieldIdx,
             T_DebyeLengthBox const debyeLengthBox,
             T_TemperatureEnergyBox const temperatureEnergyBox,
             T_ZStarBox const zStarBox)
         {
-            // eV/(sim.unit.energy())
-            constexpr float_X eV = sim.pic.get_eV();
+            // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
+            float_X const temperatureTimesk_Boltzman = temperatureEnergyBox(superCellFieldIdx);
+            // UNIT_LENGTH, not weighted
+            float_X const debyeLength = debyeLengthBox(superCellFieldIdx);
+            uint8_t const chargeState = T_atomicNumber;
+            // unitless, not weighted
+            float_X const zStar = zStarBox(superCellFieldIdx);
 
-            // eV/(sim.unit.mass() * sim.unit.length()^2 / sim.unit.time()^2) * unitless * sim.unit.charge()^2
-            //  / ( unitless * sim.unit.charge()^2 * sim.unit.time()^2 / (sim.unit.length()^3 * sim.unit.mass()))
-            // = eV * sim.unit.time()^2 * sim.unit.mass()^(-1) * sim.unit.length()^(-2) * sim.unit.charge()^2 *
-            // sim.unit.charge()^(-2)
-            //  * sim.unit.time()^(-2) * sim.unit.length()^3 * sim.unit.mass()^1 = eV * sim.unit.length()
-            // eV * sim.unit.length()
+            return ipd(temperatureTimesk_Boltzman, debyeLength, zStar, chargeState);
+        }
+
+        /** calculate ionization potential depression
+         *
+         * @param temperatureTimesk_Boltzman in UNIT_ENERGY
+         * @param debyeLength in UNIT_LENGTH
+         * @param zStar unitless
+         * @param chargeState charge state of the ion before ionization
+         *
+         * @return unit: eV, not weighted
+         */
+        HDINLINE static float_X ipd(
+            float_X const temperatureTimesk_Boltzman,
+            float_X const debyeLength,
+            float_X const zStar,
+            uint8_t const chargeState)
+        {
+            // UNIT_CHARGE^2 / ( unitless * UNIT_CHARGE^2 * UNIT_TIME^2 / (UNIT_LENGTH^3 * UNIT_MASS))
+            // = UNIT_MASS * UNIT_LENGTH^3 * UNIT_TIME^(-2)
             constexpr float_X constFactor
-                = eV * static_cast<float_X>(T_atomicNumber)
-                  * pmacc::math::cPow(picongpu::sim.pic.getElectronCharge(), 2u)
+                = pmacc::math::cPow(picongpu::sim.pic.getElectronCharge(), 2u)
                   / (4._X * static_cast<float_X>(picongpu::PI) * picongpu::sim.pic.getEps0());
 
-            // eV, not weighted
-            float_X const temperatureTimesk_Boltzman = temperatureEnergyBox(superCellFieldIdx);
-            // sim.unit.length(), not weighted
-            float_X const debyeLength = debyeLengthBox(superCellFieldIdx);
-
-            // (eV * sim.unit.length()) / (eV * sim.unit.length()), not weighted
-            // unitless, not weighted
+            // UNIT_MASS * UNIT_LENGTH^3 / UNIT_TIME^2 * 1/(UNIT_ENERGY * UNIT_LENGTH)
+            // = unitless, not weighted
             float_X const K = (pmacc::math::isApproxZero(temperatureTimesk_Boltzman * debyeLength))
                                   ? 0._X
                                   : constFactor / (temperatureTimesk_Boltzman * debyeLength);
 
-            // unitless, not weighted
-            float_X const zStar = zStarBox(superCellFieldIdx);
+            // UNIT_ENERGY/eV
+            constexpr float_X eV = sim.pic.get_eV();
 
             // eV, not weighted
-            return temperatureTimesk_Boltzman * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
+            return temperatureTimesk_Boltzman / eV * (math::pow(((3 * zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
                    / (2._X * (zStar + 1._X));
         }
 

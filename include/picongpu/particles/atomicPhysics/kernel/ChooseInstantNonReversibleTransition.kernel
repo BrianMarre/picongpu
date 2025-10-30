@@ -156,9 +156,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             worker.sync();
 
             float_X const ionizationPotentialDepression
-                = T_IPDModel::template calculateIPD<T_ChargeStateDataDataBox::atomicNumber>(
-                    superCellFieldIdx,
-                    ipdInput...);
+                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
 
             // mask states with maximum total loss rate below rate limit
             forEachAtomicState(

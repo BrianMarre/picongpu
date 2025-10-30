@@ -49,7 +49,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
         }
 
         //! @returns 0._X eV
-        HDINLINE static float_X calculateIPD()
+        HDINLINE static float_X getIPD(pmacc::DataSpace<simDim> const)
         {
             return 0._X;
         }

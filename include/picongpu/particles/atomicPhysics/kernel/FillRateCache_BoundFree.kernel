@@ -345,9 +345,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                 return;
 
             float_X const ionizationPotentialDepression
-                = T_IPDModel::template calculateIPD<T_ChargeStateDataDataBox::atomicNumber>(
-                    superCellFieldIdx,
-                    ipdInput...);
+                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
 
             auto& rateCache = rateCacheBox(superCellFieldIdx);
 

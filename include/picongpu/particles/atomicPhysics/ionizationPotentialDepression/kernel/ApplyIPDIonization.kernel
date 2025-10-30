@@ -121,7 +121,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
             T_IPDInputBoxes const... ipdInputBoxes)
         {
             // eV
-            kernelState.superCellConstantIPD = T_IPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
+            kernelState.superCellConstantIPD = T_IPDModel::template getIPD<T_ChargeStateDataBox::atomicNumber>(
                 superCellFieldIndex,
                 ipdInputBoxes...);
             kernelState.foundUnbound = u32(false);

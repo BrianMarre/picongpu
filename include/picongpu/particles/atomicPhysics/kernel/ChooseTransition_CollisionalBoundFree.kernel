@@ -162,9 +162,7 @@ namespace picongpu::particles::atomicPhysics::kernel
             cachedHistogram.fill(worker, electronHistogram, volumeScalingFactor);
 
             float_X const ionizationPotentialDepression
-                = T_IPDModel::template calculateIPD<T_ChargeStateDataDataBox::atomicNumber>(
-                    superCellFieldIdx,
-                    ipdInput...);
+                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
 
             // check whether collisional bound-free transition and if yes, roll specific transition and bin
             forEachLocalIonBoxEntry(

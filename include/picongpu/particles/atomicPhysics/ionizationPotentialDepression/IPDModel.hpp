@@ -61,7 +61,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
         template<typename T_AtomicPhysicsIonSpeciesList>
         HINLINE static void applyIPDIonization(picongpu::MappingDesc const mappingDesc, uint32_t const currentStep);
 
-        /** calculate ionization potential depression
+        /** get ionization potential depression for a super cell
          *
          * @param superCellFieldIdx index of superCell in superCellField(without guards)
          * @param input to ipd calculation
@@ -69,7 +69,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
          * @return unit: eV, not weighted
          */
         template<typename... T_Input>
-        HDINLINE static float_X calculateIPD(pmacc::DataSpace<simDim> const superCellFieldIdx, T_Input const... input);
+        HDINLINE static float_X getIPD(pmacc::DataSpace<simDim> const superCellFieldIdx, T_Input const... input);
 
         /** append ipd input to kernelInput and do a PMACC_LOCKSTEP_KERNEL call for T_kernel
          *

@@ -36,20 +36,16 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
             T_ChargeStateDataBox chargeStateBox,
             T_IPDInput... ipdInput)
         {
-            return T_IPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
-                superCellFieldIdx,
-                ipdInput...);
+            return T_IPDModel::template getIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
         }
 
         template<typename T_IPDModel, typename T_ChargeStateDataBox, typename... T_IPDInput>
-        HDINLINE static float_X calculateIPD(
+        HDINLINE static float_X getIPD(
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx,
             T_ChargeStateDataBox chargeStateBox,
             T_IPDInput... ipdInput)
         {
-            return T_IPDModel::template calculateIPD<T_ChargeStateDataBox::atomicNumber>(
-                superCellFieldIdx,
-                ipdInput...);
+            return T_IPDModel::template getIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
         }
 
         template<typename T_RNGFactory, typename... T_AddStuff>

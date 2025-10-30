@@ -119,7 +119,7 @@ namespace picongpu::particles::atomicPhysics::kernel
              *  -> no need to calculate IPD for non collisional processClasses*/
             if constexpr(isIonizing && isCollisional)
                 ionizationPotentialDepression
-                    = ionizationPotentialDepression::PassIPDInputs::template calculateIPD<T_IPDModel>(
+                    = ionizationPotentialDepression::PassIPDInputs::template getIPD<T_IPDModel>(
                         superCellFieldIdx,
                         chargeStateBoxAndIPDInput...);
 
