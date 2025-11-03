@@ -132,7 +132,7 @@ namespace picongpu::particles::atomicPhysics::kernel
 
             auto eFieldCache = EFieldCache::get<__COUNTER__>(worker, superCellIdx, eFieldBox);
 
-            PMACC_SMEM(worker, superCellConstantIPDInput, T_IPDModel::SuperCellConstantInput);
+            PMACC_SMEM(worker, superCellConstantIPDInput, typename T_IPDModel::SuperCellConstantInput);
 
             auto onlyMaster = lockstep::makeMaster(worker);
             onlyMaster(
