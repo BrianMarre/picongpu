@@ -98,8 +98,14 @@ namespace picongpu::particles::atomicPhysics::kernel
             auto& electronHistogram = electronHistogramBox(superCellFieldIdx);
             auto& fieldEnergyUseCache = fieldEnergyUseCacheBox(superCellFieldIdx);
 
-            float_X const ionizationPotentialDepression
-                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
+            PMACC_SMEM(worker, superCellConstantIPDInput, typename T_IPDModel::SuperCellConstantInput);
+            auto onlyMaster = lockstep::makeMaster(worker);
+            onlyMaster(
+                [&superCellConstantIPDInput, &superCellFieldIdx, &ipdInput...]()
+                {
+                    superCellConstantIPDInput = T_IPDModel::getSuperCellConstantInput(superCellFieldIdx, ipdInput...);
+                });
+            worker.sync();
 
             forEachLocalIonBoxEntry(
                 [&](T_Worker const& worker, auto& ion)
@@ -134,6 +140,14 @@ namespace picongpu::particles::atomicPhysics::kernel
                             = s_enums::IsProcess<s_enums::ProcessClassGroup::electricFieldBased>::check(processClass);
                         if(fieldUsingProcess)
                         {
+                            auto const stateConfigNumber
+                                = atomicStateBox.configNumber(ion[atomicStateCollectionIndex_]);
+                            uint8_t const stateChargeState
+                                = T_AtomicStateDataDataBox::ConfigNumber::getChargeState(stateConfigNumber);
+                            // eV
+                            float_X const ionizationPotentialDepression
+                                = T_IPDModel::ipd(superCellConstantIPDInput, stateChargeState);
+
                             // eV, weighted
                             float_X const energyUsed = DeltaEnergyTransition::get(
                                                            transitionCollectionIndex,

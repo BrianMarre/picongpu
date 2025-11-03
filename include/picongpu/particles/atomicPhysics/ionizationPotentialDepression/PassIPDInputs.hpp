@@ -30,22 +30,22 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
     struct PassIPDInputs
     {
         template<typename T_IPDModel, typename T_RNGFactory, typename T_ChargeStateDataBox, typename... T_IPDInput>
-        HDINLINE static float_X calculateIPD_RngFactory(
+        HDINLINE static T_IPDModel::SuperCellConstantInput getSuperCellConstantInput_RNGFactory(
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx,
             T_RNGFactory&,
-            T_ChargeStateDataBox chargeStateBox,
+            T_ChargeStateDataBox,
             T_IPDInput... ipdInput)
         {
-            return T_IPDModel::template getIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
+            return T_IPDModel::template getSuperCellConstantInput(superCellFieldIdx, ipdInput...);
         }
 
         template<typename T_IPDModel, typename T_ChargeStateDataBox, typename... T_IPDInput>
-        HDINLINE static float_X getIPD(
+        HDINLINE static T_IPDModel::SuperCellConstantInput getSuperCellConstantInput(
             pmacc::DataSpace<picongpu::simDim> const superCellFieldIdx,
-            T_ChargeStateDataBox chargeStateBox,
+            T_ChargeStateDataBox,
             T_IPDInput... ipdInput)
         {
-            return T_IPDModel::template getIPD<T_ChargeStateDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
+            return T_IPDModel::template getSuperCellConstantInput(superCellFieldIdx, ipdInput...);
         }
 
         template<typename T_RNGFactory, typename... T_AddStuff>

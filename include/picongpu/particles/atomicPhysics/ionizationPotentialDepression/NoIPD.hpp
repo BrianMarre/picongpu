@@ -30,8 +30,18 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
+    namespace detail
+    {
+        // the NoIPD model has no input, therefore the struct has no members
+        struct NoIPDSuperCellConstantInput
+        {
+        };
+    } // namespace detail
+
     struct NoIPD : IPDModel
     {
+        using SuperCellConstantInput = detail::SuperCellConstantInput;
+
         //! create all HelperFields required by the IPD model
         HINLINE static void createHelperFields()
         {

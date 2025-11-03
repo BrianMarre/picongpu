@@ -38,6 +38,19 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
+    namespace detail
+    {
+        struct StewartPyattSuperCellConstantInput
+        {
+            // UNIT_ENERGY
+            float_X temperatureTimesk_Boltzman;
+            // UNIT_LENGTH
+            float_X debyeLength;
+            // unitless
+            float_X zStar;
+        };
+    } // namespace detail
+
     //! short hand for IPD namespace
     namespace s_IPD = picongpu::particles::atomicPhysics::ionizationPotentialDepression;
 
@@ -49,6 +62,8 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
     template<typename T_TemperatureFunctor>
     struct StewartPyattIPD : IPDModel
     {
+        using SuperCellConstantInput = detail::StewartPyattSuperCellConstantInput;
+
     private:
         //! reset IPD support infrastructure before we accumulate over particles to calculate new IPD Inputs
         HINLINE static void resetSumFields()
@@ -195,42 +210,36 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
          *
          * @return unit: eV, not weighted
          */
-        template<
-            uint8_t T_atomicNumber,
-            typename T_DebyeLengthBox,
-            typename T_TemperatureEnergyBox,
-            typename T_ZStarBox>
-        HDINLINE static float_X getIPD(
+        template<typename T_DebyeLengthBox, typename T_TemperatureEnergyBox, typename T_ZStarBox>
+        HDINLINE static SuperCellConstantInput getSuperCellConstantInput(
             pmacc::DataSpace<simDim> const superCellFieldIdx,
             T_DebyeLengthBox const debyeLengthBox,
             T_TemperatureEnergyBox const temperatureEnergyBox,
             T_ZStarBox const zStarBox)
         {
             // UNIT_MASS * UNIT_LENGTH^2 / UNIT_TIME^2, not weighted
-            float_X const temperatureTimesk_Boltzman = temperatureEnergyBox(superCellFieldIdx);
+            float_X temperatureTimesk_Boltzman = temperatureEnergyBox(superCellFieldIdx);
             // UNIT_LENGTH, not weighted
-            float_X const debyeLength = debyeLengthBox(superCellFieldIdx);
-            uint8_t const chargeState = T_atomicNumber;
+            float_X debyeLength = debyeLengthBox(superCellFieldIdx);
             // unitless, not weighted
-            float_X const zStar = zStarBox(superCellFieldIdx);
+            float_X zStar = zStarBox(superCellFieldIdx);
 
-            return ipd(temperatureTimesk_Boltzman, debyeLength, zStar, chargeState);
+            auto superCellConstantInput = SuperCellConstantInput();
+            superCellConstantInput.temperatureTimesk_Boltzman = temperatureTimesk_Boltzman;
+            superCellConstantInput.debyeLength = debyeLength;
+            superCellConstantInput.zStar = zStar;
+
+            return superCellConstantInput;
         }
 
         /** calculate ionization potential depression
          *
-         * @param temperatureTimesk_Boltzman in UNIT_ENERGY
-         * @param debyeLength in UNIT_LENGTH
-         * @param zStar unitless
+         * @param superCellConstantInput struct storing the values of all super cell constant IPD input parameters
          * @param chargeState charge state of the ion before ionization
          *
          * @return unit: eV, not weighted
          */
-        HDINLINE static float_X ipd(
-            float_X const temperatureTimesk_Boltzman,
-            float_X const debyeLength,
-            float_X const zStar,
-            uint8_t const chargeState)
+        HDINLINE static float_X ipd(SuperCellConstantInput const superCellConstantInput, uint8_t const chargeState)
         {
             // UNIT_CHARGE^2 / ( unitless * UNIT_CHARGE^2 * UNIT_TIME^2 / (UNIT_LENGTH^3 * UNIT_MASS))
             // = UNIT_MASS * UNIT_LENGTH^3 * UNIT_TIME^(-2)
@@ -240,16 +249,20 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 
             // UNIT_MASS * UNIT_LENGTH^3 / UNIT_TIME^2 * 1/(UNIT_ENERGY * UNIT_LENGTH)
             // = unitless, not weighted
-            float_X const K = (pmacc::math::isApproxZero(temperatureTimesk_Boltzman * debyeLength))
-                                  ? 0._X
-                                  : constFactor * (chargeState + 1) / (temperatureTimesk_Boltzman * debyeLength);
+            float_X const K
+                = (pmacc::math::isApproxZero(
+                      superCellConstantInput.temperatureTimesk_Boltzman * superCellConstantInput.debyeLength))
+                      ? 0._X
+                      : constFactor * (chargeState + 1)
+                            / (superCellConstantInput.temperatureTimesk_Boltzman * superCellConstantInput.debyeLength);
 
             // UNIT_ENERGY/eV
             constexpr float_X eV = sim.pic.get_eV();
 
             // eV, not weighted
-            return temperatureTimesk_Boltzman / eV * (math::pow((3 * (zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
-                   / (2._X * (zStar + 1._X));
+            return superCellConstantInput.temperatureTimesk_Boltzman / eV
+                   * (math::pow((3 * (superCellConstantInput.zStar + 1) * K + 1), 2._X / 3._X) - 1._X)
+                   / (2._X * (superCellConstantInput.zStar + 1._X));
         }
 
         template<typename T_Kernel, uint32_t T_chunkSize, typename... T_KernelInput>

@@ -131,13 +131,20 @@ namespace picongpu::particles::atomicPhysics::kernel
                 return;
 
             auto eFieldCache = EFieldCache::get<__COUNTER__>(worker, superCellIdx, eFieldBox);
+
+            PMACC_SMEM(worker, superCellConstantIPDInput, T_IPDModel::SuperCellConstantInput);
+
+            auto onlyMaster = lockstep::makeMaster(worker);
+            onlyMaster(
+                [&superCellConstantIPDInput, &superCellFieldIdx, &ipdInput...]()
+                {
+                    superCellConstantIPDInput = T_IPDModel::getSuperCellConstantInput(superCellFieldIdx, ipdInput...);
+                });
+
             worker.sync();
 
             auto rngGeneratorFloat = rngFactoryFloat(worker, superCellFieldIdx);
             auto& rateCache = rateCacheBox(superCellFieldIdx);
-
-            float_X const ionizationPotentialDepression
-                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
 
             forEachLocalIonBoxEntry(
                 [&](T_Worker const& worker, auto& ion)
@@ -182,6 +189,13 @@ namespace picongpu::particles::atomicPhysics::kernel
                         setNoChangeTransition(ion);
                         return;
                     }
+
+                    auto const stateConfigNumber = atomicStateBox.configNumber(atomicStateCollectionIndex);
+                    uint8_t const stateChargeState
+                        = T_AtomicStateDataDataBox::ConfigNumber::getChargeState(stateConfigNumber);
+                    // eV
+                    float_X const ionizationPotentialDepression
+                        = T_IPDModel::ipd(superCellConstantIPDInput, stateChargeState);
 
                     float_X cumSum = 0._X;
                     for(uint32_t transitionID = 0u; transitionID < numberTransitions; ++transitionID)

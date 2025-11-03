@@ -161,8 +161,15 @@ namespace picongpu::particles::atomicPhysics::kernel
             PMACC_SMEM(worker, cachedHistogram, CachedHistogram<T_Histogram::numberBins>);
             cachedHistogram.fill(worker, electronHistogram, volumeScalingFactor);
 
-            float_X const ionizationPotentialDepression
-                = T_IPDModel::template getIPD<T_ChargeStateDataDataBox::atomicNumber>(superCellFieldIdx, ipdInput...);
+            PMACC_SMEM(worker, superCellConstantIPDInput, T_IPDModel::SuperCellConstantInput);
+
+            auto onlyMaster = lockstep::makeMaster(worker);
+            onlyMaster(
+                [&superCellConstantIPDInput, &superCellFieldIdx, &ipdInput...]()
+                {
+                    superCellConstantIPDInput = T_IPDModel::getSuperCellConstantInput(superCellFieldIdx, ipdInput...);
+                });
+            worker.sync();
 
             // check whether collisional bound-free transition and if yes, roll specific transition and bin
             forEachLocalIonBoxEntry(
@@ -174,7 +181,7 @@ namespace picongpu::particles::atomicPhysics::kernel
                  &transitionDataBox,
                  &cachedHistogram,
                  &rateCache,
-                 &ionizationPotentialDepression](T_Worker const& worker, auto& ion)
+                 &superCellConstantIPDInput](T_Worker const& worker, auto& ion)
                 {
                     // debug
                     checkForInvalidChooseTransitionGroup(ion);
@@ -209,6 +216,14 @@ namespace picongpu::particles::atomicPhysics::kernel
                         setNoChangeTransition(ion);
                         return;
                     }
+
+                    auto const atomicStateConfigNumber
+                        = atomicStateDataDataBox.configNumber(atomicStateCollectionIndex);
+                    auto const stateChargeState
+                        = T_AtomicStateDataDataBox::ConfigNumber::getChargeState(atomicStateConfigNumber);
+                    // eV
+                    float_X const ionizationPotentialDepression
+                        = T_IPDModel::ipd(superCellConstantIPDInput, stateChargeState);
 
                     float_X cumSum = 0._X;
                     for(uint32_t transitionID = 0u; transitionID < numberTransitions; ++transitionID)

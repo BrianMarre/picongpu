@@ -27,8 +27,21 @@
 
 namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression
 {
+    namespace detail
+    {
+        /** struct storing all input parameters for the ipd-model that are the same for every macro ion in the same
+         *  super cell
+         */
+        struct SuperCellConstantInput
+        {
+        };
+    } // namespace detail
+
     struct IPDModel
     {
+        //! a type storing all input for the ipd calculation that is the same for all macro ions of one super cell
+        using SuperCellConstantInput = detail::SuperCellConstantInput;
+
         //! create all HelperFields required by the IPD model
         HINLINE static void createHelperFields();
 
