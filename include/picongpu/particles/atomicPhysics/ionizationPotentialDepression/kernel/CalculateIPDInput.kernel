@@ -107,7 +107,7 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
 
             // localSumFieldValues
             //!@{
-            // sim.unit.energy() * weight / sim.unit.typicalNumParticlesPerMacroParticle()
+            // UNIT_ENERGY * weight / sim.unit.typicalNumParticlesPerMacroParticle()
             float_X const sumTemperatureTerm = sumTemperatureTermBox(superCellFieldIdx);
             // weight / sim.unit.typicalNumParticlesPerMacroParticle()
             float_X const sumWeightAllNormalized = sumWeightAllNormalizedBox(superCellFieldIdx);
@@ -140,19 +140,14 @@ namespace picongpu::particles::atomicPhysics::ionizationPotentialDepression::ker
                                                       ? sumChargeNumberSquared / sumChargeNumber
                                                       : 0._X;
 
-                    // eV / unit_energy
-                    constexpr float_X eV = sim.pic.get_eV();
-
-                    /* unit: unit_energy * weight / typicalNumParticlesPerMacroParticle
-                     *  / (weight / typicalNumParticlesPerMacroParticle) = unit_energy
+                    /* unit: UNIT_ENERGY * weight / typicalNumParticlesPerMacroParticle
+                     *  / (weight / typicalNumParticlesPerMacroParticle) = UNIT_ENERGY
                      *
                      * k_Boltzman * Temperature, energy equivalent to the local temperature */
-                    float_X const temperatureEnergy_PIC = (!pmacc::math::isApproxZero(sumWeightAllNormalized))
-                                                              ? sumTemperatureTerm / sumWeightAllNormalized
-                                                              : 0._X;
-
-                    // (eV / unit_energy) * unit_energy = eV
-                    temperatureEnergyBox(superCellFieldIdx) = eV * temperatureEnergy_PIC;
+                    temperatureEnergyBox(superCellFieldIdx) = (!pmacc::math::isApproxZero(sumWeightAllNormalized))
+                                                                  ? sumTemperatureTerm / sumWeightAllNormalized
+                                                                  : 0._X;
+                    ;
 
                     /** @note in case simDim = DIM2, we assumes sim.pic.getCellSize().productOfComponents() =
                      * sim.pic.getCellSize().x() * sim.pic.getCellSize().z() * (system size)
