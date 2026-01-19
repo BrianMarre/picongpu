@@ -193,6 +193,9 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
             T_AtomicStateDataBox const atomicStateDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
+            if constexpr(picongpu::atomicPhysics::debug::fixedRateMatrix::USE_FIXED_RATE_INSTEAD_OF_RATE_CALCULATION)
+                return 0._X;
+
             // unit_energy
             float_X const eFieldEnergy = FieldEnergy::getEFieldEnergy(eFieldNorm * eFieldNorm);
 
@@ -252,6 +255,9 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
             T_AtomicStateDataBox const atomicStateDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
+            if constexpr(picongpu::atomicPhysics::debug::fixedRateMatrix::USE_FIXED_RATE_INSTEAD_OF_RATE_CALCULATION)
+                return 0._X;
+
             // unit_energy
             float_X const maxEFieldEnergy = FieldEnergy::getEFieldEnergy(maxEFieldNorm * maxEFieldNorm);
 

@@ -237,6 +237,9 @@ namespace picongpu::particles::atomicPhysics::rateCalculation
             T_AtomicStateDataBox const atomicStateDataBox,
             T_BoundFreeTransitionDataBox const boundFreeTransitionDataBox)
         {
+            if constexpr(picongpu::atomicPhysics::debug::fixedRateMatrix::USE_FIXED_RATE_INSTEAD_OF_RATE_CALCULATION)
+                return 0._X;
+
             float_X sigma = collisionalIonizationCrossSection(
                 // eV
                 energyElectron,
