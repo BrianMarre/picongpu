@@ -34,7 +34,5 @@ namespace picongpu::atomicPhysics
     constexpr bool useSCFLYextendedStewartPyattIPD = true;
 
     //! configuration of used ionization potential depression Model
-    using IPDModel = picongpu::particles::atomicPhysics::ionizationPotentialDepression::StewartPyattIPD<
-        picongpu::particles::atomicPhysics::ionizationPotentialDepression::RelativisticTemperatureFunctor,
-        useSCFLYextendedStewartPyattIPD>;
+    using IPDModel = picongpu::particles::atomicPhysics::ionizationPotentialDepression::NoIPD;
 } // namespace picongpu::atomicPhysics
